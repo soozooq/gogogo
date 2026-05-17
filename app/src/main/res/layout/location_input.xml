@@ -46,10 +46,11 @@
             android:text="@string/input_position_baidu" />
 
         <RadioButton
+            android:id="@+id/pos_type_gcj02"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/input_position_gps" />
+            android:text="@string/input_position_gcj02" />
     </RadioGroup>
 
 

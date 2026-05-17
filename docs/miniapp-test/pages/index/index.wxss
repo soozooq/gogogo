@@ -1,0 +1,26 @@
+.container {
+  padding: 40rpx;
+}
+
+.btn {
+  margin-bottom: 30rpx;
+  width: 100%;
+}
+
+.result {
+  background: #fff;
+  padding: 30rpx;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  line-height: 1.8;
+  color: #333;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.tip {
+  margin-top: 30rpx;
+  font-size: 24rpx;
+  color: #999;
+  line-height: 1.6;
+}

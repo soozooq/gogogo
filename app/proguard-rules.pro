@@ -19,10 +19,17 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
--keep class com.baidu.** {*;}
--keep class vi.com.** {*;}
--keep class com.baidu.vi.** {*;}
--dontwarn com.baidu.**
+-keep class com.tencent.tencentmap.** {*;}
+-keep class com.tencent.map.** {*;}
+-keep class com.tencent.gaya.** {*;}
+-keep class com.tencent.mapsdk.** {*;}
+-keepattributes *Annotation*
+-keepattributes Signature
+-keepattributes Exceptions
+-keepattributes InnerClasses
+-keepattributes EnclosingMethod
+-dontwarn com.tencent.**
+-dontwarn com.qq.**
 
 # OkHttp platform used only on JVM and when Conscrypt and other security providers are available.
 -dontwarn okhttp3.internal.platform.**

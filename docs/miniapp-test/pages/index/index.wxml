@@ -1,0 +1,114 @@
+<view class="container">
+  <!-- 标题区域 -->
+  <view class="header">
+    <text class="title">影梭定位测试</text>
+    <text class="subtitle">模拟微信小程序获取定位</text>
+  </view>
+
+  <!-- 状态栏 -->
+  <view class="status-bar">
+    <view class="status-item">
+      <text class="status-label">Mock状态</text>
+      <text class="status-value {{mockInfo.isMock ? 'mock' : 'normal'}}">{{mockInfo.message}}</text>
+    </view>
+    <view class="status-item">
+      <text class="status-label">更新时间</text>
+      <text class="status-value">{{lastUpdate}}</text>
+    </view>
+  </view>
+
+  <!-- 刷新按钮 -->
+  <button class="refresh-btn" type="primary" loading="{{loading}}" bindtap="onRefresh">
+    {{loading ? '定位中...' : '刷新定位'}}
+  </button>
+
+  <!-- WGS84 坐标卡片 -->
+  <view class="card wgs84-card">
+    <view class="card-header">
+      <text class="card-title">WGS84 (GPS原始坐标)</text>
+      <text class="card-subtitle">影梭注入的坐标</text>
+    </view>
+    <view class="card-body">
+      <view class="coord-row">
+        <text class="coord-label">纬度</text>
+        <text class="coord-value">{{wgs84.lat}}</text>
+      </view>
+      <view class="coord-row">
+        <text class="coord-label">经度</text>
+        <text class="coord-value">{{wgs84.lng}}</text>
+      </view>
+      <view class="coord-row">
+        <text class="coord-label">精度</text>
+        <text class="coord-value">{{wgs84.accuracy}}</text>
+      </view>
+      <view class="coord-row">
+        <text class="coord-label">速度</text>
+        <text class="coord-value">{{wgs84.speed}}</text>
+      </view>
+      <view class="coord-row">
+        <text class="coord-label">海拔</text>
+        <text class="coord-value">{{wgs84.altitude}}</text>
+      </view>
+    </view>
+    <view class="card-footer">
+      <button class="copy-btn" size="mini" bindtap="copyWGS84">复制坐标</button>
+    </view>
+  </view>
+
+  <!-- GCJ02 坐标卡片 -->
+  <view class="card gcj02-card">
+    <view class="card-header">
+      <text class="card-title">GCJ02 (火星坐标)</text>
+      <text class="card-subtitle">微信/腾讯/高德使用的坐标系</text>
+    </view>
+    <view class="card-body">
+      <view class="coord-row">
+        <text class="coord-label">纬度</text>
+        <text class="coord-value">{{gcj02.lat}}</text>
+      </view>
+      <view class="coord-row">
+        <text class="coord-label">经度</text>
+        <text class="coord-value">{{gcj02.lng}}</text>
+      </view>
+    </view>
+    <view class="card-footer">
+      <button class="copy-btn" size="mini" bindtap="copyGCJ02">复制坐标</button>
+    </view>
+  </view>
+
+  <!-- 地址信息卡片 -->
+  <view class="card address-card">
+    <view class="card-header">
+      <text class="card-title">地址解析</text>
+      <text class="card-subtitle">腾讯地图反向地理编码</text>
+    </view>
+    <view class="card-body">
+      <view class="address-row">
+        <text class="address-label">名称</text>
+        <text class="address-value">{{address.name}}</text>
+      </view>
+      <view class="address-row">
+        <text class="address-label">地址</text>
+        <text class="address-value">{{address.address}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 复制全部按钮 -->
+  <button class="copy-all-btn" bindtap="copyAll">复制全部信息</button>
+
+  <!-- 说明 -->
+  <view class="tips">
+    <text class="tips-title">使用说明</text>
+    <text class="tips-item">1. 影梭启动模拟位置，关闭WiFi</text>
+    <text class="tips-item">2. 点击"刷新定位"获取当前坐标</text>
+    <text class="tips-item">3. WGS84 应与影梭设置值一致</text>
+    <text class="tips-item">4. GCJ02 是微信实际使用的坐标</text>
+    <text class="tips-item">5. 如不一致，说明腾讯SDK用了其他定位源</text>
+  </view>
+
+  <!-- 开发者信息 -->
+  <view class="footer">
+    <text>影梭 GoGoGo 定位测试工具</text>
+  </view>
+</view>

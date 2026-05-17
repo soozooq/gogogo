@@ -145,22 +145,22 @@ public class HistoryActivity extends BaseActivity {
                 String Longitude = cursor.getString(2);
                 String Latitude = cursor.getString(3);
                 long TimeStamp = cursor.getInt(4);
-                String BD09Longitude = cursor.getString(5);
-                String BD09Latitude = cursor.getString(6);
-                Log.d("TB", ID + "\t" + Location + "\t" + Longitude + "\t" + Latitude + "\t" + TimeStamp + "\t" + BD09Longitude + "\t" + BD09Latitude);
+                String CustomLongitude = cursor.getString(5);
+                String CustomLatitude = cursor.getString(6);
+                Log.d("TB", ID + "\t" + Location + "\t" + Longitude + "\t" + Latitude + "\t" + TimeStamp + "\t" + CustomLongitude + "\t" + CustomLatitude);
                 BigDecimal bigDecimalLongitude = BigDecimal.valueOf(Double.parseDouble(Longitude));
                 BigDecimal bigDecimalLatitude = BigDecimal.valueOf(Double.parseDouble(Latitude));
-                BigDecimal bigDecimalBDLongitude = BigDecimal.valueOf(Double.parseDouble(BD09Longitude));
-                BigDecimal bigDecimalBDLatitude = BigDecimal.valueOf(Double.parseDouble(BD09Latitude));
+                BigDecimal bigDecimalCustomLongitude = BigDecimal.valueOf(Double.parseDouble(CustomLongitude));
+                BigDecimal bigDecimalCustomLatitude = BigDecimal.valueOf(Double.parseDouble(CustomLatitude));
                 double doubleLongitude = bigDecimalLongitude.setScale(11, RoundingMode.HALF_UP).doubleValue();
                 double doubleLatitude = bigDecimalLatitude.setScale(11, RoundingMode.HALF_UP).doubleValue();
-                double doubleBDLongitude = bigDecimalBDLongitude.setScale(11, RoundingMode.HALF_UP).doubleValue();
-                double doubleBDLatitude = bigDecimalBDLatitude.setScale(11, RoundingMode.HALF_UP).doubleValue();
+                double doubleCustomLongitude = bigDecimalCustomLongitude.setScale(11, RoundingMode.HALF_UP).doubleValue();
+                double doubleCustomLatitude = bigDecimalCustomLatitude.setScale(11, RoundingMode.HALF_UP).doubleValue();
                 item.put(KEY_ID, Integer.toString(ID));
                 item.put(KEY_LOCATION, Location);
                 item.put(KEY_TIME, GoUtils.timeStamp2Date(Long.toString(TimeStamp)));
                 item.put(KEY_LNG_LAT_WGS, "[经度:" + doubleLongitude + " 纬度:" + doubleLatitude + "]");
-                item.put(KEY_LNG_LAT_CUSTOM, "[经度:" + doubleBDLongitude + " 纬度:" + doubleBDLatitude + "]");
+                item.put(KEY_LNG_LAT_CUSTOM, "[经度:" + doubleCustomLongitude + " 纬度:" + doubleCustomLatitude + "]");
                 data.add(item);
             }
             cursor.close();
@@ -319,24 +319,25 @@ public class HistoryActivity extends BaseActivity {
         mSearchLayout = findViewById(R.id.search_linear);
         mRecordListView = findViewById(R.id.record_list_view);
         mRecordListView.setOnItemClickListener((adapterView, view, i, l) -> {
-            String bd09Longitude;
-            String bd09Latitude;
+            String gcj02Longitude;
+            String gcj02Latitude;
             String name;
             name = (String) ((TextView) view.findViewById(R.id.LocationText)).getText();
-            String bd09LatLng = (String) ((TextView) view.findViewById(R.id.BDLatLngText)).getText();
-            bd09LatLng = bd09LatLng.substring(bd09LatLng.indexOf('[') + 1, bd09LatLng.indexOf(']'));
-            String[] latLngStr = bd09LatLng.split(" ");
-            bd09Longitude = latLngStr[0].substring(latLngStr[0].indexOf(':') + 1);
-            bd09Latitude = latLngStr[1].substring(latLngStr[1].indexOf(':') + 1);
+            // DB_COLUMN_LONGITUDE_CUSTOM / DB_COLUMN_LATITUDE_CUSTOM 现存储 GCJ02 坐标
+            String gcj02LatLng = (String) ((TextView) view.findViewById(R.id.BDLatLngText)).getText();
+            gcj02LatLng = gcj02LatLng.substring(gcj02LatLng.indexOf('[') + 1, gcj02LatLng.indexOf(']'));
+            String[] latLngStr = gcj02LatLng.split(" ");
+            gcj02Longitude = latLngStr[0].substring(latLngStr[0].indexOf(':') + 1);
+            gcj02Latitude = latLngStr[1].substring(latLngStr[1].indexOf(':') + 1);
 
             // Random offset
             if(sharedPreferences.getBoolean("setting_random_offset", false)) {
-                String[] offsetResult = randomOffset(bd09Longitude, bd09Latitude);
-                bd09Longitude = offsetResult[0];
-                bd09Latitude = offsetResult[1];
+                String[] offsetResult = randomOffset(gcj02Longitude, gcj02Latitude);
+                gcj02Longitude = offsetResult[0];
+                gcj02Latitude = offsetResult[1];
             }
 
-            if (!MainActivity.showLocation(name, bd09Longitude, bd09Latitude)) {
+            if (!MainActivity.showLocation(name, gcj02Longitude, gcj02Latitude)) {
                 GoUtils.DisplayToast(this, getResources().getString(R.string.history_error_location));
             }
             this.finish();

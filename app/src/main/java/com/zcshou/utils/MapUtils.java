@@ -19,6 +19,24 @@ public class MapUtils {
         return gcj02towgs84(bd2Gcj[0], bd2Gcj[1]);
     }
 
+    // BD09 → GCJ02
+    public static double[] bd2gcj02(double lon, double lat) {
+        return bd09togcj02(lon, lat);
+    }
+
+    // WGS84 → GCJ02
+    public static double[] wgs2gcj02(double lng, double lat) {
+        double dlat = transformLat(lng - 105.0, lat - 35.0);
+        double dlng = transformLon(lng - 105.0, lat - 35.0);
+        double radlat = lat / 180.0 * pi;
+        double magic = Math.sin(radlat);
+        magic = 1 - ee * magic * magic;
+        double sqrtmagic = Math.sqrt(magic);
+        dlat = (dlat * 180.0) / ((a * (1 - ee)) / (magic * sqrtmagic) * pi);
+        dlng = (dlng * 180.0) / (a / sqrtmagic * Math.cos(radlat) * pi);
+        return new double[] { lng + dlng, lat + dlat };
+    }
+
     /**
      * WGS84 转换为 BD-09
      * @param lng   经度
@@ -55,6 +73,14 @@ public class MapUtils {
         double gg_lng = z * Math.cos(theta);
         double gg_lat = z * Math.sin(theta);
         return new double[] { gg_lng, gg_lat };
+    }
+
+    public static double[] gcj02tobd09(double gcj_lon, double gcj_lat) {
+        double z = Math.sqrt(gcj_lon * gcj_lon + gcj_lat * gcj_lat) + 0.00002 * Math.sin(gcj_lat * x_pi);
+        double theta = Math.atan2(gcj_lat, gcj_lon) + 0.000003 * Math.cos(gcj_lon * x_pi);
+        double bd_lng = z * Math.cos(theta) + 0.0065;
+        double bd_lat = z * Math.sin(theta) + 0.006;
+        return new double[] { bd_lng, bd_lat };
     }
 
     public static double[] gcj02towgs84(double lng, double lat) {

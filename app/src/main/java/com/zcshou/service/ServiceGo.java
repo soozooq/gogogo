@@ -10,8 +10,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.ServiceInfo;
 import android.location.Criteria;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.provider.ProviderProperties;
 import android.os.Binder;
@@ -48,6 +50,7 @@ public class ServiceGo extends Service {
     private LocationManager mLocManager;
     private HandlerThread mLocHandlerThread;
     private Handler mLocHandler;
+    private LocationListener mPersistentListener;     // 保持 Provider 活跃订阅,见 onCreate 注释
     private boolean isStop = false;
     // 通知栏消息
     private static final int SERVICE_GO_NOTE_ID = 1;
@@ -83,6 +86,30 @@ public class ServiceGo extends Service {
         initNotification();
 
         initJoyStick();
+
+        // 关键:维持 Provider 活跃订阅。Android 12+ 上没有活跃 listener 的 Provider
+        // 会进入低功耗/缓存退化状态,微信小程序调 getLastKnownLocation 拿不到
+        // 刚 push 的 mock 数据 (高德/百度 App 自己有订阅就能看到)。
+        // Baidu 版靠 LocationClient(:remote, scanSpan=1000)做这件事,迁移后需要补回来。
+        initPersistentLocationListener();
+    }
+
+    @SuppressLint("MissingPermission")
+    private void initPersistentLocationListener() {
+        mPersistentListener = new LocationListener() {
+            @Override public void onLocationChanged(@NonNull Location location) {}
+            @Override public void onProviderEnabled(@NonNull String provider) {}
+            @Override public void onProviderDisabled(@NonNull String provider) {}
+            @Override public void onStatusChanged(String provider, int status, Bundle extras) {}
+        };
+        try {
+            mLocManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0f, mPersistentListener);
+            mLocManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0f, mPersistentListener);
+        } catch (SecurityException e) {
+            XLog.e("SERVICEGO: ERROR - requestLocationUpdates permission missing");
+        } catch (Exception e) {
+            XLog.e("SERVICEGO: ERROR - initPersistentLocationListener: " + e.getMessage());
+        }
     }
 
     @Override
@@ -106,6 +133,13 @@ public class ServiceGo extends Service {
 
         removeTestProviderNetwork();
         removeTestProviderGPS();
+
+        if (mPersistentListener != null) {
+            try {
+                mLocManager.removeUpdates(mPersistentListener);
+            } catch (Exception ignored) {
+            }
+        }
 
         unregisterReceiver(mActReceiver);
         stopForeground(STOP_FOREGROUND_REMOVE);
@@ -145,7 +179,13 @@ public class ServiceGo extends Service {
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .build();
 
-        startForeground(SERVICE_GO_NOTE_ID, notification);
+        // Android 14+ (API 34) 要求显式声明 foregroundServiceType,否则在前台服务中
+        // requestLocationUpdates 会抛 SecurityException
+        if (Build.VERSION.SDK_INT >= 34) {
+            startForeground(SERVICE_GO_NOTE_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
+        } else {
+            startForeground(SERVICE_GO_NOTE_ID, notification);
+        }
     }
 
     private void initJoyStick() {

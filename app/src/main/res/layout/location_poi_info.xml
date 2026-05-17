@@ -28,22 +28,46 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
             android:orientation="vertical">
+
             <TextView
-                android:id="@+id/poi_longitude"
-                android:textSize="16sp"
+                android:id="@+id/poi_coords_gcj02"
+                android:textSize="12sp"
+                android:textColor="#00796B"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
             <TextView
-                android:id="@+id/poi_latitude"
-                android:textSize="16sp"
+                android:id="@+id/poi_coords_wgs84"
+                android:textSize="12sp"
+                android:textColor="#666666"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
         </LinearLayout>
     </LinearLayout>
 
     <TextView
-        android:id="@+id/poi_address"
+        android:id="@+id/poi_address_baidu"
         android:layout_marginStart="4dp"
+        android:layout_marginTop="4dp"
+        android:textSize="12sp"
+        android:textColor="#E65100"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/poi_address_tencent"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="2dp"
+        android:textSize="12sp"
+        android:textColor="#2196F3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:id="@+id/poi_address_tianditu"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="2dp"
+        android:textSize="12sp"
+        android:textColor="#4CAF50"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"/>
 
@@ -72,6 +96,16 @@
             android:theme="@style/RippleWhite"
             android:src="@drawable/ic_copy"
             app:tint="@color/colorAccent"/>
+        <ImageButton
+            android:id="@+id/poi_copy_gcj02"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:layout_weight="1"
+            android:contentDescription="@null"
+            android:theme="@style/RippleWhite"
+            android:src="@drawable/ic_copy"
+            app:tint="#00796B"/>
         <ImageButton
             android:id="@+id/poi_share"
             android:layout_width="wrap_content"

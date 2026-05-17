@@ -9,7 +9,6 @@ import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.SwitchPreferenceCompat;
 
-import com.baidu.mapapi.SDKInitializer;
 import com.elvishew.xlog.XLog;
 import com.zcshou.utils.GoUtils;
 
@@ -39,6 +38,27 @@ public class FragmentSettings extends PreferenceFragmentCompat {
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
         // Load the preferences from an XML resource
         addPreferencesFromResource(R.xml.preferences_main);
+
+        ListPreference pfCoordSystem = findPreference("setting_coordinate_system");
+        if (pfCoordSystem != null) {
+            pfCoordSystem.setSummaryProvider((Preference.SummaryProvider<ListPreference>) preference -> Objects.requireNonNull(preference.getEntry()));
+        }
+
+        EditTextPreference pfMapKey = findPreference("setting_map_key");
+        if (pfMapKey != null) {
+            pfMapKey.setSummaryProvider((Preference.SummaryProvider<EditTextPreference>) preference -> {
+                String val = preference.getText();
+                return (val == null || val.isEmpty()) ? "使用默认 Key" : "已配置";
+            });
+        }
+
+        EditTextPreference pfTencentKey = findPreference("setting_tencent_key");
+        if (pfTencentKey != null) {
+            pfTencentKey.setSummaryProvider((Preference.SummaryProvider<EditTextPreference>) preference -> {
+                String val = preference.getText();
+                return (val == null || val.isEmpty()) ? "未配置 (点击输入)" : "已配置";
+            });
+        }
 
         ListPreference pfJoystick = findPreference("setting_joystick_type");
         if (pfJoystick != null) {

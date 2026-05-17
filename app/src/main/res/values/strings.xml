@@ -71,6 +71,15 @@
     <string name="setting_random_offset_default">10.0</string>
     <string name="setting_lat_max_offset">经度最大偏移距离(米)</string>
     <string name="setting_lon_max_offset">纬度最大偏移距离(米)</string>
+    <!-- 地图相关参数 -->
+    <string name="setting_group_map">地图</string>
+    <string name="setting_coordinate_system">坐标系偏好</string>
+    <string name="setting_coordinate_system_summary">选择坐标显示和输入的默认坐标系</string>
+    <string name="setting_map_key">百度地图 Key</string>
+    <string name="setting_map_key_summary">用于反向地理编码，留空使用默认 Key</string>
+    <string name="setting_tencent_key">腾讯地图 Key</string>
+    <string name="setting_tencent_key_summary">用于对比腾讯POI数据，留空不对比。申请地址: lbs.qq.com</string>
+
     <!-- 记录相关参数 -->
     <string name="setting_group_log">记录</string>
     <string name="setting_log_off">关闭日志</string>
@@ -105,6 +114,7 @@
     <string name="nav_drawer_open">打开导航菜单</string>
     <string name="nav_drawer_close">关闭导航菜单</string>
     <string name="nav_menu_history">历史记录</string>
+    <string name="nav_menu_mini_program_test">小程序测试</string>
     <string name="nav_menu_settings">设置</string>
     <string name="nav_menu_dev">开发人员选项</string>
     <string name="nav_menu_more">更多</string>
@@ -119,7 +129,7 @@
     <string name="input_position_ok">传送</string>
     <string name="input_position_cancel">取消</string>
     <string name="input_position_baidu">BD09 坐标系</string>
-    <string name="input_position_gps">GPS 坐标系</string>
+    <string name="input_position_gcj02">GCJ02 (微信/腾讯/高德)</string>
     <string name="input_button">输入位置</string>
     <string name="cur_position">返回当前位置</string>
     <string name="zoom_in">放大</string>

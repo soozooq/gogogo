@@ -87,6 +87,35 @@
     </PreferenceCategory>
 
     <PreferenceCategory
+        app:title="@string/setting_group_map"
+        app:iconSpaceReserved="false">
+
+        <ListPreference
+            app:key="setting_coordinate_system"
+            app:title="@string/setting_coordinate_system"
+            app:entries="@array/array_coordinate_system"
+            app:entryValues="@array/array_coordinate_system_values"
+            app:dialogTitle="@string/setting_coordinate_system"
+            app:defaultValue="bd09"
+            app:summary="@string/setting_coordinate_system_summary"
+            app:iconSpaceReserved="false">
+        </ListPreference>
+
+        <EditTextPreference
+            app:key="setting_map_key"
+            app:title="@string/setting_map_key"
+            app:defaultValue=""
+            app:summary="@string/setting_map_key_summary"
+            app:iconSpaceReserved="false"/>
+        <EditTextPreference
+            app:key="setting_tencent_key"
+            app:title="@string/setting_tencent_key"
+            app:defaultValue=""
+            app:summary="@string/setting_tencent_key_summary"
+            app:iconSpaceReserved="false"/>
+    </PreferenceCategory>
+
+    <PreferenceCategory
         app:title="@string/setting_group_about"
         app:iconSpaceReserved="false">
 

@@ -22,18 +22,17 @@ import android.widget.SimpleAdapter;
 import android.widget.TextView;
 import android.widget.SearchView;
 
+import androidx.annotation.NonNull;
 import androidx.preference.PreferenceManager;
 
-import com.baidu.mapapi.map.BaiduMap;
-import com.baidu.mapapi.map.MapPoi;
-import com.baidu.mapapi.map.MapStatus;
-import com.baidu.mapapi.map.MapStatusUpdateFactory;
-import com.baidu.mapapi.map.MapView;
-import com.baidu.mapapi.map.MarkerOptions;
-import com.baidu.mapapi.map.MyLocationData;
-import com.baidu.mapapi.model.LatLng;
-import com.baidu.mapapi.search.sug.SuggestionSearch;
-import com.baidu.mapapi.search.sug.SuggestionSearchOption;
+import java.io.IOException;
+
+import com.tencent.tencentmap.mapsdk.maps.TencentMap;
+import com.tencent.tencentmap.mapsdk.maps.MapView;
+import com.tencent.tencentmap.mapsdk.maps.CameraUpdateFactory;
+import com.tencent.tencentmap.mapsdk.maps.model.CameraPosition;
+import com.tencent.tencentmap.mapsdk.maps.model.LatLng;
+import com.tencent.tencentmap.mapsdk.maps.model.MarkerOptions;
 import com.zcshou.database.DataBaseHistoryLocation;
 import com.zcshou.gogogo.HistoryActivity;
 import com.zcshou.gogogo.MainActivity;
@@ -86,10 +85,9 @@ public class JoyStick extends View {
     /* 地图悬浮窗相关 */
     private FrameLayout mMapLayout;
     private MapView mMapView;
-    private BaiduMap mBaiduMap;
+    private TencentMap mTencentMap;
     private LatLng mCurMapLngLat;
     private LatLng mMarkMapLngLat;
-    private SuggestionSearch mSuggestionSearch;
     private ListView mSearchList;
     private LinearLayout mSearchLayout;
 
@@ -151,11 +149,11 @@ public class JoyStick extends View {
     }
 
     public void setCurrentPosition(double lng, double lat, double alt) {
-        double[] lngLat = MapUtils.wgs2bd09(lng, lat);
+        double[] lngLat = MapUtils.wgs2gcj02(lng, lat);
         mCurMapLngLat = new LatLng(lngLat[1], lngLat[0]);
         mAltitude = alt;
 
-        resetBaiduMap();
+        resetTencentMap();
     }
 
     public void show() {
@@ -168,7 +166,7 @@ public class JoyStick extends View {
                     mWindowManager.removeView(mHistoryLayout);
                 }
                 if (mMapLayout.getParent() == null) {
-                    resetBaiduMap();
+                    resetTencentMap();
                     mWindowManager.addView(mMapLayout, mWindowParamCurrent);
                 }
                 break;
@@ -224,7 +222,6 @@ public class JoyStick extends View {
             mWindowManager.removeViewImmediate(mHistoryLayout);
         }
 
-        mBaiduMap.setMyLocationEnabled(false);
         mMapView.onDestroy();
     }
 
@@ -438,43 +435,12 @@ public class JoyStick extends View {
 
         mSearchList = mMapLayout.findViewById(R.id.map_search_list_view);
         mSearchLayout = mMapLayout.findViewById(R.id.map_search_linear);
-        mSuggestionSearch = SuggestionSearch.newInstance();
-        mSuggestionSearch.setOnGetSuggestionResultListener(suggestionResult -> {
-            if (suggestionResult == null || suggestionResult.getAllSuggestions() == null) {
-                GoUtils.DisplayToast(mContext,getResources().getString(R.string.app_search_null));
-            } else {
-                List<Map<String, Object>> data = new ArrayList<>();
-                int retCnt = suggestionResult.getAllSuggestions().size();
-
-                for (int i = 0; i < retCnt; i++) {
-                    if (suggestionResult.getAllSuggestions().get(i).pt == null) {
-                        continue;
-                    }
-
-                    Map<String, Object> poiItem = new HashMap<>();
-                    poiItem.put(MainActivity.POI_NAME, suggestionResult.getAllSuggestions().get(i).key);
-                    poiItem.put(MainActivity.POI_ADDRESS, suggestionResult.getAllSuggestions().get(i).city + " " + suggestionResult.getAllSuggestions().get(i).district);
-                    poiItem.put(MainActivity.POI_LONGITUDE, "" + suggestionResult.getAllSuggestions().get(i).pt.longitude);
-                    poiItem.put(MainActivity.POI_LATITUDE, "" + suggestionResult.getAllSuggestions().get(i).pt.latitude);
-                    data.add(poiItem);
-                }
-
-                SimpleAdapter simAdapt = new SimpleAdapter(
-                        mContext,
-                        data,
-                        R.layout.search_poi_item,
-                        new String[] {MainActivity.POI_NAME, MainActivity.POI_ADDRESS, MainActivity.POI_LONGITUDE, MainActivity.POI_LATITUDE}, // 与下面数组元素要一一对应
-                        new int[] {R.id.poi_name, R.id.poi_address, R.id.poi_longitude, R.id.poi_latitude});
-                mSearchList.setAdapter(simAdapt);
-                mSearchLayout.setVisibility(View.VISIBLE);
-            }
-        });
         mSearchList.setOnItemClickListener((parent, view, position, id) -> {
             mSearchLayout.setVisibility(View.GONE);
 
             String lng = ((TextView) view.findViewById(R.id.poi_longitude)).getText().toString();
             String lat = ((TextView) view.findViewById(R.id.poi_latitude)).getText().toString();
-            markBaiduMap(new LatLng(Double.parseDouble(lat), Double.parseDouble(lng)));
+            markTencentMap(new LatLng(Double.parseDouble(lat), Double.parseDouble(lng)));
         });
 
         TextView tips = mMapLayout.findViewById(R.id.joystick_map_tips);
@@ -507,15 +473,7 @@ public class JoyStick extends View {
             @Override
             public boolean onQueryTextChange(String newText) {
                 if (newText != null && newText.length() > 0) {
-                    try {
-                        mSuggestionSearch.requestSuggestion((new SuggestionSearchOption())
-                                .keyword(newText)
-                                .city(MainActivity.mCurrentCity)
-                        );
-                    } catch (Exception e) {
-                        GoUtils.DisplayToast(mContext,getResources().getString(R.string.app_error_search));
-                        e.printStackTrace();
-                    }
+                    queryTencentSuggestionForJoystick(newText, MainActivity.mCurrentCity);
                 } else {
                     mSearchLayout.setVisibility(GONE);
                 }
@@ -543,10 +501,10 @@ public class JoyStick extends View {
                     mCurMapLngLat = mMarkMapLngLat;
                     mMarkMapLngLat = null;
 
-                    double[] lngLat = MapUtils.bd2wgs(mCurMapLngLat.longitude, mCurMapLngLat.latitude);
+                    double[] lngLat = MapUtils.gcj02towgs84(mCurMapLngLat.longitude, mCurMapLngLat.latitude);
                     mListener.onPositionInfo(lngLat[0], lngLat[1], mAltitude);
 
-                    resetBaiduMap();
+                    resetTencentMap();
 
                     GoUtils.DisplayToast(mContext, getResources().getString(R.string.app_location_ok));
                 }
@@ -571,86 +529,137 @@ public class JoyStick extends View {
         });
 
         ImageButton btnBack = mMapLayout.findViewById(R.id.btnBack);
-        btnBack.setOnClickListener(v -> resetBaiduMap());
+        btnBack.setOnClickListener(v -> resetTencentMap());
         btnBack.setColorFilter(getResources().getColor(R.color.colorAccent, mContext.getTheme()));
 
-        initBaiduMap();
+        initTencentMap();
     }
 
-    private void initBaiduMap() {
-        mMapView = mMapLayout.findViewById(R.id.map_joystick);
-        mMapView.showZoomControls(false);
-        mBaiduMap = mMapView.getMap();
-        mBaiduMap.setMapType(BaiduMap.MAP_TYPE_NORMAL);
-        mBaiduMap.setMyLocationEnabled(true);
+    private void queryTencentSuggestionForJoystick(String keyword, String city) {
+        // 使用 place/v1/search 而非 suggestion: 配额独立计算,suggestion 端点容易因为示例 key 被刷爆
+        okhttp3.OkHttpClient client = new okhttp3.OkHttpClient();
+        String tencentKey = sharedPreferences.getString("setting_tencent_key", "");
+        if (tencentKey == null || tencentKey.isEmpty()) {
+            tencentKey = "S3XBZ-CS26Z-BXYXM-726RB-TVFW5-VAFGK"; // 默认 Key
+        }
+        String encodedKeyword;
+        try {
+            encodedKeyword = java.net.URLEncoder.encode(keyword, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException ex) {
+            encodedKeyword = keyword;
+        }
+        String region = (city != null && !city.isEmpty()) ? city : "全国";
+        String encodedRegion;
+        try {
+            encodedRegion = java.net.URLEncoder.encode(region, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException ex) {
+            encodedRegion = region;
+        }
+        String url = "https://apis.map.qq.com/ws/place/v1/search?keyword=" + encodedKeyword
+                + "&boundary=region(" + encodedRegion + ",0)"
+                + "&page_size=20&page_index=1"
+                + "&key=" + tencentKey;
 
-        mBaiduMap.setOnMapTouchListener(event -> {
+        okhttp3.Request request = new okhttp3.Request.Builder().url(url).get().build();
+        client.newCall(request).enqueue(new okhttp3.Callback() {
+            @Override
+            public void onFailure(@NonNull okhttp3.Call call, @NonNull IOException e) {
+                android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+                handler.post(() -> GoUtils.DisplayToast(mContext, getResources().getString(R.string.app_search_null)));
+            }
 
+            @Override
+            public void onResponse(@NonNull okhttp3.Call call, @NonNull okhttp3.Response response) throws IOException {
+                okhttp3.ResponseBody body = response.body();
+                if (body != null) {
+                    String resp = body.string();
+                    try {
+                        org.json.JSONObject json = new org.json.JSONObject(resp);
+                        int status = json.getInt("status");
+                        if (status == 0) {
+                            org.json.JSONArray dataArray = json.getJSONArray("data");
+                            List<Map<String, Object>> data = new ArrayList<>();
+                            for (int i = 0; i < dataArray.length(); i++) {
+                                org.json.JSONObject item = dataArray.getJSONObject(i);
+                                org.json.JSONObject location = item.getJSONObject("location");
+                                Map<String, Object> poiItem = new HashMap<>();
+                                poiItem.put(MainActivity.POI_NAME, item.getString("title"));
+                                poiItem.put(MainActivity.POI_ADDRESS, item.optString("address", ""));
+                                poiItem.put(MainActivity.POI_LONGITUDE, "" + location.getDouble("lng"));
+                                poiItem.put(MainActivity.POI_LATITUDE, "" + location.getDouble("lat"));
+                                data.add(poiItem);
+                            }
+                            android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+                            handler.post(() -> {
+                                if (data.isEmpty()) {
+                                    GoUtils.DisplayToast(mContext, getResources().getString(R.string.app_search_null));
+                                } else {
+                                    SimpleAdapter simAdapt = new SimpleAdapter(
+                                            mContext,
+                                            data,
+                                            R.layout.search_poi_item,
+                                            new String[] {MainActivity.POI_NAME, MainActivity.POI_ADDRESS, MainActivity.POI_LONGITUDE, MainActivity.POI_LATITUDE},
+                                            new int[] {R.id.poi_name, R.id.poi_address, R.id.poi_longitude, R.id.poi_latitude});
+                                    mSearchList.setAdapter(simAdapt);
+                                    mSearchLayout.setVisibility(View.VISIBLE);
+                                }
+                            });
+                        } else {
+                            Log.e("JOYSTICK", "Tencent place/search failed: status=" + status + " message=" + json.optString("message", ""));
+                            android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+                            handler.post(() -> GoUtils.DisplayToast(mContext, getResources().getString(R.string.app_search_null)));
+                        }
+                    } catch (org.json.JSONException e) {
+                        android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
+                        handler.post(() -> GoUtils.DisplayToast(mContext, getResources().getString(R.string.app_search_null)));
+                    }
+                }
+            }
         });
+    }
 
-        mBaiduMap.setOnMapClickListener(new BaiduMap.OnMapClickListener() {
-            /**
-             * 单击地图
-             */
+    private void initTencentMap() {
+        mMapView = mMapLayout.findViewById(R.id.map_joystick);
+        mTencentMap = mMapView.getMap();
+        mTencentMap.setMapType(TencentMap.MAP_TYPE_NORMAL);
+
+        mTencentMap.setOnMapClickListener(new TencentMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng point) {
-                markBaiduMap(point);
-            }
-
-            /**
-             * 单击地图中的POI点
-             */
-            @Override
-            public void onMapPoiClick(MapPoi poi) {
-                markBaiduMap(poi.getPosition());
+                markTencentMap(point);
             }
         });
 
-        mBaiduMap.setOnMapLongClickListener(new BaiduMap.OnMapLongClickListener() {
-            /**
-             * 长按地图
-             */
+        mTencentMap.setOnMapLongClickListener(new TencentMap.OnMapLongClickListener() {
             @Override
             public void onMapLongClick(LatLng point) {
-                markBaiduMap(point);
-            }
-        });
-
-        mBaiduMap.setOnMapDoubleClickListener(new BaiduMap.OnMapDoubleClickListener() {
-            /**
-             * 双击地图
-             */
-            @Override
-            public void onMapDoubleClick(LatLng point) {
-                markBaiduMap(point);
+                markTencentMap(point);
             }
         });
     }
 
-    private void resetBaiduMap() {
-        mBaiduMap.clear();
+    private void resetTencentMap() {
+        mTencentMap.clearAllOverlays();
 
-        MyLocationData locData = new MyLocationData.Builder()
-                .latitude(mCurMapLngLat.latitude)
-                .longitude(mCurMapLngLat.longitude)
+        CameraPosition cameraPosition = new CameraPosition.Builder()
+                .target(mCurMapLngLat)
+                .zoom(18.0f)
                 .build();
-        mBaiduMap.setMyLocationData(locData);
-
-        MapStatus.Builder builder = new MapStatus.Builder();
-        builder.target(mCurMapLngLat).zoom(18.0f);
-        mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
+        mTencentMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
     }
 
-    private void markBaiduMap(LatLng latLng) {
+    private void markTencentMap(LatLng latLng) {
         mMarkMapLngLat = latLng;
 
         MarkerOptions ooA = new MarkerOptions().position(latLng).icon(MainActivity.mMapIndicator);
-        mBaiduMap.clear();
-        mBaiduMap.addOverlay(ooA);
+        mTencentMap.clearAllOverlays();
+        mTencentMap.addMarker(ooA);
 
-        MapStatus.Builder builder = new MapStatus.Builder();
-        builder.target(latLng).zoom(18.0f);
-        mBaiduMap.animateMapStatus(MapStatusUpdateFactory.newMapStatus(builder.build()));
+        CameraPosition cameraPosition = new CameraPosition.Builder()
+                .target(latLng)
+                .zoom(18.0f)
+                .build();
+        mTencentMap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
     }
 
 
@@ -732,12 +741,13 @@ public class JoyStick extends View {
             mListener.onPositionInfo(Double.parseDouble(wgs84Longitude), Double.parseDouble(wgs84Latitude), mAltitude);
 
             // 注意这里在选择位置之后需要刷新地图
-            String bdLatLng = (String) ((TextView) view.findViewById(R.id.BDLatLngText)).getText();
-            bdLatLng = bdLatLng.substring(bdLatLng.indexOf('[') + 1, bdLatLng.indexOf(']'));
-            String[] bdLatLngStr = bdLatLng.split(" ");
-            String bdLongitude = bdLatLngStr[0].substring(bdLatLngStr[0].indexOf(':') + 1);
-            String bdLatitude = bdLatLngStr[1].substring(bdLatLngStr[1].indexOf(':') + 1);
-            mCurMapLngLat = new LatLng(Double.parseDouble(bdLatitude), Double.parseDouble(bdLongitude));
+            // BDLatLngText 现在存储的是 GCJ02 坐标（与腾讯地图兼容）
+            String gcjLatLng = (String) ((TextView) view.findViewById(R.id.BDLatLngText)).getText();
+            gcjLatLng = gcjLatLng.substring(gcjLatLng.indexOf('[') + 1, gcjLatLng.indexOf(']'));
+            String[] gcjLatLngStr = gcjLatLng.split(" ");
+            String gcjLongitude = gcjLatLngStr[0].substring(gcjLatLngStr[0].indexOf(':') + 1);
+            String gcjLatitude = gcjLatLngStr[1].substring(gcjLatLngStr[1].indexOf(':') + 1);
+            mCurMapLngLat = new LatLng(Double.parseDouble(gcjLatitude), Double.parseDouble(gcjLongitude));
 
             GoUtils.DisplayToast(mContext, getResources().getString(R.string.app_location_ok));
         });
@@ -780,22 +790,22 @@ public class JoyStick extends View {
                 String Longitude = cursor.getString(2);
                 String Latitude = cursor.getString(3);
                 long TimeStamp = cursor.getInt(4);
-                String BD09Longitude = cursor.getString(5);
-                String BD09Latitude = cursor.getString(6);
-                Log.d("TB", ID + "\t" + Location + "\t" + Longitude + "\t" + Latitude + "\t" + TimeStamp + "\t" + BD09Longitude + "\t" + BD09Latitude);
+                String CustomLongitude = cursor.getString(5);
+                String CustomLatitude = cursor.getString(6);
+                Log.d("TB", ID + "\t" + Location + "\t" + Longitude + "\t" + Latitude + "\t" + TimeStamp + "\t" + CustomLongitude + "\t" + CustomLatitude);
                 BigDecimal bigDecimalLongitude = BigDecimal.valueOf(Double.parseDouble(Longitude));
                 BigDecimal bigDecimalLatitude = BigDecimal.valueOf(Double.parseDouble(Latitude));
-                BigDecimal bigDecimalBDLongitude = BigDecimal.valueOf(Double.parseDouble(BD09Longitude));
-                BigDecimal bigDecimalBDLatitude = BigDecimal.valueOf(Double.parseDouble(BD09Latitude));
+                BigDecimal bigDecimalCustomLongitude = BigDecimal.valueOf(Double.parseDouble(CustomLongitude));
+                BigDecimal bigDecimalCustomLatitude = BigDecimal.valueOf(Double.parseDouble(CustomLatitude));
                 double doubleLongitude = bigDecimalLongitude.setScale(11, RoundingMode.HALF_UP).doubleValue();
                 double doubleLatitude = bigDecimalLatitude.setScale(11, RoundingMode.HALF_UP).doubleValue();
-                double doubleBDLongitude = bigDecimalBDLongitude.setScale(11, RoundingMode.HALF_UP).doubleValue();
-                double doubleBDLatitude = bigDecimalBDLatitude.setScale(11, RoundingMode.HALF_UP).doubleValue();
+                double doubleCustomLongitude = bigDecimalCustomLongitude.setScale(11, RoundingMode.HALF_UP).doubleValue();
+                double doubleCustomLatitude = bigDecimalCustomLatitude.setScale(11, RoundingMode.HALF_UP).doubleValue();
                 item.put(HistoryActivity.KEY_ID, Integer.toString(ID));
                 item.put(HistoryActivity.KEY_LOCATION, Location);
                 item.put(HistoryActivity.KEY_TIME, GoUtils.timeStamp2Date(Long.toString(TimeStamp)));
                 item.put(HistoryActivity.KEY_LNG_LAT_WGS, "[经度:" + doubleLongitude + " 纬度:" + doubleLatitude + "]");
-                item.put(HistoryActivity.KEY_LNG_LAT_CUSTOM, "[经度:" + doubleBDLongitude + " 纬度:" + doubleBDLatitude + "]");
+                item.put(HistoryActivity.KEY_LNG_LAT_CUSTOM, "[经度:" + doubleCustomLongitude + " 纬度:" + doubleCustomLatitude + "]");
                 mAllRecord.add(item);
             }
             cursor.close();

@@ -18,4 +18,13 @@
         <item>2</item>
     </string-array>
 
+    <string-array name="array_coordinate_system">
+        <item>BD09 (百度地图)</item>
+        <item>GCJ02 (微信/腾讯/高德)</item>
+    </string-array>
+    <string-array name="array_coordinate_system_values">
+        <item>bd09</item>
+        <item>gcj02</item>
+    </string-array>
+
 </resources>

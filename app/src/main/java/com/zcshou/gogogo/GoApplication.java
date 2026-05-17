@@ -2,10 +2,6 @@ package com.zcshou.gogogo;
 
 import android.app.Application;
 
-import com.baidu.location.LocationClient;
-import com.baidu.mapapi.CoordType;
-import com.baidu.mapapi.SDKInitializer;
-
 import com.elvishew.xlog.LogConfiguration;
 import com.elvishew.xlog.LogLevel;
 import com.elvishew.xlog.XLog;
@@ -15,6 +11,7 @@ import com.elvishew.xlog.printer.file.FilePrinter;
 import com.elvishew.xlog.printer.file.backup.NeverBackupStrategy;
 import com.elvishew.xlog.printer.file.clean.FileLastModifiedCleanStrategy;
 import com.elvishew.xlog.printer.file.naming.ChangelessFileNameGenerator;
+import com.tencent.tencentmap.mapsdk.maps.TencentMapInitializer;
 
 import java.io.File;
 
@@ -29,15 +26,15 @@ public class GoApplication extends Application {
 
         initXlog();
 
-        // 百度地图 7.5 开始，要求必须同意隐私政策，默认为false
-        SDKInitializer.setAgreePrivacy(this, true);
-        // 百度定位 7.5 开始，要求必须同意隐私政策，默认为false(官方说可以统一为以上接口，但实际测试并不行，定位还是需要单独设置)
-        LocationClient.setAgreePrivacy(true);
-        SDKInitializer.setApiKey(BuildConfig.MAPS_API_KEY);
-        // 在使用 SDK 各组间之前初始化 context 信息，传入 ApplicationContext
-        SDKInitializer.initialize(this);
-
-        SDKInitializer.setCoordType(CoordType.BD09LL);
+        // 腾讯地图 SDK 隐私合规 + 初始化
+        try {
+            // 6.x 起 setAgreePrivacy 需要 Context 参数
+            TencentMapInitializer.setAgreePrivacy(this, true);
+            // 6.x 需要显式 start;5.x 不需要。否则 MapView.getMap() 返回 null
+            TencentMapInitializer.start(this);
+        } catch (Exception e) {
+            XLog.e("TencentMap init failed: " + e.getMessage());
+        }
     }
 
     /**
