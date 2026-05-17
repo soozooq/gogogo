@@ -540,7 +540,7 @@ public class JoyStick extends View {
         okhttp3.OkHttpClient client = new okhttp3.OkHttpClient();
         String tencentKey = sharedPreferences.getString("setting_tencent_key", "");
         if (tencentKey == null || tencentKey.isEmpty()) {
-            tencentKey = "S3XBZ-CS26Z-BXYXM-726RB-TVFW5-VAFGK"; // 默认 Key
+            tencentKey = com.zcshou.gogogo.BuildConfig.TENCENT_MAP_KEY;  // 由 local.properties 注入,用户可在设置覆盖
         }
         String encodedKeyword;
         try {

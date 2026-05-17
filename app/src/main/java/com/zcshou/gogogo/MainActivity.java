@@ -830,7 +830,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
 
         String tencentKey = sharedPreferences.getString("setting_tencent_key", "");
         if (tencentKey == null || tencentKey.isEmpty()) {
-            tencentKey = "S3XBZ-CS26Z-BXYXM-726RB-TVFW5-VAFGK"; // 默认 Key
+            tencentKey = BuildConfig.TENCENT_MAP_KEY;  // 由 local.properties 注入(gitignored),用户可在设置覆盖
         }
         // 腾讯逆地理编码,输入为 GCJ02
         String mapApiUrl = "https://apis.map.qq.com/ws/geocoder/v1/?location=" + lat + "," + lng
@@ -897,7 +897,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
     private void queryTencentSuggestion(String keyword) {
         String tencentKey = sharedPreferences.getString("setting_tencent_key", "");
         if (tencentKey == null || tencentKey.isEmpty()) {
-            tencentKey = "S3XBZ-CS26Z-BXYXM-726RB-TVFW5-VAFGK"; // 默认 Key
+            tencentKey = BuildConfig.TENCENT_MAP_KEY;  // 由 local.properties 注入(gitignored),用户可在设置覆盖
         }
         String encodedKeyword;
         try {

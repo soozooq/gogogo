@@ -35,8 +35,9 @@ import okhttp3.ResponseBody;
 public class MiniProgramTestActivity extends BaseActivity {
 
     private static final int PERMISSION_REQUEST_CODE = 100;
-    private static final String DEFAULT_BAIDU_AK = "9stBEaBAA46hh0JPxpI0qvzQYyJEJu1a";
-    private static final String DEFAULT_TENCENT_KEY = "S3XBZ-CS26Z-BXYXM-726RB-TVFW5-VAFGK";
+    // Key 由 local.properties 在 build 时注入(gitignored),拷贝项目后请在 local.properties 配置自己申请的 Key
+    private static final String DEFAULT_BAIDU_AK = BuildConfig.MAPS_API_KEY;
+    private static final String DEFAULT_TENCENT_KEY = BuildConfig.TENCENT_MAP_KEY;
 
     private TextView tvStatus;
     private TextView tvWgs84;

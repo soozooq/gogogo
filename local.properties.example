@@ -1,0 +1,17 @@
+# Copy this file to "local.properties" and fill in your own values.
+# "local.properties" is gitignored — never commit your actual keys.
+
+# Android SDK location (auto-detected by Android Studio usually)
+#sdk.dir=C:\Users\YOUR_NAME\AppData\Local\Android\Sdk
+
+# 腾讯地图 SDK Key (必填)
+# 申请: https://lbs.qq.com/dev/console/key/manage
+# 启用产品需勾选 "Android 地图 SDK" + "WebService API"
+# 配置: PackageName=com.zcshou.gogogo, SHA1=你的签名 SHA1
+TENCENT_MAP_KEY=YOUR_TENCENT_MAP_KEY_HERE
+
+# 百度地图 Key (可选)
+# 仅供 MiniProgramTestActivity 中对照"腾讯逆地理 / 百度逆地理"两边结果用
+# 申请: https://lbsyun.baidu.com/apiconsole/key
+# 不填的话,小程序测试页面"百度反向地理编码"那一栏会报错,其他功能不受影响
+MAPS_API_KEY=YOUR_BAIDU_MAP_AK_HERE
