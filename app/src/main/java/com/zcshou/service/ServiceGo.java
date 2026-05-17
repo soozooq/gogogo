@@ -30,6 +30,8 @@ import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 
 import com.elvishew.xlog.XLog;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.zcshou.gogogo.MainActivity;
 import com.zcshou.gogogo.R;
 import com.zcshou.joystick.JoyStick;
@@ -46,11 +48,15 @@ public class ServiceGo extends Service {
     private float mCurBea = DEFAULT_BEA;
     private double mSpeed = 1.2;        /* 默认的速度，单位 m/s */
     private static final int HANDLER_MSG_ID = 0;
+    // 33ms (~30Hz) tick: 缩短"mock 过期"窗口,避免某些应用在两次 push 之间读到真实位置后漂移
+    private static final long TICK_INTERVAL_MS = 33;
     private static final String SERVICE_GO_HANDLER_NAME = "ServiceGoLocation";
     private LocationManager mLocManager;
     private HandlerThread mLocHandlerThread;
     private Handler mLocHandler;
     private LocationListener mPersistentListener;     // 保持 Provider 活跃订阅,见 onCreate 注释
+    private FusedLocationProviderClient mFusedClient; // Google Play Services fused mock, null = GMS 不可用
+    private boolean mFusedMockEnabled = false;
     private boolean isStop = false;
     // 通知栏消息
     private static final int SERVICE_GO_NOTE_ID = 1;
@@ -81,6 +87,13 @@ public class ServiceGo extends Service {
         removeTestProviderGPS();
         addTestProviderGPS();
 
+        // Android 12+ 起 LocationManager 也有 "fused" provider,部分应用(WeChat 走的就是
+        // 这条) 不直接读 GPS/NETWORK 而是读 fused。能注就注,失败也无所谓。
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            removeTestProviderFused();
+            addTestProviderFused();
+        }
+
         initGoLocation();
 
         initNotification();
@@ -92,6 +105,28 @@ public class ServiceGo extends Service {
         // 刚 push 的 mock 数据 (高德/百度 App 自己有订阅就能看到)。
         // Baidu 版靠 LocationClient(:remote, scanSpan=1000)做这件事,迁移后需要补回来。
         initPersistentLocationListener();
+
+        // 第二条路径: 用 GMS FusedLocationProviderClient.setMockMode + setMockLocation
+        // 覆盖走 Google Play Services 路径的应用(部分 WeChat/腾讯小程序场景)。
+        // 设备没装 GMS 就 try/catch 静默跳过。
+        initFusedMock();
+    }
+
+    @SuppressLint("MissingPermission")
+    private void initFusedMock() {
+        try {
+            mFusedClient = LocationServices.getFusedLocationProviderClient(this);
+            mFusedClient.setMockMode(true)
+                    .addOnSuccessListener(unused -> {
+                        mFusedMockEnabled = true;
+                        XLog.i("SERVICEGO: FusedLocation setMockMode(true) OK");
+                    })
+                    .addOnFailureListener(e -> XLog.e("SERVICEGO: FusedLocation setMockMode failed: " + e.getMessage()));
+        } catch (Throwable t) {
+            // 设备没 GMS / play-services-location 不可用 → 退化到仅 LocationManager 注入
+            XLog.e("SERVICEGO: FusedLocation init failed (GMS not available?): " + t.getMessage());
+            mFusedClient = null;
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -133,10 +168,20 @@ public class ServiceGo extends Service {
 
         removeTestProviderNetwork();
         removeTestProviderGPS();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            removeTestProviderFused();
+        }
 
         if (mPersistentListener != null) {
             try {
                 mLocManager.removeUpdates(mPersistentListener);
+            } catch (Exception ignored) {
+            }
+        }
+
+        if (mFusedClient != null && mFusedMockEnabled) {
+            try {
+                mFusedClient.setMockMode(false);
             } catch (Exception ignored) {
             }
         }
@@ -224,11 +269,15 @@ public class ServiceGo extends Service {
             @Override
             public void handleMessage(@NonNull Message msg) {
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(TICK_INTERVAL_MS);
 
                     if (!isStop) {
                         setLocationNetwork();
                         setLocationGPS();
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            setLocationFused();
+                        }
+                        setLocationFusedClient();
 
                         sendEmptyMessage(HANDLER_MSG_ID);
                     }
@@ -344,6 +393,68 @@ public class ServiceGo extends Service {
             mLocManager.setTestProviderLocation(LocationManager.NETWORK_PROVIDER, loc);
         } catch (Exception e) {
             XLog.e("SERVICEGO: ERROR - setLocationNetwork");
+        }
+    }
+
+    private void removeTestProviderFused() {
+        try {
+            if (mLocManager.isProviderEnabled(LocationManager.FUSED_PROVIDER)) {
+                mLocManager.setTestProviderEnabled(LocationManager.FUSED_PROVIDER, false);
+                mLocManager.removeTestProvider(LocationManager.FUSED_PROVIDER);
+            }
+        } catch (Exception e) {
+            // 系统 fused 通常不让 addTestProvider,失败正常 — 不写日志免刷屏
+        }
+    }
+
+    @SuppressLint("wrongconstant")
+    private void addTestProviderFused() {
+        try {
+            mLocManager.addTestProvider(LocationManager.FUSED_PROVIDER, false, true, false,
+                    false, true, true, true, ProviderProperties.POWER_USAGE_HIGH, ProviderProperties.ACCURACY_FINE);
+            if (!mLocManager.isProviderEnabled(LocationManager.FUSED_PROVIDER)) {
+                mLocManager.setTestProviderEnabled(LocationManager.FUSED_PROVIDER, true);
+            }
+            XLog.i("SERVICEGO: FUSED_PROVIDER test provider added");
+        } catch (Exception e) {
+            // 系统 fused 通常不让 addTestProvider,失败正常 — GMS 路径仍可覆盖
+        }
+    }
+
+    private void setLocationFused() {
+        try {
+            Location loc = new Location(LocationManager.FUSED_PROVIDER);
+            loc.setAccuracy(Criteria.ACCURACY_FINE);
+            loc.setAltitude(mCurAlt);
+            loc.setBearing(mCurBea);
+            loc.setLatitude(mCurLat);
+            loc.setLongitude(mCurLng);
+            loc.setTime(System.currentTimeMillis());
+            loc.setSpeed((float) mSpeed);
+            loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+
+            mLocManager.setTestProviderLocation(LocationManager.FUSED_PROVIDER, loc);
+        } catch (Exception e) {
+            // fused test provider 没注上时这里会 fail,正常
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void setLocationFusedClient() {
+        if (mFusedClient == null || !mFusedMockEnabled) return;
+        try {
+            Location loc = new Location("fused");
+            loc.setAccuracy(Criteria.ACCURACY_FINE);
+            loc.setAltitude(mCurAlt);
+            loc.setBearing(mCurBea);
+            loc.setLatitude(mCurLat);
+            loc.setLongitude(mCurLng);
+            loc.setTime(System.currentTimeMillis());
+            loc.setSpeed((float) mSpeed);
+            loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+            mFusedClient.setMockLocation(loc);
+        } catch (Throwable t) {
+            // 不打日志,避免每 33ms 刷屏
         }
     }
 
