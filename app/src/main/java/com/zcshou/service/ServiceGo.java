@@ -65,7 +65,8 @@ public class ServiceGo extends Service {
     private static final String SERVICE_GO_NOTE_CHANNEL_ID = "SERVICE_GO_NOTE";
     private static final String SERVICE_GO_NOTE_CHANNEL_NAME = "SERVICE_GO_NOTE";
     private NoteActionReceiver mActReceiver;
-    // 摇杆相关
+    // 摇杆相关。测试版默认禁用 overlay，避免遮挡其它应用。
+    private static final boolean ENABLE_JOYSTICK_OVERLAY = false;
     private JoyStick mJoyStick;
 
     private final ServiceGoBinder mBinder = new ServiceGoBinder();
@@ -98,7 +99,9 @@ public class ServiceGo extends Service {
 
         initNotification();
 
-        initJoyStick();
+        if (ENABLE_JOYSTICK_OVERLAY) {
+            initJoyStick();
+        }
 
         // 关键:维持 Provider 活跃订阅。Android 12+ 上没有活跃 listener 的 Provider
         // 会进入低功耗/缓存退化状态,微信小程序调 getLastKnownLocation 拿不到
@@ -153,7 +156,11 @@ public class ServiceGo extends Service {
         mCurLat = intent.getDoubleExtra(MainActivity.LAT_MSG_ID, DEFAULT_LAT);
         mCurAlt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
 
-        mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+        if (mJoyStick != null) {
+            if (mJoyStick != null) {
+                mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+            }
+        }
 
         return super.onStartCommand(intent, flags, startId);
     }
@@ -164,7 +171,10 @@ public class ServiceGo extends Service {
         mLocHandler.removeMessages(HANDLER_MSG_ID);
         mLocHandlerThread.quit();
 
-        mJoyStick.destroy();
+        if (mJoyStick != null) {
+            mJoyStick.destroy();
+            mJoyStick = null;
+        }
 
         removeTestProviderNetwork();
         removeTestProviderGPS();
@@ -463,11 +473,11 @@ public class ServiceGo extends Service {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
             if (action != null) {
-                if (action.equals(SERVICE_GO_NOTE_ACTION_JOYSTICK_SHOW)) {
+                if (mJoyStick != null && action.equals(SERVICE_GO_NOTE_ACTION_JOYSTICK_SHOW)) {
                     mJoyStick.show();
                 }
 
-                if (action.equals(SERVICE_GO_NOTE_ACTION_JOYSTICK_HIDE)) {
+                if (mJoyStick != null && action.equals(SERVICE_GO_NOTE_ACTION_JOYSTICK_HIDE)) {
                     mJoyStick.hide();
                 }
             }
