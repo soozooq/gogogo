@@ -158,9 +158,7 @@ public class ServiceGo extends Service {
         mCurAlt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
 
         if (mJoyStick != null) {
-            if (mJoyStick != null) {
-                if (mJoyStick != null) mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
-            }
+            mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
         }
 
         return super.onStartCommand(intent, flags, startId);
