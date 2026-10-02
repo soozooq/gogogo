@@ -100,7 +100,7 @@ public class ServiceGo extends Service {
         initNotification();
 
         if (ENABLE_JOYSTICK_OVERLAY) {
-            initJoyStick();
+            // No-map test build: floating joystick intentionally disabled.
         }
 
         // 关键:维持 Provider 活跃订阅。Android 12+ 上没有活跃 listener 的 Provider
@@ -158,7 +158,7 @@ public class ServiceGo extends Service {
 
         if (mJoyStick != null) {
             if (mJoyStick != null) {
-                mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+                if (mJoyStick != null) mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
             }
         }
 
@@ -172,7 +172,7 @@ public class ServiceGo extends Service {
         mLocHandlerThread.quit();
 
         if (mJoyStick != null) {
-            mJoyStick.destroy();
+            if (mJoyStick != null) mJoyStick.destroy();
             mJoyStick = null;
         }
 
@@ -229,8 +229,6 @@ public class ServiceGo extends Service {
                 .setContentTitle(getResources().getString(R.string.app_name))
                 .setContentText(getResources().getString(R.string.app_service_tips))
                 .setContentIntent(clickPI)
-                .addAction(new NotificationCompat.Action(null, getResources().getString(R.string.note_show), showPendingPI))
-                .addAction(new NotificationCompat.Action(null, getResources().getString(R.string.note_hide), hidePendingPI))
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .build();
 
@@ -474,11 +472,11 @@ public class ServiceGo extends Service {
             String action = intent.getAction();
             if (action != null) {
                 if (mJoyStick != null && action.equals(SERVICE_GO_NOTE_ACTION_JOYSTICK_SHOW)) {
-                    mJoyStick.show();
+                    if (mJoyStick != null) mJoyStick.show();
                 }
 
                 if (mJoyStick != null && action.equals(SERVICE_GO_NOTE_ACTION_JOYSTICK_HIDE)) {
-                    mJoyStick.hide();
+                    if (mJoyStick != null) mJoyStick.hide();
                 }
             }
         }
@@ -491,7 +489,7 @@ public class ServiceGo extends Service {
             mCurLat = lat;
             mCurAlt = alt;
             mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
-            mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+            if (mJoyStick != null) mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
         }
     }
 }
