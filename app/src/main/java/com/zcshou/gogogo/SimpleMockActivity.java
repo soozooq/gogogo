@@ -11,6 +11,9 @@ import android.net.Uri;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.wifi.ScanResult;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.telephony.TelephonyManager;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
@@ -149,6 +152,7 @@ public class SimpleMockActivity extends AppCompatActivity {
         root.addView(diagTitle, matchWrap());
 
         addButton(root, "刷新定位自检", v -> refreshDiagnostics());
+        addButton(root, "刷新 Wi-Fi 环境自检", v -> refreshWifiEnvironment());
 
         diagnosticView = new TextView(this);
         diagnosticView.setTextSize(14);
@@ -342,6 +346,8 @@ public class SimpleMockActivity extends AppCompatActivity {
             sb.append("当前联网方式：读取失败\n");
         }
 
+        appendWifiEnvironmentDiagnostics(sb);
+
         try {
             TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
             String country = tm == null ? "" : tm.getNetworkCountryIso();
@@ -431,6 +437,102 @@ public class SimpleMockActivity extends AppCompatActivity {
             }
         } catch (Throwable t) {
             diagnosticView.append("GMS Fused：不可用\n");
+        }
+    }
+
+    private void refreshWifiEnvironment() {
+        try {
+            WifiManager wifiManager = (WifiManager) getApplicationContext()
+                    .getSystemService(Context.WIFI_SERVICE);
+            if (wifiManager != null && wifiManager.isWifiEnabled()) {
+                try {
+                    wifiManager.startScan();
+                    Toast.makeText(this,
+                            "已请求 Wi-Fi 扫描，系统可能返回缓存结果；1 秒后刷新。",
+                            Toast.LENGTH_SHORT).show();
+                } catch (Throwable ignored) {
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        if (diagnosticView != null) {
+            diagnosticView.postDelayed(this::refreshDiagnostics, 1000);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void appendWifiEnvironmentDiagnostics(StringBuilder sb) {
+        sb.append("Wi-Fi 环境指纹可见性：");
+        try {
+            WifiManager wifiManager = (WifiManager) getApplicationContext()
+                    .getSystemService(Context.WIFI_SERVICE);
+            if (wifiManager == null) {
+                sb.append("Wi-Fi 服务不可用\n");
+                return;
+            }
+
+            sb.append(wifiManager.isWifiEnabled() ? "Wi-Fi 已开启" : "Wi-Fi 已关闭")
+                    .append("\n");
+
+            boolean connectionBssidVisible = false;
+            boolean connectionSsidVisible = false;
+            try {
+                WifiInfo info = wifiManager.getConnectionInfo();
+                if (info != null) {
+                    String bssid = info.getBSSID();
+                    String ssid = info.getSSID();
+
+                    connectionBssidVisible = bssid != null
+                            && !bssid.isEmpty()
+                            && !"02:00:00:00:00:00".equals(bssid);
+                    connectionSsidVisible = ssid != null
+                            && !ssid.isEmpty()
+                            && !"<unknown ssid>".equalsIgnoreCase(ssid);
+                }
+            } catch (Throwable ignored) {
+            }
+
+            sb.append("当前连接 BSSID：")
+                    .append(connectionBssidVisible ? "可见（未显示具体地址）" : "不可见/已脱敏")
+                    .append("\n");
+            sb.append("当前连接 SSID：")
+                    .append(connectionSsidVisible ? "可见（未显示名称）" : "不可见/已脱敏")
+                    .append("\n");
+
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
+                sb.append("附近 AP：缺少精确定位权限，无法读取\n");
+                return;
+            }
+
+            try {
+                java.util.List<ScanResult> results = wifiManager.getScanResults();
+                int total = results == null ? 0 : results.size();
+                java.util.HashSet<String> unique = new java.util.HashSet<>();
+                if (results != null) {
+                    for (ScanResult result : results) {
+                        if (result != null && result.BSSID != null && !result.BSSID.isEmpty()) {
+                            unique.add(result.BSSID);
+                        }
+                    }
+                }
+                sb.append("附近 AP 扫描结果：")
+                        .append(total)
+                        .append(" 个（唯一 BSSID ")
+                        .append(unique.size())
+                        .append(" 个；不显示具体地址）\n");
+                sb.append("Wi-Fi 指纹判断：")
+                        .append(unique.isEmpty()
+                                ? "当前应用没有拿到周围 AP 指纹"
+                                : "当前应用仍能拿到周围 AP 指纹")
+                        .append("\n");
+            } catch (SecurityException e) {
+                sb.append("附近 AP：系统拒绝读取（权限/系统策略限制）\n");
+            } catch (Throwable t) {
+                sb.append("附近 AP：读取失败\n");
+            }
+        } catch (Throwable t) {
+            sb.append("读取失败\n");
         }
     }
 
