@@ -1,4 +1,4 @@
-name: Build WeChat Fixed APK
+name: Show Android Signing SHA1
 
 on:
   workflow_dispatch:
@@ -7,11 +7,8 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  sha1:
     runs-on: ubuntu-latest
-
-    env:
-      TENCENT_MAP_KEY: ${{ secrets.TENCENT_MAP_KEY }}
 
     steps:
       - name: Checkout source
@@ -22,48 +19,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android components
-        run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-32" "build-tools;36.0.0" "ndk;26.2.11394342"
-
-      - name: Fix Linux keystore path
-        run: |
-          python3 - <<'PY'
-          p = "app/build.gradle"
-          s = open(p, encoding="utf-8").read()
-          s = s.replace("..\\\\keystore\\\\GoGoGo.jks", "../keystore/GoGoGo.jks")
-          open(p, "w", encoding="utf-8").write(s)
-          PY
 
       - name: Show signing SHA1
         run: |
-          echo "=============================="
-          echo "COPY THE SHA1 BELOW"
-          echo "=============================="
+          echo "=== COPY THE SHA1 BELOW ==="
           keytool -list -v \
             -keystore keystore/GoGoGo.jks \
             -alias GoGoKey \
             -storepass GoGoGo \
             -keypass GoGoGo | grep -E "SHA1:|SHA-1:"
-
-      - name: Create local.properties
-        run: |
-          printf 'sdk.dir=%s\n' "$ANDROID_HOME" > local.properties
-          printf 'TENCENT_MAP_KEY=%s\n' "$TENCENT_MAP_KEY" >> local.properties
-          printf 'MAPS_API_KEY=\n' >> local.properties
-
-      - name: Tencent key not configured
-        if: ${{ env.TENCENT_MAP_KEY == '' }}
-        run: |
-          echo "::error::TENCENT_MAP_KEY is not configured yet."
-          echo "Copy the SHA1 shown above."
-          echo "Create the Tencent Map key first, then add it as a GitHub Actions secret."
-          exit 1
-
-      - name: Build release APK
