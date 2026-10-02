@@ -1,4 +1,4 @@
 step=prepare
 ANDROID_HOME=/usr/local/lib/android/sdk
 ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
-exit=1
+exit=0
