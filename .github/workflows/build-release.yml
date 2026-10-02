@@ -24,39 +24,38 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android platform
-        run: sdkmanager "platforms;android-36"
-
-      - name: Create local.properties
+      - name: Prepare Android properties
+        shell: bash
         run: |
+          mkdir -p ci
+          echo "step=prepare" > ci/diagnostic.txt
+          echo "ANDROID_HOME=$ANDROID_HOME" >> ci/diagnostic.txt
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> ci/diagnostic.txt
           printf 'sdk.dir=%s\n' "$ANDROID_HOME" > local.properties
           printf 'TENCENT_MAP_KEY=DUMMY\n' >> local.properties
           printf 'MAPS_API_KEY=\n' >> local.properties
+          chmod +x gradlew
 
-      - name: Build debug APK and capture log
+      - name: Build debug APK
         shell: bash
         run: |
-          chmod +x gradlew
-          mkdir -p ci
           set +e
           ./gradlew --no-daemon assembleDebug --stacktrace 2>&1 | tee ci/latest-build.log
-          status=${PIPESTATUS[0]}
-          echo "BUILD_EXIT_CODE=$status" >> "$GITHUB_ENV"
+          code=${PIPESTATUS[0]}
+          echo "exit=$code" >> ci/diagnostic.txt
+          echo "BUILD_EXIT_CODE=$code" >> "$GITHUB_ENV"
           exit 0
 
-      - name: Save failed build log to repository
-        if: env.BUILD_EXIT_CODE != '0'
+      - name: Persist diagnostics
+        if: always()
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add ci/latest-build.log
-          git commit -m "[skip ci] ci: save latest failed build log" || true
-          git push
+          git add ci/diagnostic.txt ci/latest-build.log 2>/dev/null || true
+          git commit -m "[skip ci] ci: persist build diagnostics" || true
+          git push || true
 
       - name: Upload APK
         if: env.BUILD_EXIT_CODE == '0'
@@ -66,6 +65,6 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
-      - name: Fail job when build failed
+      - name: Mark build failed
         if: env.BUILD_EXIT_CODE != '0'
         run: exit 1
