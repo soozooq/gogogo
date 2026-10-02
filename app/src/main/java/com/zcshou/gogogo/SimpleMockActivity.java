@@ -1,8 +1,10 @@
 package com.zcshou.gogogo;
 
-import android.annotation.SuppressLint;
-import android.content.ActivityNotFoundException;
+import android.Manifest;
+import android.app.AppOpsManager;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
@@ -20,21 +22,29 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.location.LocationServices;
 import com.zcshou.service.ServiceGo;
 import com.zcshou.utils.GoUtils;
 
 public class SimpleMockActivity extends AppCompatActivity {
+    private static final int REQ_LOCATION = 1001;
+
     private EditText longitudeInput;
     private EditText latitudeInput;
     private TextView statusView;
-    private TextView diagnosticsView;
+    private TextView diagnosticView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        buildUi();
+        ensureLocationPermission();
+        refreshDiagnostics();
+    }
 
+    private void buildUi() {
         int pad = (int) (16 * getResources().getDisplayMetrics().density);
 
         ScrollView scroll = new ScrollView(this);
@@ -42,21 +52,19 @@ public class SimpleMockActivity extends AppCompatActivity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(pad, pad, pad, pad);
         root.setGravity(Gravity.CENTER_HORIZONTAL);
-        scroll.addView(root, new ScrollView.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT));
+        scroll.addView(root);
 
         TextView title = new TextView(this);
         title.setText("微信定位测试版（无地图）");
         title.setTextSize(22);
         title.setGravity(Gravity.CENTER);
-        root.addView(title, fullWidth());
+        root.addView(title, matchWrap());
 
         TextView hint = new TextView(this);
-        hint.setText("直接输入 WGS-84 坐标。\n妙瓦底已预填：98.50895, 16.68914\n本版已默认关闭摇杆悬浮窗。");
+        hint.setText("直接输入 WGS-84 坐标。\n妙瓦底已预填：98.50895, 16.68914");
         hint.setTextSize(15);
         hint.setPadding(0, pad, 0, pad);
-        root.addView(hint, fullWidth());
+        root.addView(hint, matchWrap());
 
         longitudeInput = new EditText(this);
         longitudeInput.setHint("经度，例如 98.50895");
@@ -64,7 +72,7 @@ public class SimpleMockActivity extends AppCompatActivity {
         longitudeInput.setInputType(InputType.TYPE_CLASS_NUMBER
                 | InputType.TYPE_NUMBER_FLAG_DECIMAL
                 | InputType.TYPE_NUMBER_FLAG_SIGNED);
-        root.addView(longitudeInput, fullWidth());
+        root.addView(longitudeInput, matchWrap());
 
         latitudeInput = new EditText(this);
         latitudeInput.setHint("纬度，例如 16.68914");
@@ -72,73 +80,86 @@ public class SimpleMockActivity extends AppCompatActivity {
         latitudeInput.setInputType(InputType.TYPE_CLASS_NUMBER
                 | InputType.TYPE_NUMBER_FLAG_DECIMAL
                 | InputType.TYPE_NUMBER_FLAG_SIGNED);
-        root.addView(latitudeInput, fullWidth());
+        root.addView(latitudeInput, matchWrap());
 
-        Button startButton = addButton(root, "开始模拟");
-        Button stopButton = addButton(root, "停止模拟");
+        addButton(root, "开始模拟", v -> startMock());
+        addButton(root, "停止模拟", v -> stopMock());
 
         statusView = new TextView(this);
         statusView.setText("状态：未启动");
         statusView.setTextSize(16);
         statusView.setPadding(0, pad, 0, pad);
-        root.addView(statusView, fullWidth());
+        root.addView(statusView, matchWrap());
 
         TextView settingsTitle = new TextView(this);
-        settingsTitle.setText("系统排查快捷入口");
+        settingsTitle.setText("快速设置入口");
         settingsTitle.setTextSize(19);
         settingsTitle.setPadding(0, pad, 0, 4);
-        root.addView(settingsTitle, fullWidth());
+        root.addView(settingsTitle, matchWrap());
 
-        addButton(root, "打开 Wi-Fi / 蓝牙扫描设置")
-                .setOnClickListener(v -> openScanningSettings());
-        addButton(root, "打开定位设置")
-                .setOnClickListener(v -> openIntent(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS), null));
-        addButton(root, "打开开发者选项 / 模拟位置应用")
-                .setOnClickListener(v -> openIntent(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS), null));
-        addButton(root, "打开本应用系统详情")
-                .setOnClickListener(v -> openAppDetails());
-        addButton(root, "打开悬浮窗权限（本版不需要开启）")
-                .setOnClickListener(v -> openOverlaySettings());
+        addButton(root, "打开 WLAN / 蓝牙扫描设置", v -> openScanningSettings());
+        addButton(root, "打开系统定位设置", v -> safeOpen(
+                new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS), null));
+        addButton(root, "打开开发者选项（模拟位置应用）", v -> {
+            Toast.makeText(this, "进入后找“选择模拟位置信息应用”，选本测试版", Toast.LENGTH_LONG).show();
+            safeOpen(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS), null);
+        });
+        addButton(root, "打开当前应用详情", v -> safeOpen(
+                new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:" + getPackageName())), null));
 
-        TextView diagnosticTitle = new TextView(this);
-        diagnosticTitle.setText("定位自检");
-        diagnosticTitle.setTextSize(19);
-        diagnosticTitle.setPadding(0, pad, 0, 4);
-        root.addView(diagnosticTitle, fullWidth());
+        TextView diagTitle = new TextView(this);
+        diagTitle.setText("定位自检");
+        diagTitle.setTextSize(19);
+        diagTitle.setPadding(0, pad, 0, 4);
+        root.addView(diagTitle, matchWrap());
 
-        Button refreshButton = addButton(root, "刷新定位自检");
-        diagnosticsView = new TextView(this);
-        diagnosticsView.setTextSize(14);
-        diagnosticsView.setTextIsSelectable(true);
-        diagnosticsView.setPadding(0, 6, 0, pad);
-        root.addView(diagnosticsView, fullWidth());
+        addButton(root, "刷新定位自检", v -> refreshDiagnostics());
+
+        diagnosticView = new TextView(this);
+        diagnosticView.setTextSize(14);
+        diagnosticView.setTextIsSelectable(true);
+        diagnosticView.setPadding(0, 8, 0, pad);
+        root.addView(diagnosticView, matchWrap());
+
+        TextView overlayNote = new TextView(this);
+        overlayNote.setText("本测试版已禁用原项目的悬浮摇杆，不需要开启“显示在其他应用上层”。");
+        overlayNote.setTextSize(14);
+        root.addView(overlayNote, matchWrap());
 
         setContentView(scroll);
-
-        startButton.setOnClickListener(v -> startMock());
-        stopButton.setOnClickListener(v -> stopMock());
-        refreshButton.setOnClickListener(v -> refreshDiagnostics());
-
-        refreshDiagnostics();
     }
 
-    private LinearLayout.LayoutParams fullWidth() {
+    private LinearLayout.LayoutParams matchWrap() {
         return new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
     }
 
-    private Button addButton(LinearLayout root, String label) {
-        Button b = new Button(this);
-        b.setText(label);
-        root.addView(b, fullWidth());
-        return b;
+    private void addButton(LinearLayout parent, String text, android.view.View.OnClickListener listener) {
+        Button button = new Button(this);
+        button.setText(text);
+        button.setAllCaps(false);
+        button.setOnClickListener(listener);
+        parent.addView(button, matchWrap());
+    }
+
+    private void ensureLocationPermission() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                    REQ_LOCATION);
+        }
     }
 
     private void startMock() {
+        ensureLocationPermission();
+
         final double lng;
         final double lat;
-
         try {
             lng = Double.parseDouble(longitudeInput.getText().toString().trim());
             lat = Double.parseDouble(latitudeInput.getText().toString().trim());
@@ -158,10 +179,10 @@ public class SimpleMockActivity extends AppCompatActivity {
             return;
         }
 
-        // 本测试版不再依赖悬浮窗。摇杆 overlay 已在 ServiceGo 中默认关闭。
-        if (!GoUtils.isAllowMockLocation(this)) {
-            statusView.setText("状态：请在开发者选项中把本应用设为模拟位置应用");
-            GoUtils.showEnableMockLocationDialog(this);
+        if (!isMockLocationAllowed()) {
+            statusView.setText("状态：请先把本应用设为模拟位置应用");
+            Toast.makeText(this, "开发者选项 → 选择模拟位置信息应用 → 选择本测试版", Toast.LENGTH_LONG).show();
+            safeOpen(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS), null);
             return;
         }
 
@@ -177,130 +198,152 @@ public class SimpleMockActivity extends AppCompatActivity {
         }
 
         statusView.setText("状态：模拟中\n经度 " + lng + "\n纬度 " + lat);
-        diagnosticsView.postDelayed(this::refreshDiagnostics, 800);
+        diagnosticView.postDelayed(this::refreshDiagnostics, 1200);
     }
 
     private void stopMock() {
         stopService(new Intent(this, ServiceGo.class));
         statusView.setText("状态：已停止");
-        diagnosticsView.postDelayed(this::refreshDiagnostics, 300);
+        diagnosticView.postDelayed(this::refreshDiagnostics, 500);
     }
 
     private void openScanningSettings() {
-        Intent scan = new Intent("android.settings.LOCATION_SCANNING_SETTINGS");
+        Intent primary = new Intent("android.settings.LOCATION_SCANNING_SETTINGS");
         Intent fallback = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-        openIntent(scan, fallback);
+        Toast.makeText(this, "在这里关闭 WLAN 扫描、蓝牙扫描（若系统提供这些开关）", Toast.LENGTH_LONG).show();
+        safeOpen(primary, fallback);
     }
 
-    private void openAppDetails() {
-        Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                Uri.parse("package:" + getPackageName()));
-        openIntent(i, null);
-    }
-
-    private void openOverlaySettings() {
-        Intent i = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                Uri.parse("package:" + getPackageName()));
-        openIntent(i, new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                Uri.parse("package:" + getPackageName())));
-    }
-
-    private void openIntent(Intent primary, Intent fallback) {
+    private void safeOpen(Intent primary, Intent fallback) {
         try {
-            startActivity(primary);
-        } catch (ActivityNotFoundException | SecurityException e) {
-            if (fallback != null) {
-                try {
-                    startActivity(fallback);
-                    Toast.makeText(this, "当前系统没有该专用页面，已打开备用设置页", Toast.LENGTH_LONG).show();
-                    return;
-                } catch (Exception ignored) {
-                }
+            if (primary.resolveActivity(getPackageManager()) != null) {
+                startActivity(primary);
+                return;
             }
-            Toast.makeText(this, "当前系统无法直接打开这个设置页", Toast.LENGTH_LONG).show();
+        } catch (Exception ignored) {
+        }
+        if (fallback != null) {
+            try {
+                startActivity(fallback);
+                return;
+            } catch (Exception ignored) {
+            }
+        }
+        Toast.makeText(this, "当前系统没有提供这个设置页面", Toast.LENGTH_LONG).show();
+    }
+
+    private boolean isMockLocationAllowed() {
+        try {
+            AppOpsManager appOps = (AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
+            int mode = appOps.checkOpNoThrow(AppOpsManager.OPSTR_MOCK_LOCATION,
+                    android.os.Process.myUid(), getPackageName());
+            return mode == AppOpsManager.MODE_ALLOWED;
+        } catch (Throwable ignored) {
+            return false;
         }
     }
 
-    @SuppressLint("MissingPermission")
+    private String formatLocation(Location location) {
+        if (location == null) return "无数据";
+        return String.format(java.util.Locale.US,
+                "%.6f, %.6f  provider=%s  mock=%s",
+                location.getLongitude(),
+                location.getLatitude(),
+                location.getProvider(),
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                        ? location.isMock()
+                        : androidx.core.location.LocationCompat.isMock(location));
+    }
+
     private void refreshDiagnostics() {
+        if (diagnosticView == null) return;
+
         StringBuilder sb = new StringBuilder();
-        sb.append("目标：")
-                .append(latitudeInput.getText()).append(", ")
-                .append(longitudeInput.getText()).append("\n");
+        LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        sb.append("目标坐标：")
+                .append(longitudeInput == null ? "?" : longitudeInput.getText())
+                .append(", ")
+                .append(latitudeInput == null ? "?" : latitudeInput.getText())
+                .append("\n");
+
+        sb.append("本应用为模拟位置应用：")
+                .append(isMockLocationAllowed() ? "是" : "否")
+                .append("\n");
 
         boolean locationEnabled;
-        try {
-            int mode = Settings.Secure.getInt(getContentResolver(), Settings.Secure.LOCATION_MODE);
-            locationEnabled = mode != Settings.Secure.LOCATION_MODE_OFF;
-        } catch (Exception e) {
-            locationEnabled = GoUtils.isGpsOpened(this);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            locationEnabled = lm.isLocationEnabled();
+        } else {
+            locationEnabled = Settings.Secure.getInt(
+                    getContentResolver(), Settings.Secure.LOCATION_MODE,
+                    Settings.Secure.LOCATION_MODE_OFF) != Settings.Secure.LOCATION_MODE_OFF;
         }
+        sb.append("系统定位：").append(locationEnabled ? "开启" : "关闭").append("\n");
 
         int wifiScan = Settings.Global.getInt(
                 getContentResolver(), "wifi_scan_always_enabled", -1);
         int bleScan = Settings.Global.getInt(
                 getContentResolver(), "ble_scan_always_enabled", -1);
+        sb.append("WLAN 扫描：").append(settingState(wifiScan)).append("\n");
+        sb.append("蓝牙扫描：").append(settingState(bleScan)).append("\n");
 
-        sb.append("系统定位：").append(locationEnabled ? "开启" : "关闭").append("\n");
-        sb.append("Wi-Fi 扫描：").append(scanState(wifiScan)).append("\n");
-        sb.append("蓝牙扫描：").append(scanState(bleScan)).append("\n");
-        sb.append("悬浮窗权限：")
-                .append(Settings.canDrawOverlays(this) ? "已允许（本版无需）" : "未允许（正常）")
-                .append("\n\n");
+        int locationMode = Settings.Secure.getInt(
+                getContentResolver(), Settings.Secure.LOCATION_MODE, -1);
+        sb.append("系统定位模式值：").append(locationMode).append("\n");
 
-        LocationManager lm = (LocationManager) getSystemService(LOCATION_SERVICE);
-        if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
-                == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            appendLocation(sb, "GPS", safeLastKnown(lm, LocationManager.GPS_PROVIDER));
-            appendLocation(sb, "Network", safeLastKnown(lm, LocationManager.NETWORK_PROVIDER));
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                appendLocation(sb, "System Fused", safeLastKnown(lm, LocationManager.FUSED_PROVIDER));
-            }
-
-            diagnosticsView.setText(sb.toString() + "GMS Fused：读取中…");
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
             try {
-                LocationServices.getFusedLocationProviderClient(this).getLastLocation()
-                        .addOnSuccessListener(location -> {
-                            StringBuilder done = new StringBuilder(sb);
-                            appendLocation(done, "GMS Fused", location);
-                            diagnosticsView.setText(done.toString());
-                        })
-                        .addOnFailureListener(e -> {
-                            diagnosticsView.setText(sb.toString()
-                                    + "GMS Fused：读取失败 " + e.getClass().getSimpleName());
-                        });
-            } catch (Throwable t) {
-                diagnosticsView.setText(sb.toString() + "GMS Fused：不可用");
+                sb.append("GPS：").append(formatLocation(
+                        lm.getLastKnownLocation(LocationManager.GPS_PROVIDER))).append("\n");
+            } catch (Exception e) {
+                sb.append("GPS：读取失败\n");
+            }
+            try {
+                sb.append("Network：").append(formatLocation(
+                        lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER))).append("\n");
+            } catch (Exception e) {
+                sb.append("Network：读取失败\n");
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                try {
+                    sb.append("系统 Fused：").append(formatLocation(
+                            lm.getLastKnownLocation(LocationManager.FUSED_PROVIDER))).append("\n");
+                } catch (Exception e) {
+                    sb.append("系统 Fused：读取失败\n");
+                }
             }
         } else {
-            sb.append("定位权限：未授予\n");
-            diagnosticsView.setText(sb.toString());
+            sb.append("GPS / Network：未授予定位权限\n");
         }
-    }
 
-    private Location safeLastKnown(LocationManager lm, String provider) {
+        sb.append("GMS Fused：读取中…\n");
+        diagnosticView.setText(sb.toString());
+
         try {
-            return lm.getLastKnownLocation(provider);
-        } catch (Exception e) {
-            return null;
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED
+                    || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED) {
+                final String prefix = sb.toString().replace("GMS Fused：读取中…\n", "");
+                LocationServices.getFusedLocationProviderClient(this)
+                        .getLastLocation()
+                        .addOnSuccessListener(location ->
+                                diagnosticView.setText(prefix + "GMS Fused：" + formatLocation(location) + "\n"))
+                        .addOnFailureListener(e ->
+                                diagnosticView.setText(prefix + "GMS Fused：读取失败\n"));
+            }
+        } catch (Throwable t) {
+            diagnosticView.append("GMS Fused：不可用\n");
         }
     }
 
-    private void appendLocation(StringBuilder sb, String name, Location l) {
-        sb.append(name).append("：");
-        if (l == null) {
-            sb.append("无数据\n");
-            return;
-        }
-        sb.append(l.getLatitude()).append(", ")
-                .append(l.getLongitude())
-                .append(l.isFromMockProvider() ? " [mock]" : " [real/cache]")
-                .append("\n");
-    }
-
-    private String scanState(int value) {
+    private String settingState(int value) {
         if (value == 1) return "开启";
         if (value == 0) return "关闭";
-        return "系统未公开状态";
+        return "系统未公开 / 未知";
     }
 }
