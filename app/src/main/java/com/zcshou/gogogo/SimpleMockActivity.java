@@ -12,6 +12,8 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.telephony.TelephonyManager;
+import android.telephony.SubscriptionInfo;
+import android.telephony.SubscriptionManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -128,6 +130,10 @@ public class SimpleMockActivity extends AppCompatActivity {
         addButton(root, "打开 VPN 设置", v -> safeOpen(
                 new Intent(Settings.ACTION_VPN_SETTINGS), new Intent(Settings.ACTION_WIRELESS_SETTINGS)));
         addButton(root, "检测公网出口 IP / 地区", v -> checkPublicIp());
+        addButton(root, "打开微信应用详情（可手动清缓存）", v ->
+                openPackageDetails("com.tencent.mm", "微信"));
+        addButton(root, "打开腾讯地图应用详情（可手动清缓存）", v ->
+                openPackageDetails("com.tencent.map", "腾讯地图"));
 
         publicIpView = new TextView(this);
         publicIpView.setText("公网出口：未检测");
@@ -339,11 +345,44 @@ public class SimpleMockActivity extends AppCompatActivity {
         try {
             TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
             String country = tm == null ? "" : tm.getNetworkCountryIso();
+            String simCountry = tm == null ? "" : tm.getSimCountryIso();
+            String netOp = tm == null ? "" : tm.getNetworkOperator();
+            String simOp = tm == null ? "" : tm.getSimOperator();
+            boolean roaming = tm != null && tm.isNetworkRoaming();
+
             sb.append("蜂窝网络国家代码：")
                     .append(country == null || country.isEmpty() ? "不可见/无蜂窝网络" : country)
                     .append("\n");
+            sb.append("SIM 国家代码：")
+                    .append(simCountry == null || simCountry.isEmpty() ? "不可见" : simCountry)
+                    .append("\n");
+            sb.append("当前网络 MCC/MNC：")
+                    .append(netOp == null || netOp.isEmpty() ? "不可见" : netOp)
+                    .append("\n");
+            sb.append("SIM MCC/MNC：")
+                    .append(simOp == null || simOp.isEmpty() ? "不可见" : simOp)
+                    .append("\n");
+            sb.append("是否漫游：").append(roaming ? "是" : "否").append("\n");
+
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
+                    == PackageManager.PERMISSION_GRANTED) {
+                SubscriptionManager sm = (SubscriptionManager) getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
+                java.util.List<SubscriptionInfo> subs = sm == null ? null : sm.getActiveSubscriptionInfoList();
+                if (subs != null && !subs.isEmpty()) {
+                    for (int i = 0; i < subs.size(); i++) {
+                        SubscriptionInfo si = subs.get(i);
+                        sb.append("SIM").append(i + 1).append(" 运营商：")
+                                .append(si.getCarrierName())
+                                .append(" MCC=").append(si.getMcc())
+                                .append(" MNC=").append(si.getMnc())
+                                .append("\n");
+                    }
+                }
+            } else {
+                sb.append("SIM 详细信息：未授予电话状态权限\n");
+            }
         } catch (Throwable t) {
-            sb.append("蜂窝网络国家代码：读取失败\n");
+            sb.append("蜂窝/SIM 信息：读取失败\n");
         }
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -393,6 +432,22 @@ public class SimpleMockActivity extends AppCompatActivity {
         } catch (Throwable t) {
             diagnosticView.append("GMS Fused：不可用\n");
         }
+    }
+
+    private void openPackageDetails(String packageName, String appName) {
+        try {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:" + packageName));
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                Toast.makeText(this,
+                        "进入“存储与缓存”后可手动清理 " + appName + " 缓存；不要点卸载。",
+                        Toast.LENGTH_LONG).show();
+                startActivity(intent);
+                return;
+            }
+        } catch (Throwable ignored) {
+        }
+        Toast.makeText(this, "没有找到 " + appName + " 的应用详情页", Toast.LENGTH_LONG).show();
     }
 
     private void checkPublicIp() {
