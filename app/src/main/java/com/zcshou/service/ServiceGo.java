@@ -34,6 +34,7 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.zcshou.gogogo.MainActivity;
 import com.zcshou.gogogo.R;
+import com.zcshou.gogogo.SimpleMockActivity;
 import com.zcshou.joystick.JoyStick;
 
 public class ServiceGo extends Service {
@@ -217,7 +218,7 @@ public class ServiceGo extends Service {
         }
 
         //准备intent
-        Intent clickIntent = new Intent(this, MainActivity.class);
+        Intent clickIntent = new Intent(this, SimpleMockActivity.class);
         PendingIntent clickPI = PendingIntent.getActivity(this, 1, clickIntent, PendingIntent.FLAG_IMMUTABLE);
         Intent showIntent = new Intent(SERVICE_GO_NOTE_ACTION_JOYSTICK_SHOW);
         PendingIntent showPendingPI = PendingIntent.getBroadcast(this, 0, showIntent, PendingIntent.FLAG_IMMUTABLE);
