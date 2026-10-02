@@ -28,6 +28,13 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
 import com.google.android.gms.location.LocationServices;
 import com.zcshou.service.ServiceGo;
 import com.zcshou.utils.GoUtils;
@@ -39,6 +46,7 @@ public class SimpleMockActivity extends AppCompatActivity {
     private EditText latitudeInput;
     private TextView statusView;
     private TextView diagnosticView;
+    private TextView publicIpView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,6 +125,16 @@ public class SimpleMockActivity extends AppCompatActivity {
         addButton(root, "打开当前应用详情", v -> safeOpen(
                 new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                         Uri.parse("package:" + getPackageName())), null));
+        addButton(root, "打开 VPN 设置", v -> safeOpen(
+                new Intent(Settings.ACTION_VPN_SETTINGS), new Intent(Settings.ACTION_WIRELESS_SETTINGS)));
+        addButton(root, "检测公网出口 IP / 地区", v -> checkPublicIp());
+
+        publicIpView = new TextView(this);
+        publicIpView.setText("公网出口：未检测");
+        publicIpView.setTextSize(14);
+        publicIpView.setTextIsSelectable(true);
+        publicIpView.setPadding(0, 8, 0, pad);
+        root.addView(publicIpView, matchWrap());
 
         TextView diagTitle = new TextView(this);
         diagTitle.setText("定位自检");
@@ -375,6 +393,68 @@ public class SimpleMockActivity extends AppCompatActivity {
         } catch (Throwable t) {
             diagnosticView.append("GMS Fused：不可用\n");
         }
+    }
+
+    private void checkPublicIp() {
+        if (publicIpView == null) return;
+        publicIpView.setText("公网出口：检测中…");
+
+        new Thread(() -> {
+            String result;
+            try {
+                URL url = new URL("https://ipinfo.io/json");
+                HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                connection.setConnectTimeout(6000);
+                connection.setReadTimeout(6000);
+                connection.setRequestProperty("User-Agent", "GoGoGo-Diagnostic/1.0");
+
+                BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(connection.getInputStream()));
+                StringBuilder body = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) body.append(line);
+                reader.close();
+                connection.disconnect();
+
+                JSONObject json = new JSONObject(body.toString());
+                String ip = json.optString("ip", "未知");
+                String city = json.optString("city", "");
+                String region = json.optString("region", "");
+                String country = json.optString("country", "");
+                String org = json.optString("org", "");
+
+                result = "公网出口 IP：" + ip
+                        + "\nIP 地区：" + city + " " + region + " " + country
+                        + "\n网络/ASN：" + org;
+            } catch (Throwable first) {
+                try {
+                    URL url = new URL("https://www.cloudflare.com/cdn-cgi/trace");
+                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                    connection.setConnectTimeout(6000);
+                    connection.setReadTimeout(6000);
+
+                    BufferedReader reader = new BufferedReader(
+                            new InputStreamReader(connection.getInputStream()));
+                    String ip = "未知";
+                    String loc = "未知";
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (line.startsWith("ip=")) ip = line.substring(3);
+                        if (line.startsWith("loc=")) loc = line.substring(4);
+                    }
+                    reader.close();
+                    connection.disconnect();
+                    result = "公网出口 IP：" + ip + "\nIP 国家/地区：" + loc;
+                } catch (Throwable second) {
+                    result = "公网出口：检测失败（可能被网络/VPN/防火墙拦截）";
+                }
+            }
+
+            final String display = result;
+            runOnUiThread(() -> {
+                if (publicIpView != null) publicIpView.setText(display);
+            });
+        }).start();
     }
 
     private String settingState(int value) {
