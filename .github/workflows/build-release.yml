@@ -1,113 +1,69 @@
-name: Build Release
+name: Build WeChat Fixed APK
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - '*'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  Build:
-    name: Release APK
+  build:
     runs-on: ubuntu-latest
-    steps:
-      # https://github.com/marketplace/actions/checkout
-      - uses: actions/checkout@v5
 
-      # 设置 JDK
-      - name: set up JDK 17
+    env:
+      TENCENT_MAP_KEY: ${{ secrets.TENCENT_MAP_KEY }}
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
+          distribution: temurin
           java-version: '17'
-          distribution: 'adopt'
           cache: gradle
 
-      - name: Get Tag
-        id: var
-        run: echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
 
-      # 创建 local.properties 文件
+      - name: Install Android components
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-32" "build-tools;36.0.0" "ndk;26.2.11394342"
+
+      - name: Fix Linux keystore path
+        run: |
+          python3 - <<'PY'
+          p = "app/build.gradle"
+          s = open(p, encoding="utf-8").read()
+          s = s.replace("..\\\\keystore\\\\GoGoGo.jks", "../keystore/GoGoGo.jks")
+          open(p, "w", encoding="utf-8").write(s)
+          PY
+
+      - name: Show signing SHA1
+        run: |
+          echo "=============================="
+          echo "COPY THE SHA1 BELOW"
+          echo "=============================="
+          keytool -list -v \
+            -keystore keystore/GoGoGo.jks \
+            -alias GoGoKey \
+            -storepass GoGoGo \
+            -keypass GoGoGo | grep -E "SHA1:|SHA-1:"
+
       - name: Create local.properties
         run: |
-          cat << EOF > local.properties
-          MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}
-          MAPS_SAFE_CODE=${{ secrets.MAPS_SAFE_CODE }}
-          EOF
+          printf 'sdk.dir=%s\n' "$ANDROID_HOME" > local.properties
+          printf 'TENCENT_MAP_KEY=%s\n' "$TENCENT_MAP_KEY" >> local.properties
+          printf 'MAPS_API_KEY=\n' >> local.properties
 
-      - name: Build APK
-        run: bash ./gradlew assembleRelease
-
-      - name: Get Build Tool Version
-        shell: bash
+      - name: Tencent key not configured
+        if: ${{ env.TENCENT_MAP_KEY == '' }}
         run: |
-          BUILD_TOOL_VERSION=$(ls /usr/local/lib/android/sdk/build-tools/ | tail -n 1)
-          echo "BUILD_TOOL_VERSION=$BUILD_TOOL_VERSION" >> $GITHUB_ENV
-          echo Last build tool version is: $BUILD_TOOL_VERSION
+          echo "::error::TENCENT_MAP_KEY is not configured yet."
+          echo "Copy the SHA1 shown above."
+          echo "Create the Tencent Map key first, then add it as a GitHub Actions secret."
+          exit 1
 
-      # https://github.com/marketplace/actions/sign-android-release
-      - name: Sign APK
-        id: sign_apk
-        uses: r0adkll/sign-android-release@v1
-        with:
-          releaseDirectory: app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          alias: ${{ secrets.ALIAS }}
-          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-        env:
-          BUILD_TOOLS_VERSION: ${{ env.BUILD_TOOL_VERSION }}
-
-      - name: Get Signed APK Name
-        run: |
-          FULL_PATH=${{steps.sign_apk.outputs.signedReleaseFile}}
-          FILENAME=$(basename "$FULL_PATH")
-          echo "FILENAME=${FILENAME}" >> $GITHUB_ENV  # 存储到环境变量
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.FILENAME }}
-          path: ${{steps.sign_apk.outputs.signedReleaseFile}}
-
-      # https://github.com/marketplace/actions/auto-changelog
-      # require commit format are "type(category): description [flag]"
-      - name: Make Changelog
-        uses: ardalanamini/auto-changelog@v4.0.4
-        id  : changelog
-        with:
-          github-token            : ${{ github.token }}
-          commit-types            : |
-            feat: New Features
-            fix: Bug Fixes
-            build: Build System & Dependencies
-            perf: Performance Improvements
-            docs: Documentation
-            test: Tests
-            refactor: Refactors
-            chore: Chores
-            ci: CI
-            style: Code Style
-            revert: Reverts
-          default-commit-type     : Other Changes
-          mention-authors         : true
-          mention-new-contributors: true
-          include-compare-link    : true
-
-      - name: Upload Changelog
-        uses: actions/upload-artifact@v4
-        with:
-          name: Changelog
-          path: ${{ steps.changelog.outputs.changelog }}
-
-      # https://github.com/marketplace/actions/gh-release
-      - name: Release APK
-        uses: softprops/action-gh-release@v2.3.2
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          token: ${{ github.token }}
-          body: ${{ steps.changelog.outputs.changelog }}
-          prerelease: false
-          files: ${{steps.sign_apk.outputs.signedReleaseFile}}
+      - name: Build release APK
