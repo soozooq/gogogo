@@ -270,39 +270,39 @@ The org.gradle.api.plugins.Convention type has been deprecated. This is schedule
 > Task :app:createDebugCompatibleScreenManifests
 > Task :app:generateDebugResValues
 > Task :app:generateDebugBuildConfig
-> Task :app:extractDeepLinksDebug
 > Task :app:generateDebugResources
-> Task :app:mapDebugSourceSetPaths
-> Task :app:checkDebugAarMetadata
 > Task :app:javaPreCompileDebug
+> Task :app:packageDebugResources
+> Task :app:mapDebugSourceSetPaths
+> Task :app:extractDeepLinksDebug
+> Task :app:checkDebugAarMetadata
 > Task :app:mergeDebugShaders
 > Task :app:compileDebugShaders NO-SOURCE
 > Task :app:generateDebugAssets UP-TO-DATE
-> Task :app:packageDebugResources
+> Task :app:mergeDebugAssets
+> Task :app:compressDebugAssets
 > Task :app:processDebugMainManifest
 > Task :app:processDebugManifest
-> Task :app:processDebugManifestForPackage
 > Task :app:parseDebugLocalResources
 > Task :app:desugarDebugFileDependencies
 > Task :app:mergeDebugJniLibFolders
-> Task :app:checkDebugDuplicateClasses
-> Task :app:mergeDebugAssets
-> Task :app:mergeDebugNativeLibs
-> Task :app:mergeDebugResources
-> Task :app:mergeExtDexDebug
-> Task :app:compressDebugAssets
-> Task :app:mergeLibDexDebug
+> Task :app:processDebugManifestForPackage
 > Task :app:validateSigningDebug
 > Task :app:writeDebugAppMetadata
 > Task :app:writeDebugSigningConfigVersions
+> Task :app:checkDebugDuplicateClasses
+> Task :app:mergeDebugNativeLibs
+> Task :app:mergeDebugResources
 
 > Task :app:stripDebugDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libBugly_Native.so, libbugly_dumper.so, libbuglybacktrace.so, librmonitor_base.so, librmonitor_memory.so, libtxmapengine.so, libtxmapvis.so. Run with --info option to learn more.
 
+> Task :app:mergeLibDexDebug
 > Task :app:processDebugResources
 > Task :app:compileDebugKotlin NO-SOURCE
 > Task :app:processDebugJavaRes NO-SOURCE
 > Task :app:mergeDebugJavaResource
+> Task :app:mergeExtDexDebug
 
 > Task :app:compileDebugJavaWithJavac
 /home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/gogogo/MiniProgramTestActivity.java:137: warning: [deprecation] onStatusChanged(String,int,Bundle) in LocationListener has been deprecated
@@ -314,12 +314,18 @@ Unable to strip the following libraries, packaging them as they are: libBugly_Na
 /home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/gogogo/MiniProgramTestActivity.java:171: warning: [deprecation] isFromMockProvider() in Location has been deprecated
             isMock = loc.isFromMockProvider();
                         ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/gogogo/SimpleMockActivity.java:307: warning: [deprecation] LOCATION_MODE in Secure has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/gogogo/SimpleMockActivity.java:313: warning: [deprecation] LOCATION_MODE in Secure has been deprecated
                     getContentResolver(), Settings.Secure.LOCATION_MODE,
                                                          ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/gogogo/SimpleMockActivity.java:320: warning: [deprecation] LOCATION_MODE in Secure has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/gogogo/SimpleMockActivity.java:326: warning: [deprecation] LOCATION_MODE in Secure has been deprecated
                 getContentResolver(), Settings.Secure.LOCATION_MODE, -1);
                                                      ^
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/gogogo/SimpleMockActivity.java:376: warning: [deprecation] getMcc() in SubscriptionInfo has been deprecated
+                                .append(" MCC=").append(si.getMcc())
+                                                          ^
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/gogogo/SimpleMockActivity.java:377: warning: [deprecation] getMnc() in SubscriptionInfo has been deprecated
+                                .append(" MNC=").append(si.getMnc())
+                                                          ^
 /home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/gogogo/MainActivity.java:244: warning: [deprecation] setMyLocationEnabled(boolean) in IMyLocation has been deprecated
         mTencentMap.setMyLocationEnabled(false);
                    ^
@@ -422,7 +428,7 @@ Unable to strip the following libraries, packaging them as they are: libBugly_Na
 /home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/gogogo/SettingsActivity.java:19: warning: [deprecation] setStatusBarColor(int) in Window has been deprecated
         getWindow().setStatusBarColor(getResources().getColor(R.color.colorPrimary, this.getTheme()));
                    ^
-39 warnings
+41 warnings
 
 > Task :app:dexBuilderDebug
 > Task :app:mergeProjectDexDebug
@@ -432,6 +438,6 @@ Unable to strip the following libraries, packaging them as they are: libBugly_Na
 
 [Incubating] Problems report is available at: file:///home/runner/work/gogogo/gogogo/build/reports/problems/problems-report.html
 
-BUILD SUCCESSFUL in 1m 35s
+BUILD SUCCESSFUL in 1m 27s
 34 actionable tasks: 34 executed
 Configuration cache entry stored.
