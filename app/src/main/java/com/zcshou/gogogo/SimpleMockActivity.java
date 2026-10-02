@@ -153,6 +153,7 @@ public class SimpleMockActivity extends AppCompatActivity {
 
         addButton(root, "刷新定位自检", v -> refreshDiagnostics());
         addButton(root, "刷新 Wi-Fi 环境自检", v -> refreshWifiEnvironment());
+        addButton(root, "腾讯模式环境检查", v -> checkTencentEnvironment());
 
         diagnosticView = new TextView(this);
         diagnosticView.setTextSize(14);
@@ -438,6 +439,74 @@ public class SimpleMockActivity extends AppCompatActivity {
         } catch (Throwable t) {
             diagnosticView.append("GMS Fused：不可用\n");
         }
+    }
+
+    private void checkTencentEnvironment() {
+        StringBuilder result = new StringBuilder();
+        boolean ok = true;
+
+        try {
+            WifiManager wifi = (WifiManager) getApplicationContext()
+                    .getSystemService(Context.WIFI_SERVICE);
+            boolean wifiOn = wifi != null && wifi.isWifiEnabled();
+            result.append("Wi-Fi：").append(wifiOn ? "开启 ❌" : "关闭 ✅").append("\n");
+            if (wifiOn) ok = false;
+        } catch (Throwable t) {
+            result.append("Wi-Fi：无法判断 ⚠️\n");
+            ok = false;
+        }
+
+        try {
+            TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+            String netOp = tm == null ? "" : tm.getNetworkOperator();
+            boolean cellularVisible = netOp != null && !netOp.isEmpty();
+            result.append("蜂窝注册：")
+                    .append(cellularVisible ? "可见 (" + netOp + ") ❌" : "不可见 ✅")
+                    .append("\n");
+            if (cellularVisible) ok = false;
+        } catch (Throwable t) {
+            result.append("蜂窝注册：无法判断 ⚠️\n");
+            ok = false;
+        }
+
+        try {
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            Network active = cm.getActiveNetwork();
+            NetworkCapabilities caps = active == null ? null : cm.getNetworkCapabilities(active);
+            String transport = "无网络";
+            boolean preferred = false;
+            if (caps != null) {
+                if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) {
+                    transport = "Ethernet 有线";
+                    preferred = true;
+                } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_BLUETOOTH)) {
+                    transport = "Bluetooth PAN";
+                    preferred = true;
+                } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
+                    transport = "Wi-Fi";
+                } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) {
+                    transport = "蜂窝移动网络";
+                } else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
+                    transport = "VPN/其它";
+                }
+            }
+            result.append("当前联网：").append(transport)
+                    .append(preferred ? " ✅" : " ⚠️").append("\n");
+        } catch (Throwable t) {
+            result.append("当前联网：无法判断 ⚠️\n");
+            ok = false;
+        }
+
+        result.append("\n结论：")
+                .append(ok
+                        ? "环境较干净，可以测试腾讯定位。"
+                        : "仍存在 Wi-Fi/蜂窝旁路，腾讯可能回到真实区域。");
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("腾讯模式环境检查")
+                .setMessage(result.toString())
+                .setPositiveButton("知道了", null)
+                .show();
     }
 
     private void refreshWifiEnvironment() {
