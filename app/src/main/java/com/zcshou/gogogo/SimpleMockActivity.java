@@ -8,6 +8,10 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.telephony.TelephonyManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -98,6 +102,12 @@ public class SimpleMockActivity extends AppCompatActivity {
         root.addView(settingsTitle, matchWrap());
 
         addButton(root, "打开 WLAN / 蓝牙扫描设置", v -> openScanningSettings());
+        addButton(root, "打开网络切换面板", v -> {
+            Intent panel = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                    ? new Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY)
+                    : new Intent(Settings.ACTION_WIRELESS_SETTINGS);
+            safeOpen(panel, new Intent(Settings.ACTION_WIRELESS_SETTINGS));
+        });
         addButton(root, "打开系统定位设置", v -> safeOpen(
                 new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS), null));
         addButton(root, "打开开发者选项（模拟位置应用）", v -> {
@@ -291,6 +301,32 @@ public class SimpleMockActivity extends AppCompatActivity {
         int locationMode = Settings.Secure.getInt(
                 getContentResolver(), Settings.Secure.LOCATION_MODE, -1);
         sb.append("系统定位模式值：").append(locationMode).append("\n");
+
+        try {
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            Network active = cm.getActiveNetwork();
+            NetworkCapabilities caps = active == null ? null : cm.getNetworkCapabilities(active);
+            String transport = "未知";
+            if (caps != null) {
+                if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) transport = "蜂窝移动网络";
+                else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) transport = "Wi-Fi";
+                else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)) transport = "以太网";
+                else if (caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) transport = "VPN/其它";
+            }
+            sb.append("当前联网方式：").append(transport).append("\n");
+        } catch (Throwable t) {
+            sb.append("当前联网方式：读取失败\n");
+        }
+
+        try {
+            TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+            String country = tm == null ? "" : tm.getNetworkCountryIso();
+            sb.append("蜂窝网络国家代码：")
+                    .append(country == null || country.isEmpty() ? "不可见/无蜂窝网络" : country)
+                    .append("\n");
+        } catch (Throwable t) {
+            sb.append("蜂窝网络国家代码：读取失败\n");
+        }
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED
