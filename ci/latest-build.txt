@@ -267,37 +267,40 @@ The org.gradle.api.plugins.Convention type has been deprecated. This is schedule
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preDebugBuild UP-TO-DATE
 > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
-> Task :app:createDebugCompatibleScreenManifests
 > Task :app:generateDebugResValues
+> Task :app:createDebugCompatibleScreenManifests
 > Task :app:generateDebugBuildConfig
-> Task :app:generateDebugResources
-> Task :app:javaPreCompileDebug
-> Task :app:packageDebugResources
-> Task :app:mapDebugSourceSetPaths
 > Task :app:extractDeepLinksDebug
+> Task :app:generateDebugResources
+> Task :app:mapDebugSourceSetPaths
 > Task :app:checkDebugAarMetadata
+> Task :app:javaPreCompileDebug
 > Task :app:mergeDebugShaders
 > Task :app:compileDebugShaders NO-SOURCE
 > Task :app:generateDebugAssets UP-TO-DATE
-> Task :app:mergeDebugAssets
+> Task :app:packageDebugResources
 > Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:mergeDebugAssets
 > Task :app:parseDebugLocalResources
 > Task :app:compressDebugAssets
-> Task :app:desugarDebugFileDependencies
-> Task :app:processDebugManifest
 > Task :app:mergeDebugJniLibFolders
-> Task :app:processDebugManifestForPackage
+> Task :app:checkDebugDuplicateClasses
+> Task :app:mergeDebugResources
+> Task :app:mergeLibDexDebug
 > Task :app:validateSigningDebug
 > Task :app:writeDebugAppMetadata
 > Task :app:writeDebugSigningConfigVersions
-> Task :app:checkDebugDuplicateClasses
-> Task :app:mergeDebugResources
 > Task :app:mergeDebugNativeLibs
-> Task :app:mergeExtDexDebug
-> Task :app:mergeLibDexDebug
 
 > Task :app:stripDebugDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libBugly_Native.so, libbugly_dumper.so, libbuglybacktrace.so, librmonitor_base.so, librmonitor_memory.so, libtxmapengine.so, libtxmapvis.so. Run with --info option to learn more.
+
+> Task :app:desugarDebugFileDependencies
+
+> Task :app:mergeExtDexDebug
+WARNING: /home/runner/.gradle/caches/8.13/transforms/581db212f4b48a2c3b49a69a0669d155/transformed/play-services-location-21.3.0-runtime.jar: D8: The companion object Companion could not be found in class com.google.android.gms.internal.location.zze
 
 > Task :app:processDebugResources
 > Task :app:compileDebugKotlin NO-SOURCE
@@ -441,6 +444,6 @@ Unable to strip the following libraries, packaging them as they are: libBugly_Na
 
 [Incubating] Problems report is available at: file:///home/runner/work/gogogo/gogogo/build/reports/problems/problems-report.html
 
-BUILD SUCCESSFUL in 1m 41s
+BUILD SUCCESSFUL in 1m 44s
 34 actionable tasks: 34 executed
 Configuration cache entry stored.
