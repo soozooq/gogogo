@@ -8,12 +8,15 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
+import android.text.InputType;
 import android.view.Gravity;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -54,6 +57,10 @@ public class LabMapActivity extends AppCompatActivity {
 
     private TextView statusView;
     private TextView routeView;
+    private EditText routeSpeedInput;
+    private Spinner routeModeSpinner;
+    private EditText roamRadiusInput;
+    private EditText roamSpeedInput;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,7 +77,7 @@ public class LabMapActivity extends AppCompatActivity {
         root.setPadding(pad, pad, pad, pad);
 
         TextView title = new TextView(this);
-        title.setText("🧪 GoGoGo Lab · MapLibre");
+        title.setText("🧪 GoGoGo Lab 2 · MapLibre");
         title.setTextSize(21);
         title.setGravity(Gravity.CENTER);
         root.addView(title, matchWrap());
@@ -84,7 +91,7 @@ public class LabMapActivity extends AppCompatActivity {
         mapView.onCreate(savedInstanceState);
         LinearLayout.LayoutParams mapLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
-        mapLp.setMargins(0, dp(8), 0, dp(8));
+        mapLp.setMargins(0, dp(6), 0, dp(6));
         root.addView(mapView, mapLp);
 
         root.addView(buttonRow(
@@ -96,16 +103,52 @@ public class LabMapActivity extends AppCompatActivity {
 
         root.addView(buttonRow(
                 button("📂 导入 GPX/KML", v -> pickRouteFile()),
-                button("▶ 路线播放", v -> startRoute()),
-                button("⏹ 停止路线", v -> stopRoute()),
-                button("🗑 清空路线", v -> clearRoute())
+                button("▶ 路线", v -> startRoute()),
+                button("⏹ 路线", v -> stopRoute()),
+                button("🗑 路线", v -> clearRoute())
         ));
+
+        LinearLayout routeSettings = new LinearLayout(this);
+        routeSettings.setOrientation(LinearLayout.HORIZONTAL);
+        routeSettings.setGravity(Gravity.CENTER_VERTICAL);
+        routeSettings.addView(label("路线速度 m/s "));
+        routeSpeedInput = numberField("1.4", 88);
+        routeSettings.addView(routeSpeedInput);
+
+        routeSettings.addView(label("  模式 "));
+        routeModeSpinner = new Spinner(this);
+        ArrayAdapter<String> modeAdapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_dropdown_item,
+                new String[]{"单次", "循环", "往返"});
+        routeModeSpinner.setAdapter(modeAdapter);
+        routeSettings.addView(routeModeSpinner,
+                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        root.addView(routeSettings, matchWrap());
 
         routeView = new TextView(this);
         routeView.setText("路线：未导入");
         routeView.setTextSize(13);
-        routeView.setPadding(0, dp(6), 0, dp(4));
+        routeView.setPadding(0, dp(2), 0, dp(4));
         root.addView(routeView, matchWrap());
+
+        LinearLayout roamSettings = new LinearLayout(this);
+        roamSettings.setOrientation(LinearLayout.HORIZONTAL);
+        roamSettings.setGravity(Gravity.CENTER_VERTICAL);
+        roamSettings.addView(label("漫游半径 m "));
+        roamRadiusInput = numberField("100", 88);
+        roamSettings.addView(roamRadiusInput);
+        roamSettings.addView(label("  速度 m/s "));
+        roamSpeedInput = numberField("1.4", 88);
+        roamSettings.addView(roamSpeedInput);
+        root.addView(roamSettings, matchWrap());
+
+        root.addView(buttonRow(
+                button("🎲 随机漫游", v -> startRoam()),
+                button("⏹ 停止漫游", v -> stopRoam()),
+                button("📟 实验仪表盘", v ->
+                        startActivity(new Intent(this, LabDiagnosticsActivity.class)))
+        ));
 
         Button back = button("← 返回定位测试面板", v -> finish());
         root.addView(back, matchWrap());
@@ -126,6 +169,23 @@ public class LabMapActivity extends AppCompatActivity {
                 selectPoint(selectedPoint, false);
             });
         });
+    }
+
+    private TextView label(String text) {
+        TextView view = new TextView(this);
+        view.setText(text);
+        view.setTextSize(13);
+        return view;
+    }
+
+    private EditText numberField(String value, int widthDp) {
+        EditText input = new EditText(this);
+        input.setText(value);
+        input.setSingleLine(true);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        input.setSelectAllOnFocus(true);
+        input.setLayoutParams(new LinearLayout.LayoutParams(dp(widthDp), ViewGroup.LayoutParams.WRAP_CONTENT));
+        return input;
     }
 
     private HorizontalScrollView buttonRow(Button... buttons) {
@@ -168,7 +228,7 @@ public class LabMapActivity extends AppCompatActivity {
             if (selectedMarker == null) {
                 selectedMarker = map.addMarker(new MarkerOptions()
                         .position(point)
-                        .title("模拟位置"));
+                        .title("模拟位置 / 漫游中心"));
             } else {
                 selectedMarker.setPosition(point);
                 map.updateMarker(selectedMarker);
@@ -189,16 +249,9 @@ public class LabMapActivity extends AppCompatActivity {
         intent.putExtra(MainActivity.LAT_MSG_ID, selectedPoint.getLatitude());
         intent.putExtra(MainActivity.ALT_MSG_ID, 55.0);
 
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent);
-            } else {
-                startService(intent);
-            }
+        if (startLocationService(intent)) {
             LabStore.addHistory(this, selectedPoint.getLongitude(), selectedPoint.getLatitude());
             Toast.makeText(this, "已把模拟位置切到地图选点", Toast.LENGTH_SHORT).show();
-        } catch (Throwable t) {
-            Toast.makeText(this, "启动模拟失败：" + t.getClass().getSimpleName(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -287,7 +340,7 @@ public class LabMapActivity extends AppCompatActivity {
             routePoints.addAll(parsed);
             drawRoute();
             routeView.setText("路线：" + (name == null ? "导入文件" : name)
-                    + " · " + routePoints.size() + " 个点 · 默认 1 秒/点");
+                    + " · " + routePoints.size() + " 个点");
             Toast.makeText(this, "路线导入成功：" + routePoints.size() + " 个点", Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             Toast.makeText(this, "路线解析失败：" + e.getClass().getSimpleName(), Toast.LENGTH_LONG).show();
@@ -337,6 +390,11 @@ public class LabMapActivity extends AppCompatActivity {
             return;
         }
 
+        double speed = parseNumber(routeSpeedInput, 1.4);
+        speed = clamp(speed, 0.2, 60.0);
+        int mode = routeModeSpinner.getSelectedItemPosition();
+        mode = Math.max(ServiceGo.ROUTE_MODE_ONCE, Math.min(ServiceGo.ROUTE_MODE_PINGPONG, mode));
+
         double[] lats = new double[routePoints.size()];
         double[] lngs = new double[routePoints.size()];
         for (int i = 0; i < routePoints.size(); i++) {
@@ -349,20 +407,16 @@ public class LabMapActivity extends AppCompatActivity {
         intent.setAction(ServiceGo.ACTION_ROUTE_START);
         intent.putExtra(ServiceGo.EXTRA_ROUTE_LATS, lats);
         intent.putExtra(ServiceGo.EXTRA_ROUTE_LNGS, lngs);
-        intent.putExtra(ServiceGo.EXTRA_ROUTE_STEP_MS, 1000L);
-        intent.putExtra(ServiceGo.EXTRA_ROUTE_LOOP, false);
+        intent.putExtra(ServiceGo.EXTRA_ROUTE_SPEED_MPS, speed);
+        intent.putExtra(ServiceGo.EXTRA_ROUTE_MODE, mode);
 
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent);
-            } else {
-                startService(intent);
-            }
+        if (startLocationService(intent)) {
             RouteFileParser.RoutePoint p = routePoints.get(0);
             LabStore.addHistory(this, p.longitude, p.latitude);
-            Toast.makeText(this, "路线开始：1 秒/点", Toast.LENGTH_SHORT).show();
-        } catch (Throwable t) {
-            Toast.makeText(this, "路线启动失败：" + t.getClass().getSimpleName(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this,
+                    String.format(Locale.US, "路线开始：%.1f m/s · %s",
+                            speed, routeModeName(mode)),
+                    Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -371,7 +425,7 @@ public class LabMapActivity extends AppCompatActivity {
         intent.setAction(ServiceGo.ACTION_ROUTE_STOP);
         try {
             startService(intent);
-            Toast.makeText(this, "路线已停止，位置停在最后一点", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "路线已停止，位置停在当前位置", Toast.LENGTH_SHORT).show();
         } catch (Throwable t) {
             Toast.makeText(this, "停止路线失败", Toast.LENGTH_SHORT).show();
         }
@@ -387,6 +441,72 @@ public class LabMapActivity extends AppCompatActivity {
         }
         routeLine = null;
         routeView.setText("路线：未导入");
+    }
+
+    private void startRoam() {
+        if (selectedPoint == null) return;
+
+        double radius = clamp(parseNumber(roamRadiusInput, 100.0), 5.0, 5000.0);
+        double speed = clamp(parseNumber(roamSpeedInput, 1.4), 0.2, 30.0);
+
+        Intent intent = new Intent(this, ServiceGo.class);
+        intent.setAction(ServiceGo.ACTION_ROAM_START);
+        intent.putExtra(ServiceGo.EXTRA_ROAM_CENTER_LAT, selectedPoint.getLatitude());
+        intent.putExtra(ServiceGo.EXTRA_ROAM_CENTER_LNG, selectedPoint.getLongitude());
+        intent.putExtra(ServiceGo.EXTRA_ROAM_RADIUS_M, radius);
+        intent.putExtra(ServiceGo.EXTRA_ROAM_SPEED_MPS, speed);
+
+        if (startLocationService(intent)) {
+            LabStore.addHistory(this, selectedPoint.getLongitude(), selectedPoint.getLatitude());
+            Toast.makeText(this,
+                    String.format(Locale.US, "随机漫游：半径 %.0f m · %.1f m/s", radius, speed),
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void stopRoam() {
+        Intent intent = new Intent(this, ServiceGo.class);
+        intent.setAction(ServiceGo.ACTION_ROAM_STOP);
+        try {
+            startService(intent);
+            Toast.makeText(this, "随机漫游已停止", Toast.LENGTH_SHORT).show();
+        } catch (Throwable t) {
+            Toast.makeText(this, "停止漫游失败", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private boolean startLocationService(Intent intent) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent);
+            } else {
+                startService(intent);
+            }
+            return true;
+        } catch (Throwable t) {
+            Toast.makeText(this,
+                    "启动模拟失败：" + t.getClass().getSimpleName(),
+                    Toast.LENGTH_LONG).show();
+            return false;
+        }
+    }
+
+    private static double parseNumber(EditText input, double fallback) {
+        try {
+            return Double.parseDouble(input.getText().toString().trim());
+        } catch (Exception e) {
+            return fallback;
+        }
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private static String routeModeName(int mode) {
+        if (mode == ServiceGo.ROUTE_MODE_LOOP) return "循环";
+        if (mode == ServiceGo.ROUTE_MODE_PINGPONG) return "往返";
+        return "单次";
     }
 
     @Override
