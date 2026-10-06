@@ -117,6 +117,14 @@ public class ServiceGo extends Service {
     private double mLastTrackLng = Double.NaN;
     private static final int MAX_TRACK_POINTS = 20000;
 
+    // TaintDroid-inspired lightweight provenance for GoGoGo's own synthetic data pipeline.
+    // This is NOT OS-wide taint tracking; it records where our emitted mock samples came from.
+    private final Object mProvenanceLock = new Object();
+    private final java.util.ArrayDeque<String> mProvenanceEvents = new java.util.ArrayDeque<>();
+    private static final int MAX_PROVENANCE_EVENTS = 300;
+    private String mProvenanceSource = "RESTORED";
+    private long mLastProvenanceSampleElapsed = 0L;
+
     private static final int HANDLER_MSG_ID = 0;
     // 33ms (~30Hz) tick: 缩短"mock 过期"窗口,避免某些应用在两次 push 之间读到真实位置后漂移
     private static final long TICK_INTERVAL_MS = 33;
@@ -157,6 +165,7 @@ public class ServiceGo extends Service {
     public void onCreate() {
         super.onCreate();
         sRunning = true;
+        recordProvenance("SERVICE", "ServiceGo created");
 
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         if (powerManager != null) {
@@ -324,6 +333,7 @@ public class ServiceGo extends Service {
                 mLastTrackLng = Double.NaN;
             }
             sampleTrackIfNeeded(true);
+            recordProvenance("TRACK", "recording started");
             return START_STICKY;
         }
 
@@ -331,6 +341,7 @@ public class ServiceGo extends Service {
             synchronized (mTrackLock) {
                 mTrackRecording = false;
             }
+            recordProvenance("TRACK", "recording stopped");
             return START_STICKY;
         }
 
@@ -343,6 +354,7 @@ public class ServiceGo extends Service {
                 mLastTrackLat = Double.NaN;
                 mLastTrackLng = Double.NaN;
             }
+            recordProvenance("TRACK", "recording buffer cleared");
             return START_STICKY;
         }
 
@@ -350,6 +362,7 @@ public class ServiceGo extends Service {
             if (mRouteActive || mRoamActive) {
                 mMotionPaused = true;
                 mSpeed = 0.0;
+                recordProvenance("MOTION", "paused");
             }
             return START_STICKY;
         }
@@ -360,6 +373,7 @@ public class ServiceGo extends Service {
                 mLastMotionElapsed = SystemClock.elapsedRealtime();
                 mSpeed = mRouteActive ? mRouteSpeedMps * mMotionMultiplier
                         : mRoamSpeedMps * mMotionMultiplier;
+                recordProvenance("MOTION", "resumed");
             }
             return START_STICKY;
         }
@@ -370,17 +384,22 @@ public class ServiceGo extends Service {
             if (!mMotionPaused) {
                 mSpeed = (mRouteActive ? mRouteSpeedMps : mRoamSpeedMps) * mMotionMultiplier;
             }
+            recordProvenance("MOTION", "multiplier=" + mMotionMultiplier + "x");
             return START_STICKY;
         }
 
         if (intent != null && ACTION_ROUTE_STOP.equals(intent.getAction())) {
+            recordProvenance("ROUTE", "route stopped");
             stopLabMotion();
+            mProvenanceSource = "IDLE";
             return START_STICKY;
         }
 
         if (intent != null && ACTION_ROAM_STOP.equals(intent.getAction())) {
             mRoamActive = false;
             mSpeed = 0.0;
+            recordProvenance("ROAM", "random roam stopped");
+            mProvenanceSource = "IDLE";
             return START_STICKY;
         }
 
@@ -408,6 +427,9 @@ public class ServiceGo extends Service {
                 mSpeed = mRouteSpeedMps * mMotionMultiplier;
                 mLastMotionElapsed = SystemClock.elapsedRealtime();
 
+                mProvenanceSource = "ROUTE";
+                recordProvenance("ROUTE", "started points=" + lats.length
+                        + " speed=" + mRouteSpeedMps + "m/s mode=" + mRouteMode);
                 persistCurrentLocation(state);
                 XLog.i("SERVICEGO: Lab route started, points=" + lats.length
                         + " speed=" + mRouteSpeedMps + " mode=" + mRouteMode);
@@ -430,6 +452,9 @@ public class ServiceGo extends Service {
             mSpeed = mRoamSpeedMps * mMotionMultiplier;
             chooseNewRoamTarget();
             mLastMotionElapsed = SystemClock.elapsedRealtime();
+            mProvenanceSource = "ROAM";
+            recordProvenance("ROAM", "started radius=" + mRoamRadiusM
+                    + "m speed=" + mRoamSpeedMps + "m/s");
             persistCurrentLocation(state);
             XLog.i("SERVICEGO: Lab random roam started, radius=" + mRoamRadiusM
                     + " speed=" + mRoamSpeedMps);
@@ -443,6 +468,8 @@ public class ServiceGo extends Service {
             mCurLng = intent.getDoubleExtra(MainActivity.LNG_MSG_ID, DEFAULT_LNG);
             mCurLat = intent.getDoubleExtra(MainActivity.LAT_MSG_ID, DEFAULT_LAT);
             mCurAlt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
+            mProvenanceSource = "MANUAL";
+            recordProvenance("MANUAL", "position selected");
             persistCurrentLocation(state);
         } else {
             mCurLng = Double.longBitsToDouble(
@@ -451,6 +478,7 @@ public class ServiceGo extends Service {
                     state.getLong("lat_bits", Double.doubleToRawLongBits(DEFAULT_LAT)));
             mCurAlt = Double.longBitsToDouble(
                     state.getLong("alt_bits", Double.doubleToRawLongBits(DEFAULT_ALT)));
+            mProvenanceSource = "RESTORED";
         }
 
         if (mJoyStick != null) {
@@ -617,6 +645,7 @@ public class ServiceGo extends Service {
                     if (!isStop) {
                         advanceLabMotion();
                         sampleTrackIfNeeded(false);
+                        sampleProvenanceIfNeeded();
                         setLocationNetwork();
                         setLocationGPS();
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -691,6 +720,38 @@ public class ServiceGo extends Service {
         }
     }
 
+    private void sampleProvenanceIfNeeded() {
+        long now = SystemClock.elapsedRealtime();
+        if (mLastProvenanceSampleElapsed > 0L
+                && now - mLastProvenanceSampleElapsed < 5000L) {
+            return;
+        }
+        mLastProvenanceSampleElapsed = now;
+        recordProvenance("SAMPLE",
+                String.format(java.util.Locale.US,
+                        "src=%s lng=%.6f lat=%.6f speed=%.2fm/s bearing=%.1f°",
+                        mProvenanceSource, mCurLng, mCurLat, mSpeed, mCurBea));
+    }
+
+    private void recordProvenance(String kind, String detail) {
+        String stamp;
+        try {
+            java.text.SimpleDateFormat format =
+                    new java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.US);
+            stamp = format.format(new java.util.Date());
+        } catch (Throwable t) {
+            stamp = String.valueOf(System.currentTimeMillis());
+        }
+
+        String line = stamp + "  [" + kind + "]  " + detail;
+        synchronized (mProvenanceLock) {
+            while (mProvenanceEvents.size() >= MAX_PROVENANCE_EVENTS) {
+                mProvenanceEvents.removeFirst();
+            }
+            mProvenanceEvents.addLast(line);
+        }
+    }
+
     private double getCurrentPassProgressMeters() {
         if (!mRouteActive || mRouteLats == null || mRouteCumulative == null
                 || mRouteLats.length < 2 || mRouteIndex < 0 || mRouteIndex >= mRouteLats.length) {
@@ -747,7 +808,7 @@ public class ServiceGo extends Service {
             return;
         }
 
-        mSpeed = mRouteSpeedMps;
+        mSpeed = mRouteSpeedMps * mMotionMultiplier;
         int guard = 0;
         while (metersToMove > 0.0001 && mRouteActive && guard++ < 20) {
             int next = mRouteIndex + mRouteDirection;
@@ -797,7 +858,7 @@ public class ServiceGo extends Service {
     }
 
     private void moveRandomRoam(double metersToMove) {
-        mSpeed = mRoamSpeedMps;
+        mSpeed = mRoamSpeedMps * mMotionMultiplier;
         int guard = 0;
         while (metersToMove > 0.0001 && mRoamActive && guard++ < 10) {
             double remaining = distanceMeters(mCurLat, mCurLng, mRoamTargetLat, mRoamTargetLng);
@@ -1125,6 +1186,23 @@ public class ServiceGo extends Service {
         }
 
         public int getRouteMode() { return mRouteMode; }
+
+        public String getProvenanceSource() {
+            return mProvenanceSource;
+        }
+
+        public String[] getProvenanceEvents() {
+            synchronized (mProvenanceLock) {
+                return mProvenanceEvents.toArray(new String[0]);
+            }
+        }
+
+        public void clearProvenanceEvents() {
+            synchronized (mProvenanceLock) {
+                mProvenanceEvents.clear();
+            }
+            recordProvenance("PROVENANCE", "timeline cleared");
+        }
 
         public boolean isTrackRecording() {
             synchronized (mTrackLock) {
