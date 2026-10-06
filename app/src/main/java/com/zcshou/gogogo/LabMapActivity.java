@@ -144,7 +144,7 @@ public class LabMapActivity extends AppCompatActivity {
         root.setPadding(pad, pad, pad, pad);
 
         TextView title = new TextView(this);
-        title.setText("🧪 GoGoGo Lab 8 · Resource Broker");
+        title.setText("🧪 GoGoGo Lab 11 · Deterministic Replay");
         title.setTextSize(21);
         title.setGravity(Gravity.CENTER);
         root.addView(title, matchWrap());
@@ -262,6 +262,8 @@ public class LabMapActivity extends AppCompatActivity {
         ));
 
         root.addView(buttonRow(
+                button("🎛 Scenario / Replay", v ->
+                        startActivity(new Intent(this, ScenarioLabActivity.class))),
                 button("🧠 Resource Broker", v ->
                         startActivity(new Intent(this, PolicyLabActivity.class))),
                 button("🧬 数据来源链", v -> showProvenanceTimeline()),
@@ -428,6 +430,13 @@ public class LabMapActivity extends AppCompatActivity {
             } else {
                 sb.append("\nPublished PAUSED · ").append(binder.getPolicySummary());
             }
+
+            sb.append(String.format(Locale.US,
+                    "\nScenario Tick %d · batt %d%% · head %.1f° · %s",
+                    binder.getScenarioStep(),
+                    binder.getScenarioBatteryPercent(),
+                    binder.getScenarioHeadingDegrees(),
+                    binder.getScenarioSummary()));
 
             if (route) {
                 double progress = binder.getRouteProgressFraction();
