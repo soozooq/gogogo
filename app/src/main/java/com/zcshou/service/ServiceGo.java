@@ -324,7 +324,7 @@ public class ServiceGo extends Service {
                                     event.values, rotation, adjusted, orientation);
                             frame = engine.onAbsoluteHeading(
                                     heading,
-                                    mMagneticAccuracy,
+                                    mDeviceHeadingAccuracy,
                                     event.timestamp);
                         } else if (event.sensor == mGameHeadingSensor) {
                             float heading = headingFromRotationVector(
@@ -336,7 +336,7 @@ public class ServiceGo extends Service {
                                     event.values[0],
                                     event.values[1],
                                     event.values[2],
-                                    mDeviceHeadingAccuracy,
+                                    mMagneticAccuracy,
                                     event.timestamp);
                         }
 
