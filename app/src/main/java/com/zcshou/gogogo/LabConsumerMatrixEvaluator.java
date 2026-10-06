@@ -14,21 +14,38 @@ public final class LabConsumerMatrixEvaluator {
         if (samples == null) samples = Collections.emptyList();
 
         int available = 0;
-        int fresh = 0;
+        int freshStreams = 0;
+        int availableStreams = 0;
+        int availableSnapshots = 0;
+        int freshSnapshots = 0;
         int mockMarked = 0;
         double maxSeparation = 0.0;
 
         Sample reference = null;
-        List<String> stale = new ArrayList<>();
+        List<String> staleStreams = new ArrayList<>();
+        List<String> staleSnapshots = new ArrayList<>();
 
         for (Sample sample : samples) {
             if (sample == null || !sample.available) continue;
             available++;
 
-            if (sample.ageMs >= 0L && sample.ageMs <= 1000L) {
-                fresh++;
+            if (sample.stream) {
+                availableStreams++;
+                if (sample.ageMs >= 0L && sample.ageMs <= 1000L) {
+                    freshStreams++;
+                } else {
+                    staleStreams.add(sample.name);
+                }
             } else {
-                stale.add(sample.name);
+                availableSnapshots++;
+                // Snapshot APIs naturally age after the one-shot completes.
+                // Treat <=30s as reasonably recent diagnostics, but do not use
+                // snapshot freshness to downgrade the live-stream grade.
+                if (sample.ageMs >= 0L && sample.ageMs <= 30000L) {
+                    freshSnapshots++;
+                } else {
+                    staleSnapshots.add(sample.name);
+                }
             }
 
             if (sample.mockMarked) mockMarked++;
@@ -47,9 +64,12 @@ public final class LabConsumerMatrixEvaluator {
         }
 
         String grade;
-        if (fresh >= 4 && maxSeparation <= 10.0) {
+        if (availableStreams >= 3
+                && freshStreams >= 3
+                && maxSeparation <= 10.0) {
             grade = "CONSISTENT";
-        } else if (fresh >= 2 && maxSeparation <= 50.0) {
+        } else if (freshStreams >= 2
+                && maxSeparation <= 50.0) {
             grade = "PARTIAL";
         } else {
             grade = "DEGRADED";
@@ -58,10 +78,14 @@ public final class LabConsumerMatrixEvaluator {
         return new Result(
                 grade,
                 available,
-                fresh,
+                availableStreams,
+                freshStreams,
+                availableSnapshots,
+                freshSnapshots,
                 mockMarked,
                 maxSeparation,
-                stale);
+                staleStreams,
+                staleSnapshots);
     }
 
     private static double distanceMeters(
@@ -88,6 +112,7 @@ public final class LabConsumerMatrixEvaluator {
         public final double longitude;
         public final long ageMs;
         public final boolean mockMarked;
+        public final boolean stream;
 
         public Sample(
                 String name,
@@ -95,37 +120,51 @@ public final class LabConsumerMatrixEvaluator {
                 double latitude,
                 double longitude,
                 long ageMs,
-                boolean mockMarked) {
+                boolean mockMarked,
+                boolean stream) {
             this.name = name == null ? "unknown" : name;
             this.available = available;
             this.latitude = latitude;
             this.longitude = longitude;
             this.ageMs = ageMs;
             this.mockMarked = mockMarked;
+            this.stream = stream;
         }
     }
 
     public static final class Result {
         public final String grade;
         public final int availableChannels;
-        public final int freshChannels;
+        public final int availableStreams;
+        public final int freshStreams;
+        public final int availableSnapshots;
+        public final int freshSnapshots;
         public final int mockMarkedChannels;
         public final double maxSeparationMeters;
-        public final List<String> staleChannels;
+        public final List<String> staleStreams;
+        public final List<String> staleSnapshots;
 
         Result(
                 String grade,
                 int availableChannels,
-                int freshChannels,
+                int availableStreams,
+                int freshStreams,
+                int availableSnapshots,
+                int freshSnapshots,
                 int mockMarkedChannels,
                 double maxSeparationMeters,
-                List<String> staleChannels) {
+                List<String> staleStreams,
+                List<String> staleSnapshots) {
             this.grade = grade;
             this.availableChannels = availableChannels;
-            this.freshChannels = freshChannels;
+            this.availableStreams = availableStreams;
+            this.freshStreams = freshStreams;
+            this.availableSnapshots = availableSnapshots;
+            this.freshSnapshots = freshSnapshots;
             this.mockMarkedChannels = mockMarkedChannels;
             this.maxSeparationMeters = maxSeparationMeters;
-            this.staleChannels = Collections.unmodifiableList(new ArrayList<>(staleChannels));
+            this.staleStreams = Collections.unmodifiableList(new ArrayList<>(staleStreams));
+            this.staleSnapshots = Collections.unmodifiableList(new ArrayList<>(staleSnapshots));
         }
     }
 }
