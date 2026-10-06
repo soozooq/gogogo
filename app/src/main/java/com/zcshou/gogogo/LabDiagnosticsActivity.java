@@ -361,7 +361,6 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
                 + " (API " + android.os.Build.VERSION.SDK_INT + ")"
                 + "\n设备: " + android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL
                 + "\n开发者选项: " + yesNo(dev)
-                + "\nShizuku: " + (shizuku ? "已安装，下一阶段可接高级系统 API" : "未检测到")
                 + "\nGoGoGo 包名: " + getPackageName()
                 + "\nLab 目标: 诊断 / 路线 / 漫游 / 沙箱 / 离线地图";
     }
