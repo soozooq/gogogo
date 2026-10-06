@@ -24,6 +24,7 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Process;
+import android.os.PowerManager;
 import android.os.SystemClock;
 
 import androidx.annotation.NonNull;
@@ -47,7 +48,7 @@ public class ServiceGo extends Service {
     private double mCurLng = DEFAULT_LNG;
     private double mCurAlt = DEFAULT_ALT;
     private float mCurBea = DEFAULT_BEA;
-    private double mSpeed = 1.2;        /* 默认的速度，单位 m/s */
+    private double mSpeed = 0.0;        /* 默认的速度，单位 m/s */
     private static final int HANDLER_MSG_ID = 0;
     // 33ms (~30Hz) tick: 缩短"mock 过期"窗口,避免某些应用在两次 push 之间读到真实位置后漂移
     private static final long TICK_INTERVAL_MS = 33;
@@ -59,6 +60,7 @@ public class ServiceGo extends Service {
     private FusedLocationProviderClient mFusedClient; // Google Play Services fused mock, null = GMS 不可用
     private boolean mFusedMockEnabled = false;
     private boolean isStop = false;
+    private PowerManager.WakeLock mWakeLock;
     // 通知栏消息
     private static final int SERVICE_GO_NOTE_ID = 1;
     private static final String SERVICE_GO_NOTE_ACTION_JOYSTICK_SHOW = "ShowJoyStick";
@@ -80,6 +82,16 @@ public class ServiceGo extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        if (powerManager != null) {
+            mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "GoGoGo:MockLocation");
+            mWakeLock.setReferenceCounted(false);
+            try {
+                mWakeLock.acquire();
+            } catch (Throwable ignored) {
+            }
+        }
 
         mLocManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
 
@@ -153,15 +165,33 @@ public class ServiceGo extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        mCurLng = intent.getDoubleExtra(MainActivity.LNG_MSG_ID, DEFAULT_LNG);
-        mCurLat = intent.getDoubleExtra(MainActivity.LAT_MSG_ID, DEFAULT_LAT);
-        mCurAlt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
+        android.content.SharedPreferences state =
+                getSharedPreferences("mock_location_state", MODE_PRIVATE);
+
+        if (intent != null) {
+            mCurLng = intent.getDoubleExtra(MainActivity.LNG_MSG_ID, DEFAULT_LNG);
+            mCurLat = intent.getDoubleExtra(MainActivity.LAT_MSG_ID, DEFAULT_LAT);
+            mCurAlt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
+            state.edit()
+                    .putLong("lng_bits", Double.doubleToRawLongBits(mCurLng))
+                    .putLong("lat_bits", Double.doubleToRawLongBits(mCurLat))
+                    .putLong("alt_bits", Double.doubleToRawLongBits(mCurAlt))
+                    .apply();
+        } else {
+            mCurLng = Double.longBitsToDouble(
+                    state.getLong("lng_bits", Double.doubleToRawLongBits(DEFAULT_LNG)));
+            mCurLat = Double.longBitsToDouble(
+                    state.getLong("lat_bits", Double.doubleToRawLongBits(DEFAULT_LAT)));
+            mCurAlt = Double.longBitsToDouble(
+                    state.getLong("alt_bits", Double.doubleToRawLongBits(DEFAULT_ALT)));
+        }
 
         if (mJoyStick != null) {
             mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
         }
 
-        return super.onStartCommand(intent, flags, startId);
+        // 被系统回收后尽量以同一坐标恢复，避免切到高德一段时间后服务消失。
+        return START_STICKY;
     }
 
     @Override
@@ -197,6 +227,13 @@ public class ServiceGo extends Service {
 
         unregisterReceiver(mActReceiver);
         stopForeground(STOP_FOREGROUND_REMOVE);
+
+        if (mWakeLock != null && mWakeLock.isHeld()) {
+            try {
+                mWakeLock.release();
+            } catch (Throwable ignored) {
+            }
+        }
 
         super.onDestroy();
     }
@@ -337,7 +374,7 @@ public class ServiceGo extends Service {
         try {
             // 尽可能模拟真实的 GPS 数据
             Location loc = new Location(LocationManager.GPS_PROVIDER);
-            loc.setAccuracy(Criteria.ACCURACY_FINE);    // 设定此位置的估计水平精度，以米为单位。
+            loc.setAccuracy(0.8f);    // 设定此位置的估计水平精度，以米为单位。
             loc.setAltitude(mCurAlt);                     // 设置高度，在 WGS 84 参考坐标系中的米
             loc.setBearing(mCurBea);                       // 方向（度）
             loc.setLatitude(mCurLat);                   // 纬度（度）
@@ -345,13 +382,20 @@ public class ServiceGo extends Service {
             loc.setTime(System.currentTimeMillis());    // 本地时间
             loc.setSpeed((float) mSpeed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                loc.setVerticalAccuracyMeters(1.5f);
+                loc.setSpeedAccuracyMetersPerSecond(0.2f);
+                loc.setBearingAccuracyDegrees(1.0f);
+            }
             Bundle bundle = new Bundle();
-            bundle.putInt("satellites", 7);
+            bundle.putInt("satellites", 12);
             loc.setExtras(bundle);
 
             mLocManager.setTestProviderLocation(LocationManager.GPS_PROVIDER, loc);
         } catch (Exception e) {
-            XLog.e("SERVICEGO: ERROR - setLocationGPS");
+            XLog.e("SERVICEGO: ERROR - setLocationGPS, reinitializing provider");
+            removeTestProviderGPS();
+            addTestProviderGPS();
         }
     }
 
@@ -392,7 +436,8 @@ public class ServiceGo extends Service {
         try {
             // 尽可能模拟真实的 NETWORK 数据
             Location loc = new Location(LocationManager.NETWORK_PROVIDER);
-            loc.setAccuracy(Criteria.ACCURACY_COARSE);  // 设定此位置的估计水平精度，以米为单位。
+            // 高德会融合网络定位；把 mock NETWORK 也保持为较高质量，减少真实网络定位抢回。
+            loc.setAccuracy(2.0f);  // 设定此位置的估计水平精度，以米为单位。
             loc.setAltitude(mCurAlt);                     // 设置高度，在 WGS 84 参考坐标系中的米
             loc.setBearing(mCurBea);                       // 方向（度）
             loc.setLatitude(mCurLat);                   // 纬度（度）
@@ -401,9 +446,16 @@ public class ServiceGo extends Service {
             loc.setSpeed((float) mSpeed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
 
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                loc.setVerticalAccuracyMeters(3.0f);
+                loc.setSpeedAccuracyMetersPerSecond(0.5f);
+                loc.setBearingAccuracyDegrees(2.0f);
+            }
             mLocManager.setTestProviderLocation(LocationManager.NETWORK_PROVIDER, loc);
         } catch (Exception e) {
-            XLog.e("SERVICEGO: ERROR - setLocationNetwork");
+            XLog.e("SERVICEGO: ERROR - setLocationNetwork, reinitializing provider");
+            removeTestProviderNetwork();
+            addTestProviderNetwork();
         }
     }
 
