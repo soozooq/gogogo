@@ -110,7 +110,8 @@ public final class LabHeadingIntelligenceEngine {
             int sensorType,
             int accuracy,
             long timestampNs) {
-        if (sensorType == 11 /* TYPE_ROTATION_VECTOR */) {
+        if (sensorType == 11 /* TYPE_ROTATION_VECTOR */
+                || sensorType == 20 /* TYPE_GEOMAGNETIC_ROTATION_VECTOR */) {
             absoluteAccuracy = accuracy;
         } else if (sensorType == 2 /* TYPE_MAGNETIC_FIELD */) {
             magneticAccuracy = accuracy;
