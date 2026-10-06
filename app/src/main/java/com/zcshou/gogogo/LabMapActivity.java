@@ -1,0 +1,433 @@
+package com.zcshou.gogogo;
+
+import android.app.AlertDialog;
+import android.content.Intent;
+import android.database.Cursor;
+import android.graphics.Color;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.provider.OpenableColumns;
+import android.view.Gravity;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.HorizontalScrollView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.zcshou.service.ServiceGo;
+
+import org.maplibre.android.MapLibre;
+import org.maplibre.android.annotations.Marker;
+import org.maplibre.android.annotations.MarkerOptions;
+import org.maplibre.android.annotations.Polyline;
+import org.maplibre.android.annotations.PolylineOptions;
+import org.maplibre.android.camera.CameraPosition;
+import org.maplibre.android.camera.CameraUpdateFactory;
+import org.maplibre.android.geometry.LatLng;
+import org.maplibre.android.maps.MapLibreMap;
+import org.maplibre.android.maps.MapView;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+@SuppressWarnings("deprecation")
+public class LabMapActivity extends AppCompatActivity {
+    private static final int REQ_ROUTE_FILE = 2301;
+    private static final double DEFAULT_LAT = 16.68914;
+    private static final double DEFAULT_LNG = 98.50895;
+    private static final String MAP_STYLE = "https://demotiles.maplibre.org/style.json";
+
+    private MapView mapView;
+    private MapLibreMap map;
+    private Marker selectedMarker;
+    private Polyline routeLine;
+    private LatLng selectedPoint = new LatLng(DEFAULT_LAT, DEFAULT_LNG);
+    private final List<RouteFileParser.RoutePoint> routePoints = new ArrayList<>();
+
+    private TextView statusView;
+    private TextView routeView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        MapLibre.getInstance(this);
+        buildUi(savedInstanceState);
+    }
+
+    private void buildUi(Bundle savedInstanceState) {
+        int pad = dp(10);
+
+        LinearLayout root = new LinearLayout(this);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(pad, pad, pad, pad);
+
+        TextView title = new TextView(this);
+        title.setText("🧪 GoGoGo Lab · MapLibre");
+        title.setTextSize(21);
+        title.setGravity(Gravity.CENTER);
+        root.addView(title, matchWrap());
+
+        statusView = new TextView(this);
+        statusView.setText("点地图选位置。默认：妙瓦底 98.50895, 16.68914");
+        statusView.setTextSize(14);
+        root.addView(statusView, matchWrap());
+
+        mapView = new MapView(this);
+        mapView.onCreate(savedInstanceState);
+        LinearLayout.LayoutParams mapLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
+        mapLp.setMargins(0, dp(8), 0, dp(8));
+        root.addView(mapView, mapLp);
+
+        root.addView(buttonRow(
+                button("📍 模拟这里", v -> simulateSelected()),
+                button("❤️ 收藏", v -> promptFavorite()),
+                button("⭐ 收藏夹", v -> showSavedPoints(true)),
+                button("🕘 历史", v -> showSavedPoints(false))
+        ));
+
+        root.addView(buttonRow(
+                button("📂 导入 GPX/KML", v -> pickRouteFile()),
+                button("▶ 路线播放", v -> startRoute()),
+                button("⏹ 停止路线", v -> stopRoute()),
+                button("🗑 清空路线", v -> clearRoute())
+        ));
+
+        routeView = new TextView(this);
+        routeView.setText("路线：未导入");
+        routeView.setTextSize(13);
+        routeView.setPadding(0, dp(6), 0, dp(4));
+        root.addView(routeView, matchWrap());
+
+        Button back = button("← 返回定位测试面板", v -> finish());
+        root.addView(back, matchWrap());
+
+        setContentView(root);
+
+        mapView.getMapAsync(mapLibreMap -> {
+            map = mapLibreMap;
+            map.setStyle(MAP_STYLE, style -> {
+                map.setCameraPosition(new CameraPosition.Builder()
+                        .target(selectedPoint)
+                        .zoom(14.5)
+                        .build());
+                map.addOnMapClickListener(point -> {
+                    selectPoint(point, true);
+                    return true;
+                });
+                selectPoint(selectedPoint, false);
+            });
+        });
+    }
+
+    private HorizontalScrollView buttonRow(Button... buttons) {
+        HorizontalScrollView scroll = new HorizontalScrollView(this);
+        scroll.setHorizontalScrollBarEnabled(false);
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        for (Button b : buttons) {
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.setMargins(0, 0, dp(6), 0);
+            row.addView(b, lp);
+        }
+        scroll.addView(row);
+        return scroll;
+    }
+
+    private Button button(String text, android.view.View.OnClickListener listener) {
+        Button b = new Button(this);
+        b.setText(text);
+        b.setAllCaps(false);
+        b.setOnClickListener(listener);
+        return b;
+    }
+
+    private LinearLayout.LayoutParams matchWrap() {
+        return new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private void selectPoint(LatLng point, boolean moveCamera) {
+        selectedPoint = point;
+        if (map != null) {
+            if (selectedMarker == null) {
+                selectedMarker = map.addMarker(new MarkerOptions()
+                        .position(point)
+                        .title("模拟位置"));
+            } else {
+                selectedMarker.setPosition(point);
+                map.updateMarker(selectedMarker);
+            }
+            if (moveCamera) {
+                map.animateCamera(CameraUpdateFactory.newLatLng(point));
+            }
+        }
+        statusView.setText(String.format(Locale.US,
+                "已选择：%.6f, %.6f", point.getLongitude(), point.getLatitude()));
+    }
+
+    private void simulateSelected() {
+        if (selectedPoint == null) return;
+
+        Intent intent = new Intent(this, ServiceGo.class);
+        intent.putExtra(MainActivity.LNG_MSG_ID, selectedPoint.getLongitude());
+        intent.putExtra(MainActivity.LAT_MSG_ID, selectedPoint.getLatitude());
+        intent.putExtra(MainActivity.ALT_MSG_ID, 55.0);
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent);
+            } else {
+                startService(intent);
+            }
+            LabStore.addHistory(this, selectedPoint.getLongitude(), selectedPoint.getLatitude());
+            Toast.makeText(this, "已把模拟位置切到地图选点", Toast.LENGTH_SHORT).show();
+        } catch (Throwable t) {
+            Toast.makeText(this, "启动模拟失败：" + t.getClass().getSimpleName(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void promptFavorite() {
+        if (selectedPoint == null) return;
+        EditText input = new EditText(this);
+        input.setHint("例如：妙瓦底酒店 / 测试点 A");
+
+        new AlertDialog.Builder(this)
+                .setTitle("收藏这个位置")
+                .setView(input)
+                .setPositiveButton("保存", (d, w) -> {
+                    String name = input.getText().toString().trim();
+                    if (name.isEmpty()) name = "收藏位置";
+                    LabStore.addFavorite(this, name,
+                            selectedPoint.getLongitude(), selectedPoint.getLatitude());
+                    Toast.makeText(this, "已收藏：" + name, Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    private void showSavedPoints(boolean favorites) {
+        List<LabStore.SavedPoint> items = favorites
+                ? LabStore.getFavorites(this)
+                : LabStore.getHistory(this);
+
+        if (items.isEmpty()) {
+            Toast.makeText(this, favorites ? "收藏夹还是空的" : "还没有模拟历史", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] labels = new String[items.size()];
+        for (int i = 0; i < items.size(); i++) labels[i] = items.get(i).displayText();
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setTitle(favorites ? "收藏夹" : "最近模拟")
+                .setItems(labels, (d, which) -> {
+                    LabStore.SavedPoint p = items.get(which);
+                    LatLng point = new LatLng(p.latitude, p.longitude);
+                    selectPoint(point, true);
+                    if (map != null) {
+                        map.animateCamera(CameraUpdateFactory.newLatLngZoom(point, 16.0));
+                    }
+                })
+                .setNegativeButton("关闭", null);
+
+        if (!favorites) {
+            builder.setNeutralButton("清空历史", (d, w) -> {
+                LabStore.clearHistory(this);
+                Toast.makeText(this, "历史已清空", Toast.LENGTH_SHORT).show();
+            });
+        }
+        builder.show();
+    }
+
+    private void pickRouteFile() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
+                "application/gpx+xml",
+                "application/vnd.google-earth.kml+xml",
+                "application/xml",
+                "text/xml",
+                "text/plain"
+        });
+        startActivityForResult(intent, REQ_ROUTE_FILE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQ_ROUTE_FILE || resultCode != RESULT_OK || data == null) return;
+        Uri uri = data.getData();
+        if (uri == null) return;
+
+        String name = queryDisplayName(uri);
+        try (InputStream input = getContentResolver().openInputStream(uri)) {
+            List<RouteFileParser.RoutePoint> parsed = RouteFileParser.parse(name, input);
+            if (parsed.isEmpty()) {
+                Toast.makeText(this, "文件里没有找到可用的 GPX/KML 路径点", Toast.LENGTH_LONG).show();
+                return;
+            }
+            routePoints.clear();
+            routePoints.addAll(parsed);
+            drawRoute();
+            routeView.setText("路线：" + (name == null ? "导入文件" : name)
+                    + " · " + routePoints.size() + " 个点 · 默认 1 秒/点");
+            Toast.makeText(this, "路线导入成功：" + routePoints.size() + " 个点", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "路线解析失败：" + e.getClass().getSimpleName(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private String queryDisplayName(Uri uri) {
+        try (Cursor cursor = getContentResolver().query(uri, null, null, null, null)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                int index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                if (index >= 0) return cursor.getString(index);
+            }
+        } catch (Exception ignored) {
+        }
+        return uri.getLastPathSegment();
+    }
+
+    private void drawRoute() {
+        if (map == null || routePoints.isEmpty()) return;
+
+        if (routeLine != null) {
+            try {
+                map.removePolyline(routeLine);
+            } catch (Throwable ignored) {
+            }
+            routeLine = null;
+        }
+
+        PolylineOptions options = new PolylineOptions()
+                .color(Color.rgb(30, 136, 229))
+                .width(7f);
+
+        for (RouteFileParser.RoutePoint p : routePoints) {
+            options.add(new LatLng(p.latitude, p.longitude));
+        }
+        routeLine = map.addPolyline(options);
+
+        RouteFileParser.RoutePoint first = routePoints.get(0);
+        LatLng firstPoint = new LatLng(first.latitude, first.longitude);
+        selectPoint(firstPoint, false);
+        map.animateCamera(CameraUpdateFactory.newLatLngZoom(firstPoint, 14.0));
+    }
+
+    private void startRoute() {
+        if (routePoints.size() < 2) {
+            Toast.makeText(this, "先导入至少两个路径点", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        double[] lats = new double[routePoints.size()];
+        double[] lngs = new double[routePoints.size()];
+        for (int i = 0; i < routePoints.size(); i++) {
+            RouteFileParser.RoutePoint p = routePoints.get(i);
+            lats[i] = p.latitude;
+            lngs[i] = p.longitude;
+        }
+
+        Intent intent = new Intent(this, ServiceGo.class);
+        intent.setAction(ServiceGo.ACTION_ROUTE_START);
+        intent.putExtra(ServiceGo.EXTRA_ROUTE_LATS, lats);
+        intent.putExtra(ServiceGo.EXTRA_ROUTE_LNGS, lngs);
+        intent.putExtra(ServiceGo.EXTRA_ROUTE_STEP_MS, 1000L);
+        intent.putExtra(ServiceGo.EXTRA_ROUTE_LOOP, false);
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent);
+            } else {
+                startService(intent);
+            }
+            RouteFileParser.RoutePoint p = routePoints.get(0);
+            LabStore.addHistory(this, p.longitude, p.latitude);
+            Toast.makeText(this, "路线开始：1 秒/点", Toast.LENGTH_SHORT).show();
+        } catch (Throwable t) {
+            Toast.makeText(this, "路线启动失败：" + t.getClass().getSimpleName(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void stopRoute() {
+        Intent intent = new Intent(this, ServiceGo.class);
+        intent.setAction(ServiceGo.ACTION_ROUTE_STOP);
+        try {
+            startService(intent);
+            Toast.makeText(this, "路线已停止，位置停在最后一点", Toast.LENGTH_SHORT).show();
+        } catch (Throwable t) {
+            Toast.makeText(this, "停止路线失败", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void clearRoute() {
+        routePoints.clear();
+        if (map != null && routeLine != null) {
+            try {
+                map.removePolyline(routeLine);
+            } catch (Throwable ignored) {
+            }
+        }
+        routeLine = null;
+        routeView.setText("路线：未导入");
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (mapView != null) mapView.onStart();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (mapView != null) mapView.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        if (mapView != null) mapView.onPause();
+        super.onPause();
+    }
+
+    @Override
+    protected void onStop() {
+        if (mapView != null) mapView.onStop();
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (mapView != null) mapView.onDestroy();
+        super.onDestroy();
+    }
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        if (mapView != null) mapView.onLowMemory();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (mapView != null) mapView.onSaveInstanceState(outState);
+    }
+}
