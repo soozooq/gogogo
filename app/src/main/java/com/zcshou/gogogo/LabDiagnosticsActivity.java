@@ -68,6 +68,8 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
     private TextView systemView;
     private TextView shizukuView;
     private TextView privilegedView;
+    private TextView brokerView;
+    private LabPolicyEngine policyEngine;
     private ILabPrivilegedService privilegedService;
     private boolean privilegedBinding = false;
     private boolean pendingPrivilegedBind = false;
@@ -133,6 +135,7 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        policyEngine = new LabPolicyEngine(this);
         buildUi();
         initSensors();
 
@@ -163,6 +166,14 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         root.addView(sectionTitle("网络环境"));
         networkView = body();
         root.addView(networkView, matchWrap());
+
+        root.addView(sectionTitle("Resource Broker Shadow View"));
+        brokerView = body();
+        root.addView(brokerView, matchWrap());
+
+        Button broker = button("🧠 打开 Resource Broker", v ->
+                startActivity(new Intent(this, PolicyLabActivity.class)));
+        root.addView(broker, matchWrap());
 
         root.addView(sectionTitle("系统 / 实验能力"));
         systemView = body();
@@ -363,9 +374,21 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
                     + "\nGyroscope: " + yesNo(gyroscope != null);
         }
         sensorView.setText(sensorText);
-        networkView.setText(buildNetworkSnapshot());
+        String rawNetwork = buildNetworkSnapshot();
+        networkView.setText(rawNetwork);
         systemView.setText(buildSystemSnapshot());
         shizukuView.setText(buildShizukuSnapshot());
+
+        if (policyEngine != null) {
+            StringBuilder broker = new StringBuilder();
+            broker.append("Policy: ").append(policyEngine.summary()).append("\n\n");
+            broker.append("[Network]\n")
+                    .append(policyEngine.describeNetworkShadow(rawNetwork))
+                    .append("\n\n[Sensor]\n")
+                    .append(policyEngine.describeSensorShadow(
+                            hasOrientation, heading, pitch, roll));
+            brokerView.setText(broker.toString());
+        }
     }
 
     private String buildNetworkSnapshot() {
@@ -673,6 +696,11 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         sb.append("[系统]\n").append(buildSystemSnapshot()).append("\n\n");
         sb.append("[网络]\n").append(buildNetworkSnapshot()).append("\n\n");
         sb.append("[Shizuku]\n").append(buildShizukuSnapshot()).append("\n\n");
+        if (policyEngine != null) {
+            sb.append("[Resource Broker]\n")
+                    .append(policyEngine.summary())
+                    .append("\n\n");
+        }
 
         if (hasOrientation) {
             sb.append("[传感器]\n");
@@ -794,6 +822,14 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         }
         privilegedService = null;
         privilegedBinding = false;
+
+        if (policyEngine != null) {
+            try {
+                policyEngine.close();
+            } catch (Throwable ignored) {
+            }
+            policyEngine = null;
+        }
 
         try {
             Shizuku.removeBinderReceivedListener(shizukuBinderReceived);
