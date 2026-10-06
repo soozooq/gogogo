@@ -126,8 +126,9 @@ public final class LabMotionQualityEngine {
         score -= Math.min(18, longGaps * 3);
         score -= Math.min(18, accelerationSpikes * 3);
         score -= Math.min(12, turnRateSpikes * 2);
-        score -= Math.min(10, robust.robustOutlierCount * 2);
 
+        // Robust outliers/CUSUM are diagnostic signals, not automatic quality failures:
+        // a legitimate walk→run or stop→drive transition can be statistically unusual.
         if (medianIntervalMs > 15000L) score -= 12;
         else if (medianIntervalMs > 5000L) score -= 6;
 
@@ -143,10 +144,10 @@ public final class LabMotionQualityEngine {
         if (accelerationSpikes > 0) issues.add("加速度突变 >15m/s² ×" + accelerationSpikes);
         if (turnRateSpikes > 0) issues.add("转向变化 >180°/s ×" + turnRateSpikes);
         if (robust.robustOutlierCount > 0) {
-            issues.add("MAD 鲁棒速度离群点 ×" + robust.robustOutlierCount);
+            issues.add("MAD 鲁棒速度离群点（诊断） ×" + robust.robustOutlierCount);
         }
         if (robust.cusumChangePointCount > 0) {
-            issues.add("CUSUM 运动模式变化点 ×" + robust.cusumChangePointCount);
+            issues.add("CUSUM 运动模式变化点（诊断） ×" + robust.cusumChangePointCount);
         }
         if (medianIntervalMs > 5000L) issues.add("采样中位间隔偏大：" + medianIntervalMs + "ms");
         if (issues.isEmpty()) issues.add("未发现明显时间/运动连续性异常");
