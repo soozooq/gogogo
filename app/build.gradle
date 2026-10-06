@@ -29,8 +29,8 @@ android {
         minSdkVersion 27
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 35
-        versionCode 2300001
-        versionName '2.3.0-lab1' // https://semver.org/lang/zh-CN/
+        versionCode 2310001
+        versionName '2.3.1-lab2' // https://semver.org/lang/zh-CN/
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += ['zh', 'zh-rCN', 'en', 'en-rUS']
         ndk {
