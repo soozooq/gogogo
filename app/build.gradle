@@ -29,8 +29,8 @@ android {
         minSdkVersion 27
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 35
-        versionCode 2310001
-        versionName '2.3.1-lab2' // https://semver.org/lang/zh-CN/
+        versionCode 2320001
+        versionName '2.3.2-lab3' // https://semver.org/lang/zh-CN/
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += ['zh', 'zh-rCN', 'en', 'en-rUS']
         ndk {
@@ -111,6 +111,8 @@ android {
 dependencies {
     // GoGoGo Lab: active open-source GPU map renderer.
     implementation 'org.maplibre.gl:android-sdk-opengl:13.5.2'
+    implementation 'dev.rikka.shizuku:api:13.1.5'
+    implementation 'dev.rikka.shizuku:provider:13.1.5'
     // 腾讯地图 SDK (GCJ02 坐标系，与微信小程序一致)
     // 官方分包: vector-sdk (核心绘制) + openmap:foundation (LatLng/MapPoi 等基础类型)
     implementation 'com.tencent.map:tencent-map-vector-sdk:6.11.0.260507.ab2310c2.209828299'
