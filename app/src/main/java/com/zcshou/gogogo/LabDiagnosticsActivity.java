@@ -2,6 +2,8 @@ package com.zcshou.gogogo;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.ComponentName;
+import android.content.ServiceConnection;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.SharedPreferences;
@@ -19,6 +21,7 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.IBinder;
 import android.provider.Settings;
 import android.telephony.TelephonyManager;
 import android.view.Gravity;
@@ -30,6 +33,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.zcshou.gogogo.shizuku.ILabPrivilegedService;
+import com.zcshou.gogogo.shizuku.LabPrivilegedService;
 
 import java.net.InetAddress;
 import java.text.SimpleDateFormat;
@@ -61,6 +67,37 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
     private TextView networkView;
     private TextView systemView;
     private TextView shizukuView;
+    private TextView privilegedView;
+    private ILabPrivilegedService privilegedService;
+    private boolean privilegedBinding = false;
+    private boolean pendingPrivilegedBind = false;
+
+    private final ServiceConnection privilegedConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder binder) {
+            privilegedBinding = false;
+            privilegedService = ILabPrivilegedService.Stub.asInterface(binder);
+            privilegedView.setText("UserService：已连接\n"
+                    + "这段代码现在运行在 Shizuku 提供的 shell/root 独立进程里 😈");
+            refreshViews();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            privilegedBinding = false;
+            privilegedService = null;
+            privilegedView.setText("UserService：连接已断开");
+            refreshViews();
+        }
+    };
+
+    private final Shizuku.UserServiceArgs privilegedArgs =
+            new Shizuku.UserServiceArgs(
+                    new ComponentName(BuildConfig.APPLICATION_ID, LabPrivilegedService.class.getName()))
+                    .daemon(false)
+                    .processNameSuffix("lab_privileged")
+                    .debuggable(BuildConfig.DEBUG)
+                    .version(BuildConfig.VERSION_CODE);
 
     private final Shizuku.OnBinderReceivedListener shizukuBinderReceived =
             () -> refreshViews();
@@ -74,6 +111,12 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
                                     ? "Shizuku 权限已授予"
                                     : "Shizuku 权限未授予",
                             Toast.LENGTH_SHORT).show();
+                    if (grantResult == PackageManager.PERMISSION_GRANTED && pendingPrivilegedBind) {
+                        pendingPrivilegedBind = false;
+                        bindPrivilegedUserService();
+                    } else if (grantResult != PackageManager.PERMISSION_GRANTED) {
+                        pendingPrivilegedBind = false;
+                    }
                     refreshViews();
                 }
             };
@@ -135,6 +178,25 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         Button shizuku = button("打开 Shizuku", v -> openShizuku());
         root.addView(shizuku, matchWrap());
 
+        privilegedView = body();
+        privilegedView.setText("UserService：未连接");
+        root.addView(privilegedView, matchWrap());
+
+        root.addView(buttonRow(
+                button("🚀 启动高权限进程", v -> bindPrivilegedUserService()),
+                button("⏹ 停止高权限进程", v -> stopPrivilegedUserService())
+        ));
+
+        root.addView(buttonRow(
+                button("🧬 身份报告", v -> runPrivilegedProbe(1)),
+                button("📍 定位系统报告", v -> runPrivilegedProbe(2)),
+                button("🖥 系统报告", v -> runPrivilegedProbe(3))
+        ));
+
+        Button sandbox = button("📦 打开 Sandbox Lab / Work Profile 探测", v ->
+                startActivity(new Intent(this, SandboxLabActivity.class)));
+        root.addView(sandbox, matchWrap());
+
         Button developer = button("🛠 打开开发者选项", v -> {
             try {
                 startActivity(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS));
@@ -180,6 +242,22 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         b.setAllCaps(false);
         b.setOnClickListener(listener);
         return b;
+    }
+
+    private android.widget.HorizontalScrollView buttonRow(Button... buttons) {
+        android.widget.HorizontalScrollView scroll = new android.widget.HorizontalScrollView(this);
+        scroll.setHorizontalScrollBarEnabled(false);
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        for (Button b : buttons) {
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.setMargins(0, 0, dp(6), 0);
+            row.addView(b, lp);
+        }
+        scroll.addView(row);
+        return scroll;
     }
 
     private LinearLayout.LayoutParams matchWrap() {
@@ -431,8 +509,114 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
             sb.append("SELinux：未知\n");
         }
 
-        sb.append("高级模式：Binder IPC 已就绪");
+        sb.append("高级模式：Binder IPC 已就绪\n");
+        sb.append("UserService：").append(privilegedService != null ? "已连接" :
+                (privilegedBinding ? "连接中" : "未连接"));
         return sb.toString().trim();
+    }
+
+    private void bindPrivilegedUserService() {
+        if (privilegedService != null || privilegedBinding) {
+            Toast.makeText(this, "高权限 UserService 已经在运行", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            if (!Shizuku.pingBinder()) {
+                Toast.makeText(this, "先启动 Shizuku 服务", Toast.LENGTH_LONG).show();
+                openShizuku();
+                return;
+            }
+
+            if (Shizuku.isPreV11() || Shizuku.getVersion() < 10) {
+                Toast.makeText(this, "当前 Shizuku 版本不支持 UserService", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) {
+                if (Shizuku.shouldShowRequestPermissionRationale()) {
+                    Toast.makeText(this, "请先在 Shizuku 中给 GoGoGo 授权", Toast.LENGTH_LONG).show();
+                    openShizuku();
+                    return;
+                }
+                pendingPrivilegedBind = true;
+                Shizuku.requestPermission(REQ_SHIZUKU);
+                return;
+            }
+
+            privilegedBinding = true;
+            privilegedView.setText("UserService：正在启动 shell/root 独立进程…");
+            Shizuku.bindUserService(privilegedArgs, privilegedConnection);
+        } catch (Throwable t) {
+            privilegedBinding = false;
+            privilegedView.setText("UserService 启动失败：" + t.getClass().getSimpleName()
+                    + "\n" + String.valueOf(t.getMessage()));
+        }
+    }
+
+    private void stopPrivilegedUserService() {
+        try {
+            Shizuku.unbindUserService(privilegedArgs, privilegedConnection, true);
+            privilegedService = null;
+            privilegedBinding = false;
+            privilegedView.setText("UserService：已停止");
+        } catch (Throwable t) {
+            privilegedView.setText("UserService 停止失败：" + t.getClass().getSimpleName());
+        }
+        refreshViews();
+    }
+
+    private void runPrivilegedProbe(int type) {
+        ILabPrivilegedService service = privilegedService;
+        if (service == null) {
+            Toast.makeText(this, "先点“启动高权限进程”", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        privilegedView.setText("UserService：正在执行白名单诊断…");
+        new Thread(() -> {
+            String report;
+            try {
+                if (type == 1) {
+                    report = service.getIdentityReport();
+                } else if (type == 2) {
+                    report = service.getLocationReport();
+                } else {
+                    report = service.getSystemReport();
+                }
+            } catch (Throwable t) {
+                report = "高权限诊断失败：" + t.getClass().getSimpleName()
+                        + "\n" + String.valueOf(t.getMessage());
+            }
+
+            final String finalReport = report;
+            runOnUiThread(() -> {
+                privilegedView.setText("UserService：已连接");
+                showPrivilegedReport(type, finalReport);
+            });
+        }, "GoGoGo-PrivilegedProbe").start();
+    }
+
+    private void showPrivilegedReport(int type, String report) {
+        String title;
+        if (type == 1) title = "🧬 UserService 身份报告";
+        else if (type == 2) title = "📍 高权限定位系统报告";
+        else title = "🖥 高权限系统报告";
+
+        TextView view = new TextView(this);
+        int pad = dp(16);
+        view.setPadding(pad, pad, pad, pad);
+        view.setTextIsSelectable(true);
+        view.setText(report == null ? "（无输出）" : report);
+
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(view);
+
+        new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setView(scroll)
+                .setPositiveButton("关闭", null)
+                .show();
     }
 
     private void requestShizukuPermission() {
@@ -594,6 +778,15 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
 
     @Override
     protected void onDestroy() {
+        try {
+            if (privilegedService != null || privilegedBinding) {
+                Shizuku.unbindUserService(privilegedArgs, privilegedConnection, false);
+            }
+        } catch (Throwable ignored) {
+        }
+        privilegedService = null;
+        privilegedBinding = false;
+
         try {
             Shizuku.removeBinderReceivedListener(shizukuBinderReceived);
             Shizuku.removeBinderDeadListener(shizukuBinderDead);
