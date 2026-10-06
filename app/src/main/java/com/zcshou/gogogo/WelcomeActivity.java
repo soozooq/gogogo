@@ -92,26 +92,16 @@ public class WelcomeActivity extends AppCompatActivity {
     }
 
     private void checkDefaultPermissions() {
-        // 定位精确位置
+        ReqPermissions.clear();
+
+        // 真机高德版只把前台定位作为启动必需权限。
+        // 存储和电话状态不是模拟定位所必需；在现代 Android 上强制请求反而可能卡住启动流程。
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ReqPermissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
         }
 
         if (checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ReqPermissions.add(Manifest.permission.ACCESS_COARSE_LOCATION);
-        }
-
-        /*
-         * 读写权限和电话状态权限非必要权限(建议授予)只会申请一次，用户同意或者禁止，只会弹一次
-         */
-        // 读写权限
-        if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            ReqPermissions.add(Manifest.permission.READ_EXTERNAL_STORAGE);
-        }
-
-        // 读取电话状态权限
-        if (checkSelfPermission(Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
-            ReqPermissions.add(Manifest.permission.READ_PHONE_STATE);
         }
 
         if (ReqPermissions.isEmpty()) {
