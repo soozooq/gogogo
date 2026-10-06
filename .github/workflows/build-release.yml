@@ -1,8 +1,11 @@
-name: Build No-Map APK
+name: Build AMap Android APK
 
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
+  pull_request:
     branches:
       - main
 
@@ -33,8 +36,12 @@ jobs:
           echo "ANDROID_HOME=$ANDROID_HOME" >> ci/diagnostic.txt
           echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> ci/diagnostic.txt
           printf 'sdk.dir=%s\n' "$ANDROID_HOME" > local.properties
-          printf 'TENCENT_MAP_KEY=DUMMY\n' >> local.properties
-          printf 'MAPS_API_KEY=DUMMY\n' >> local.properties
+          TENCENT_KEY='\${{ secrets.TENCENT_MAP_KEY }}'
+          MAPS_KEY='\${{ secrets.MAPS_API_KEY }}'
+          [ -n "$TENCENT_KEY" ] || TENCENT_KEY=DUMMY
+          [ -n "$MAPS_KEY" ] || MAPS_KEY=DUMMY
+          printf 'TENCENT_MAP_KEY=%s\n' "$TENCENT_KEY" >> local.properties
+          printf 'MAPS_API_KEY=%s\n' "$MAPS_KEY" >> local.properties
           chmod +x gradlew
 
       - name: Build debug APK
@@ -61,7 +68,7 @@ jobs:
         if: env.BUILD_EXIT_CODE == '0'
         uses: actions/upload-artifact@v4
         with:
-          name: gogogo-no-map-wechat-test
+          name: gogogo-amap-modern-android
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
