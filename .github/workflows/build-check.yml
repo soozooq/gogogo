@@ -20,6 +20,7 @@ on:
       - feat/gogogo-session-lab17-2
       - feat/gogogo-session-lab17-2-1
       - feat/gogogo-session-lab17-3
+      - feat/gogogo-auto-lab18
   # 仓库收到 pull_request 时触发
   pull_request:
     branches:
