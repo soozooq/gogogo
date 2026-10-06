@@ -160,6 +160,7 @@ public class ServiceGo extends Service {
     private volatile LabKinematicsEngine.Frame mKinematicFrame;
     private volatile float mDeviceHeadingDegrees = 0.0f;
     private volatile int mDeviceHeadingAccuracy = SensorManager.SENSOR_STATUS_UNRELIABLE;
+    private volatile int mMagneticAccuracy = SensorManager.SENSOR_STATUS_UNRELIABLE;
     private volatile String mHeadingSensorSource = "NONE";
     private String mLastKinematicSignature = "";
 
@@ -323,7 +324,7 @@ public class ServiceGo extends Service {
                                     event.values, rotation, adjusted, orientation);
                             frame = engine.onAbsoluteHeading(
                                     heading,
-                                    mDeviceHeadingAccuracy,
+                                    mMagneticAccuracy,
                                     event.timestamp);
                         } else if (event.sensor == mGameHeadingSensor) {
                             float heading = headingFromRotationVector(
@@ -352,6 +353,8 @@ public class ServiceGo extends Service {
 
                     if (sensor == mHeadingSensor) {
                         mDeviceHeadingAccuracy = accuracy;
+                    } else if (sensor == mMagneticSensor) {
+                        mMagneticAccuracy = accuracy;
                     }
 
                     LabHeadingIntelligenceEngine engine = mHeadingFusionEngine;
@@ -425,9 +428,10 @@ public class ServiceGo extends Service {
     private void applyHeadingFrame(LabHeadingIntelligenceEngine.Frame frame) {
         if (frame == null) return;
         mHeadingFrame = frame;
+        boolean wasAvailable = mHeadingAvailable;
         mHeadingAvailable = frame.available;
         if (frame.available) {
-            mDeviceHeadingDegrees = mHeadingAvailable
+            mDeviceHeadingDegrees = wasAvailable
                     ? smoothHeadingDegrees(
                             mDeviceHeadingDegrees,
                             frame.fusedHeadingDeg,
