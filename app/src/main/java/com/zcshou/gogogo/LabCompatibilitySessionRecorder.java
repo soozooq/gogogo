@@ -402,7 +402,6 @@ public final class LabCompatibilitySessionRecorder {
             this.count = count;
             this.lastRelativeMs = lastRelativeMs;
             this.maxGapMs = maxGapMs;
-            this.gaps = gaps;
             this.lastSystemState = lastSystemState;
             this.gaps = gaps;
         }
@@ -526,6 +525,7 @@ public final class LabCompatibilitySessionRecorder {
             this.firstRelativeMs = firstRelativeMs;
             this.lastRelativeMs = lastRelativeMs;
             this.maxGapMs = maxGapMs;
+            this.gaps = gaps;
         }
     }
 
