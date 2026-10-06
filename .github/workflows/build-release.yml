@@ -8,6 +8,7 @@ on:
       - x8-compat
       - fix/x8-modern-amap
       - feat/gogogo-lab-phase1
+      - feat/gogogo-lab-phase2
 
 permissions:
   contents: read
@@ -68,7 +69,7 @@ jobs:
         if: env.BUILD_EXIT_CODE == '0'
         uses: actions/upload-artifact@v4
         with:
-          name: gogogo-lab-phase1
+          name: gogogo-lab-phase2
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
