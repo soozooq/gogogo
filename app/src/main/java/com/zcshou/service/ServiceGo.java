@@ -601,7 +601,13 @@ public class ServiceGo extends Service {
 
         if (mFusedClient != null && mFusedMockEnabled) {
             try {
-                mFusedClient.setMockMode(false);
+                boolean fine = checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                        == android.content.pm.PackageManager.PERMISSION_GRANTED;
+                boolean coarse = checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                        == android.content.pm.PackageManager.PERMISSION_GRANTED;
+                if (fine || coarse) {
+                    mFusedClient.setMockMode(false);
+                }
             } catch (Exception ignored) {
             }
         }
@@ -646,6 +652,7 @@ public class ServiceGo extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(mActReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
         } else {
+            //noinspection UnspecifiedRegisterReceiverFlag
             registerReceiver(mActReceiver, filter);
         }
 
