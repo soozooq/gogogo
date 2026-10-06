@@ -267,40 +267,36 @@ The org.gradle.api.plugins.Convention type has been deprecated. This is schedule
 > Task :app:preBuild UP-TO-DATE
 > Task :app:preDebugBuild UP-TO-DATE
 > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
-> Task :app:generateDebugResValues
 > Task :app:createDebugCompatibleScreenManifests
+> Task :app:generateDebugResValues
 > Task :app:generateDebugBuildConfig
-> Task :app:extractDeepLinksDebug
 > Task :app:generateDebugResources
-> Task :app:mapDebugSourceSetPaths
-> Task :app:checkDebugAarMetadata
 > Task :app:javaPreCompileDebug
+> Task :app:packageDebugResources
+> Task :app:mapDebugSourceSetPaths
+> Task :app:extractDeepLinksDebug
+> Task :app:checkDebugAarMetadata
 > Task :app:mergeDebugShaders
 > Task :app:compileDebugShaders NO-SOURCE
 > Task :app:generateDebugAssets UP-TO-DATE
-> Task :app:packageDebugResources
+> Task :app:mergeDebugAssets
 > Task :app:processDebugMainManifest
 > Task :app:processDebugManifest
 > Task :app:processDebugManifestForPackage
-> Task :app:mergeDebugAssets
-> Task :app:parseDebugLocalResources
 > Task :app:compressDebugAssets
+> Task :app:desugarDebugFileDependencies
 > Task :app:mergeDebugJniLibFolders
-> Task :app:checkDebugDuplicateClasses
-> Task :app:mergeDebugResources
-> Task :app:mergeLibDexDebug
+> Task :app:parseDebugLocalResources
 > Task :app:validateSigningDebug
 > Task :app:writeDebugAppMetadata
 > Task :app:writeDebugSigningConfigVersions
+> Task :app:mergeDebugResources
 > Task :app:mergeDebugNativeLibs
+> Task :app:checkDebugDuplicateClasses
+> Task :app:mergeLibDexDebug
 
 > Task :app:stripDebugDebugSymbols
 Unable to strip the following libraries, packaging them as they are: libBugly_Native.so, libbugly_dumper.so, libbuglybacktrace.so, librmonitor_base.so, librmonitor_memory.so, libtxmapengine.so, libtxmapvis.so. Run with --info option to learn more.
-
-> Task :app:desugarDebugFileDependencies
-
-> Task :app:mergeExtDexDebug
-WARNING: /home/runner/.gradle/caches/8.13/transforms/581db212f4b48a2c3b49a69a0669d155/transformed/play-services-location-21.3.0-runtime.jar: D8: The companion object Companion could not be found in class com.google.android.gms.internal.location.zze
 
 > Task :app:processDebugResources
 > Task :app:compileDebugKotlin NO-SOURCE
@@ -365,52 +361,52 @@ WARNING: /home/runner/.gradle/caches/8.13/transforms/581db212f4b48a2c3b49a69a066
 /home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:142: warning: [deprecation] onStatusChanged(String,int,Bundle) in LocationListener has been deprecated
             @Override public void onStatusChanged(String provider, int status, Bundle extras) {}
                                   ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:322: warning: [deprecation] Criteria in android.location has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:326: warning: [deprecation] Criteria in android.location has been deprecated
                         false, true, true, true, Criteria.POWER_HIGH, Criteria.ACCURACY_FINE);
                                                  ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:322: warning: [deprecation] POWER_HIGH in Criteria has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:326: warning: [deprecation] POWER_HIGH in Criteria has been deprecated
                         false, true, true, true, Criteria.POWER_HIGH, Criteria.ACCURACY_FINE);
                                                          ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:322: warning: [deprecation] Criteria in android.location has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:326: warning: [deprecation] Criteria in android.location has been deprecated
                         false, true, true, true, Criteria.POWER_HIGH, Criteria.ACCURACY_FINE);
                                                                       ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:322: warning: [deprecation] ACCURACY_FINE in Criteria has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:326: warning: [deprecation] ACCURACY_FINE in Criteria has been deprecated
                         false, true, true, true, Criteria.POWER_HIGH, Criteria.ACCURACY_FINE);
                                                                               ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:336: warning: [deprecation] Criteria in android.location has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:340: warning: [deprecation] Criteria in android.location has been deprecated
             loc.setAccuracy(Criteria.ACCURACY_FINE);    // 设定此位置的估计水平精度，以米为单位。
                             ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:336: warning: [deprecation] ACCURACY_FINE in Criteria has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:340: warning: [deprecation] ACCURACY_FINE in Criteria has been deprecated
             loc.setAccuracy(Criteria.ACCURACY_FINE);    // 设定此位置的估计水平精度，以米为单位。
                                     ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:377: warning: [deprecation] Criteria in android.location has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:381: warning: [deprecation] Criteria in android.location has been deprecated
                         true, Criteria.POWER_LOW, Criteria.ACCURACY_COARSE);
                               ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:377: warning: [deprecation] POWER_LOW in Criteria has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:381: warning: [deprecation] POWER_LOW in Criteria has been deprecated
                         true, Criteria.POWER_LOW, Criteria.ACCURACY_COARSE);
                                       ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:377: warning: [deprecation] Criteria in android.location has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:381: warning: [deprecation] Criteria in android.location has been deprecated
                         true, Criteria.POWER_LOW, Criteria.ACCURACY_COARSE);
                                                   ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:377: warning: [deprecation] ACCURACY_COARSE in Criteria has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:381: warning: [deprecation] ACCURACY_COARSE in Criteria has been deprecated
                         true, Criteria.POWER_LOW, Criteria.ACCURACY_COARSE);
                                                           ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:391: warning: [deprecation] Criteria in android.location has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:395: warning: [deprecation] Criteria in android.location has been deprecated
             loc.setAccuracy(Criteria.ACCURACY_COARSE);  // 设定此位置的估计水平精度，以米为单位。
                             ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:391: warning: [deprecation] ACCURACY_COARSE in Criteria has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:395: warning: [deprecation] ACCURACY_COARSE in Criteria has been deprecated
             loc.setAccuracy(Criteria.ACCURACY_COARSE);  // 设定此位置的估计水平精度，以米为单位。
                                     ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:434: warning: [deprecation] Criteria in android.location has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:438: warning: [deprecation] Criteria in android.location has been deprecated
             loc.setAccuracy(Criteria.ACCURACY_FINE);
                             ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:434: warning: [deprecation] ACCURACY_FINE in Criteria has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:438: warning: [deprecation] ACCURACY_FINE in Criteria has been deprecated
             loc.setAccuracy(Criteria.ACCURACY_FINE);
                                     ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:454: warning: [deprecation] Criteria in android.location has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:458: warning: [deprecation] Criteria in android.location has been deprecated
             loc.setAccuracy(Criteria.ACCURACY_FINE);
                             ^
-/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:454: warning: [deprecation] ACCURACY_FINE in Criteria has been deprecated
+/home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/service/ServiceGo.java:458: warning: [deprecation] ACCURACY_FINE in Criteria has been deprecated
             loc.setAccuracy(Criteria.ACCURACY_FINE);
                                     ^
 /home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/joystick/JoyStick.java:654: warning: [deprecation] MarkerOptions() in MarkerOptions has been deprecated
@@ -434,6 +430,10 @@ WARNING: /home/runner/.gradle/caches/8.13/transforms/581db212f4b48a2c3b49a69a066
 /home/runner/work/gogogo/gogogo/app/src/main/java/com/zcshou/gogogo/SettingsActivity.java:19: warning: [deprecation] setStatusBarColor(int) in Window has been deprecated
         getWindow().setStatusBarColor(getResources().getColor(R.color.colorPrimary, this.getTheme()));
                    ^
+
+> Task :app:mergeExtDexDebug
+
+> Task :app:compileDebugJavaWithJavac
 42 warnings
 
 > Task :app:dexBuilderDebug
@@ -444,6 +444,6 @@ WARNING: /home/runner/.gradle/caches/8.13/transforms/581db212f4b48a2c3b49a69a066
 
 [Incubating] Problems report is available at: file:///home/runner/work/gogogo/gogogo/build/reports/problems/problems-report.html
 
-BUILD SUCCESSFUL in 1m 44s
+BUILD SUCCESSFUL in 1m 12s
 34 actionable tasks: 34 executed
 Configuration cache entry stored.
