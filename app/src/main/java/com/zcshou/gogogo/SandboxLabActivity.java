@@ -80,6 +80,9 @@ public class SandboxLabActivity extends AppCompatActivity {
         Button accounts = button("💼 打开账号 / 工作资料相关设置", v -> openAccountSettings());
         root.addView(accounts, matchWrap());
 
+        Button avf = button("🧪 AVF / pKVM 说明", v -> showAvfPlan());
+        root.addView(avf, matchWrap());
+
         Button plan = button("🧬 查看 Sandbox 下一阶段", v -> showNextStage());
         root.addView(plan, matchWrap());
 
@@ -130,6 +133,8 @@ public class SandboxLabActivity extends AppCompatActivity {
 
         boolean managedUsersFeature =
                 getPackageManager().hasSystemFeature(PackageManager.FEATURE_MANAGED_USERS);
+        boolean avfFeature =
+                getPackageManager().hasSystemFeature("android.software.virtualization_framework");
         boolean profileOwner = false;
         boolean deviceOwner = false;
         boolean provisioningAllowed = false;
@@ -152,6 +157,9 @@ public class SandboxLabActivity extends AppCompatActivity {
 
         StringBuilder caps = new StringBuilder();
         caps.append("Managed Users 系统特性：").append(yesNo(managedUsersFeature)).append("\n");
+        caps.append("Android Virtualization Framework：").append(yesNo(avfFeature)).append("\n");
+        caps.append("API >= 34（AVF API 起点）：")
+                .append(yesNo(android.os.Build.VERSION.SDK_INT >= 34)).append("\n");
         caps.append("当前是否 Work Profile：").append(yesNo(currentManaged)).append("\n");
         caps.append("GoGoGo = Profile Owner：").append(yesNo(profileOwner)).append("\n");
         caps.append("GoGoGo = Device Owner：").append(yesNo(deviceOwner)).append("\n");
@@ -302,6 +310,27 @@ public class SandboxLabActivity extends AppCompatActivity {
                 Toast.makeText(this, "系统没有可打开的账号设置页", Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    private void showAvfPlan() {
+        boolean avf = getPackageManager()
+                .hasSystemFeature("android.software.virtualization_framework");
+
+        TextView text = body();
+        text.setText(
+                "AVF 系统特性：" + yesNo(avf)
+                        + "\nAndroid API：" + android.os.Build.VERSION.SDK_INT
+                        + "\n\nAVF 是 Android 官方的虚拟化框架，底层是 pKVM，"
+                        + "可以运行 protected VM / Microdroid。"
+                        + "\n\n普通第三方 APK 不能直接获得 MANAGE_VIRTUAL_MACHINE 权限，"
+                        + "所以 GoGoGo 这阶段先做能力探测和 Shizuku 高权限报告。"
+                        + "\n如果以后换到支持的开发设备 / 预装环境，再研究真正 Microdroid payload。");
+
+        new AlertDialog.Builder(this)
+                .setTitle("🧪 Android Virtualization Framework")
+                .setView(text)
+                .setPositiveButton("继续研究 😈", null)
+                .show();
     }
 
     private void showNextStage() {
