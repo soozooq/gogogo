@@ -75,6 +75,8 @@ public class LabMapActivity extends AppCompatActivity {
     private Polyline routeLine;
     private LatLng selectedPoint = new LatLng(DEFAULT_LAT, DEFAULT_LNG);
     private final List<RouteFileParser.RoutePoint> routePoints = new ArrayList<>();
+    private final List<Marker> routeEditMarkers = new ArrayList<>();
+    private boolean routeEditMode = false;
     private String currentStyle = STYLE_LIBERTY;
 
     private TextView statusView;
@@ -86,6 +88,7 @@ public class LabMapActivity extends AppCompatActivity {
     private EditText roamRadiusInput;
     private EditText roamSpeedInput;
     private Button followButton;
+    private Button routeEditButton;
 
     private ServiceGo.ServiceGoBinder serviceBinder;
     private boolean serviceBound = false;
@@ -141,7 +144,7 @@ public class LabMapActivity extends AppCompatActivity {
         root.setPadding(pad, pad, pad, pad);
 
         TextView title = new TextView(this);
-        title.setText("🧪 GoGoGo Lab 4 · MapLibre");
+        title.setText("🧪 GoGoGo Lab 6 · MapLibre");
         title.setTextSize(21);
         title.setGravity(Gravity.CENTER);
         root.addView(title, matchWrap());
@@ -191,6 +194,13 @@ public class LabMapActivity extends AppCompatActivity {
                 button("▶ 路线", v -> startRoute()),
                 button("⏹ 路线", v -> stopRoute()),
                 button("🗑 路线", v -> clearRoute())
+        ));
+
+        routeEditButton = button("✏️ 编辑路线：关", v -> toggleRouteEditor());
+        root.addView(buttonRow(
+                routeEditButton,
+                button("↩ 撤销路点", v -> undoRoutePoint()),
+                button("📏 路线信息", v -> showRouteInfo())
         ));
 
         LinearLayout routeSettings = new LinearLayout(this);
@@ -260,6 +270,11 @@ public class LabMapActivity extends AppCompatActivity {
             map = mapLibreMap;
             map.addOnMapClickListener(point -> {
                 selectPoint(point, true);
+                return true;
+            });
+            map.addOnMapLongClickListener(point -> {
+                if (!routeEditMode) return false;
+                addManualRoutePoint(point);
                 return true;
             });
             map.setCameraPosition(new CameraPosition.Builder()
@@ -414,17 +429,35 @@ public class LabMapActivity extends AppCompatActivity {
                 routeProgress.setProgress(0);
             }
 
+            double trackDistance = binder.getTrackDistanceMeters();
+            long trackDuration = binder.getTrackDurationSeconds();
+            double trackAverage = binder.getTrackAverageSpeedMps();
+
             sb.append("\n轨迹录制：")
                     .append(recording ? "● 录制中" : "停止")
                     .append(" · ")
                     .append(trackPoints)
                     .append(" 点");
+            if (trackPoints > 0) {
+                sb.append(String.format(Locale.US,
+                        " · %s · %s · 均速 %.2f m/s",
+                        formatDistance(trackDistance),
+                        formatDuration(trackDuration),
+                        trackAverage));
+            }
 
             liveView.setText(sb.toString());
             updateLiveMarker(lat, lng);
         } catch (Throwable t) {
             liveView.setText("实时状态读取失败：" + t.getClass().getSimpleName());
         }
+    }
+
+    private static String formatDistance(double meters) {
+        if (meters >= 1000.0) {
+            return String.format(Locale.US, "%.2f km", meters / 1000.0);
+        }
+        return String.format(Locale.US, "%.0f m", meters);
     }
 
     private static String formatDuration(long seconds) {
@@ -570,6 +603,8 @@ public class LabMapActivity extends AppCompatActivity {
             }
             routePoints.clear();
             routePoints.addAll(parsed);
+            routeEditMode = false;
+            if (routeEditButton != null) routeEditButton.setText("✏️ 编辑路线：关");
             drawRoute();
             routeView.setText("路线：" + (name == null ? "导入文件" : name)
                     + " · " + routePoints.size() + " 个点");
@@ -585,6 +620,7 @@ public class LabMapActivity extends AppCompatActivity {
         selectedMarker = null;
         liveMarker = null;
         routeLine = null;
+        routeEditMarkers.clear();
         map.setStyle(styleUrl, style -> {
             selectPoint(selectedPoint, false);
             if (!routePoints.isEmpty()) drawRoute();
@@ -732,7 +768,15 @@ public class LabMapActivity extends AppCompatActivity {
     }
 
     private void drawRoute() {
-        if (map == null || routePoints.isEmpty()) return;
+        drawRoute(true);
+    }
+
+    private void drawRoute(boolean recenter) {
+        if (map == null || routePoints.isEmpty()) {
+            removeRouteLineAndMarkers();
+            updateRouteView();
+            return;
+        }
 
         if (routeLine != null) {
             try {
@@ -742,19 +786,167 @@ public class LabMapActivity extends AppCompatActivity {
             routeLine = null;
         }
 
-        PolylineOptions options = new PolylineOptions()
-                .color(Color.rgb(30, 136, 229))
-                .width(7f);
+        if (routePoints.size() >= 2) {
+            PolylineOptions options = new PolylineOptions()
+                    .color(Color.rgb(30, 136, 229))
+                    .width(7f);
 
-        for (RouteFileParser.RoutePoint p : routePoints) {
-            options.add(new LatLng(p.latitude, p.longitude));
+            for (RouteFileParser.RoutePoint p : routePoints) {
+                options.add(new LatLng(p.latitude, p.longitude));
+            }
+            routeLine = map.addPolyline(options);
         }
-        routeLine = map.addPolyline(options);
 
-        RouteFileParser.RoutePoint first = routePoints.get(0);
-        LatLng firstPoint = new LatLng(first.latitude, first.longitude);
-        selectPoint(firstPoint, false);
-        map.animateCamera(CameraUpdateFactory.newLatLngZoom(firstPoint, 14.0));
+        renderRouteEditMarkers();
+        updateRouteView();
+
+        if (recenter) {
+            RouteFileParser.RoutePoint first = routePoints.get(0);
+            LatLng firstPoint = new LatLng(first.latitude, first.longitude);
+            selectPoint(firstPoint, false);
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(firstPoint, 14.0));
+        }
+    }
+
+    private void toggleRouteEditor() {
+        routeEditMode = !routeEditMode;
+        if (routeEditButton != null) {
+            routeEditButton.setText(routeEditMode ? "✏️ 编辑路线：开" : "✏️ 编辑路线：关");
+        }
+        renderRouteEditMarkers();
+        Toast.makeText(this,
+                routeEditMode
+                        ? "路线编辑已开启：长按地图追加路点"
+                        : "路线编辑已关闭",
+                Toast.LENGTH_SHORT).show();
+    }
+
+    private void addManualRoutePoint(LatLng point) {
+        if (point == null) return;
+        if (routePoints.size() >= RouteFileParser.MAX_POINTS) {
+            Toast.makeText(this, "路线点已经到上限", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        routePoints.add(new RouteFileParser.RoutePoint(
+                point.getLongitude(), point.getLatitude(), 55.0));
+        selectedPoint = point;
+        drawRoute(false);
+
+        Toast.makeText(this,
+                "已添加路点 #" + routePoints.size(),
+                Toast.LENGTH_SHORT).show();
+    }
+
+    private void undoRoutePoint() {
+        if (routePoints.isEmpty()) {
+            Toast.makeText(this, "没有可撤销的路点", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        routePoints.remove(routePoints.size() - 1);
+        drawRoute(false);
+        Toast.makeText(this, "已撤销最后一个路点", Toast.LENGTH_SHORT).show();
+    }
+
+    private void renderRouteEditMarkers() {
+        if (map == null) return;
+
+        for (Marker marker : routeEditMarkers) {
+            try {
+                map.removeMarker(marker);
+            } catch (Throwable ignored) {
+            }
+        }
+        routeEditMarkers.clear();
+
+        if (!routeEditMode || routePoints.size() > 200) return;
+
+        for (int i = 0; i < routePoints.size(); i++) {
+            RouteFileParser.RoutePoint p = routePoints.get(i);
+            try {
+                Marker marker = map.addMarker(new MarkerOptions()
+                        .position(new LatLng(p.latitude, p.longitude))
+                        .title("路点 #" + (i + 1)));
+                routeEditMarkers.add(marker);
+            } catch (Throwable ignored) {
+            }
+        }
+    }
+
+    private void removeRouteLineAndMarkers() {
+        if (map != null && routeLine != null) {
+            try {
+                map.removePolyline(routeLine);
+            } catch (Throwable ignored) {
+            }
+        }
+        routeLine = null;
+
+        if (map != null) {
+            for (Marker marker : routeEditMarkers) {
+                try {
+                    map.removeMarker(marker);
+                } catch (Throwable ignored) {
+                }
+            }
+        }
+        routeEditMarkers.clear();
+    }
+
+    private void updateRouteView() {
+        if (routePoints.isEmpty()) {
+            routeView.setText("路线：未导入 / 未编辑");
+            return;
+        }
+        routeView.setText(String.format(Locale.US,
+                "路线：%d 个点 · %s%s",
+                routePoints.size(),
+                formatDistance(routeDistanceMeters()),
+                routeEditMode ? " · 编辑中" : ""));
+    }
+
+    private double routeDistanceMeters() {
+        if (routePoints.size() < 2) return 0.0;
+        double total = 0.0;
+        for (int i = 1; i < routePoints.size(); i++) {
+            RouteFileParser.RoutePoint a = routePoints.get(i - 1);
+            RouteFileParser.RoutePoint b = routePoints.get(i);
+            total += distanceMeters(a.latitude, a.longitude, b.latitude, b.longitude);
+        }
+        return total;
+    }
+
+    private void showRouteInfo() {
+        if (routePoints.isEmpty()) {
+            Toast.makeText(this, "当前没有路线", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        double distance = routeDistanceMeters();
+        double speed = clamp(parseNumber(routeSpeedInput, 1.4), 0.2, 60.0);
+        long eta = speed > 0.01 ? Math.round(distance / speed) : -1L;
+
+        new AlertDialog.Builder(this)
+                .setTitle("📏 当前路线")
+                .setMessage("路点：" + routePoints.size()
+                        + "\n总距离：" + formatDistance(distance)
+                        + "\n当前设定速度：" + String.format(Locale.US, "%.2f m/s", speed)
+                        + "\n预计单程时间：" + (eta < 0 ? "--" : formatDuration(eta))
+                        + "\n模式：" + routeModeName(routeModeSpinner.getSelectedItemPosition()))
+                .setPositiveButton("关闭", null)
+                .show();
+    }
+
+    private static double distanceMeters(double lat1, double lon1, double lat2, double lon2) {
+        final double earth = 6371000.0;
+        double p1 = Math.toRadians(lat1);
+        double p2 = Math.toRadians(lat2);
+        double dp = Math.toRadians(lat2 - lat1);
+        double dl = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dp / 2.0) * Math.sin(dp / 2.0)
+                + Math.cos(p1) * Math.cos(p2)
+                * Math.sin(dl / 2.0) * Math.sin(dl / 2.0);
+        return earth * 2.0 * Math.atan2(Math.sqrt(a), Math.sqrt(1.0 - a));
     }
 
     private void startRoute() {
@@ -805,14 +997,8 @@ public class LabMapActivity extends AppCompatActivity {
 
     private void clearRoute() {
         routePoints.clear();
-        if (map != null && routeLine != null) {
-            try {
-                map.removePolyline(routeLine);
-            } catch (Throwable ignored) {
-            }
-        }
-        routeLine = null;
-        routeView.setText("路线：未导入");
+        removeRouteLineAndMarkers();
+        updateRouteView();
     }
 
     private void startRoam() {
