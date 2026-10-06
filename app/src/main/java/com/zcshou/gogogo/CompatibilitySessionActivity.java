@@ -103,7 +103,7 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title, GoGoUi.matchWrap());
         titleBlock.addView(
-                GoGoUi.muted(this, "Lab 17.2.1 · Survival A/B Evidence Lock"),
+                GoGoUi.muted(this, "Lab 17.3 · OEM Survival Profiler"),
                 GoGoUi.matchWrap());
         appBar.addView(titleBlock, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
@@ -358,28 +358,47 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
                 summary.eventCount));
 
         streamsView.setText(String.format(Locale.US,
-                "GPS: count=%d · max gap=%d ms\n"
-                        + "NETWORK: count=%d · max gap=%d ms\n"
-                        + "GMS updates: count=%d · max gap=%d ms\n"
+                "GPS: count=%d · p95=%d · p99=%d · max=%d ms\n"
+                        + "NETWORK: count=%d · p95=%d · p99=%d · max=%d ms\n"
+                        + "GMS: count=%d · p95=%d · p99=%d · max=%d ms\n"
+                        + "冻结计数 >1.5s / >3s / >10s\n"
+                        + "GPS %d/%d/%d · NET %d/%d/%d · GMS %d/%d/%d\n"
                         + "最后三路最大分离: %.1f m",
                 summary.gps.count,
+                summary.gps.gaps.p95Ms,
+                summary.gps.gaps.p99Ms,
                 summary.gps.maxGapMs,
                 summary.network.count,
+                summary.network.gaps.p95Ms,
+                summary.network.gaps.p99Ms,
                 summary.network.maxGapMs,
                 summary.gms.count,
+                summary.gms.gaps.p95Ms,
+                summary.gms.gaps.p99Ms,
                 summary.gms.maxGapMs,
+                summary.gps.gaps.over1500,
+                summary.gps.gaps.over3000,
+                summary.gps.gaps.over10000,
+                summary.network.gaps.over1500,
+                summary.network.gaps.over3000,
+                summary.network.gaps.over10000,
+                summary.gms.gaps.over1500,
+                summary.gms.gaps.over3000,
+                summary.gms.gaps.over10000,
                 summary.maxLastSeparationMeters));
 
         String freezeHint;
         String diagnosis = summary.freezeDiagnosis();
         if ("PROCESS_OR_SCHEDULER_FREEZE".equals(diagnosis)) {
-            freezeHint = "Heartbeat 与位置流一起出现长 gap：更像进程/线程被系统或厂商后台策略冻结。";
+            freezeHint = "主线程与独立后台线程 heartbeat 都和位置流一起断：更像整个进程没有得到调度。";
+        } else if ("MAIN_THREAD_STALL".equals(diagnosis)) {
+            freezeHint = "独立后台 heartbeat 正常，但主线程 heartbeat 长时间断：更像主线程卡顿。";
         } else if ("LOCATION_CALLBACK_THROTTLE".equals(diagnosis)) {
-            freezeHint = "Heartbeat 持续正常，但位置流出现长 gap：更像后台位置回调被系统节流。";
+            freezeHint = "两个 heartbeat 都正常，只有位置流出现长 gap：更像后台位置回调被节流。";
         } else if ("NO_LONG_GAP".equals(diagnosis)) {
             freezeHint = "未发现长 gap。";
         } else {
-            freezeHint = "Heartbeat 与位置流表现不一致，需要结合 CSV 继续看。";
+            freezeHint = "三组时序没有形成单一模式，需要结合 CSV 继续看。";
         }
 
         timelineView.setText(String.format(Locale.US,
@@ -387,18 +406,33 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
                         + "UI → foreground: %d\n"
                         + "errors: %d\n"
                         + "mock-marked location events: %d\n"
-                        + "heartbeat: count=%d · max gap=%d ms\n"
+                        + "MAIN heartbeat: count=%d · p95=%d · p99=%d · max=%d ms\n"
+                        + "BG heartbeat: count=%d · p95=%d · p99=%d · max=%d ms\n"
+                        + "MAIN freezes >1.5/3/10s = %d/%d/%d\n"
+                        + "BG freezes >1.5/3/10s = %d/%d/%d\n"
                         + "freeze diagnosis: %s\n"
                         + "last system state: %s\n\n"
                         + "%s\n\n"
-                        + "判定说明：STABLE 要求三条实时流与 heartbeat 都持续、最大 gap ≤1500 ms、"
-                        + "最后坐标分离 ≤10 m，并且 recorder 没有 API error。",
+                        + "判定说明：STABLE 要求三条实时流、主线程 heartbeat、独立后台 heartbeat 都持续，"
+                        + "最大 gap ≤1500 ms，最后坐标分离 ≤10 m，并且 recorder 没有 API error。",
                 summary.backgroundMarkers,
                 summary.foregroundMarkers,
                 summary.errorCount,
                 summary.mockMarkedLocations,
                 summary.heartbeat == null ? 0 : summary.heartbeat.count,
+                summary.heartbeat == null ? 0L : summary.heartbeat.gaps.p95Ms,
+                summary.heartbeat == null ? 0L : summary.heartbeat.gaps.p99Ms,
                 summary.heartbeat == null ? 0L : summary.heartbeat.maxGapMs,
+                summary.backgroundHeartbeat == null ? 0 : summary.backgroundHeartbeat.count,
+                summary.backgroundHeartbeat == null ? 0L : summary.backgroundHeartbeat.gaps.p95Ms,
+                summary.backgroundHeartbeat == null ? 0L : summary.backgroundHeartbeat.gaps.p99Ms,
+                summary.backgroundHeartbeat == null ? 0L : summary.backgroundHeartbeat.maxGapMs,
+                summary.heartbeat == null ? 0 : summary.heartbeat.gaps.over1500,
+                summary.heartbeat == null ? 0 : summary.heartbeat.gaps.over3000,
+                summary.heartbeat == null ? 0 : summary.heartbeat.gaps.over10000,
+                summary.backgroundHeartbeat == null ? 0 : summary.backgroundHeartbeat.gaps.over1500,
+                summary.backgroundHeartbeat == null ? 0 : summary.backgroundHeartbeat.gaps.over3000,
+                summary.backgroundHeartbeat == null ? 0 : summary.backgroundHeartbeat.gaps.over10000,
                 diagnosis,
                 summary.heartbeat == null ? "N/A" : summary.heartbeat.lastSystemState,
                 freezeHint));
