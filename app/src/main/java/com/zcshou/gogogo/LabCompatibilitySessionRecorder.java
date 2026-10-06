@@ -437,11 +437,16 @@ public final class LabCompatibilitySessionRecorder {
             long locationGap = Math.max(
                     gps.maxGapMs,
                     Math.max(network.maxGapMs, gms.maxGapMs));
-            long heartbeatGap = heartbeat == null ? 0L : heartbeat.maxGapMs;
 
             if (locationGap <= 1500L) {
                 return "NO_LONG_GAP";
             }
+
+            if (heartbeat == null || heartbeat.count < 2) {
+                return "NO_HEARTBEAT_DATA";
+            }
+
+            long heartbeatGap = heartbeat.maxGapMs;
             if (heartbeatGap >= Math.max(2000L, locationGap - 2000L)) {
                 return "PROCESS_OR_SCHEDULER_FREEZE";
             }
