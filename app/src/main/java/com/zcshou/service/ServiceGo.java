@@ -56,21 +56,43 @@ public class ServiceGo extends Service {
     private float mCurBea = DEFAULT_BEA;
     private double mSpeed = 0.0;        /* 默认的速度，单位 m/s */
 
-    // GoGoGo Lab route playback. Intent arrays stay small enough for Binder by capping imports at 5000 points.
+    // GoGoGo Lab motion engine. Imported routes are capped at 5000 points to stay Binder-safe.
     public static final String ACTION_ROUTE_START = "com.soozooq.gogogo.action.ROUTE_START";
     public static final String ACTION_ROUTE_STOP = "com.soozooq.gogogo.action.ROUTE_STOP";
+    public static final String ACTION_ROAM_START = "com.soozooq.gogogo.action.ROAM_START";
+    public static final String ACTION_ROAM_STOP = "com.soozooq.gogogo.action.ROAM_STOP";
+
     public static final String EXTRA_ROUTE_LATS = "ROUTE_LATS";
     public static final String EXTRA_ROUTE_LNGS = "ROUTE_LNGS";
-    public static final String EXTRA_ROUTE_STEP_MS = "ROUTE_STEP_MS";
-    public static final String EXTRA_ROUTE_LOOP = "ROUTE_LOOP";
+    public static final String EXTRA_ROUTE_SPEED_MPS = "ROUTE_SPEED_MPS";
+    public static final String EXTRA_ROUTE_MODE = "ROUTE_MODE";
+    public static final int ROUTE_MODE_ONCE = 0;
+    public static final int ROUTE_MODE_LOOP = 1;
+    public static final int ROUTE_MODE_PINGPONG = 2;
+
+    public static final String EXTRA_ROAM_CENTER_LAT = "ROAM_CENTER_LAT";
+    public static final String EXTRA_ROAM_CENTER_LNG = "ROAM_CENTER_LNG";
+    public static final String EXTRA_ROAM_RADIUS_M = "ROAM_RADIUS_M";
+    public static final String EXTRA_ROAM_SPEED_MPS = "ROAM_SPEED_MPS";
 
     private double[] mRouteLats;
     private double[] mRouteLngs;
     private int mRouteIndex = 0;
-    private long mRouteStepMs = 1000L;
-    private long mNextRouteStepElapsed = 0L;
-    private boolean mRouteLoop = false;
+    private int mRouteDirection = 1;
+    private int mRouteMode = ROUTE_MODE_ONCE;
+    private double mRouteSpeedMps = 1.4;
     private boolean mRouteActive = false;
+
+    private boolean mRoamActive = false;
+    private double mRoamCenterLat;
+    private double mRoamCenterLng;
+    private double mRoamRadiusM = 100.0;
+    private double mRoamSpeedMps = 1.4;
+    private double mRoamTargetLat;
+    private double mRoamTargetLng;
+    private final java.util.Random mRandom = new java.util.Random();
+
+    private long mLastMotionElapsed = 0L;
 
     private static final int HANDLER_MSG_ID = 0;
     // 33ms (~30Hz) tick: 缩短"mock 过期"窗口,避免某些应用在两次 push 之间读到真实位置后漂移
@@ -271,9 +293,12 @@ public class ServiceGo extends Service {
                 getSharedPreferences("mock_location_state", MODE_PRIVATE);
 
         if (intent != null && ACTION_ROUTE_STOP.equals(intent.getAction())) {
-            mRouteActive = false;
-            mRouteLats = null;
-            mRouteLngs = null;
+            stopLabMotion();
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_ROAM_STOP.equals(intent.getAction())) {
+            mRoamActive = false;
             mSpeed = 0.0;
             return START_STICKY;
         }
@@ -281,45 +306,58 @@ public class ServiceGo extends Service {
         if (intent != null && ACTION_ROUTE_START.equals(intent.getAction())) {
             double[] lats = intent.getDoubleArrayExtra(EXTRA_ROUTE_LATS);
             double[] lngs = intent.getDoubleArrayExtra(EXTRA_ROUTE_LNGS);
-            if (lats != null && lngs != null && lats.length > 0 && lats.length == lngs.length) {
+            if (lats != null && lngs != null && lats.length > 1 && lats.length == lngs.length) {
                 mRouteLats = lats;
                 mRouteLngs = lngs;
                 mRouteIndex = 0;
-                mRouteStepMs = Math.max(250L, intent.getLongExtra(EXTRA_ROUTE_STEP_MS, 1000L));
-                mRouteLoop = intent.getBooleanExtra(EXTRA_ROUTE_LOOP, false);
+                mRouteDirection = 1;
+                mRouteMode = Math.max(ROUTE_MODE_ONCE,
+                        Math.min(ROUTE_MODE_PINGPONG,
+                                intent.getIntExtra(EXTRA_ROUTE_MODE, ROUTE_MODE_ONCE)));
+                mRouteSpeedMps = clamp(
+                        intent.getDoubleExtra(EXTRA_ROUTE_SPEED_MPS, 1.4), 0.2, 60.0);
                 mRouteActive = true;
-                mNextRouteStepElapsed = SystemClock.elapsedRealtime() + mRouteStepMs;
+                mRoamActive = false;
                 mCurLat = mRouteLats[0];
                 mCurLng = mRouteLngs[0];
                 mCurAlt = DEFAULT_ALT;
-                mSpeed = 0.0;
+                mSpeed = mRouteSpeedMps;
+                mLastMotionElapsed = SystemClock.elapsedRealtime();
 
-                state.edit()
-                        .putLong("lng_bits", Double.doubleToRawLongBits(mCurLng))
-                        .putLong("lat_bits", Double.doubleToRawLongBits(mCurLat))
-                        .putLong("alt_bits", Double.doubleToRawLongBits(mCurAlt))
-                        .apply();
+                persistCurrentLocation(state);
                 XLog.i("SERVICEGO: Lab route started, points=" + lats.length
-                        + " stepMs=" + mRouteStepMs + " loop=" + mRouteLoop);
+                        + " speed=" + mRouteSpeedMps + " mode=" + mRouteMode);
                 return START_STICKY;
             }
         }
 
-        if (intent != null) {
-            // Any ordinary manual location command cancels an active route.
+        if (intent != null && ACTION_ROAM_START.equals(intent.getAction())) {
+            mRoamCenterLat = intent.getDoubleExtra(EXTRA_ROAM_CENTER_LAT, mCurLat);
+            mRoamCenterLng = intent.getDoubleExtra(EXTRA_ROAM_CENTER_LNG, mCurLng);
+            mRoamRadiusM = clamp(intent.getDoubleExtra(EXTRA_ROAM_RADIUS_M, 100.0), 5.0, 5000.0);
+            mRoamSpeedMps = clamp(intent.getDoubleExtra(EXTRA_ROAM_SPEED_MPS, 1.4), 0.2, 30.0);
+            mCurLat = mRoamCenterLat;
+            mCurLng = mRoamCenterLng;
+            mCurAlt = DEFAULT_ALT;
             mRouteActive = false;
-            mRouteLats = null;
-            mRouteLngs = null;
+            mRoamActive = true;
+            mSpeed = mRoamSpeedMps;
+            chooseNewRoamTarget();
+            mLastMotionElapsed = SystemClock.elapsedRealtime();
+            persistCurrentLocation(state);
+            XLog.i("SERVICEGO: Lab random roam started, radius=" + mRoamRadiusM
+                    + " speed=" + mRoamSpeedMps);
+            return START_STICKY;
+        }
+
+        if (intent != null) {
+            // Ordinary manual position commands cancel Lab motion.
+            stopLabMotion();
 
             mCurLng = intent.getDoubleExtra(MainActivity.LNG_MSG_ID, DEFAULT_LNG);
             mCurLat = intent.getDoubleExtra(MainActivity.LAT_MSG_ID, DEFAULT_LAT);
             mCurAlt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
-            mSpeed = 0.0;
-            state.edit()
-                    .putLong("lng_bits", Double.doubleToRawLongBits(mCurLng))
-                    .putLong("lat_bits", Double.doubleToRawLongBits(mCurLat))
-                    .putLong("alt_bits", Double.doubleToRawLongBits(mCurAlt))
-                    .apply();
+            persistCurrentLocation(state);
         } else {
             mCurLng = Double.longBitsToDouble(
                     state.getLong("lng_bits", Double.doubleToRawLongBits(DEFAULT_LNG)));
@@ -333,8 +371,24 @@ public class ServiceGo extends Service {
             mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
         }
 
-        // 被系统回收后尽量以同一坐标恢复，避免切到地图应用一段时间后服务消失。
         return START_STICKY;
+    }
+
+    private void persistCurrentLocation(android.content.SharedPreferences state) {
+        state.edit()
+                .putLong("lng_bits", Double.doubleToRawLongBits(mCurLng))
+                .putLong("lat_bits", Double.doubleToRawLongBits(mCurLat))
+                .putLong("alt_bits", Double.doubleToRawLongBits(mCurAlt))
+                .apply();
+    }
+
+    private void stopLabMotion() {
+        mRouteActive = false;
+        mRoamActive = false;
+        mRouteLats = null;
+        mRouteLngs = null;
+        mSpeed = 0.0;
+        mLastMotionElapsed = 0L;
     }
 
     @Override
@@ -470,7 +524,7 @@ public class ServiceGo extends Service {
                     Thread.sleep(TICK_INTERVAL_MS);
 
                     if (!isStop) {
-                        advanceRouteIfNeeded();
+                        advanceLabMotion();
                         setLocationNetwork();
                         setLocationGPS();
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -490,46 +544,139 @@ public class ServiceGo extends Service {
         mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
     }
 
-    private void advanceRouteIfNeeded() {
-        if (!mRouteActive || mRouteLats == null || mRouteLngs == null
-                || mRouteLats.length == 0 || mRouteLats.length != mRouteLngs.length) {
+    private void advanceLabMotion() {
+        if (!mRouteActive && !mRoamActive) return;
+
+        long now = SystemClock.elapsedRealtime();
+        if (mLastMotionElapsed <= 0L) {
+            mLastMotionElapsed = now;
             return;
         }
 
-        long now = SystemClock.elapsedRealtime();
-        if (now < mNextRouteStepElapsed) return;
+        double dt = (now - mLastMotionElapsed) / 1000.0;
+        mLastMotionElapsed = now;
+        // Avoid a giant teleport after the process/thread was paused for a while.
+        dt = clamp(dt, 0.0, 0.25);
 
-        int nextIndex = mRouteIndex + 1;
-        if (nextIndex >= mRouteLats.length) {
-            if (mRouteLoop && mRouteLats.length > 1) {
-                nextIndex = 0;
+        if (mRouteActive) {
+            moveAlongRoute(mRouteSpeedMps * dt);
+        } else if (mRoamActive) {
+            moveRandomRoam(mRoamSpeedMps * dt);
+        }
+    }
+
+    private void moveAlongRoute(double metersToMove) {
+        if (mRouteLats == null || mRouteLngs == null
+                || mRouteLats.length < 2 || mRouteLats.length != mRouteLngs.length) {
+            stopLabMotion();
+            return;
+        }
+
+        mSpeed = mRouteSpeedMps;
+        int guard = 0;
+        while (metersToMove > 0.0001 && mRouteActive && guard++ < 20) {
+            int next = mRouteIndex + mRouteDirection;
+
+            if (next < 0 || next >= mRouteLats.length) {
+                if (mRouteMode == ROUTE_MODE_LOOP) {
+                    next = mRouteDirection > 0 ? 0 : mRouteLats.length - 1;
+                } else if (mRouteMode == ROUTE_MODE_PINGPONG) {
+                    mRouteDirection *= -1;
+                    next = mRouteIndex + mRouteDirection;
+                } else {
+                    mRouteActive = false;
+                    mSpeed = 0.0;
+                    XLog.i("SERVICEGO: Lab route finished");
+                    return;
+                }
+            }
+
+            double targetLat = mRouteLats[next];
+            double targetLng = mRouteLngs[next];
+            double remaining = distanceMeters(mCurLat, mCurLng, targetLat, targetLng);
+
+            if (remaining < 0.05) {
+                mCurLat = targetLat;
+                mCurLng = targetLng;
+                mRouteIndex = next;
+                continue;
+            }
+
+            if (!mHeadingAvailable) {
+                mCurBea = bearingDegrees(mCurLat, mCurLng, targetLat, targetLng);
+            }
+
+            if (metersToMove >= remaining) {
+                mCurLat = targetLat;
+                mCurLng = targetLng;
+                mRouteIndex = next;
+                metersToMove -= remaining;
             } else {
-                mRouteActive = false;
-                mSpeed = 0.0;
-                XLog.i("SERVICEGO: Lab route finished at point " + mRouteIndex);
-                return;
+                double fraction = metersToMove / remaining;
+                mCurLat += (targetLat - mCurLat) * fraction;
+                mCurLng += shortestLongitudeDelta(mCurLng, targetLng) * fraction;
+                normalizeCurrentLongitude();
+                metersToMove = 0.0;
             }
         }
+    }
 
-        double oldLat = mCurLat;
-        double oldLng = mCurLng;
-        double newLat = mRouteLats[nextIndex];
-        double newLng = mRouteLngs[nextIndex];
+    private void moveRandomRoam(double metersToMove) {
+        mSpeed = mRoamSpeedMps;
+        int guard = 0;
+        while (metersToMove > 0.0001 && mRoamActive && guard++ < 10) {
+            double remaining = distanceMeters(mCurLat, mCurLng, mRoamTargetLat, mRoamTargetLng);
+            if (remaining < 0.5) {
+                chooseNewRoamTarget();
+                continue;
+            }
 
-        double distance = distanceMeters(oldLat, oldLng, newLat, newLng);
-        mSpeed = Math.max(0.0, Math.min(80.0, distance / (mRouteStepMs / 1000.0)));
-        if (!mHeadingAvailable && distance > 0.5) {
-            mCurBea = bearingDegrees(oldLat, oldLng, newLat, newLng);
+            if (!mHeadingAvailable) {
+                mCurBea = bearingDegrees(mCurLat, mCurLng, mRoamTargetLat, mRoamTargetLng);
+            }
+
+            if (metersToMove >= remaining) {
+                mCurLat = mRoamTargetLat;
+                mCurLng = mRoamTargetLng;
+                metersToMove -= remaining;
+                chooseNewRoamTarget();
+            } else {
+                double fraction = metersToMove / remaining;
+                mCurLat += (mRoamTargetLat - mCurLat) * fraction;
+                mCurLng += shortestLongitudeDelta(mCurLng, mRoamTargetLng) * fraction;
+                normalizeCurrentLongitude();
+                metersToMove = 0.0;
+            }
         }
+    }
 
-        mCurLat = newLat;
-        mCurLng = newLng;
-        mRouteIndex = nextIndex;
+    private void chooseNewRoamTarget() {
+        double angle = mRandom.nextDouble() * Math.PI * 2.0;
+        double radius = Math.sqrt(mRandom.nextDouble()) * mRoamRadiusM;
+        double north = Math.cos(angle) * radius;
+        double east = Math.sin(angle) * radius;
 
-        mNextRouteStepElapsed += mRouteStepMs;
-        if (mNextRouteStepElapsed < now) {
-            mNextRouteStepElapsed = now + mRouteStepMs;
-        }
+        mRoamTargetLat = mRoamCenterLat + north / 111320.0;
+        double cos = Math.max(0.05, Math.cos(Math.toRadians(mRoamCenterLat)));
+        mRoamTargetLng = mRoamCenterLng + east / (111320.0 * cos);
+        if (mRoamTargetLng > 180.0) mRoamTargetLng -= 360.0;
+        if (mRoamTargetLng < -180.0) mRoamTargetLng += 360.0;
+    }
+
+    private static double shortestLongitudeDelta(double from, double to) {
+        double d = to - from;
+        if (d > 180.0) d -= 360.0;
+        if (d < -180.0) d += 360.0;
+        return d;
+    }
+
+    private void normalizeCurrentLongitude() {
+        if (mCurLng > 180.0) mCurLng -= 360.0;
+        if (mCurLng < -180.0) mCurLng += 360.0;
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private static double distanceMeters(double lat1, double lon1, double lat2, double lon2) {
