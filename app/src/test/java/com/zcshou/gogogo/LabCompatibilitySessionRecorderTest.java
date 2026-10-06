@@ -129,6 +129,26 @@ public class LabCompatibilitySessionRecorderTest {
     }
 
     @Test
+    public void survivalModeAndWakeLockEvidenceRemainAfterStop() {
+        LabCompatibilitySessionRecorder recorder =
+                new LabCompatibilitySessionRecorder();
+
+        recorder.start(1000L);
+        recorder.addMarker(1010L, "SURVIVAL_MODE_WAKELOCK");
+        recorder.addMarker(1020L, "WAKELOCK_ACQUIRED");
+        recorder.addHeartbeat(1100L, 100, false, true, false, false);
+        recorder.addMarker(1200L, "WAKELOCK_NOT_HELD");
+        recorder.stop(1300L);
+
+        LabCompatibilitySessionRecorder.Summary summary = recorder.summarize();
+
+        assertEquals("WAKELOCK", summary.sessionMode);
+        assertTrue(summary.wakeLockAcquired);
+        assertEquals(1, summary.wakeLockLossCount);
+        assertEquals(false, summary.wakeLockAcquireFailed);
+    }
+
+    @Test
     public void csvContainsMarkersAndLocations() {
         LabCompatibilitySessionRecorder recorder =
                 new LabCompatibilitySessionRecorder();
