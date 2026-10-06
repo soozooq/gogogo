@@ -18,6 +18,7 @@ on:
       - feat/gogogo-lab-phase9
       - feat/gogogo-lab-phase10
       - feat/gogogo-lab-phase12
+      - feat/gogogo-lab-phase13
 
 permissions:
   contents: read
@@ -78,7 +79,7 @@ jobs:
         if: env.BUILD_EXIT_CODE == '0'
         uses: actions/upload-artifact@v4
         with:
-          name: gogogo-lab-phase12
+          name: gogogo-lab-phase13
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
