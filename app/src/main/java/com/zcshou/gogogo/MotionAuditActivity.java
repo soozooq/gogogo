@@ -172,6 +172,8 @@ public class MotionAuditActivity extends AppCompatActivity {
                     "质量分：%d / 100 · Grade %s\n"
                             + "轨迹点：%d · 时长：%s · 距离：%s\n"
                             + "均速：%.2f m/s · 最大段速度：%.2f m/s\n"
+                            + "速度中位数：%.2f m/s · MAD：%.3f\n"
+                            + "Robust outliers：%d · CUSUM changes：%d\n"
                             + "采样中位间隔：%d ms · 近重复段：%.1f%%\n\n"
                             + "当前运动：%s\n"
                             + "a=%+.2f m/s² · jerk=%+.2f · turn=%+.1f°/s\n"
@@ -184,6 +186,10 @@ public class MotionAuditActivity extends AppCompatActivity {
                     formatDistance(result.distanceMeters),
                     result.averageSpeedMps,
                     result.maxSegmentSpeedMps,
+                    result.medianSegmentSpeedMps,
+                    result.speedMadMps,
+                    result.robustSpeedOutlierCount,
+                    result.cusumChangePointCount,
                     result.medianIntervalMs,
                     result.nearDuplicateRatio * 100.0,
                     binder.getKinematicState(),
@@ -234,6 +240,10 @@ public class MotionAuditActivity extends AppCompatActivity {
             report.put("average_speed_mps", result.averageSpeedMps);
             report.put("max_segment_speed_mps", result.maxSegmentSpeedMps);
             report.put("median_interval_ms", result.medianIntervalMs);
+            report.put("median_segment_speed_mps", result.medianSegmentSpeedMps);
+            report.put("speed_mad_mps", result.speedMadMps);
+            report.put("robust_speed_outlier_count", result.robustSpeedOutlierCount);
+            report.put("cusum_change_point_count", result.cusumChangePointCount);
             report.put("near_duplicate_ratio", result.nearDuplicateRatio);
             report.put("non_monotonic_timestamps", result.nonMonotonicTimestamps);
             report.put("long_gap_count", result.longGapCount);
