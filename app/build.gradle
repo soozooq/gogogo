@@ -26,11 +26,11 @@ android {
 
     defaultConfig {
         applicationId "com.soozooq.gogogo.test"
-        minSdkVersion 23
+        minSdkVersion 27
         //noinspection ExpiredTargetSdkVersion
-        targetSdkVersion 32
-        versionCode 2104001
-        versionName '2.1.4-x8' // https://semver.org/lang/zh-CN/
+        targetSdkVersion 35
+        versionCode 2201001
+        versionName '2.2.1-amap-modern' // https://semver.org/lang/zh-CN/
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += ['zh', 'zh-rCN', 'en', 'en-rUS']
         ndk {
