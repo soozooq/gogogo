@@ -6,6 +6,7 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
+import android.app.ActivityManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -13,8 +14,10 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.os.SystemClock;
 
 import androidx.core.app.ActivityCompat;
@@ -49,6 +52,17 @@ public class CompatibilitySessionService extends Service {
     private LocationListener gpsListener;
     private LocationListener networkListener;
     private LocationCallback gmsCallback;
+
+    private final Handler heartbeatHandler = new Handler(Looper.getMainLooper());
+    private final Runnable heartbeatTask = new Runnable() {
+        @Override
+        public void run() {
+            recordHeartbeat();
+            if (recorder.isRunning()) {
+                heartbeatHandler.postDelayed(this, 500L);
+            }
+        }
+    };
 
     @Override
     public void onCreate() {
@@ -88,11 +102,14 @@ public class CompatibilitySessionService extends Service {
         recorder.start(SystemClock.elapsedRealtime());
         startForeground(NOTIFICATION_ID, buildNotification("正在记录标准位置消费链"));
         startConsumers();
+        heartbeatHandler.removeCallbacks(heartbeatTask);
+        heartbeatHandler.post(heartbeatTask);
     }
 
     private void stopSession() {
         if (!recorder.isRunning()) return;
         recorder.stop(SystemClock.elapsedRealtime());
+        heartbeatHandler.removeCallbacks(heartbeatTask);
         stopConsumers();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE);
@@ -205,6 +222,35 @@ public class CompatibilitySessionService extends Service {
                 == PackageManager.PERMISSION_GRANTED;
     }
 
+    private boolean hasBackgroundLocationPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return true;
+        return ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void recordHeartbeat() {
+        if (!recorder.isRunning()) return;
+
+        ActivityManager.RunningAppProcessInfo info =
+                new ActivityManager.RunningAppProcessInfo();
+        ActivityManager.getMyMemoryState(info);
+
+        PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+        boolean powerSave = pm != null && pm.isPowerSaveMode();
+        boolean interactive = pm == null || pm.isInteractive();
+        boolean ignoringBatteryOptimizations = pm != null
+                && pm.isIgnoringBatteryOptimizations(getPackageName());
+
+        recorder.addHeartbeat(
+                SystemClock.elapsedRealtime(),
+                info.importance,
+                powerSave,
+                interactive,
+                hasBackgroundLocationPermission(),
+                ignoringBatteryOptimizations);
+    }
+
     private void stopConsumers() {
         if (locationManager != null) {
             try {
@@ -249,7 +295,7 @@ public class CompatibilitySessionService extends Service {
                 : new Notification.Builder(this);
 
         return builder
-                .setContentTitle("GoGoGo Lab 17")
+                .setContentTitle("GoGoGo Lab 17.1")
                 .setContentText(text)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setOngoing(true)
@@ -257,7 +303,29 @@ public class CompatibilitySessionService extends Service {
     }
 
     @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        if (recorder.isRunning()) {
+            recorder.addMarker(SystemClock.elapsedRealtime(), "TASK_REMOVED");
+        }
+        super.onTaskRemoved(rootIntent);
+    }
+
+    @Override
+    public void onTrimMemory(int level) {
+        if (recorder.isRunning()) {
+            recorder.addMarker(
+                    SystemClock.elapsedRealtime(),
+                    "TRIM_MEMORY_" + level);
+        }
+        super.onTrimMemory(level);
+    }
+
+    @Override
     public void onDestroy() {
+        heartbeatHandler.removeCallbacks(heartbeatTask);
+        if (recorder.isRunning()) {
+            recorder.addMarker(SystemClock.elapsedRealtime(), "SERVICE_DESTROY");
+        }
         stopConsumers();
         super.onDestroy();
     }
