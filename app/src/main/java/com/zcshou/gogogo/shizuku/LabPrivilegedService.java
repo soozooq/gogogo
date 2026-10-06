@@ -85,6 +85,21 @@ public class LabPrivilegedService extends ILabPrivilegedService.Stub {
         return trim(out);
     }
 
+    @Override
+    public String getUserPolicyReport() {
+        StringBuilder out = new StringBuilder();
+        appendProbe(out, "$ cmd user list",
+                new String[]{"cmd", "user", "list"});
+        appendProbe(out, "$ pm list users",
+                new String[]{"pm", "list", "users"});
+        appendProbe(out, "$ dumpsys device_policy (summary)",
+                new String[]{"sh", "-c",
+                        "dumpsys device_policy 2>/dev/null | head -n 160"});
+        appendProbe(out, "$ settings get secure user_setup_complete",
+                new String[]{"settings", "get", "secure", "user_setup_complete"});
+        return trim(out);
+    }
+
     private static void appendProbe(StringBuilder out, String title, String[] command) {
         if (out.length() >= MAX_OUTPUT_CHARS) return;
         out.append("\n").append(title).append("\n");
