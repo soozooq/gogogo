@@ -47,11 +47,11 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
     private LocationManager locationManager;
     private FusedLocationProviderClient fusedClient;
 
-    private final Channel gps = new Channel("GPS listener");
-    private final Channel network = new Channel("NETWORK listener");
-    private final Channel gmsLast = new Channel("GMS lastLocation");
-    private final Channel gmsCurrent = new Channel("GMS currentLocation");
-    private final Channel gmsUpdates = new Channel("GMS updates");
+    private final Channel gps = new Channel("GPS listener", true);
+    private final Channel network = new Channel("NETWORK listener", true);
+    private final Channel gmsLast = new Channel("GMS lastLocation", false);
+    private final Channel gmsCurrent = new Channel("GMS currentLocation", false);
+    private final Channel gmsUpdates = new Channel("GMS updates", true);
 
     private LocationListener gpsListener;
     private LocationListener networkListener;
@@ -359,21 +359,29 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
 
         comparisonView.setText(String.format(Locale.US,
                 "%s\n"
+                        + "stream fresh ≤1s: %d / %d\n"
+                        + "snapshot recent ≤30s: %d / %d\n"
                         + "available channels: %d / 5\n"
-                        + "fresh ≤1s: %d / 5\n"
                         + "mock-marked samples: %d\n"
                         + "max cross-channel separation: %.1f m\n"
-                        + "stale: %s\n\n"
-                        + "如果这里 CONSISTENT，而目标 App 仍不采用位置，"
-                        + "就说明标准消费链本身不是主要故障点。",
+                        + "stale streams: %s\n"
+                        + "old snapshots: %s\n\n"
+                        + "实时兼容性只由 GPS / NETWORK / GMS updates 三条持续流决定；"
+                        + "lastLocation / currentLocation 是一次性快照，age 自然增长不会再把评分降级。",
                 matrix.grade,
+                matrix.freshStreams,
+                matrix.availableStreams,
+                matrix.freshSnapshots,
+                matrix.availableSnapshots,
                 matrix.availableChannels,
-                matrix.freshChannels,
                 matrix.mockMarkedChannels,
                 matrix.maxSeparationMeters,
-                matrix.staleChannels.isEmpty()
+                matrix.staleStreams.isEmpty()
                         ? "none"
-                        : android.text.TextUtils.join(", ", matrix.staleChannels)));
+                        : android.text.TextUtils.join(", ", matrix.staleStreams),
+                matrix.staleSnapshots.isEmpty()
+                        ? "none"
+                        : android.text.TextUtils.join(", ", matrix.staleSnapshots)));
     }
 
     @SuppressLint("MissingPermission")
@@ -421,13 +429,15 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
 
     private static final class Channel {
         final String name;
+        final boolean stream;
         Location location;
         long receivedElapsedMs = -1L;
         long count = 0L;
         String error = "";
 
-        Channel(String name) {
+        Channel(String name, boolean stream) {
             this.name = name;
+            this.stream = stream;
         }
 
         void update(Location value) {
@@ -466,7 +476,8 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                     location == null ? 0.0 : location.getLatitude(),
                     location == null ? 0.0 : location.getLongitude(),
                     ageMs(),
-                    isMock());
+                    isMock(),
+                    stream);
         }
 
         String render() {
@@ -476,11 +487,12 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
             }
 
             return String.format(Locale.US,
-                    "%s\n"
+                    "%s [%s]\n"
                             + "  %.7f, %.7f\n"
                             + "  acc %.1f m · speed %.2f m/s · bearing %.1f°\n"
                             + "  provider=%s · age=%d ms · count=%d · isMock=%s",
                     name,
+                    stream ? "STREAM" : "SNAPSHOT",
                     location.getLongitude(),
                     location.getLatitude(),
                     location.getAccuracy(),
