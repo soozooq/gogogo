@@ -39,6 +39,7 @@ public class LabReferenceMonitorService extends Service {
     private final IResourceMonitor.Stub binder = new IResourceMonitor.Stub() {
         @Override
         public String getBrokerSnapshot() {
+            bindToServiceGoIfRunning();
             int callingUid = Binder.getCallingUid();
             int callingPid = Binder.getCallingPid();
 
