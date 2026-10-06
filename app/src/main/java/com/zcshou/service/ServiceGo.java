@@ -42,6 +42,7 @@ import com.google.android.gms.location.LocationServices;
 import com.zcshou.gogogo.MainActivity;
 import com.zcshou.gogogo.LabPolicyEngine;
 import com.zcshou.gogogo.LabScenarioEngine;
+import com.zcshou.gogogo.LabKinematicsEngine;
 import com.zcshou.gogogo.R;
 import com.zcshou.gogogo.SimpleMockActivity;
 import com.zcshou.joystick.JoyStick;
@@ -152,6 +153,15 @@ public class ServiceGo extends Service {
     private volatile double mScenarioNoiseEastMeters = 0.0;
     private String mLastScenarioSignature = "";
 
+    // Lab 12: keep movement course and handset orientation separate, then arbitrate
+    // a published bearing and derive kinematic telemetry without spoofing sensors.
+    private LabKinematicsEngine mKinematicsEngine;
+    private volatile LabKinematicsEngine.Frame mKinematicFrame;
+    private volatile float mDeviceHeadingDegrees = 0.0f;
+    private volatile int mDeviceHeadingAccuracy = SensorManager.SENSOR_STATUS_UNRELIABLE;
+    private volatile String mHeadingSensorSource = "NONE";
+    private String mLastKinematicSignature = "";
+
     private static final int HANDLER_MSG_ID = 0;
     // 33ms (~30Hz) tick: 缩短"mock 过期"窗口,避免某些应用在两次 push 之间读到真实位置后漂移
     private static final long TICK_INTERVAL_MS = 33;
@@ -206,6 +216,7 @@ public class ServiceGo extends Service {
 
         mPolicyEngine = new LabPolicyEngine(this);
         mScenarioEngine = new LabScenarioEngine(this);
+        mKinematicsEngine = new LabKinematicsEngine();
         refreshPublishedPolicy();
 
         mLocManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
@@ -253,8 +264,14 @@ public class ServiceGo extends Service {
             }
 
             mHeadingSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+            if (mHeadingSensor != null) {
+                mHeadingSensorSource = "ROTATION_VECTOR";
+            }
             if (mHeadingSensor == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 mHeadingSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR);
+                if (mHeadingSensor != null) {
+                    mHeadingSensorSource = "GEOMAGNETIC_ROTATION_VECTOR";
+                }
             }
             if (mHeadingSensor == null) {
                 XLog.e("SERVICEGO: no rotation-vector heading sensor");
@@ -296,7 +313,9 @@ public class ServiceGo extends Service {
 
                         float heading = (float) Math.toDegrees(orientation[0]);
                         if (heading < 0f) heading += 360f;
-                        mCurBea = heading;
+                        mDeviceHeadingDegrees = mHeadingAvailable
+                                ? smoothHeadingDegrees(mDeviceHeadingDegrees, heading, 0.25f)
+                                : heading;
                         mHeadingAvailable = true;
                     } catch (Throwable ignored) {
                     }
@@ -304,6 +323,7 @@ public class ServiceGo extends Service {
 
                 @Override
                 public void onAccuracyChanged(Sensor sensor, int accuracy) {
+                    mDeviceHeadingAccuracy = accuracy;
                 }
             };
 
@@ -604,6 +624,9 @@ public class ServiceGo extends Service {
             mScenarioEngine = null;
         }
 
+        mKinematicFrame = null;
+        mKinematicsEngine = null;
+
         if (mPolicyEngine != null) {
             try {
                 mPolicyEngine.close();
@@ -849,6 +872,32 @@ public class ServiceGo extends Service {
             mScenarioNoiseEastMeters = 0.0;
         }
 
+        LabKinematicsEngine kinematics = mKinematicsEngine;
+        if (kinematics != null) {
+            LabKinematicsEngine.Frame frame = kinematics.update(
+                    mPublishedLat,
+                    mPublishedLng,
+                    mPublishedSpeed,
+                    mPublishedBearing,
+                    mMotionPaused,
+                    mHeadingAvailable,
+                    mDeviceHeadingDegrees,
+                    mProvenanceSource,
+                    mScenarioStep,
+                    TICK_INTERVAL_MS);
+            mKinematicFrame = frame;
+            if (mPublishedIncludeMotion) {
+                mPublishedBearing = frame.effectiveBearingDeg;
+            }
+
+            String kinematicSignature = frame.state + " · " + frame.bearingSource;
+            if (!kinematicSignature.equals(mLastKinematicSignature)) {
+                mLastKinematicSignature = kinematicSignature;
+                recordProvenance("KINEMATICS",
+                        kinematicSignature + " · ledger=" + frame.shortHash());
+            }
+        }
+
         String signature = mPolicySummary + " · publish=" + mPolicyPublish;
         if (!signature.equals(mLastPolicySignature)) {
             mLastPolicySignature = signature;
@@ -974,9 +1023,8 @@ public class ServiceGo extends Service {
                 continue;
             }
 
-            if (!mHeadingAvailable) {
-                mCurBea = bearingDegrees(mCurLat, mCurLng, targetLat, targetLng);
-            }
+            // Route course is geometry-derived. Do not let handset orientation overwrite it.
+            mCurBea = bearingDegrees(mCurLat, mCurLng, targetLat, targetLng);
 
             if (metersToMove >= remaining) {
                 mCurLat = targetLat;
@@ -1003,9 +1051,8 @@ public class ServiceGo extends Service {
                 continue;
             }
 
-            if (!mHeadingAvailable) {
-                mCurBea = bearingDegrees(mCurLat, mCurLng, mRoamTargetLat, mRoamTargetLng);
-            }
+            // Roam course is geometry-derived. Device heading is tracked separately.
+            mCurBea = bearingDegrees(mCurLat, mCurLng, mRoamTargetLat, mRoamTargetLng);
 
             if (metersToMove >= remaining) {
                 mCurLat = mRoamTargetLat;
@@ -1075,6 +1122,20 @@ public class ServiceGo extends Service {
         return (float) result;
     }
 
+    private static float smoothHeadingDegrees(float previous, float next, float alpha) {
+        float from = previous % 360f;
+        if (from < 0f) from += 360f;
+        float to = next % 360f;
+        if (to < 0f) to += 360f;
+        float delta = to - from;
+        if (delta > 180f) delta -= 360f;
+        if (delta < -180f) delta += 360f;
+        float out = from + delta * Math.max(0f, Math.min(1f, alpha));
+        out %= 360f;
+        if (out < 0f) out += 360f;
+        return out;
+    }
+
     private void removeTestProviderGPS() {
         try {
             if (mLocManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
@@ -1112,7 +1173,7 @@ public class ServiceGo extends Service {
             Location loc = new Location(LocationManager.GPS_PROVIDER);
             loc.setAccuracy(Math.max(0.8f, mPublishedAccuracy));
             loc.setAltitude(mPublishedAlt);
-            if (mPublishedIncludeMotion && (mHeadingAvailable || mPublishedSpeed > 0.3)) {
+            if (mPublishedIncludeMotion) {
                 loc.setBearing(mPublishedBearing);
             }
             loc.setLatitude(mPublishedLat);
@@ -1123,7 +1184,7 @@ public class ServiceGo extends Service {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 loc.setVerticalAccuracyMeters(1.5f);
                 loc.setSpeedAccuracyMetersPerSecond(0.2f);
-                if (mPublishedIncludeMotion && (mHeadingAvailable || mPublishedSpeed > 0.3)) {
+                if (mPublishedIncludeMotion) {
                     loc.setBearingAccuracyDegrees(2.0f);
                 }
             }
@@ -1178,7 +1239,7 @@ public class ServiceGo extends Service {
             Location loc = new Location(LocationManager.NETWORK_PROVIDER);
             loc.setAccuracy(Math.max(2.0f, mPublishedAccuracy));
             loc.setAltitude(mPublishedAlt);
-            if (mPublishedIncludeMotion && (mHeadingAvailable || mPublishedSpeed > 0.3)) {
+            if (mPublishedIncludeMotion) {
                 loc.setBearing(mPublishedBearing);
             }
             loc.setLatitude(mPublishedLat);
@@ -1190,7 +1251,7 @@ public class ServiceGo extends Service {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 loc.setVerticalAccuracyMeters(3.0f);
                 loc.setSpeedAccuracyMetersPerSecond(0.5f);
-                if (mPublishedIncludeMotion && (mHeadingAvailable || mPublishedSpeed > 0.3)) {
+                if (mPublishedIncludeMotion) {
                     loc.setBearingAccuracyDegrees(3.0f);
                 }
             }
@@ -1233,7 +1294,7 @@ public class ServiceGo extends Service {
             Location loc = new Location(LocationManager.FUSED_PROVIDER);
             loc.setAccuracy(Math.max(1.0f, mPublishedAccuracy));
             loc.setAltitude(mPublishedAlt);
-            if (mPublishedIncludeMotion && (mHeadingAvailable || mPublishedSpeed > 0.3)) {
+            if (mPublishedIncludeMotion) {
                 loc.setBearing(mPublishedBearing);
             }
             loc.setLatitude(mPublishedLat);
@@ -1255,7 +1316,7 @@ public class ServiceGo extends Service {
             Location loc = new Location("fused");
             loc.setAccuracy(Math.max(1.0f, mPublishedAccuracy));
             loc.setAltitude(mPublishedAlt);
-            if (mPublishedIncludeMotion && (mHeadingAvailable || mPublishedSpeed > 0.3)) {
+            if (mPublishedIncludeMotion) {
                 loc.setBearing(mPublishedBearing);
             }
             loc.setLatitude(mPublishedLat);
@@ -1309,6 +1370,40 @@ public class ServiceGo extends Service {
         public float getPublishedBearingDegrees() { return mPublishedBearing; }
         public float getPublishedAccuracyMeters() { return mPublishedAccuracy; }
         public String getPolicySummary() { return mPolicySummary; }
+
+        public boolean isDeviceHeadingAvailable() { return mHeadingAvailable; }
+        public float getDeviceHeadingDegrees() { return mDeviceHeadingDegrees; }
+        public int getDeviceHeadingAccuracy() { return mDeviceHeadingAccuracy; }
+        public String getHeadingSensorSource() { return mHeadingSensorSource; }
+
+        public String getKinematicState() {
+            LabKinematicsEngine.Frame f = mKinematicFrame;
+            return f == null ? "UNAVAILABLE" : f.state;
+        }
+        public double getKinematicAccelerationMps2() {
+            LabKinematicsEngine.Frame f = mKinematicFrame;
+            return f == null ? 0.0 : f.accelerationMps2;
+        }
+        public double getKinematicJerkMps3() {
+            LabKinematicsEngine.Frame f = mKinematicFrame;
+            return f == null ? 0.0 : f.jerkMps3;
+        }
+        public double getKinematicTurnRateDegPerSec() {
+            LabKinematicsEngine.Frame f = mKinematicFrame;
+            return f == null ? 0.0 : f.turnRateDegPerSec;
+        }
+        public String getKinematicBearingSource() {
+            LabKinematicsEngine.Frame f = mKinematicFrame;
+            return f == null ? "UNAVAILABLE" : f.bearingSource;
+        }
+        public String getKinematicLedgerHash() {
+            LabKinematicsEngine.Frame f = mKinematicFrame;
+            return f == null ? "UNAVAILABLE" : f.chainHash;
+        }
+        public String getKinematicSummary() {
+            LabKinematicsEngine.Frame f = mKinematicFrame;
+            return f == null ? "UNAVAILABLE" : f.summary();
+        }
 
         public long getScenarioStep() { return mScenarioStep; }
         public String getScenarioSummary() { return mScenarioSummary; }
