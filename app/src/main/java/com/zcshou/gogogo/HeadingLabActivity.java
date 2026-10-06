@@ -3,6 +3,7 @@ package com.zcshou.gogogo;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -16,6 +17,10 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.zcshou.service.ServiceGo;
 
+import java.io.BufferedWriter;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 /**
@@ -25,11 +30,15 @@ import java.util.Locale;
  * It does not inject sensor events into other applications.
  */
 public class HeadingLabActivity extends AppCompatActivity {
+    private static final int REQ_EXPORT_TRACE = 8401;
+
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     private TextView fusedView;
     private TextView sensorView;
+    private TextView attitudeView;
     private TextView guidanceView;
+    private String[] pendingTraceRows;
 
     private ServiceGo.ServiceGoBinder binder;
     private boolean bound;
@@ -93,7 +102,7 @@ public class HeadingLabActivity extends AppCompatActivity {
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title, GoGoUi.matchWrap());
         titleBlock.addView(
-                GoGoUi.muted(this, "Lab 14 · 磁干扰感知方向融合"),
+                GoGoUi.muted(this, "Lab 15 · 姿态无关方向 + Flight Recorder"),
                 GoGoUi.matchWrap());
         appBar.addView(titleBlock, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
@@ -118,6 +127,40 @@ public class HeadingLabActivity extends AppCompatActivity {
         sensorView.setTextIsSelectable(true);
         sensorContent.addView(sensorView, GoGoUi.matchWrap());
         GoGoUi.addCard(root, sensorCard, 12);
+
+        com.google.android.material.card.MaterialCardView attitudeCard = GoGoUi.card(this);
+        LinearLayout attitudeContent = GoGoUi.cardContent(this);
+        attitudeCard.addView(attitudeContent);
+        attitudeContent.addView(
+                GoGoUi.sectionTitle(this, "姿态 / Axis Mapping"),
+                GoGoUi.matchWrap());
+        attitudeView = GoGoUi.muted(this, "暂无姿态数据");
+        attitudeView.setTextIsSelectable(true);
+        attitudeContent.addView(attitudeView, GoGoUi.matchWrap());
+        GoGoUi.addCard(root, attitudeCard, 12);
+
+        com.google.android.material.card.MaterialCardView recorderCard = GoGoUi.card(this);
+        LinearLayout recorderContent = GoGoUi.cardContent(this);
+        recorderCard.addView(recorderContent);
+        recorderContent.addView(
+                GoGoUi.sectionTitle(this, "Heading Flight Recorder"),
+                GoGoUi.matchWrap());
+
+        LinearLayout recorderRow = GoGoUi.row(this);
+        recorderRow.addView(
+                GoGoUi.secondaryButton(this, "清空记录", v -> clearTrace()),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, recorderRow, 8);
+        recorderRow.addView(
+                GoGoUi.primaryButton(this, "导出 CSV", v -> exportTrace()),
+                GoGoUi.weighted());
+        recorderContent.addView(recorderRow, GoGoUi.matchWrap());
+        recorderContent.addView(GoGoUi.gap(this, 8));
+        recorderContent.addView(
+                GoGoUi.muted(this,
+                        "最多保留约 2400 个样本，记录 Fused / Absolute / Game / Attitude / 磁场 / confidence / posture。"),
+                GoGoUi.matchWrap());
+        GoGoUi.addCard(root, recorderCard, 12);
 
         com.google.android.material.card.MaterialCardView guideCard = GoGoUi.card(this);
         LinearLayout guideContent = GoGoUi.cardContent(this);
@@ -189,6 +232,22 @@ public class HeadingLabActivity extends AppCompatActivity {
                 b.getHeadingCalibrationState(),
                 b.getHeadingSensorSource()));
 
+        attitudeView.setText(String.format(Locale.US,
+                "Attitude candidate: %s\n"
+                        + "Posture: %s\n"
+                        + "Axis: %s\n"
+                        + "Pitch: %.1f°\n"
+                        + "Roll: %.1f°\n"
+                        + "Attitude confidence: %.0f%%\n"
+                        + "Trace samples: %d",
+                formatHeading(b.getAttitudeHeadingDegrees()),
+                b.getHeadingPosture(),
+                b.getHeadingAttitudeAxis(),
+                b.getDevicePitchDegrees(),
+                b.getDeviceRollDegrees(),
+                b.getHeadingAttitudeConfidence() * 100.0,
+                b.getHeadingTraceCount()));
+
         String state = b.getHeadingCalibrationState();
         if ("MAG_ACCURACY_LOW".equals(state)) {
             guidanceView.setText(
@@ -206,6 +265,62 @@ public class HeadingLabActivity extends AppCompatActivity {
             guidanceView.setText(
                     "方向融合状态正常。磁参考用于长期校正，"
                             + "Game Rotation Vector 用于短期平滑和抗磁干扰。");
+        }
+    }
+
+    private void clearTrace() {
+        ServiceGo.ServiceGoBinder b = binder;
+        if (b != null) {
+            b.clearHeadingTrace();
+            refresh();
+        }
+    }
+
+    private void exportTrace() {
+        ServiceGo.ServiceGoBinder b = binder;
+        if (b == null) return;
+
+        String[] rows = b.getHeadingTraceCsvRows();
+        if (rows == null || rows.length <= 1) {
+            guidanceView.setText("还没有足够的方向记录可以导出。先转动手机几秒。");
+            return;
+        }
+
+        pendingTraceRows = rows;
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("text/csv");
+        intent.putExtra(Intent.EXTRA_TITLE, "gogogo-heading-lab15.csv");
+        startActivityForResult(intent, REQ_EXPORT_TRACE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, android.content.Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQ_EXPORT_TRACE
+                || resultCode != RESULT_OK
+                || data == null
+                || data.getData() == null
+                || pendingTraceRows == null) {
+            return;
+        }
+
+        Uri uri = data.getData();
+        String[] rows = pendingTraceRows;
+        pendingTraceRows = null;
+
+        try (OutputStream output = getContentResolver().openOutputStream(uri);
+             BufferedWriter writer = output == null ? null
+                     : new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8))) {
+            if (writer == null) return;
+            for (String row : rows) {
+                writer.write(row == null ? "" : row);
+                writer.newLine();
+            }
+            writer.flush();
+            guidanceView.setText("Heading Flight Recorder CSV 已导出。");
+        } catch (Throwable t) {
+            guidanceView.setText("导出失败：" + t.getClass().getSimpleName());
         }
     }
 
