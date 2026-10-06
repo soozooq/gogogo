@@ -29,6 +29,11 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Lab 17 foreground session recorder running in the :consumer process.
  */
@@ -60,6 +65,9 @@ public class CompatibilitySessionService extends Service {
     private volatile boolean wakeLockLossReported = false;
 
     private final Handler heartbeatHandler = new Handler(Looper.getMainLooper());
+    private ScheduledExecutorService backgroundHeartbeatExecutor;
+    private ScheduledFuture<?> backgroundHeartbeatFuture;
+
     private final Runnable heartbeatTask = new Runnable() {
         @Override
         public void run() {
@@ -135,12 +143,14 @@ public class CompatibilitySessionService extends Service {
         startConsumers();
         heartbeatHandler.removeCallbacks(heartbeatTask);
         heartbeatHandler.post(heartbeatTask);
+        startBackgroundHeartbeat();
     }
 
     private void stopSession() {
         if (!recorder.isRunning()) return;
         recorder.stop(SystemClock.elapsedRealtime());
         heartbeatHandler.removeCallbacks(heartbeatTask);
+        stopBackgroundHeartbeat();
         stopConsumers();
         releaseWakeLock();
         wakeLockMode = false;
@@ -309,8 +319,9 @@ public class CompatibilitySessionService extends Service {
         boolean ignoringBatteryOptimizations = pm != null
                 && pm.isIgnoringBatteryOptimizations(getPackageName());
 
-        recorder.addHeartbeat(
+        recorder.addHeartbeatMain(
                 SystemClock.elapsedRealtime(),
+                android.os.Process.getElapsedCpuTime(),
                 info.importance,
                 powerSave,
                 interactive,
@@ -325,6 +336,49 @@ public class CompatibilitySessionService extends Service {
                     SystemClock.elapsedRealtime(),
                     "WAKELOCK_NOT_HELD");
         }
+    }
+
+    private void startBackgroundHeartbeat() {
+        stopBackgroundHeartbeat();
+
+        backgroundHeartbeatExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "GoGoGo-Lab17-BG-Heartbeat");
+            t.setDaemon(true);
+            return t;
+        });
+
+        backgroundHeartbeatFuture = backgroundHeartbeatExecutor.scheduleAtFixedRate(
+                () -> {
+                    try {
+                        if (recorder.isRunning()) {
+                            recorder.addHeartbeatBackground(
+                                    SystemClock.elapsedRealtime(),
+                                    android.os.Process.getElapsedCpuTime());
+                        }
+                    } catch (Throwable ignored) {
+                    }
+                },
+                0L,
+                500L,
+                TimeUnit.MILLISECONDS);
+    }
+
+    private void stopBackgroundHeartbeat() {
+        try {
+            if (backgroundHeartbeatFuture != null) {
+                backgroundHeartbeatFuture.cancel(true);
+            }
+        } catch (Throwable ignored) {
+        }
+        backgroundHeartbeatFuture = null;
+
+        try {
+            if (backgroundHeartbeatExecutor != null) {
+                backgroundHeartbeatExecutor.shutdownNow();
+            }
+        } catch (Throwable ignored) {
+        }
+        backgroundHeartbeatExecutor = null;
     }
 
     private boolean isWakeLockHeld() {
@@ -384,7 +438,7 @@ public class CompatibilitySessionService extends Service {
                 : new Notification.Builder(this);
 
         return builder
-                .setContentTitle("GoGoGo Lab 17.2")
+                .setContentTitle("GoGoGo Lab 17.3")
                 .setContentText(text)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setOngoing(true)
@@ -412,6 +466,7 @@ public class CompatibilitySessionService extends Service {
     @Override
     public void onDestroy() {
         heartbeatHandler.removeCallbacks(heartbeatTask);
+        stopBackgroundHeartbeat();
         releaseWakeLock();
         if (recorder.isRunning()) {
             recorder.addMarker(SystemClock.elapsedRealtime(), "SERVICE_DESTROY");
