@@ -72,13 +72,13 @@ public class SimpleMockActivity extends AppCompatActivity {
         scroll.addView(root);
 
         TextView title = new TextView(this);
-        title.setText("微信定位测试版（无地图）");
+        title.setText("高德定位测试版（无地图）");
         title.setTextSize(22);
         title.setGravity(Gravity.CENTER);
         root.addView(title, matchWrap());
 
         TextView hint = new TextView(this);
-        hint.setText("直接输入 WGS-84 坐标。\n妙瓦底已预填：98.50895, 16.68914");
+        hint.setText("直接输入 WGS-84 坐标。\n高德稳定测试：建议关闭 WLAN 扫描 / 蓝牙扫描后再启动。");
         hint.setTextSize(15);
         hint.setPadding(0, pad, 0, pad);
         root.addView(hint, matchWrap());
@@ -133,10 +133,8 @@ public class SimpleMockActivity extends AppCompatActivity {
         addButton(root, "打开 VPN 设置", v -> safeOpen(
                 new Intent(Settings.ACTION_VPN_SETTINGS), new Intent(Settings.ACTION_WIRELESS_SETTINGS)));
         addButton(root, "检测公网出口 IP / 地区", v -> checkPublicIp());
-        addButton(root, "打开微信应用详情（可手动清缓存）", v ->
-                openPackageDetails("com.tencent.mm", "微信"));
-        addButton(root, "打开腾讯地图应用详情（可手动清缓存）", v ->
-                openPackageDetails("com.tencent.map", "腾讯地图"));
+        addButton(root, "打开高德地图应用详情（可手动清缓存）", v ->
+                openPackageDetails("com.autonavi.minimap", "高德地图"));
 
         publicIpView = new TextView(this);
         publicIpView.setText("公网出口：未检测");
@@ -236,7 +234,16 @@ public class SimpleMockActivity extends AppCompatActivity {
             startService(intent);
         }
 
-        statusView.setText("状态：模拟中\n经度 " + lng + "\n纬度 " + lat);
+        String wifiWarning = "";
+        try {
+            WifiManager wifi = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+            if (wifi != null && wifi.isWifiEnabled()) {
+                wifiWarning = "\n⚠ Wi-Fi 已开启：高德可能用附近热点/网络定位把位置拉回真实区域";
+            }
+        } catch (Throwable ignored) {
+        }
+
+        statusView.setText("状态：模拟中\n经度 " + lng + "\n纬度 " + lat + wifiWarning);
         diagnosticView.postDelayed(this::refreshDiagnostics, 1200);
     }
 
