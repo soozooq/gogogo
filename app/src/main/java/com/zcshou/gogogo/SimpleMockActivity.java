@@ -2,6 +2,7 @@ package com.zcshou.gogogo;
 
 import android.Manifest;
 import android.app.AppOpsManager;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -62,111 +63,203 @@ public class SimpleMockActivity extends AppCompatActivity {
     }
 
     private void buildUi() {
-        int pad = (int) (16 * getResources().getDisplayMetrics().density);
+        int pad = GoGoUi.dp(this, 18);
 
         ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        GoGoUi.applyScreenBackground(scroll);
+
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(pad, pad, pad, pad);
-        root.setGravity(Gravity.CENTER_HORIZONTAL);
+        root.setPadding(pad, GoGoUi.dp(this, 22), pad, GoGoUi.dp(this, 28));
         scroll.addView(root);
 
-        TextView title = new TextView(this);
-        title.setText("高德定位测试版（无地图）");
-        title.setTextSize(22);
-        title.setGravity(Gravity.CENTER);
-        root.addView(title, matchWrap());
+        TextView title = GoGoUi.heroTitle(this, "GoGoGo");
+        root.addView(title, GoGoUi.matchWrap());
 
-        TextView hint = new TextView(this);
-        hint.setText("直接输入 WGS-84 坐标。\n高德稳定测试：建议关闭 WLAN 扫描 / 蓝牙扫描后再启动。");
-        hint.setTextSize(15);
-        hint.setPadding(0, pad, 0, pad);
-        root.addView(hint, matchWrap());
+        TextView subtitle = GoGoUi.subtitle(
+                this,
+                "位置实验、路线回放与环境诊断工作台");
+        root.addView(subtitle, GoGoUi.matchWrap());
 
+        // Primary location card
+        com.google.android.material.card.MaterialCardView locationCard = GoGoUi.card(this);
+        LinearLayout locationContent = GoGoUi.cardContent(this);
+        locationCard.addView(locationContent);
+        locationContent.addView(GoGoUi.sectionTitle(this, "位置控制"), GoGoUi.matchWrap());
+
+        TextView locationHint = GoGoUi.muted(
+                this,
+                "输入 WGS-84 坐标。常用操作只放在这里，低频系统入口已收进“更多工具”。");
+        locationContent.addView(locationHint, GoGoUi.matchWrap());
+        locationContent.addView(GoGoUi.gap(this, 12));
+
+        TextView lngLabel = GoGoUi.muted(this, "经度");
+        locationContent.addView(lngLabel, GoGoUi.matchWrap());
         longitudeInput = new EditText(this);
-        longitudeInput.setHint("经度，例如 98.50895");
+        longitudeInput.setHint("例如 98.50895");
         longitudeInput.setText("98.50895");
         longitudeInput.setInputType(InputType.TYPE_CLASS_NUMBER
                 | InputType.TYPE_NUMBER_FLAG_DECIMAL
                 | InputType.TYPE_NUMBER_FLAG_SIGNED);
-        root.addView(longitudeInput, matchWrap());
+        GoGoUi.styleInput(longitudeInput);
+        locationContent.addView(longitudeInput, GoGoUi.matchWrap());
 
+        locationContent.addView(GoGoUi.gap(this, 10));
+
+        TextView latLabel = GoGoUi.muted(this, "纬度");
+        locationContent.addView(latLabel, GoGoUi.matchWrap());
         latitudeInput = new EditText(this);
-        latitudeInput.setHint("纬度，例如 16.68914");
+        latitudeInput.setHint("例如 16.68914");
         latitudeInput.setText("16.68914");
         latitudeInput.setInputType(InputType.TYPE_CLASS_NUMBER
                 | InputType.TYPE_NUMBER_FLAG_DECIMAL
                 | InputType.TYPE_NUMBER_FLAG_SIGNED);
-        root.addView(latitudeInput, matchWrap());
+        GoGoUi.styleInput(latitudeInput);
+        locationContent.addView(latitudeInput, GoGoUi.matchWrap());
 
-        addButton(root, "开始模拟", v -> startMock());
-        addButton(root, "停止模拟", v -> stopMock());
-        addButton(root, "🧪 打开 GoGoGo Lab（地图 / 收藏 / GPX / KML）",
-                v -> startActivity(new Intent(this, LabMapActivity.class)));
+        locationContent.addView(GoGoUi.gap(this, 14));
 
-        statusView = new TextView(this);
-        statusView.setText("状态：未启动");
-        statusView.setTextSize(16);
-        statusView.setPadding(0, pad, 0, pad);
-        root.addView(statusView, matchWrap());
+        LinearLayout actionRow = GoGoUi.row(this);
+        com.google.android.material.button.MaterialButton startButton =
+                GoGoUi.primaryButton(this, "开始模拟", v -> startMock());
+        actionRow.addView(startButton, GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, actionRow, 10);
+        com.google.android.material.button.MaterialButton stopButton =
+                GoGoUi.dangerButton(this, "停止", v -> stopMock());
+        actionRow.addView(stopButton, GoGoUi.weighted());
+        locationContent.addView(actionRow, GoGoUi.matchWrap());
 
-        TextView settingsTitle = new TextView(this);
-        settingsTitle.setText("快速设置入口");
-        settingsTitle.setTextSize(19);
-        settingsTitle.setPadding(0, pad, 0, 4);
-        root.addView(settingsTitle, matchWrap());
+        statusView = GoGoUi.status(this, "● 未启动");
+        statusView.setPadding(0, GoGoUi.dp(this, 12), 0, 0);
+        locationContent.addView(statusView, GoGoUi.matchWrap());
 
-        addButton(root, "打开 WLAN / 蓝牙扫描设置", v -> openScanningSettings());
-        addButton(root, "打开网络切换面板", v -> {
-            Intent panel = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
-                    ? new Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY)
-                    : new Intent(Settings.ACTION_WIRELESS_SETTINGS);
-            safeOpen(panel, new Intent(Settings.ACTION_WIRELESS_SETTINGS));
-        });
-        addButton(root, "打开系统定位设置", v -> safeOpen(
-                new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS), null));
-        addButton(root, "打开开发者选项（模拟位置应用）", v -> {
-            Toast.makeText(this, "进入后找“选择模拟位置信息应用”，选本测试版", Toast.LENGTH_LONG).show();
-            safeOpen(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS), null);
-        });
-        addButton(root, "打开当前应用详情", v -> safeOpen(
-                new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                        Uri.parse("package:" + getPackageName())), null));
-        addButton(root, "打开 VPN 设置", v -> safeOpen(
-                new Intent(Settings.ACTION_VPN_SETTINGS), new Intent(Settings.ACTION_WIRELESS_SETTINGS)));
-        addButton(root, "检测公网出口 IP / 地区", v -> checkPublicIp());
-        addButton(root, "打开高德地图应用详情（可手动清缓存）", v ->
-                openPackageDetails("com.autonavi.minimap", "高德地图"));
+        GoGoUi.addCard(root, locationCard, 18);
 
-        publicIpView = new TextView(this);
-        publicIpView.setText("公网出口：未检测");
-        publicIpView.setTextSize(14);
+        // Lab entry card
+        com.google.android.material.card.MaterialCardView labCard = GoGoUi.card(this);
+        LinearLayout labContent = GoGoUi.cardContent(this);
+        labCard.addView(labContent);
+        labContent.addView(GoGoUi.sectionTitle(this, "实验中心"), GoGoUi.matchWrap());
+        labContent.addView(GoGoUi.muted(
+                this,
+                "地图、收藏、路线、回放、Motion Audit、Sandbox 等高级能力都从这里进入。"),
+                GoGoUi.matchWrap());
+        labContent.addView(GoGoUi.gap(this, 12));
+
+        labContent.addView(
+                GoGoUi.primaryButton(this, "打开地图实验室  →",
+                        v -> startActivity(new Intent(this, LabMapActivity.class))),
+                GoGoUi.matchWrap());
+
+        GoGoUi.addCard(root, labCard, 14);
+
+        // Diagnostics card
+        com.google.android.material.card.MaterialCardView diagCard = GoGoUi.card(this);
+        LinearLayout diagContent = GoGoUi.cardContent(this);
+        diagCard.addView(diagContent);
+        diagContent.addView(GoGoUi.sectionTitle(this, "诊断与工具"), GoGoUi.matchWrap());
+
+        LinearLayout diagRow = GoGoUi.row(this);
+        diagRow.addView(
+                GoGoUi.secondaryButton(this, "刷新自检", v -> refreshDiagnostics()),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, diagRow, 10);
+        diagRow.addView(
+                GoGoUi.secondaryButton(this, "更多工具", v -> showToolsMenu()),
+                GoGoUi.weighted());
+        diagContent.addView(diagRow, GoGoUi.matchWrap());
+
+        publicIpView = GoGoUi.muted(this, "公网出口：未检测");
         publicIpView.setTextIsSelectable(true);
-        publicIpView.setPadding(0, 8, 0, pad);
-        root.addView(publicIpView, matchWrap());
+        publicIpView.setPadding(0, GoGoUi.dp(this, 12), 0, 0);
+        diagContent.addView(publicIpView, GoGoUi.matchWrap());
 
-        TextView diagTitle = new TextView(this);
-        diagTitle.setText("定位自检");
-        diagTitle.setTextSize(19);
-        diagTitle.setPadding(0, pad, 0, 4);
-        root.addView(diagTitle, matchWrap());
-
-        addButton(root, "刷新定位自检", v -> refreshDiagnostics());
-        addButton(root, "刷新 Wi-Fi 环境自检", v -> refreshWifiEnvironment());
-        addButton(root, "腾讯模式环境检查", v -> checkTencentEnvironment());
-
-        diagnosticView = new TextView(this);
-        diagnosticView.setTextSize(14);
+        diagnosticView = GoGoUi.muted(this, "定位自检：等待刷新");
         diagnosticView.setTextIsSelectable(true);
-        diagnosticView.setPadding(0, 8, 0, pad);
-        root.addView(diagnosticView, matchWrap());
+        diagnosticView.setPadding(0, GoGoUi.dp(this, 10), 0, 0);
+        diagContent.addView(diagnosticView, GoGoUi.matchWrap());
 
-        TextView overlayNote = new TextView(this);
-        overlayNote.setText("本测试版已禁用原项目的悬浮摇杆，不需要开启“显示在其他应用上层”。");
-        overlayNote.setTextSize(14);
-        root.addView(overlayNote, matchWrap());
+        GoGoUi.addCard(root, diagCard, 14);
+
+        TextView footer = GoGoUi.muted(
+                this,
+                "GoGoGo Lab · 当前版本已禁用原项目悬浮摇杆，不需要悬浮窗权限。");
+        footer.setGravity(Gravity.CENTER);
+        footer.setPadding(0, GoGoUi.dp(this, 18), 0, 0);
+        root.addView(footer, GoGoUi.matchWrap());
 
         setContentView(scroll);
+    }
+
+    private void showToolsMenu() {
+        final String[] items = new String[]{
+                "检测公网出口 IP / 地区",
+                "Wi-Fi 环境自检",
+                "腾讯模式环境检查",
+                "WLAN / 蓝牙扫描设置",
+                "网络切换面板",
+                "系统定位设置",
+                "开发者选项 / 模拟位置应用",
+                "当前应用详情",
+                "VPN 设置",
+                "高德地图应用详情"
+        };
+
+        new AlertDialog.Builder(this)
+                .setTitle("更多工具")
+                .setItems(items, (dialog, which) -> {
+                    switch (which) {
+                        case 0:
+                            checkPublicIp();
+                            break;
+                        case 1:
+                            refreshWifiEnvironment();
+                            break;
+                        case 2:
+                            checkTencentEnvironment();
+                            break;
+                        case 3:
+                            openScanningSettings();
+                            break;
+                        case 4: {
+                            Intent panel = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                                    ? new Intent(Settings.Panel.ACTION_INTERNET_CONNECTIVITY)
+                                    : new Intent(Settings.ACTION_WIRELESS_SETTINGS);
+                            safeOpen(panel, new Intent(Settings.ACTION_WIRELESS_SETTINGS));
+                            break;
+                        }
+                        case 5:
+                            safeOpen(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS), null);
+                            break;
+                        case 6:
+                            Toast.makeText(
+                                    this,
+                                    "开发者选项 → 选择模拟位置信息应用 → GoGoGo",
+                                    Toast.LENGTH_LONG).show();
+                            safeOpen(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS), null);
+                            break;
+                        case 7:
+                            safeOpen(
+                                    new Intent(
+                                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                            Uri.parse("package:" + getPackageName())),
+                                    null);
+                            break;
+                        case 8:
+                            safeOpen(
+                                    new Intent(Settings.ACTION_VPN_SETTINGS),
+                                    new Intent(Settings.ACTION_WIRELESS_SETTINGS));
+                            break;
+                        case 9:
+                            openPackageDetails("com.autonavi.minimap", "高德地图");
+                            break;
+                        default:
+                            break;
+                    }
+                })
+                .setNegativeButton("关闭", null)
+                .show();
     }
 
     private LinearLayout.LayoutParams matchWrap() {
