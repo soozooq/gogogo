@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.provider.Settings;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -102,7 +103,7 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title, GoGoUi.matchWrap());
         titleBlock.addView(
-                GoGoUi.muted(this, "Lab 17.1 · Freeze Detector + 位置链时间轴"),
+                GoGoUi.muted(this, "Lab 17.2 · Survival A/B + Freeze Detector"),
                 GoGoUi.matchWrap());
         appBar.addView(titleBlock, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
@@ -119,23 +120,38 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
 
         LinearLayout firstRow = GoGoUi.row(this);
         firstRow.addView(
-                GoGoUi.primaryButton(this, "开始会话", v -> startSession()),
+                GoGoUi.secondaryButton(this, "基线测试", v -> startSession(false)),
                 GoGoUi.weighted());
         GoGoUi.addHorizontalGap(this, firstRow, 8);
         firstRow.addView(
-                GoGoUi.dangerButton(this, "停止会话", v -> stopSession()),
+                GoGoUi.primaryButton(this, "WakeLock 测试", v -> startSession(true)),
                 GoGoUi.weighted());
         statusContent.addView(firstRow, GoGoUi.matchWrap());
 
         LinearLayout secondRow = GoGoUi.row(this);
         secondRow.addView(
-                GoGoUi.secondaryButton(this, "清空", v -> clearSession()),
+                GoGoUi.dangerButton(this, "停止会话", v -> stopSession()),
                 GoGoUi.weighted());
         GoGoUi.addHorizontalGap(this, secondRow, 8);
         secondRow.addView(
-                GoGoUi.secondaryButton(this, "导出 CSV", v -> exportCsv()),
+                GoGoUi.secondaryButton(this, "清空", v -> clearSession()),
                 GoGoUi.weighted());
         statusContent.addView(secondRow, GoGoUi.matchWrap());
+
+        LinearLayout thirdRow = GoGoUi.row(this);
+        thirdRow.addView(
+                GoGoUi.secondaryButton(this, "电池优化设置", v -> openBatteryOptimizationSettings()),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, thirdRow, 8);
+        thirdRow.addView(
+                GoGoUi.secondaryButton(this, "应用详情", v -> openAppDetails()),
+                GoGoUi.weighted());
+        statusContent.addView(thirdRow, GoGoUi.matchWrap());
+
+        statusContent.addView(GoGoUi.gap(this, 8));
+        statusContent.addView(
+                GoGoUi.secondaryButton(this, "导出 CSV", v -> exportCsv()),
+                GoGoUi.matchWrap());
 
         GoGoUi.addCard(root, statusCard, 16);
 
@@ -170,15 +186,17 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
 
         guidanceView = GoGoUi.muted(
                 this,
-                "1. 先让 GoGoGo 正常模拟位置。\n"
-                        + "2. 点“开始会话”。\n"
-                        + "3. 切到微信并正常打开你要测试的位置功能。\n"
-                        + "4. 过 30～60 秒回到这里，点“停止会话”。\n"
-                        + "5. 看三条实时流与 heartbeat 的最大 gap。\n"
-                        + "   - 两边一起断：更像进程/线程被冻结。\n"
-                        + "   - heartbeat 不断、位置流断：更像后台位置回调被节流。\n\n"
-                        + "Recorder 只记录 GoGoGo 自己的标准位置消费行为、本页前后台事件和本进程状态，"
-                        + "不会读取微信内部信息，也不会修改 isMock 标记。");
+                "A/B 建议：\n"
+                        + "① 先跑“基线测试”30～60 秒。\n"
+                        + "② 再跑“WakeLock 测试”同样时长。\n"
+                        + "③ 如果 WakeLock 仍然出现 ~50 秒 heartbeat gap，再打开“电池优化设置”，"
+                        + "把 GoGoGo 设为不受电池优化限制后再测一轮。\n\n"
+                        + "判读：\n"
+                        + "• heartbeat 与位置流一起断 → 进程/调度冻结。\n"
+                        + "• heartbeat 不断、只有位置流断 → 后台定位回调节流。\n"
+                        + "• WakeLock 后恢复 → CPU/休眠调度因素。\n"
+                        + "• 只有电池优化豁免后恢复 → 系统/厂商后台电池策略。\n\n"
+                        + "Recorder 不读取微信内部信息，也不会隐藏或修改 isMock 标记。");
         guideContent.addView(guidanceView, GoGoUi.matchWrap());
         GoGoUi.addCard(root, guideCard, 12);
 
@@ -203,13 +221,19 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
                 REQ_LOCATION);
     }
 
-    private void startSession() {
+    private boolean pendingWakeLockMode = false;
+
+    private void startSession(boolean useWakeLock) {
+        pendingWakeLockMode = useWakeLock;
         ensurePermissionThenStart();
     }
 
     private void startSessionInternal() {
         Intent intent = new Intent(this, CompatibilitySessionService.class);
-        intent.setAction(CompatibilitySessionService.ACTION_START);
+        intent.setAction(
+                pendingWakeLockMode
+                        ? CompatibilitySessionService.ACTION_START_WAKELOCK
+                        : CompatibilitySessionService.ACTION_START);
         ContextCompat.startForegroundService(this, intent);
         bindRecorder();
         handler.postDelayed(this::render, 350L);
@@ -311,9 +335,17 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
         LabCompatibilitySessionRecorder.Summary summary = b.getSummary();
 
         statusView.setText(String.format(Locale.US,
-                "%s · %s\n时长 %s · events %d",
+                "%s · %s\n"
+                        + "mode=%s · wakeLock=%s\n"
+                        + "batteryOptExempt=%s · bgLocation=%s · importance=%d\n"
+                        + "时长 %s · events %d",
                 b.isRunning() ? "RECORDING" : "STOPPED",
                 summary.grade(),
+                b.isWakeLockMode() ? "WAKELOCK" : "BASELINE",
+                b.isWakeLockHeld() ? "HELD" : "OFF",
+                b.isBatteryOptimizationExempt() ? "YES" : "NO",
+                b.hasBackgroundLocationPermission() ? "YES" : "NO",
+                b.getCurrentProcessImportance(),
                 formatDuration(b.getDurationMs()),
                 summary.eventCount));
 
@@ -362,6 +394,23 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
                 diagnosis,
                 summary.heartbeat == null ? "N/A" : summary.heartbeat.lastSystemState,
                 freezeHint));
+    }
+
+    private void openBatteryOptimizationSettings() {
+        try {
+            startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+        } catch (Throwable t) {
+            openAppDetails();
+        }
+    }
+
+    private void openAppDetails() {
+        try {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            intent.setData(Uri.parse("package:" + getPackageName()));
+            startActivity(intent);
+        } catch (Throwable ignored) {
+        }
     }
 
     private void bindRecorder() {
