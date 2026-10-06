@@ -35,6 +35,8 @@ import com.google.android.gms.location.Priority;
 public class CompatibilitySessionService extends Service {
     public static final String ACTION_START =
             "com.soozooq.gogogo.action.LAB17_START";
+    public static final String ACTION_START_WAKELOCK =
+            "com.soozooq.gogogo.action.LAB17_START_WAKELOCK";
     public static final String ACTION_STOP =
             "com.soozooq.gogogo.action.LAB17_STOP";
     public static final String ACTION_CLEAR =
@@ -52,6 +54,9 @@ public class CompatibilitySessionService extends Service {
     private LocationListener gpsListener;
     private LocationListener networkListener;
     private LocationCallback gmsCallback;
+
+    private PowerManager.WakeLock wakeLock;
+    private volatile boolean wakeLockMode = false;
 
     private final Handler heartbeatHandler = new Handler(Looper.getMainLooper());
     private final Runnable heartbeatTask = new Runnable() {
@@ -76,7 +81,9 @@ public class CompatibilitySessionService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent == null ? null : intent.getAction();
         if (ACTION_START.equals(action)) {
-            startSession();
+            startSession(false);
+        } else if (ACTION_START_WAKELOCK.equals(action)) {
+            startSession(true);
         } else if (ACTION_STOP.equals(action)) {
             stopSession();
         } else if (ACTION_CLEAR.equals(action)) {
@@ -91,7 +98,7 @@ public class CompatibilitySessionService extends Service {
     }
 
     @SuppressLint("MissingPermission")
-    private void startSession() {
+    private void startSession(boolean useWakeLock) {
         if (recorder.isRunning()) return;
 
         if (!hasLocationPermission()) {
@@ -99,8 +106,24 @@ public class CompatibilitySessionService extends Service {
             return;
         }
 
+        wakeLockMode = useWakeLock;
         recorder.start(SystemClock.elapsedRealtime());
-        startForeground(NOTIFICATION_ID, buildNotification("正在记录标准位置消费链"));
+        recorder.addMarker(
+                SystemClock.elapsedRealtime(),
+                useWakeLock ? "SURVIVAL_MODE_WAKELOCK" : "SURVIVAL_MODE_BASELINE");
+
+        if (useWakeLock) {
+            acquireWakeLock();
+        } else {
+            releaseWakeLock();
+        }
+
+        startForeground(
+                NOTIFICATION_ID,
+                buildNotification(
+                        useWakeLock
+                                ? "WakeLock A/B 会话正在记录"
+                                : "基线会话正在记录"));
         startConsumers();
         heartbeatHandler.removeCallbacks(heartbeatTask);
         heartbeatHandler.post(heartbeatTask);
@@ -111,6 +134,8 @@ public class CompatibilitySessionService extends Service {
         recorder.stop(SystemClock.elapsedRealtime());
         heartbeatHandler.removeCallbacks(heartbeatTask);
         stopConsumers();
+        releaseWakeLock();
+        wakeLockMode = false;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE);
         } else {
@@ -222,6 +247,40 @@ public class CompatibilitySessionService extends Service {
                 == PackageManager.PERMISSION_GRANTED;
     }
 
+    private void acquireWakeLock() {
+        try {
+            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+            if (pm == null) return;
+
+            if (wakeLock == null) {
+                wakeLock = pm.newWakeLock(
+                        PowerManager.PARTIAL_WAKE_LOCK,
+                        "GoGoGo:Lab17Survival");
+                wakeLock.setReferenceCounted(false);
+            }
+
+            if (!wakeLock.isHeld()) {
+                // Survival sessions are intentionally short. Timeout prevents an
+                // abandoned diagnostic session from holding the CPU indefinitely.
+                wakeLock.acquire(10 * 60 * 1000L);
+            }
+        } catch (Throwable t) {
+            recorder.addError(
+                    SystemClock.elapsedRealtime(),
+                    "WAKE_LOCK",
+                    t.getClass().getSimpleName());
+        }
+    }
+
+    private void releaseWakeLock() {
+        try {
+            if (wakeLock != null && wakeLock.isHeld()) {
+                wakeLock.release();
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
     private boolean hasBackgroundLocationPermission() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return true;
         return ActivityCompat.checkSelfPermission(
@@ -249,6 +308,24 @@ public class CompatibilitySessionService extends Service {
                 interactive,
                 hasBackgroundLocationPermission(),
                 ignoringBatteryOptimizations);
+        if (recorder.isRunning() && wakeLockMode && !isWakeLockHeld()) {
+            recorder.addMarker(
+                    SystemClock.elapsedRealtime(),
+                    "WAKELOCK_NOT_HELD");
+        }
+    }
+
+    private boolean isWakeLockHeld() {
+        try {
+            return wakeLock != null && wakeLock.isHeld();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    private boolean isBatteryOptimizationExempt() {
+        PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+        return pm != null && pm.isIgnoringBatteryOptimizations(getPackageName());
     }
 
     private void stopConsumers() {
@@ -295,7 +372,7 @@ public class CompatibilitySessionService extends Service {
                 : new Notification.Builder(this);
 
         return builder
-                .setContentTitle("GoGoGo Lab 17.1")
+                .setContentTitle("GoGoGo Lab 17.2")
                 .setContentText(text)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setOngoing(true)
@@ -323,6 +400,7 @@ public class CompatibilitySessionService extends Service {
     @Override
     public void onDestroy() {
         heartbeatHandler.removeCallbacks(heartbeatTask);
+        releaseWakeLock();
         if (recorder.isRunning()) {
             recorder.addMarker(SystemClock.elapsedRealtime(), "SERVICE_DESTROY");
         }
@@ -333,6 +411,29 @@ public class CompatibilitySessionService extends Service {
     public final class LocalBinder extends Binder {
         public boolean isRunning() {
             return recorder.isRunning();
+        }
+
+        public boolean isWakeLockMode() {
+            return wakeLockMode;
+        }
+
+        public boolean isWakeLockHeld() {
+            return CompatibilitySessionService.this.isWakeLockHeld();
+        }
+
+        public boolean isBatteryOptimizationExempt() {
+            return CompatibilitySessionService.this.isBatteryOptimizationExempt();
+        }
+
+        public boolean hasBackgroundLocationPermission() {
+            return CompatibilitySessionService.this.hasBackgroundLocationPermission();
+        }
+
+        public int getCurrentProcessImportance() {
+            ActivityManager.RunningAppProcessInfo info =
+                    new ActivityManager.RunningAppProcessInfo();
+            ActivityManager.getMyMemoryState(info);
+            return info.importance;
         }
 
         public int getEventCount() {
