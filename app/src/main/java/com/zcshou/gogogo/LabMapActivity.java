@@ -272,6 +272,8 @@ public class LabMapActivity extends AppCompatActivity {
         root.addView(buttonRow(
                 button("🎛 Scenario / Replay", v ->
                         startActivity(new Intent(this, ScenarioLabActivity.class))),
+                button("🧪 Motion Audit", v ->
+                        startActivity(new Intent(this, MotionAuditActivity.class))),
                 button("🧠 Resource Broker", v ->
                         startActivity(new Intent(this, PolicyLabActivity.class))),
                 button("🧬 数据来源链", v -> showProvenanceTimeline()),
