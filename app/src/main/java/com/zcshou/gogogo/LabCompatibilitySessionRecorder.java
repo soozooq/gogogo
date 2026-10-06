@@ -115,8 +115,9 @@ public final class LabCompatibilitySessionRecorder {
                 false));
     }
 
-    public synchronized void addHeartbeat(
+    public synchronized void addHeartbeatMain(
             long elapsedMs,
+            long processCpuMs,
             int processImportance,
             boolean powerSave,
             boolean interactive,
@@ -125,7 +126,8 @@ public final class LabCompatibilitySessionRecorder {
         if (!running) return;
 
         String label = String.format(Locale.US,
-                "importance=%d|powerSave=%s|interactive=%s|bgLocation=%s|batteryOptExempt=%s",
+                "cpuMs=%d|importance=%d|powerSave=%s|interactive=%s|bgLocation=%s|batteryOptExempt=%s",
+                processCpuMs,
                 processImportance,
                 powerSave,
                 interactive,
@@ -135,8 +137,27 @@ public final class LabCompatibilitySessionRecorder {
         addEventLocked(new Event(
                 relative(elapsedMs),
                 elapsedMs,
-                "HEARTBEAT",
+                "HEARTBEAT_MAIN",
                 label,
+                false,
+                0.0,
+                0.0,
+                0f,
+                0f,
+                0f,
+                false));
+    }
+
+    public synchronized void addHeartbeatBackground(
+            long elapsedMs,
+            long processCpuMs) {
+        if (!running) return;
+
+        addEventLocked(new Event(
+                relative(elapsedMs),
+                elapsedMs,
+                "HEARTBEAT_BG",
+                "cpuMs=" + processCpuMs,
                 false,
                 0.0,
                 0.0,
@@ -170,7 +191,8 @@ public final class LabCompatibilitySessionRecorder {
         boolean wakeLockAcquired = false;
         boolean wakeLockAcquireFailed = false;
         int wakeLockLossCount = 0;
-        HeartbeatStats heartbeat = new HeartbeatStats();
+        HeartbeatStats heartbeat = new HeartbeatStats("MAIN");
+        HeartbeatStats backgroundHeartbeat = new HeartbeatStats("BG");
 
         for (Event event : events) {
             if ("MARKER".equals(event.kind)) {
@@ -187,8 +209,12 @@ public final class LabCompatibilitySessionRecorder {
                 errorCount++;
                 continue;
             }
-            if ("HEARTBEAT".equals(event.kind)) {
+            if ("HEARTBEAT_MAIN".equals(event.kind)) {
                 heartbeat.accept(event);
+                continue;
+            }
+            if ("HEARTBEAT_BG".equals(event.kind)) {
+                backgroundHeartbeat.accept(event);
                 continue;
             }
             if (!"LOCATION".equals(event.kind)) continue;
@@ -216,6 +242,7 @@ public final class LabCompatibilitySessionRecorder {
                 mockMarkedLocations,
                 maxSeparation,
                 heartbeat.freeze(),
+                backgroundHeartbeat.freeze(),
                 sessionMode,
                 wakeLockAcquired,
                 wakeLockAcquireFailed,
@@ -322,44 +349,124 @@ public final class LabCompatibilitySessionRecorder {
     }
 
     private static final class HeartbeatStats {
+        final String name;
         int count;
         long lastRelativeMs = -1L;
         long maxGapMs = 0L;
         String lastSystemState = "N/A";
+        final List<Long> gaps = new ArrayList<>();
+
+        HeartbeatStats(String name) {
+            this.name = name;
+        }
 
         void accept(Event event) {
             count++;
             if (lastRelativeMs >= 0L) {
-                maxGapMs = Math.max(maxGapMs, event.relativeMs - lastRelativeMs);
+                long gap = event.relativeMs - lastRelativeMs;
+                maxGapMs = Math.max(maxGapMs, gap);
+                gaps.add(gap);
             }
             lastRelativeMs = event.relativeMs;
             lastSystemState = event.label;
         }
 
         HeartbeatSummary freeze() {
+            GapProfile profile = GapProfile.from(gaps);
             return new HeartbeatSummary(
+                    name,
                     count,
                     lastRelativeMs,
                     maxGapMs,
-                    lastSystemState);
+                    lastSystemState,
+                    profile);
         }
     }
 
     public static final class HeartbeatSummary {
+        public final String name;
         public final int count;
         public final long lastRelativeMs;
         public final long maxGapMs;
         public final String lastSystemState;
+        public final GapProfile gaps;
 
         HeartbeatSummary(
+                String name,
                 int count,
                 long lastRelativeMs,
                 long maxGapMs,
-                String lastSystemState) {
+                String lastSystemState,
+                GapProfile gaps) {
+            this.name = name;
             this.count = count;
             this.lastRelativeMs = lastRelativeMs;
             this.maxGapMs = maxGapMs;
+            this.gaps = gaps;
             this.lastSystemState = lastSystemState;
+            this.gaps = gaps;
+        }
+    }
+
+    public static final class GapProfile {
+        public final long p50Ms;
+        public final long p95Ms;
+        public final long p99Ms;
+        public final long maxMs;
+        public final int over1500;
+        public final int over3000;
+        public final int over10000;
+
+        GapProfile(
+                long p50Ms,
+                long p95Ms,
+                long p99Ms,
+                long maxMs,
+                int over1500,
+                int over3000,
+                int over10000) {
+            this.p50Ms = p50Ms;
+            this.p95Ms = p95Ms;
+            this.p99Ms = p99Ms;
+            this.maxMs = maxMs;
+            this.over1500 = over1500;
+            this.over3000 = over3000;
+            this.over10000 = over10000;
+        }
+
+        static GapProfile from(List<Long> source) {
+            if (source == null || source.isEmpty()) {
+                return new GapProfile(0L, 0L, 0L, 0L, 0, 0, 0);
+            }
+            List<Long> sorted = new ArrayList<>(source);
+            Collections.sort(sorted);
+
+            int over1500 = 0;
+            int over3000 = 0;
+            int over10000 = 0;
+            long max = 0L;
+            for (long gap : sorted) {
+                max = Math.max(max, gap);
+                if (gap > 1500L) over1500++;
+                if (gap > 3000L) over3000++;
+                if (gap > 10000L) over10000++;
+            }
+
+            return new GapProfile(
+                    percentile(sorted, 0.50),
+                    percentile(sorted, 0.95),
+                    percentile(sorted, 0.99),
+                    max,
+                    over1500,
+                    over3000,
+                    over10000);
+        }
+
+        private static long percentile(List<Long> sorted, double q) {
+            if (sorted == null || sorted.isEmpty()) return 0L;
+            int index = (int) Math.ceil(q * sorted.size()) - 1;
+            index = Math.max(0, Math.min(sorted.size() - 1, index));
+            return sorted.get(index);
         }
     }
 
@@ -369,6 +476,7 @@ public final class LabCompatibilitySessionRecorder {
         long firstMs = -1L;
         long lastMs = -1L;
         long maxGapMs = 0L;
+        final List<Long> gaps = new ArrayList<>();
         Event last;
 
         StreamStats(String name) {
@@ -379,14 +487,22 @@ public final class LabCompatibilitySessionRecorder {
             count++;
             if (firstMs < 0L) firstMs = event.relativeMs;
             if (lastMs >= 0L) {
-                maxGapMs = Math.max(maxGapMs, event.relativeMs - lastMs);
+                long gap = event.relativeMs - lastMs;
+                maxGapMs = Math.max(maxGapMs, gap);
+                gaps.add(gap);
             }
             lastMs = event.relativeMs;
             last = event;
         }
 
         StreamSummary freeze() {
-            return new StreamSummary(name, count, firstMs, lastMs, maxGapMs);
+            return new StreamSummary(
+                    name,
+                    count,
+                    firstMs,
+                    lastMs,
+                    maxGapMs,
+                    GapProfile.from(gaps));
         }
     }
 
@@ -396,13 +512,15 @@ public final class LabCompatibilitySessionRecorder {
         public final long firstRelativeMs;
         public final long lastRelativeMs;
         public final long maxGapMs;
+        public final GapProfile gaps;
 
         StreamSummary(
                 String name,
                 int count,
                 long firstRelativeMs,
                 long lastRelativeMs,
-                long maxGapMs) {
+                long maxGapMs,
+                GapProfile gaps) {
             this.name = name;
             this.count = count;
             this.firstRelativeMs = firstRelativeMs;
@@ -421,6 +539,7 @@ public final class LabCompatibilitySessionRecorder {
         public final int mockMarkedLocations;
         public final double maxLastSeparationMeters;
         public final HeartbeatSummary heartbeat;
+        public final HeartbeatSummary backgroundHeartbeat;
         public final String sessionMode;
         public final boolean wakeLockAcquired;
         public final boolean wakeLockAcquireFailed;
@@ -437,6 +556,7 @@ public final class LabCompatibilitySessionRecorder {
                 int mockMarkedLocations,
                 double maxLastSeparationMeters,
                 HeartbeatSummary heartbeat,
+                HeartbeatSummary backgroundHeartbeat,
                 String sessionMode,
                 boolean wakeLockAcquired,
                 boolean wakeLockAcquireFailed,
@@ -451,6 +571,7 @@ public final class LabCompatibilitySessionRecorder {
             this.mockMarkedLocations = mockMarkedLocations;
             this.maxLastSeparationMeters = maxLastSeparationMeters;
             this.heartbeat = heartbeat;
+            this.backgroundHeartbeat = backgroundHeartbeat;
             this.sessionMode = sessionMode;
             this.wakeLockAcquired = wakeLockAcquired;
             this.wakeLockAcquireFailed = wakeLockAcquireFailed;
@@ -467,15 +588,23 @@ public final class LabCompatibilitySessionRecorder {
                 return "NO_LONG_GAP";
             }
 
-            if (heartbeat == null || heartbeat.count < 2) {
+            if (heartbeat == null || heartbeat.count < 2
+                    || backgroundHeartbeat == null
+                    || backgroundHeartbeat.count < 2) {
                 return "NO_HEARTBEAT_DATA";
             }
 
-            long heartbeatGap = heartbeat.maxGapMs;
-            if (heartbeatGap >= Math.max(2000L, locationGap - 2000L)) {
+            long mainGap = heartbeat.maxGapMs;
+            long bgGap = backgroundHeartbeat.maxGapMs;
+            long nearLocation = Math.max(2000L, locationGap - 2000L);
+
+            if (mainGap >= nearLocation && bgGap >= nearLocation) {
                 return "PROCESS_OR_SCHEDULER_FREEZE";
             }
-            if (heartbeatGap <= 1500L) {
+            if (mainGap >= nearLocation && bgGap <= 1500L) {
+                return "MAIN_THREAD_STALL";
+            }
+            if (mainGap <= 1500L && bgGap <= 1500L) {
                 return "LOCATION_CALLBACK_THROTTLE";
             }
             return "MIXED_OR_UNKNOWN";
@@ -487,6 +616,7 @@ public final class LabCompatibilitySessionRecorder {
                     && network.maxGapMs <= 1500L
                     && gms.maxGapMs <= 1500L
                     && (heartbeat == null || heartbeat.maxGapMs <= 1500L)
+                    && (backgroundHeartbeat == null || backgroundHeartbeat.maxGapMs <= 1500L)
                     && maxLastSeparationMeters <= 10.0
                     && errorCount == 0) {
                 return "STABLE";
