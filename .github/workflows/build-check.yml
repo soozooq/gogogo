@@ -58,4 +58,15 @@ jobs:
       
       # 启动构建
       - name: Build with Gradle
-        run: ./gradlew build
+        shell: bash
+        run: |
+          set +e
+          ./gradlew build
+          code=$?
+          lint_report="app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt"
+          if [ -f "$lint_report" ]; then
+            echo ""
+            echo "===== FULL ANDROID LINT REPORT ====="
+            cat "$lint_report"
+          fi
+          exit "$code"
