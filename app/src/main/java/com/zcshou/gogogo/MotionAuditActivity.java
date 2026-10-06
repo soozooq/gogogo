@@ -81,61 +81,89 @@ public class MotionAuditActivity extends AppCompatActivity {
     }
 
     private void buildUi() {
-        int pad = dp(14);
+        int pad = GoGoUi.dp(this, 18);
 
         ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        GoGoUi.applyScreenBackground(scroll);
+
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(pad, pad, pad, pad);
+        root.setPadding(pad, GoGoUi.dp(this, 16), pad, GoGoUi.dp(this, 24));
         scroll.addView(root);
 
-        TextView title = new TextView(this);
-        title.setText("🧪 GoGoGo Motion Audit · Lab 13");
-        title.setTextSize(22);
-        title.setGravity(Gravity.CENTER);
-        root.addView(title, matchWrap());
+        LinearLayout appBar = GoGoUi.row(this);
+        appBar.addView(
+                GoGoUi.textButton(this, "←", v -> finish()),
+                new LinearLayout.LayoutParams(
+                        GoGoUi.dp(this, 52),
+                        ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        TextView note = body();
-        note.setText(
-                "对 GoGoGo 自己记录的轨迹做数据质量审计：时间戳连续性、采样间隔、"
-                        + "段速度、加速度突变与转向连续性。\n\n"
-                        + "这个评分用于实验/回放质量检查，不是反检测评分，也不会修改系统传感器。");
-        root.addView(note, matchWrap());
+        LinearLayout titleBlock = new LinearLayout(this);
+        titleBlock.setOrientation(LinearLayout.VERTICAL);
+        TextView title = GoGoUi.sectionTitle(this, "Motion Audit");
+        title.setTextSize(20);
+        title.setPadding(0, 0, 0, 0);
+        titleBlock.addView(title, GoGoUi.matchWrap());
+        titleBlock.addView(
+                GoGoUi.muted(this, "轨迹质量与连续性分析 · Lab 13"),
+                GoGoUi.matchWrap());
+        appBar.addView(titleBlock, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        root.addView(appBar, GoGoUi.matchWrap());
 
-        stateView = body();
-        stateView.setText("等待 ServiceGo…");
-        root.addView(stateView, matchWrap());
+        com.google.android.material.card.MaterialCardView scoreCard = GoGoUi.card(this);
+        LinearLayout scoreContent = GoGoUi.cardContent(this);
+        scoreCard.addView(scoreContent);
+        scoreContent.addView(GoGoUi.sectionTitle(this, "实时审计"), GoGoUi.matchWrap());
 
-        issueView = body();
-        root.addView(issueView, matchWrap());
+        stateView = GoGoUi.status(this, "等待 ServiceGo…");
+        stateView.setTextSize(14);
+        scoreContent.addView(stateView, GoGoUi.matchWrap());
+        GoGoUi.addCard(root, scoreCard, 16);
 
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.addView(button("↻ 立即刷新", v -> refreshAudit()),
-                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        row.addView(button("🧾 导出审计 JSON", v -> exportReport()),
-                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        root.addView(row, matchWrap());
+        com.google.android.material.card.MaterialCardView issueCard = GoGoUi.card(this);
+        LinearLayout issueContent = GoGoUi.cardContent(this);
+        issueCard.addView(issueContent);
+        issueContent.addView(GoGoUi.sectionTitle(this, "诊断结果"), GoGoUi.matchWrap());
 
-        Button back = button("← 返回地图实验室", v -> finish());
-        root.addView(back, matchWrap());
+        issueView = GoGoUi.muted(this, "等待轨迹输入");
+        issueView.setTextIsSelectable(true);
+        issueContent.addView(issueView, GoGoUi.matchWrap());
+        GoGoUi.addCard(root, issueCard, 12);
+
+        com.google.android.material.card.MaterialCardView actionCard = GoGoUi.card(this);
+        LinearLayout actionContent = GoGoUi.cardContent(this);
+        actionCard.addView(actionContent);
+
+        LinearLayout row = GoGoUi.row(this);
+        row.addView(
+                GoGoUi.secondaryButton(this, "立即刷新", v -> refreshAudit()),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, row, 10);
+        row.addView(
+                GoGoUi.primaryButton(this, "导出 JSON", v -> exportReport()),
+                GoGoUi.weighted());
+        actionContent.addView(row, GoGoUi.matchWrap());
+
+        actionContent.addView(GoGoUi.gap(this, 10));
+        actionContent.addView(
+                GoGoUi.muted(
+                        this,
+                        "评分用于 GoGoGo 自身的实验/回放质量检查。MAD 与 CUSUM 是诊断信号，不代表反检测能力。"),
+                GoGoUi.matchWrap());
+
+        GoGoUi.addCard(root, actionCard, 12);
 
         setContentView(scroll);
     }
 
     private TextView body() {
-        TextView v = new TextView(this);
-        v.setTextSize(14);
-        v.setPadding(0, dp(8), 0, dp(8));
-        return v;
+        return GoGoUi.muted(this, "");
     }
 
     private Button button(String text, android.view.View.OnClickListener listener) {
-        Button b = new Button(this);
-        b.setText(text);
-        b.setAllCaps(false);
-        b.setOnClickListener(listener);
-        return b;
+        return GoGoUi.secondaryButton(this, text, listener);
     }
 
     private LinearLayout.LayoutParams matchWrap() {
