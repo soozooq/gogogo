@@ -66,6 +66,13 @@ android {
     // 要存取 secret value 必須要使用到一個 BuildScript 的類別，默认会从 local.properties 中获取
     buildFeatures {
         buildConfig = true
+        aidl = true
+    }
+
+    sourceSets {
+        main {
+            aidl.srcDirs = ['src/main/aidl']
+        }
     }
 
     compileOptions {
