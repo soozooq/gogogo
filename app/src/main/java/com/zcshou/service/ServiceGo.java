@@ -1389,7 +1389,10 @@ public class ServiceGo extends Service {
             loc.setExtras(bundle);
 
             mLocManager.setTestProviderLocation(LocationManager.GPS_PROVIDER, loc);
+            mGpsPublishCount++;
+            mLastGpsPublishElapsed = SystemClock.elapsedRealtime();
         } catch (Exception e) {
+            mGpsPublishFailureCount++;
             XLog.e("SERVICEGO: ERROR - setLocationGPS, reinitializing provider");
             removeTestProviderGPS();
             addTestProviderGPS();
@@ -1452,7 +1455,10 @@ public class ServiceGo extends Service {
                 }
             }
             mLocManager.setTestProviderLocation(LocationManager.NETWORK_PROVIDER, loc);
+            mNetworkPublishCount++;
+            mLastNetworkPublishElapsed = SystemClock.elapsedRealtime();
         } catch (Exception e) {
+            mNetworkPublishFailureCount++;
             XLog.e("SERVICEGO: ERROR - setLocationNetwork, reinitializing provider");
             removeTestProviderNetwork();
             addTestProviderNetwork();
@@ -1500,7 +1506,10 @@ public class ServiceGo extends Service {
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
 
             mLocManager.setTestProviderLocation(LocationManager.FUSED_PROVIDER, loc);
+            mFusedProviderPublishCount++;
+            mLastFusedProviderPublishElapsed = SystemClock.elapsedRealtime();
         } catch (Exception e) {
+            mFusedProviderPublishFailureCount++;
             // fused test provider 没注上时这里会 fail,正常
         }
     }
@@ -1521,6 +1530,8 @@ public class ServiceGo extends Service {
             loc.setSpeed((float) mPublishedSpeed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
             mFusedClient.setMockLocation(loc);
+            mGmsFusedDispatchCount++;
+            mLastGmsFusedDispatchElapsed = SystemClock.elapsedRealtime();
         } catch (Throwable t) {
             // 不打日志,避免每 33ms 刷屏
         }
