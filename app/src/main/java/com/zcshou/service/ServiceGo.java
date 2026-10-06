@@ -64,6 +64,9 @@ public class ServiceGo extends Service {
     public static final String ACTION_MOTION_PAUSE = "com.soozooq.gogogo.action.MOTION_PAUSE";
     public static final String ACTION_MOTION_RESUME = "com.soozooq.gogogo.action.MOTION_RESUME";
     public static final String ACTION_MOTION_SPEED = "com.soozooq.gogogo.action.MOTION_SPEED";
+    public static final String ACTION_RECORD_START = "com.soozooq.gogogo.action.RECORD_START";
+    public static final String ACTION_RECORD_STOP = "com.soozooq.gogogo.action.RECORD_STOP";
+    public static final String ACTION_RECORD_CLEAR = "com.soozooq.gogogo.action.RECORD_CLEAR";
 
     public static final String EXTRA_ROUTE_LATS = "ROUTE_LATS";
     public static final String EXTRA_ROUTE_LNGS = "ROUTE_LNGS";
@@ -86,6 +89,8 @@ public class ServiceGo extends Service {
     private int mRouteMode = ROUTE_MODE_ONCE;
     private double mRouteSpeedMps = 1.4;
     private boolean mRouteActive = false;
+    private double[] mRouteCumulative;
+    private double mRouteTotalDistance = 0.0;
 
     private boolean mRoamActive = false;
     private double mRoamCenterLat;
@@ -99,6 +104,18 @@ public class ServiceGo extends Service {
     private long mLastMotionElapsed = 0L;
     private boolean mMotionPaused = false;
     private double mMotionMultiplier = 1.0;
+
+    public static volatile boolean sRunning = false;
+
+    private final Object mTrackLock = new Object();
+    private final java.util.ArrayList<Double> mTrackLats = new java.util.ArrayList<>();
+    private final java.util.ArrayList<Double> mTrackLngs = new java.util.ArrayList<>();
+    private final java.util.ArrayList<Long> mTrackTimes = new java.util.ArrayList<>();
+    private boolean mTrackRecording = false;
+    private long mLastTrackSampleElapsed = 0L;
+    private double mLastTrackLat = Double.NaN;
+    private double mLastTrackLng = Double.NaN;
+    private static final int MAX_TRACK_POINTS = 20000;
 
     private static final int HANDLER_MSG_ID = 0;
     // 33ms (~30Hz) tick: 缩短"mock 过期"窗口,避免某些应用在两次 push 之间读到真实位置后漂移
@@ -139,6 +156,7 @@ public class ServiceGo extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        sRunning = true;
 
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
         if (powerManager != null) {
@@ -298,6 +316,36 @@ public class ServiceGo extends Service {
         android.content.SharedPreferences state =
                 getSharedPreferences("mock_location_state", MODE_PRIVATE);
 
+        if (intent != null && ACTION_RECORD_START.equals(intent.getAction())) {
+            synchronized (mTrackLock) {
+                mTrackRecording = true;
+                mLastTrackSampleElapsed = 0L;
+                mLastTrackLat = Double.NaN;
+                mLastTrackLng = Double.NaN;
+            }
+            sampleTrackIfNeeded(true);
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_RECORD_STOP.equals(intent.getAction())) {
+            synchronized (mTrackLock) {
+                mTrackRecording = false;
+            }
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_RECORD_CLEAR.equals(intent.getAction())) {
+            synchronized (mTrackLock) {
+                mTrackLats.clear();
+                mTrackLngs.clear();
+                mTrackTimes.clear();
+                mLastTrackSampleElapsed = 0L;
+                mLastTrackLat = Double.NaN;
+                mLastTrackLng = Double.NaN;
+            }
+            return START_STICKY;
+        }
+
         if (intent != null && ACTION_MOTION_PAUSE.equals(intent.getAction())) {
             if (mRouteActive || mRoamActive) {
                 mMotionPaused = true;
@@ -342,6 +390,7 @@ public class ServiceGo extends Service {
             if (lats != null && lngs != null && lats.length > 1 && lats.length == lngs.length) {
                 mRouteLats = lats;
                 mRouteLngs = lngs;
+                buildRouteMetrics();
                 mRouteIndex = 0;
                 mRouteDirection = 1;
                 mRouteMode = Math.max(ROUTE_MODE_ONCE,
@@ -424,6 +473,8 @@ public class ServiceGo extends Service {
         mRoamActive = false;
         mRouteLats = null;
         mRouteLngs = null;
+        mRouteCumulative = null;
+        mRouteTotalDistance = 0.0;
         mSpeed = 0.0;
         mLastMotionElapsed = 0L;
         mMotionPaused = false;
@@ -433,6 +484,7 @@ public class ServiceGo extends Service {
     @Override
     public void onDestroy() {
         isStop = true;
+        sRunning = false;
         mLocHandler.removeMessages(HANDLER_MSG_ID);
         mLocHandlerThread.quit();
 
@@ -564,6 +616,7 @@ public class ServiceGo extends Service {
 
                     if (!isStop) {
                         advanceLabMotion();
+                        sampleTrackIfNeeded(false);
                         setLocationNetwork();
                         setLocationGPS();
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -581,6 +634,84 @@ public class ServiceGo extends Service {
         };
 
         mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
+    }
+
+    private void buildRouteMetrics() {
+        if (mRouteLats == null || mRouteLngs == null
+                || mRouteLats.length == 0 || mRouteLats.length != mRouteLngs.length) {
+            mRouteCumulative = null;
+            mRouteTotalDistance = 0.0;
+            return;
+        }
+
+        mRouteCumulative = new double[mRouteLats.length];
+        mRouteCumulative[0] = 0.0;
+        double total = 0.0;
+        for (int i = 1; i < mRouteLats.length; i++) {
+            total += distanceMeters(
+                    mRouteLats[i - 1], mRouteLngs[i - 1],
+                    mRouteLats[i], mRouteLngs[i]);
+            mRouteCumulative[i] = total;
+        }
+        mRouteTotalDistance = total;
+    }
+
+    private void sampleTrackIfNeeded(boolean force) {
+        synchronized (mTrackLock) {
+            if (!mTrackRecording) return;
+
+            long now = SystemClock.elapsedRealtime();
+            if (!force && mLastTrackSampleElapsed > 0L
+                    && now - mLastTrackSampleElapsed < 1000L) {
+                return;
+            }
+
+            double moved = (Double.isNaN(mLastTrackLat) || Double.isNaN(mLastTrackLng))
+                    ? Double.MAX_VALUE
+                    : distanceMeters(mLastTrackLat, mLastTrackLng, mCurLat, mCurLng);
+
+            if (!force && moved < 0.5
+                    && mLastTrackSampleElapsed > 0L
+                    && now - mLastTrackSampleElapsed < 5000L) {
+                return;
+            }
+
+            if (mTrackLats.size() >= MAX_TRACK_POINTS) {
+                mTrackLats.remove(0);
+                mTrackLngs.remove(0);
+                mTrackTimes.remove(0);
+            }
+
+            mTrackLats.add(mCurLat);
+            mTrackLngs.add(mCurLng);
+            mTrackTimes.add(System.currentTimeMillis());
+            mLastTrackLat = mCurLat;
+            mLastTrackLng = mCurLng;
+            mLastTrackSampleElapsed = now;
+        }
+    }
+
+    private double getCurrentPassProgressMeters() {
+        if (!mRouteActive || mRouteLats == null || mRouteCumulative == null
+                || mRouteLats.length < 2 || mRouteIndex < 0 || mRouteIndex >= mRouteLats.length) {
+            return 0.0;
+        }
+
+        int next = mRouteIndex + mRouteDirection;
+        double fromVertexDistance = 0.0;
+        if (next >= 0 && next < mRouteLats.length) {
+            fromVertexDistance = distanceMeters(
+                    mRouteLats[mRouteIndex], mRouteLngs[mRouteIndex],
+                    mCurLat, mCurLng);
+        }
+
+        if (mRouteDirection >= 0) {
+            return clamp(mRouteCumulative[mRouteIndex] + fromVertexDistance,
+                    0.0, mRouteTotalDistance);
+        } else {
+            return clamp((mRouteTotalDistance - mRouteCumulative[mRouteIndex])
+                    + fromVertexDistance, 0.0, mRouteTotalDistance);
+        }
     }
 
     private void advanceLabMotion() {
@@ -965,6 +1096,70 @@ public class ServiceGo extends Service {
             mCurAlt = alt;
             mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
             if (mJoyStick != null) mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+        }
+
+        public double getLongitude() { return mCurLng; }
+        public double getLatitude() { return mCurLat; }
+        public double getAltitude() { return mCurAlt; }
+        public double getSpeedMps() { return mSpeed; }
+        public float getBearingDegrees() { return mCurBea; }
+        public boolean isRouteActive() { return mRouteActive; }
+        public boolean isRoamActive() { return mRoamActive; }
+        public boolean isMotionPaused() { return mMotionPaused; }
+        public double getMotionMultiplier() { return mMotionMultiplier; }
+
+        public double getRouteProgressFraction() {
+            if (mRouteTotalDistance <= 0.0) return 0.0;
+            return clamp(getCurrentPassProgressMeters() / mRouteTotalDistance, 0.0, 1.0);
+        }
+
+        public double getRouteRemainingMeters() {
+            if (!mRouteActive || mRouteTotalDistance <= 0.0) return 0.0;
+            return Math.max(0.0, mRouteTotalDistance - getCurrentPassProgressMeters());
+        }
+
+        public long getRouteEtaSeconds() {
+            double effective = mRouteSpeedMps * mMotionMultiplier;
+            if (!mRouteActive || mMotionPaused || effective <= 0.01) return -1L;
+            return Math.round(getRouteRemainingMeters() / effective);
+        }
+
+        public int getRouteMode() { return mRouteMode; }
+
+        public boolean isTrackRecording() {
+            synchronized (mTrackLock) {
+                return mTrackRecording;
+            }
+        }
+
+        public int getTrackPointCount() {
+            synchronized (mTrackLock) {
+                return mTrackLats.size();
+            }
+        }
+
+        public double[] getTrackLats() {
+            synchronized (mTrackLock) {
+                double[] out = new double[mTrackLats.size()];
+                for (int i = 0; i < out.length; i++) out[i] = mTrackLats.get(i);
+                return out;
+            }
+        }
+
+        public double[] getTrackLngs() {
+            synchronized (mTrackLock) {
+                double[] out = new double[mTrackLngs.size()];
+                for (int i = 0; i < out.length; i++) out[i] = mTrackLngs.get(i);
+                return out;
+            }
+        }
+
+        public long[] getTrackTimes() {
+            synchronized (mTrackLock) {
+                long[] out = new long[mTrackTimes.size()];
+                for (int i = 0; i < out.length; i++) out[i] = mTrackTimes.get(i);
+                return out;
+            }
         }
     }
 }
