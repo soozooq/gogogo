@@ -110,6 +110,19 @@
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
 
+        <receiver
+            android:name=".LabDeviceAdminReceiver"
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:exported="true">
+            <meta-data
+                android:name="android.app.device_admin"
+                android:resource="@xml/lab_device_admin" />
+            <intent-filter>
+                <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
+                <action android:name="android.app.action.PROFILE_PROVISIONING_COMPLETE" />
+            </intent-filter>
+        </receiver>
+
         <activity
             android:name=".WelcomeActivity"
             android:exported="false"
