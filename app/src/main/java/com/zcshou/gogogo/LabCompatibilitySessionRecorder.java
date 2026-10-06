@@ -166,12 +166,21 @@ public final class LabCompatibilitySessionRecorder {
         int foregroundMarkers = 0;
         int errorCount = 0;
         int mockMarkedLocations = 0;
+        String sessionMode = "UNKNOWN";
+        boolean wakeLockAcquired = false;
+        boolean wakeLockAcquireFailed = false;
+        int wakeLockLossCount = 0;
         HeartbeatStats heartbeat = new HeartbeatStats();
 
         for (Event event : events) {
             if ("MARKER".equals(event.kind)) {
                 if ("UI_BACKGROUND".equals(event.label)) backgroundMarkers++;
                 if ("UI_FOREGROUND".equals(event.label)) foregroundMarkers++;
+                if ("SURVIVAL_MODE_WAKELOCK".equals(event.label)) sessionMode = "WAKELOCK";
+                if ("SURVIVAL_MODE_BASELINE".equals(event.label)) sessionMode = "BASELINE";
+                if ("WAKELOCK_ACQUIRED".equals(event.label)) wakeLockAcquired = true;
+                if ("WAKELOCK_ACQUIRE_FAILED".equals(event.label)) wakeLockAcquireFailed = true;
+                if ("WAKELOCK_NOT_HELD".equals(event.label)) wakeLockLossCount++;
                 continue;
             }
             if ("ERROR".equals(event.kind)) {
@@ -207,6 +216,10 @@ public final class LabCompatibilitySessionRecorder {
                 mockMarkedLocations,
                 maxSeparation,
                 heartbeat.freeze(),
+                sessionMode,
+                wakeLockAcquired,
+                wakeLockAcquireFailed,
+                wakeLockLossCount,
                 events.size());
     }
 
@@ -408,6 +421,10 @@ public final class LabCompatibilitySessionRecorder {
         public final int mockMarkedLocations;
         public final double maxLastSeparationMeters;
         public final HeartbeatSummary heartbeat;
+        public final String sessionMode;
+        public final boolean wakeLockAcquired;
+        public final boolean wakeLockAcquireFailed;
+        public final int wakeLockLossCount;
         public final int eventCount;
 
         Summary(
@@ -420,6 +437,10 @@ public final class LabCompatibilitySessionRecorder {
                 int mockMarkedLocations,
                 double maxLastSeparationMeters,
                 HeartbeatSummary heartbeat,
+                String sessionMode,
+                boolean wakeLockAcquired,
+                boolean wakeLockAcquireFailed,
+                int wakeLockLossCount,
                 int eventCount) {
             this.gps = gps;
             this.network = network;
@@ -430,6 +451,10 @@ public final class LabCompatibilitySessionRecorder {
             this.mockMarkedLocations = mockMarkedLocations;
             this.maxLastSeparationMeters = maxLastSeparationMeters;
             this.heartbeat = heartbeat;
+            this.sessionMode = sessionMode;
+            this.wakeLockAcquired = wakeLockAcquired;
+            this.wakeLockAcquireFailed = wakeLockAcquireFailed;
+            this.wakeLockLossCount = wakeLockLossCount;
             this.eventCount = eventCount;
         }
 
