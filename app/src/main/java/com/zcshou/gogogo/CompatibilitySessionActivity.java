@@ -102,7 +102,7 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title, GoGoUi.matchWrap());
         titleBlock.addView(
-                GoGoUi.muted(this, "Lab 17 · 前后台标准位置链时间轴"),
+                GoGoUi.muted(this, "Lab 17.1 · Freeze Detector + 位置链时间轴"),
                 GoGoUi.matchWrap());
         appBar.addView(titleBlock, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
@@ -174,8 +174,10 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
                         + "2. 点“开始会话”。\n"
                         + "3. 切到微信并正常打开你要测试的位置功能。\n"
                         + "4. 过 30～60 秒回到这里，点“停止会话”。\n"
-                        + "5. 看三条实时流最大 gap 是否明显变大，必要时导出 CSV。\n\n"
-                        + "Recorder 只记录 GoGoGo 自己的标准位置消费行为和本页前后台事件，"
+                        + "5. 看三条实时流与 heartbeat 的最大 gap。\n"
+                        + "   - 两边一起断：更像进程/线程被冻结。\n"
+                        + "   - heartbeat 不断、位置流断：更像后台位置回调被节流。\n\n"
+                        + "Recorder 只记录 GoGoGo 自己的标准位置消费行为、本页前后台事件和本进程状态，"
                         + "不会读取微信内部信息，也不会修改 isMock 标记。");
         guideContent.addView(guidanceView, GoGoUi.matchWrap());
         GoGoUi.addCard(root, guideCard, 12);
@@ -328,17 +330,38 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
                 summary.gms.maxGapMs,
                 summary.maxLastSeparationMeters));
 
+        String freezeHint;
+        String diagnosis = summary.freezeDiagnosis();
+        if ("PROCESS_OR_SCHEDULER_FREEZE".equals(diagnosis)) {
+            freezeHint = "Heartbeat 与位置流一起出现长 gap：更像进程/线程被系统或厂商后台策略冻结。";
+        } else if ("LOCATION_CALLBACK_THROTTLE".equals(diagnosis)) {
+            freezeHint = "Heartbeat 持续正常，但位置流出现长 gap：更像后台位置回调被系统节流。";
+        } else if ("NO_LONG_GAP".equals(diagnosis)) {
+            freezeHint = "未发现长 gap。";
+        } else {
+            freezeHint = "Heartbeat 与位置流表现不一致，需要结合 CSV 继续看。";
+        }
+
         timelineView.setText(String.format(Locale.US,
                 "UI → background: %d\n"
                         + "UI → foreground: %d\n"
                         + "errors: %d\n"
-                        + "mock-marked location events: %d\n\n"
-                        + "判定说明：STABLE 要求三条实时流都有样本、最大 gap ≤1500 ms、"
+                        + "mock-marked location events: %d\n"
+                        + "heartbeat: count=%d · max gap=%d ms\n"
+                        + "freeze diagnosis: %s\n"
+                        + "last system state: %s\n\n"
+                        + "%s\n\n"
+                        + "判定说明：STABLE 要求三条实时流与 heartbeat 都持续、最大 gap ≤1500 ms、"
                         + "最后坐标分离 ≤10 m，并且 recorder 没有 API error。",
                 summary.backgroundMarkers,
                 summary.foregroundMarkers,
                 summary.errorCount,
-                summary.mockMarkedLocations));
+                summary.mockMarkedLocations,
+                summary.heartbeat == null ? 0 : summary.heartbeat.count,
+                summary.heartbeat == null ? 0L : summary.heartbeat.maxGapMs,
+                diagnosis,
+                summary.heartbeat == null ? "N/A" : summary.heartbeat.lastSystemState,
+                freezeHint));
     }
 
     private void bindRecorder() {
