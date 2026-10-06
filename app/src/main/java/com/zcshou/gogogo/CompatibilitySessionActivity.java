@@ -103,7 +103,7 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title, GoGoUi.matchWrap());
         titleBlock.addView(
-                GoGoUi.muted(this, "Lab 17.2 · Survival A/B + Freeze Detector"),
+                GoGoUi.muted(this, "Lab 17.2.1 · Survival A/B Evidence Lock"),
                 GoGoUi.matchWrap());
         appBar.addView(titleBlock, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
@@ -334,15 +334,23 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
 
         LabCompatibilitySessionRecorder.Summary summary = b.getSummary();
 
+        String displayedMode = b.isRunning()
+                ? (b.isWakeLockMode() ? "WAKELOCK" : "BASELINE")
+                : summary.sessionMode;
+
         statusView.setText(String.format(Locale.US,
                 "%s · %s\n"
-                        + "mode=%s · wakeLock=%s\n"
+                        + "sessionMode=%s\n"
+                        + "wakeLock now=%s · acquired=%s · lost=%d · acquireFailed=%s\n"
                         + "batteryOptExempt=%s · bgLocation=%s · importance=%d\n"
                         + "时长 %s · events %d",
                 b.isRunning() ? "RECORDING" : "STOPPED",
                 summary.grade(),
-                b.isWakeLockMode() ? "WAKELOCK" : "BASELINE",
+                displayedMode,
                 b.isWakeLockHeld() ? "HELD" : "OFF",
+                summary.wakeLockAcquired ? "YES" : "NO",
+                summary.wakeLockLossCount,
+                summary.wakeLockAcquireFailed ? "YES" : "NO",
                 b.isBatteryOptimizationExempt() ? "YES" : "NO",
                 b.hasBackgroundLocationPermission() ? "YES" : "NO",
                 b.getCurrentProcessImportance(),
