@@ -147,7 +147,14 @@ public class SandboxLabActivity extends AppCompatActivity {
         caps.append("GoGoGo = Profile Owner：").append(yesNo(profileOwner)).append("\n");
         caps.append("GoGoGo = Device Owner：").append(yesNo(deviceOwner)).append("\n");
         caps.append("系统允许创建 Managed Profile：").append(yesNo(provisioningAllowed)).append("\n");
-        caps.append("当前用户 ID：").append(UserHandle.myUserId()).append("\n");
+        try {
+            long currentSerial = um == null ? -1L
+                    : um.getSerialNumberForUser(Process.myUserHandle());
+            caps.append("当前 UserHandle：").append(Process.myUserHandle()).append("\n");
+            caps.append("当前用户 serial：").append(currentSerial).append("\n");
+        } catch (Throwable ignored) {
+            caps.append("当前 UserHandle：").append(Process.myUserHandle()).append("\n");
+        }
 
         if (managedUsersFeature && provisioningAllowed) {
             caps.append("\n结论：这台设备具备继续做原生 Work Profile 沙箱实验的基础 ✅");
