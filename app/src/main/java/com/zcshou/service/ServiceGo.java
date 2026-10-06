@@ -11,6 +11,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ServiceInfo;
+import android.view.WindowManager;
+import android.view.Surface;
+import android.hardware.SensorManager;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorEvent;
+import android.hardware.Sensor;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -61,6 +67,12 @@ public class ServiceGo extends Service {
     private boolean mFusedMockEnabled = false;
     private boolean isStop = false;
     private PowerManager.WakeLock mWakeLock;
+
+    // 手机朝向：直接从系统方向传感器读取，避免高德在 Mock 模式下不再更新自身罗盘。
+    private SensorManager mSensorManager;
+    private Sensor mHeadingSensor;
+    private SensorEventListener mHeadingListener;
+    private volatile boolean mHeadingAvailable = false;
     // 通知栏消息
     private static final int SERVICE_GO_NOTE_ID = 1;
     private static final String SERVICE_GO_NOTE_ACTION_JOYSTICK_SHOW = "ShowJoyStick";
@@ -94,6 +106,7 @@ public class ServiceGo extends Service {
         }
 
         mLocManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        initHeadingSensor();
 
         removeTestProviderNetwork();
         addTestProviderNetwork();
@@ -126,6 +139,78 @@ public class ServiceGo extends Service {
         // 覆盖走 Google Play Services 路径的应用(部分 WeChat/腾讯小程序场景)。
         // 设备没装 GMS 就 try/catch 静默跳过。
         initFusedMock();
+    }
+
+    private void initHeadingSensor() {
+        try {
+            mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+            if (mSensorManager == null) {
+                XLog.e("SERVICEGO: SensorManager unavailable");
+                return;
+            }
+
+            mHeadingSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+            if (mHeadingSensor == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                mHeadingSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR);
+            }
+            if (mHeadingSensor == null) {
+                XLog.e("SERVICEGO: no rotation-vector heading sensor");
+                return;
+            }
+
+            mHeadingListener = new SensorEventListener() {
+                private final float[] rotation = new float[9];
+                private final float[] adjusted = new float[9];
+                private final float[] orientation = new float[3];
+
+                @Override
+                public void onSensorChanged(SensorEvent event) {
+                    if (event == null || event.values == null) return;
+                    try {
+                        SensorManager.getRotationMatrixFromVector(rotation, event.values);
+
+                        int displayRotation = Surface.ROTATION_0;
+                        WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+                        if (wm != null) {
+                            displayRotation = wm.getDefaultDisplay().getRotation();
+                        }
+
+                        int axisX = SensorManager.AXIS_X;
+                        int axisY = SensorManager.AXIS_Y;
+                        if (displayRotation == Surface.ROTATION_90) {
+                            axisX = SensorManager.AXIS_Y;
+                            axisY = SensorManager.AXIS_MINUS_X;
+                        } else if (displayRotation == Surface.ROTATION_180) {
+                            axisX = SensorManager.AXIS_MINUS_X;
+                            axisY = SensorManager.AXIS_MINUS_Y;
+                        } else if (displayRotation == Surface.ROTATION_270) {
+                            axisX = SensorManager.AXIS_MINUS_Y;
+                            axisY = SensorManager.AXIS_X;
+                        }
+
+                        SensorManager.remapCoordinateSystem(rotation, axisX, axisY, adjusted);
+                        SensorManager.getOrientation(adjusted, orientation);
+
+                        float heading = (float) Math.toDegrees(orientation[0]);
+                        if (heading < 0f) heading += 360f;
+                        mCurBea = heading;
+                        mHeadingAvailable = true;
+                    } catch (Throwable ignored) {
+                    }
+                }
+
+                @Override
+                public void onAccuracyChanged(Sensor sensor, int accuracy) {
+                }
+            };
+
+            boolean registered = mSensorManager.registerListener(
+                    mHeadingListener, mHeadingSensor, SensorManager.SENSOR_DELAY_GAME);
+            XLog.i("SERVICEGO: heading sensor registered=" + registered
+                    + " type=" + mHeadingSensor.getType());
+        } catch (Throwable t) {
+            XLog.e("SERVICEGO: heading sensor init failed: " + t.getMessage());
+        }
     }
 
     @SuppressLint("MissingPermission")
@@ -215,6 +300,13 @@ public class ServiceGo extends Service {
             try {
                 mLocManager.removeUpdates(mPersistentListener);
             } catch (Exception ignored) {
+            }
+        }
+
+        if (mSensorManager != null && mHeadingListener != null) {
+            try {
+                mSensorManager.unregisterListener(mHeadingListener);
+            } catch (Throwable ignored) {
             }
         }
 
@@ -376,8 +468,8 @@ public class ServiceGo extends Service {
             Location loc = new Location(LocationManager.GPS_PROVIDER);
             loc.setAccuracy(0.8f);    // 设定此位置的估计水平精度，以米为单位。
             loc.setAltitude(mCurAlt);                     // 设置高度，在 WGS 84 参考坐标系中的米
-            if (mSpeed > 0.3) {
-                loc.setBearing(mCurBea); // 只有真实模拟移动时才提供航向；静止时让高德使用手机罗盘
+            if (mHeadingAvailable || mSpeed > 0.3) {
+                loc.setBearing(mCurBea);
             }
             loc.setLatitude(mCurLat);                   // 纬度（度）
             loc.setLongitude(mCurLng);                  // 经度（度）
@@ -387,8 +479,8 @@ public class ServiceGo extends Service {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 loc.setVerticalAccuracyMeters(1.5f);
                 loc.setSpeedAccuracyMetersPerSecond(0.2f);
-                if (mSpeed > 0.3) {
-                    loc.setBearingAccuracyDegrees(1.0f);
+                if (mHeadingAvailable || mSpeed > 0.3) {
+                    loc.setBearingAccuracyDegrees(2.0f);
                 }
             }
             Bundle bundle = new Bundle();
@@ -443,8 +535,8 @@ public class ServiceGo extends Service {
             // 高德会融合网络定位；把 mock NETWORK 也保持为较高质量，减少真实网络定位抢回。
             loc.setAccuracy(2.0f);  // 设定此位置的估计水平精度，以米为单位。
             loc.setAltitude(mCurAlt);                     // 设置高度，在 WGS 84 参考坐标系中的米
-            if (mSpeed > 0.3) {
-                loc.setBearing(mCurBea); // 只有真实模拟移动时才提供航向；静止时让高德使用手机罗盘
+            if (mHeadingAvailable || mSpeed > 0.3) {
+                loc.setBearing(mCurBea);
             }
             loc.setLatitude(mCurLat);                   // 纬度（度）
             loc.setLongitude(mCurLng);                  // 经度（度）
@@ -455,8 +547,8 @@ public class ServiceGo extends Service {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 loc.setVerticalAccuracyMeters(3.0f);
                 loc.setSpeedAccuracyMetersPerSecond(0.5f);
-                if (mSpeed > 0.3) {
-                    loc.setBearingAccuracyDegrees(2.0f);
+                if (mHeadingAvailable || mSpeed > 0.3) {
+                    loc.setBearingAccuracyDegrees(3.0f);
                 }
             }
             mLocManager.setTestProviderLocation(LocationManager.NETWORK_PROVIDER, loc);
@@ -497,7 +589,7 @@ public class ServiceGo extends Service {
             Location loc = new Location(LocationManager.FUSED_PROVIDER);
             loc.setAccuracy(Criteria.ACCURACY_FINE);
             loc.setAltitude(mCurAlt);
-            if (mSpeed > 0.3) {
+            if (mHeadingAvailable || mSpeed > 0.3) {
                 loc.setBearing(mCurBea);
             }
             loc.setLatitude(mCurLat);
@@ -519,7 +611,7 @@ public class ServiceGo extends Service {
             Location loc = new Location("fused");
             loc.setAccuracy(Criteria.ACCURACY_FINE);
             loc.setAltitude(mCurAlt);
-            if (mSpeed > 0.3) {
+            if (mHeadingAvailable || mSpeed > 0.3) {
                 loc.setBearing(mCurBea);
             }
             loc.setLatitude(mCurLat);
