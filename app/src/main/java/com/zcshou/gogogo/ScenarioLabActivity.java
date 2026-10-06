@@ -112,7 +112,7 @@ public class ScenarioLabActivity extends AppCompatActivity {
         scroll.addView(root);
 
         TextView title = new TextView(this);
-        title.setText("🎛 GoGoGo Deterministic Scenario · Lab 11");
+        title.setText("🎛 GoGoGo Deterministic Scenario · Lab 12");
         title.setTextSize(22);
         title.setGravity(Gravity.CENTER);
         root.addView(title, matchWrap());
@@ -351,6 +351,8 @@ public class ScenarioLabActivity extends AppCompatActivity {
                             + "Noise N/E: %.2f / %.2f m\n"
                             + "Raw: %.6f, %.6f\n"
                             + "Published: %s\n"
+                            + "Device heading: %s\n"
+                            + "Kinematics: %s\n"
                             + "Policy: %s",
                     binder.getScenarioStep(),
                     binder.getScenarioSummary(),
@@ -362,11 +364,19 @@ public class ScenarioLabActivity extends AppCompatActivity {
                     binder.getLongitude(),
                     binder.getLatitude(),
                     binder.isPolicyPublishing()
-                            ? String.format(Locale.US, "%.6f, %.6f · acc %.0fm",
+                            ? String.format(Locale.US, "%.6f, %.6f · acc %.0fm · bearing %.1f°",
                             binder.getPublishedLongitude(),
                             binder.getPublishedLatitude(),
-                            binder.getPublishedAccuracyMeters())
+                            binder.getPublishedAccuracyMeters(),
+                            binder.getPublishedBearingDegrees())
                             : "PAUSED",
+                    binder.isDeviceHeadingAvailable()
+                            ? String.format(Locale.US, "%.1f° · %s · acc=%d",
+                            binder.getDeviceHeadingDegrees(),
+                            binder.getHeadingSensorSource(),
+                            binder.getDeviceHeadingAccuracy())
+                            : "UNAVAILABLE",
+                    binder.getKinematicSummary(),
                     binder.getPolicySummary()));
         } catch (Throwable t) {
             liveView.setText("实时场景状态读取失败：" + t.getClass().getSimpleName());
@@ -499,6 +509,19 @@ public class ScenarioLabActivity extends AppCompatActivity {
             live.put("published_speed_mps", binder.getPublishedSpeedMps());
             live.put("published_bearing_deg", binder.getPublishedBearingDegrees());
             live.put("published_accuracy_m", binder.getPublishedAccuracyMeters());
+
+            live.put("device_heading_available", binder.isDeviceHeadingAvailable());
+            live.put("device_heading_deg", binder.getDeviceHeadingDegrees());
+            live.put("device_heading_accuracy", binder.getDeviceHeadingAccuracy());
+            live.put("heading_sensor_source", binder.getHeadingSensorSource());
+
+            live.put("kinematic_state", binder.getKinematicState());
+            live.put("kinematic_acceleration_mps2", binder.getKinematicAccelerationMps2());
+            live.put("kinematic_jerk_mps3", binder.getKinematicJerkMps3());
+            live.put("kinematic_turn_rate_deg_s", binder.getKinematicTurnRateDegPerSec());
+            live.put("kinematic_bearing_source", binder.getKinematicBearingSource());
+            live.put("kinematic_ledger_sha256", binder.getKinematicLedgerHash());
+
             live.put("provenance_source", binder.getProvenanceSource());
             live.put("service_policy", binder.getPolicySummary());
             report.put("live", live);
