@@ -46,7 +46,7 @@ public class SandboxLabActivity extends AppCompatActivity {
         scroll.addView(root);
 
         TextView title = new TextView(this);
-        title.setText("📦 GoGoGo Sandbox Lab 10");
+        title.setText("📦 GoGoGo Sandbox Lab 11");
         title.setTextSize(22);
         title.setGravity(Gravity.CENTER);
         root.addView(title, matchWrap());
@@ -79,6 +79,10 @@ public class SandboxLabActivity extends AppCompatActivity {
 
         Button accounts = button("💼 打开账号 / 工作资料相关设置", v -> openAccountSettings());
         root.addView(accounts, matchWrap());
+
+        Button scenario = button("🎛 Deterministic Scenario / Replay", v ->
+                startActivity(new Intent(this, ScenarioLabActivity.class)));
+        root.addView(scenario, matchWrap());
 
         Button capsule = button("🧪 Isolated Process Capsule", v ->
                 startActivity(new Intent(this, IsolatedCapsuleLabActivity.class)));
