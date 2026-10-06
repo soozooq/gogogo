@@ -16,6 +16,7 @@ on:
       - feat/gogogo-heading-lab15
       - feat/gogogo-consumer-lab16
       - feat/gogogo-session-lab17
+      - feat/gogogo-session-lab17-1
   # 仓库收到 pull_request 时触发
   pull_request:
     branches:
