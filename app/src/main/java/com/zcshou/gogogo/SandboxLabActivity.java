@@ -5,6 +5,7 @@ import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
 import android.os.UserHandle;
@@ -163,7 +164,9 @@ public class SandboxLabActivity extends AppCompatActivity {
         }
 
         try {
-            if (um != null) currentManaged = um.isManagedProfile();
+            if (um != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                currentManaged = um.isManagedProfile();
+            }
         } catch (Throwable ignored) {
         }
 
