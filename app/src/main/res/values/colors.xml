@@ -157,4 +157,20 @@
     <color name="black_semi_transparent">#B2000000</color>
     <color name="saffron">#F4B63E</color>
     <color name="eggplant">#663D4E</color>
+
+    <!-- GoGoGo semantic UI palette -->
+    <color name="gogogo_bg">#F5F7FA</color>
+    <color name="gogogo_surface">#FFFFFFFF</color>
+    <color name="gogogo_surface_alt">#F0FDFA</color>
+    <color name="gogogo_primary">#0F766E</color>
+    <color name="gogogo_primary_dark">#115E59</color>
+    <color name="gogogo_primary_soft">#CCFBF1</color>
+    <color name="gogogo_accent">#14B8A6</color>
+    <color name="gogogo_text">#0F172A</color>
+    <color name="gogogo_text_muted">#64748B</color>
+    <color name="gogogo_border">#E2E8F0</color>
+    <color name="gogogo_success">#16A34A</color>
+    <color name="gogogo_warning">#D97706</color>
+    <color name="gogogo_danger">#DC2626</color>
+    <color name="gogogo_info">#2563EB</color>
 </resources>
