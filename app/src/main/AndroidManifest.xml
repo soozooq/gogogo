@@ -154,6 +154,18 @@
             android:process=":consumer"
             android:theme="@style/AppTheme.NoActionBar" />
 
+        <activity
+            android:name=".CompatibilitySessionActivity"
+            android:exported="false"
+            android:process=":consumer"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <service
+            android:name=".CompatibilitySessionService"
+            android:exported="false"
+            android:foregroundServiceType="location"
+            android:process=":consumer" />
+
         <receiver
             android:name=".LabDeviceAdminReceiver"
             android:permission="android.permission.BIND_DEVICE_ADMIN"
