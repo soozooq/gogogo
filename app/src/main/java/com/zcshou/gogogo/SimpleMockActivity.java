@@ -101,6 +101,8 @@ public class SimpleMockActivity extends AppCompatActivity {
 
         addButton(root, "开始模拟", v -> startMock());
         addButton(root, "停止模拟", v -> stopMock());
+        addButton(root, "🧪 打开 GoGoGo Lab（地图 / 收藏 / GPX / KML）",
+                v -> startActivity(new Intent(this, LabMapActivity.class)));
 
         statusView = new TextView(this);
         statusView.setText("状态：未启动");
