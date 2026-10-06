@@ -103,105 +103,165 @@ public class ScenarioLabActivity extends AppCompatActivity {
     }
 
     private void buildUi() {
-        int pad = dp(14);
+        int pad = GoGoUi.dp(this, 18);
 
         ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        GoGoUi.applyScreenBackground(scroll);
+
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(pad, pad, pad, pad);
+        root.setPadding(pad, GoGoUi.dp(this, 16), pad, GoGoUi.dp(this, 24));
         scroll.addView(root);
 
-        TextView title = new TextView(this);
-        title.setText("🎛 GoGoGo Deterministic Scenario · Lab 12");
-        title.setTextSize(22);
-        title.setGravity(Gravity.CENTER);
-        root.addView(title, matchWrap());
+        LinearLayout appBar = GoGoUi.row(this);
+        appBar.addView(
+                GoGoUi.textButton(this, "←", v -> finish()),
+                new LinearLayout.LayoutParams(
+                        GoGoUi.dp(this, 52),
+                        ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        TextView intro = body();
-        intro.setText(
-                "同一个场景配置 + 同一个 Seed + 同一个 Tick，会得到完全相同的实验影子。\n\n"
-                        + "位置噪声会真正作用在 Resource Broker 的 Published Mock 坐标上；"
-                        + "虚拟时间 / 电量 /方向目前是 GoGoGo Lab 的可重复 shadow resource，"
-                        + "不会修改手机真实系统时钟、电池状态或物理传感器。");
-        root.addView(intro, matchWrap());
+        LinearLayout titleBlock = new LinearLayout(this);
+        titleBlock.setOrientation(LinearLayout.VERTICAL);
+        TextView title = GoGoUi.sectionTitle(this, "Scenario / Replay");
+        title.setTextSize(20);
+        title.setPadding(0, 0, 0, 0);
+        titleBlock.addView(title, GoGoUi.matchWrap());
+        titleBlock.addView(
+                GoGoUi.muted(this, "确定性场景 · Seed / Tick / Shadow resources"),
+                GoGoUi.matchWrap());
+        appBar.addView(titleBlock, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        root.addView(appBar, GoGoUi.matchWrap());
 
-        stateView = body();
-        root.addView(stateView, matchWrap());
+        com.google.android.material.card.MaterialCardView stateCard = GoGoUi.card(this);
+        LinearLayout stateContent = GoGoUi.cardContent(this);
+        stateCard.addView(stateContent);
+        stateContent.addView(GoGoUi.sectionTitle(this, "当前场景"), GoGoUi.matchWrap());
+        stateView = GoGoUi.status(this, "");
+        stateContent.addView(stateView, GoGoUi.matchWrap());
+        GoGoUi.addCard(root, stateCard, 16);
 
-        root.addView(sectionTitle("场景配置"));
+        com.google.android.material.card.MaterialCardView configCard = GoGoUi.card(this);
+        LinearLayout config = GoGoUi.cardContent(this);
+        configCard.addView(config);
+        config.addView(GoGoUi.sectionTitle(this, "场景配置"), GoGoUi.matchWrap());
+        config.addView(
+                GoGoUi.muted(
+                        this,
+                        "同一个配置 + Seed + Tick 会得到一致的实验影子。位置噪声会作用于 Published Mock；时间、电量、方向保持为 GoGoGo 内部 shadow resource。"),
+                GoGoUi.matchWrap());
+        config.addView(GoGoUi.gap(this, 12));
 
         nameInput = field("场景名", "Lab11");
-        root.addView(nameInput, matchWrap());
+        config.addView(nameInput, GoGoUi.matchWrap());
+        config.addView(GoGoUi.gap(this, 8));
 
         seedInput = field("Seed（long）", "114514");
-        root.addView(seedInput, matchWrap());
+        config.addView(seedInput, GoGoUi.matchWrap());
+        config.addView(GoGoUi.gap(this, 8));
 
         noiseInput = field("位置噪声半径 m（0-5000）", "80");
-        root.addView(noiseInput, matchWrap());
+        config.addView(noiseInput, GoGoUi.matchWrap());
+        config.addView(GoGoUi.gap(this, 8));
 
         batteryInput = field("电量影子基准 %（0-100）", "37");
-        root.addView(batteryInput, matchWrap());
+        config.addView(batteryInput, GoGoUi.matchWrap());
+        config.addView(GoGoUi.gap(this, 8));
 
         headingInput = field("方向影子基准 °", "90");
-        root.addView(headingInput, matchWrap());
+        config.addView(headingInput, GoGoUi.matchWrap());
+        config.addView(GoGoUi.gap(this, 8));
 
         headingNoiseInput = field("方向影子扰动 ±°（0-180）", "12");
-        root.addView(headingNoiseInput, matchWrap());
+        config.addView(headingNoiseInput, GoGoUi.matchWrap());
+        config.addView(GoGoUi.gap(this, 8));
 
         virtualStartInput = field(
                 "虚拟时间起点 UTC（yyyy-MM-dd HH:mm:ss）",
                 "2026-01-01 00:00:00");
-        root.addView(virtualStartInput, matchWrap());
+        config.addView(virtualStartInput, GoGoUi.matchWrap());
+        config.addView(GoGoUi.gap(this, 12));
 
-        root.addView(buttonRow(
-                button("🔥 保存并启用", v -> saveAndEnable()),
-                button("⏸ 停用场景", v -> disableScenario()),
-                button("⏮ 重播 Tick 0", v -> resetReplay()),
-                button("🎲 新 Seed", v -> randomizeSeed())
-        ));
+        LinearLayout configActions = GoGoUi.row(this);
+        configActions.addView(
+                GoGoUi.primaryButton(this, "保存并启用", v -> saveAndEnable()),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, configActions, 8);
+        configActions.addView(
+                GoGoUi.secondaryButton(this, "停用", v -> disableScenario()),
+                GoGoUi.weighted());
+        config.addView(configActions, GoGoUi.matchWrap());
 
-        root.addView(sectionTitle("可重复预览"));
-        previewView = body();
-        root.addView(previewView, matchWrap());
+        LinearLayout replayActions = GoGoUi.row(this);
+        replayActions.addView(
+                GoGoUi.secondaryButton(this, "重播 Tick 0", v -> resetReplay()),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, replayActions, 8);
+        replayActions.addView(
+                GoGoUi.secondaryButton(this, "新 Seed", v -> randomizeSeed()),
+                GoGoUi.weighted());
+        config.addView(replayActions, GoGoUi.matchWrap());
 
-        root.addView(buttonRow(
-                button("📦 导出场景 JSON", v -> exportScenario()),
-                button("📂 导入并重播", v -> importScenario()),
-                button("🧾 导出实验报告", v -> exportReport())
-        ));
+        GoGoUi.addCard(root, configCard, 12);
 
-        root.addView(sectionTitle("实时运行状态"));
-        liveView = body();
-        root.addView(liveView, matchWrap());
+        com.google.android.material.card.MaterialCardView previewCard = GoGoUi.card(this);
+        LinearLayout previewContent = GoGoUi.cardContent(this);
+        previewCard.addView(previewContent);
+        previewContent.addView(GoGoUi.sectionTitle(this, "可重复预览"), GoGoUi.matchWrap());
+        previewView = GoGoUi.muted(this, "");
+        previewView.setTextIsSelectable(true);
+        previewContent.addView(previewView, GoGoUi.matchWrap());
+        GoGoUi.addCard(root, previewCard, 12);
 
-        TextView note = body();
-        note.setText(
-                "复现实验时建议：先导入同一个场景 JSON → 重置 Tick 0 → "
-                        + "加载同一路线 / 同一 Policy → 再开始记录。\n\n"
-                        + "实验报告会写入场景配置、当前 Raw/Published、Policy、Tick、"
-                        + "虚拟资源和最近 provenance，并附一个 SHA-256 digest；"
-                        + "这个 digest 是完整性校验，不是数字签名。");
-        root.addView(note, matchWrap());
+        com.google.android.material.card.MaterialCardView liveCard = GoGoUi.card(this);
+        LinearLayout liveContent = GoGoUi.cardContent(this);
+        liveCard.addView(liveContent);
+        liveContent.addView(GoGoUi.sectionTitle(this, "实时运行状态"), GoGoUi.matchWrap());
+        liveView = GoGoUi.muted(this, "");
+        liveView.setTextIsSelectable(true);
+        liveContent.addView(liveView, GoGoUi.matchWrap());
+        GoGoUi.addCard(root, liveCard, 12);
 
-        Button back = button("← 返回 Sandbox Lab", v -> finish());
-        root.addView(back, matchWrap());
+        com.google.android.material.card.MaterialCardView ioCard = GoGoUi.card(this);
+        LinearLayout ioContent = GoGoUi.cardContent(this);
+        ioCard.addView(ioContent);
+        ioContent.addView(GoGoUi.sectionTitle(this, "场景文件"), GoGoUi.matchWrap());
+
+        LinearLayout ioRow = GoGoUi.row(this);
+        ioRow.addView(
+                GoGoUi.secondaryButton(this, "导出 JSON", v -> exportScenario()),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, ioRow, 8);
+        ioRow.addView(
+                GoGoUi.secondaryButton(this, "导入并重播", v -> importScenario()),
+                GoGoUi.weighted());
+        ioContent.addView(ioRow, GoGoUi.matchWrap());
+
+        ioContent.addView(GoGoUi.gap(this, 8));
+        ioContent.addView(
+                GoGoUi.primaryButton(this, "导出实验报告", v -> exportReport()),
+                GoGoUi.matchWrap());
+
+        ioContent.addView(GoGoUi.gap(this, 10));
+        ioContent.addView(
+                GoGoUi.muted(
+                        this,
+                        "复现实验建议：导入同一场景 → Tick 0 → 同一路线 / Policy → 再开始记录。报告中的 digest 是完整性校验，不是数字签名。"),
+                GoGoUi.matchWrap());
+
+        GoGoUi.addCard(root, ioCard, 12);
 
         setContentView(scroll);
     }
 
     private TextView sectionTitle(String text) {
-        TextView v = new TextView(this);
-        v.setText(text);
-        v.setTextSize(18);
-        v.setPadding(0, dp(14), 0, dp(4));
-        return v;
+        return GoGoUi.sectionTitle(this, text);
     }
 
     private TextView body() {
-        TextView v = new TextView(this);
-        v.setTextSize(14);
+        TextView v = GoGoUi.muted(this, "");
         v.setTextIsSelectable(true);
-        v.setPadding(dp(8), dp(8), dp(8), dp(8));
         return v;
     }
 
@@ -209,17 +269,13 @@ public class ScenarioLabActivity extends AppCompatActivity {
         EditText input = new EditText(this);
         input.setHint(hint);
         input.setText(value);
-        input.setSingleLine(true);
         input.setSelectAllOnFocus(true);
+        GoGoUi.styleInput(input);
         return input;
     }
 
     private Button button(String text, android.view.View.OnClickListener listener) {
-        Button b = new Button(this);
-        b.setText(text);
-        b.setAllCaps(false);
-        b.setOnClickListener(listener);
-        return b;
+        return GoGoUi.secondaryButton(this, text, listener);
     }
 
     private android.widget.HorizontalScrollView buttonRow(Button... buttons) {
