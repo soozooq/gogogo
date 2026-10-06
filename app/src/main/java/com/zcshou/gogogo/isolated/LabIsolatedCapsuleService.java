@@ -178,6 +178,15 @@ public class LabIsolatedCapsuleService extends Service {
     private void probeLocation(StringBuilder out) {
         out.append("\n[Location]\n");
         try {
+            boolean fine = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED;
+            boolean coarse = checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED;
+            if (!fine && !coarse) {
+                out.append("getLastKnownLocation: DENIED (no runtime location permission)\n");
+                return;
+            }
+
             LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             Object location = lm == null ? null : lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
             out.append("getLastKnownLocation: SUCCESS value=")
