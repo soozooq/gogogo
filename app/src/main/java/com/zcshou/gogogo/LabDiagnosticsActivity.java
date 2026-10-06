@@ -25,6 +25,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -32,8 +33,11 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.Locale;
 
+import rikka.shizuku.Shizuku;
+
 @SuppressWarnings("deprecation")
 public class LabDiagnosticsActivity extends AppCompatActivity implements SensorEventListener {
+    private static final int REQ_SHIZUKU = 3301;
     private SensorManager sensorManager;
     private Sensor rotationSensor;
     private Sensor accelerometer;
@@ -52,6 +56,23 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
     private TextView sensorView;
     private TextView networkView;
     private TextView systemView;
+    private TextView shizukuView;
+
+    private final Shizuku.OnBinderReceivedListener shizukuBinderReceived =
+            () -> refreshViews();
+    private final Shizuku.OnBinderDeadListener shizukuBinderDead =
+            () -> refreshViews();
+    private final Shizuku.OnRequestPermissionResultListener shizukuPermissionResult =
+            (requestCode, grantResult) -> {
+                if (requestCode == REQ_SHIZUKU) {
+                    Toast.makeText(this,
+                            grantResult == PackageManager.PERMISSION_GRANTED
+                                    ? "Shizuku 权限已授予"
+                                    : "Shizuku 权限未授予",
+                            Toast.LENGTH_SHORT).show();
+                    refreshViews();
+                }
+            };
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable refreshTask = new Runnable() {
@@ -67,6 +88,10 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         super.onCreate(savedInstanceState);
         buildUi();
         initSensors();
+
+        Shizuku.addBinderReceivedListenerSticky(shizukuBinderReceived);
+        Shizuku.addBinderDeadListener(shizukuBinderDead);
+        Shizuku.addRequestPermissionResultListener(shizukuPermissionResult);
     }
 
     private void buildUi() {
@@ -96,7 +121,14 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         systemView = body();
         root.addView(systemView, matchWrap());
 
-        Button shizuku = button("⚡ 打开 Shizuku（若已安装）", v -> openShizuku());
+        root.addView(sectionTitle("Shizuku 高级模式"));
+        shizukuView = body();
+        root.addView(shizukuView, matchWrap());
+
+        Button requestShizuku = button("⚡ 连接 / 请求 Shizuku 权限", v -> requestShizukuPermission());
+        root.addView(requestShizuku, matchWrap());
+
+        Button shizuku = button("打开 Shizuku", v -> openShizuku());
         root.addView(shizuku, matchWrap());
 
         Button developer = button("🛠 打开开发者选项", v -> {
@@ -243,6 +275,7 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         sensorView.setText(sensorText);
         networkView.setText(buildNetworkSnapshot());
         systemView.setText(buildSystemSnapshot());
+        shizukuView.setText(buildShizukuSnapshot());
     }
 
     private String buildNetworkSnapshot() {
@@ -321,7 +354,6 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
     }
 
     private String buildSystemSnapshot() {
-        boolean shizuku = isPackageInstalled("moe.shizuku.privileged.api");
         boolean dev = Settings.Global.getInt(
                 getContentResolver(), Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0) == 1;
 
@@ -332,6 +364,107 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
                 + "\nShizuku: " + (shizuku ? "已安装，下一阶段可接高级系统 API" : "未检测到")
                 + "\nGoGoGo 包名: " + getPackageName()
                 + "\nLab 目标: 诊断 / 路线 / 漫游 / 沙箱 / 离线地图";
+    }
+
+    private String buildShizukuSnapshot() {
+        boolean installed = isPackageInstalled("moe.shizuku.privileged.api");
+        if (!installed) {
+            return "安装状态：未检测到 Shizuku\nBinder：不可用\n高级模式：关闭";
+        }
+
+        boolean binderAlive;
+        try {
+            binderAlive = Shizuku.pingBinder();
+        } catch (Throwable t) {
+            binderAlive = false;
+        }
+
+        if (!binderAlive) {
+            return "安装状态：已安装\nBinder：未连接\n"
+                    + "请先在 Shizuku App 中启动服务（Android 11+ 可用无线调试启动）";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("安装状态：已安装\nBinder：已连接\n");
+
+        try {
+            int permission = Shizuku.checkSelfPermission();
+            sb.append("权限：")
+                    .append(permission == PackageManager.PERMISSION_GRANTED ? "已授予" : "未授予")
+                    .append("\n");
+        } catch (Throwable t) {
+            sb.append("权限：读取失败\n");
+        }
+
+        try {
+            int uid = Shizuku.getUid();
+            sb.append("服务 UID：").append(uid);
+            if (uid == 0) {
+                sb.append(" (ROOT)");
+            } else if (uid == 2000) {
+                sb.append(" (ADB / shell)");
+            }
+            sb.append("\n");
+        } catch (Throwable t) {
+            sb.append("服务 UID：未知\n");
+        }
+
+        try {
+            sb.append("API 版本：").append(Shizuku.getVersion()).append("\n");
+        } catch (Throwable t) {
+            sb.append("API 版本：未知\n");
+        }
+
+        try {
+            String context = Shizuku.getSELinuxContext();
+            sb.append("SELinux：").append(context == null ? "未知" : context).append("\n");
+        } catch (Throwable t) {
+            sb.append("SELinux：未知\n");
+        }
+
+        sb.append("高级模式：Binder IPC 已就绪");
+        return sb.toString().trim();
+    }
+
+    private void requestShizukuPermission() {
+        if (!isPackageInstalled("moe.shizuku.privileged.api")) {
+            Toast.makeText(this, "还没有安装 Shizuku", Toast.LENGTH_SHORT).show();
+            openShizuku();
+            return;
+        }
+
+        try {
+            if (!Shizuku.pingBinder()) {
+                Toast.makeText(this, "Shizuku 已安装，但服务还没有启动", Toast.LENGTH_LONG).show();
+                openShizuku();
+                return;
+            }
+
+            if (Shizuku.isPreV11()) {
+                Toast.makeText(this, "Shizuku API 版本太旧，需要 v11+", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Shizuku 权限已经有了 😈", Toast.LENGTH_SHORT).show();
+                refreshViews();
+                return;
+            }
+
+            if (Shizuku.shouldShowRequestPermissionRationale()) {
+                Toast.makeText(this,
+                        "Shizuku 权限之前被拒绝，请到 Shizuku App 里重新授权",
+                        Toast.LENGTH_LONG).show();
+                openShizuku();
+                return;
+            }
+
+            Shizuku.requestPermission(REQ_SHIZUKU);
+        } catch (Throwable t) {
+            Toast.makeText(this,
+                    "Shizuku 连接异常：" + t.getClass().getSimpleName(),
+                    Toast.LENGTH_LONG).show();
+        }
     }
 
     private boolean isPackageInstalled(String pkg) {
@@ -359,6 +492,17 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
             startActivity(store);
         } catch (Throwable ignored) {
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        try {
+            Shizuku.removeBinderReceivedListener(shizukuBinderReceived);
+            Shizuku.removeBinderDeadListener(shizukuBinderDead);
+            Shizuku.removeRequestPermissionResultListener(shizukuPermissionResult);
+        } catch (Throwable ignored) {
+        }
+        super.onDestroy();
     }
 
     private static String yesNo(boolean value) {
