@@ -139,152 +139,115 @@ public class LabMapActivity extends AppCompatActivity {
     }
 
     private void buildUi(Bundle savedInstanceState) {
-        int pad = dp(10);
+        int pad = GoGoUi.dp(this, 12);
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(pad, pad, pad, pad);
+        root.setPadding(pad, GoGoUi.dp(this, 10), pad, pad);
+        GoGoUi.applyScreenBackground(root);
 
-        TextView title = new TextView(this);
-        title.setText("🧪 GoGoGo Lab 11 · Deterministic Replay");
-        title.setTextSize(21);
-        title.setGravity(Gravity.CENTER);
-        root.addView(title, matchWrap());
+        // Compact app bar: map first, tools second.
+        LinearLayout appBar = GoGoUi.row(this);
+        com.google.android.material.button.MaterialButton backButton =
+                GoGoUi.textButton(this, "←", v -> finish());
+        LinearLayout.LayoutParams backLp = new LinearLayout.LayoutParams(
+                GoGoUi.dp(this, 52), ViewGroup.LayoutParams.WRAP_CONTENT);
+        appBar.addView(backButton, backLp);
 
-        statusView = new TextView(this);
-        statusView.setText("点地图选位置。默认：妙瓦底 98.50895, 16.68914");
-        statusView.setTextSize(14);
-        root.addView(statusView, matchWrap());
+        LinearLayout titleBlock = new LinearLayout(this);
+        titleBlock.setOrientation(LinearLayout.VERTICAL);
+        TextView title = GoGoUi.sectionTitle(this, "地图实验室");
+        title.setTextSize(19);
+        title.setPadding(0, 0, 0, 0);
+        titleBlock.addView(title, GoGoUi.matchWrap());
+        titleBlock.addView(
+                GoGoUi.muted(this, "位置 · 路线 · 漫游 · 回放"),
+                GoGoUi.matchWrap());
+        appBar.addView(titleBlock, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
-        liveView = new TextView(this);
-        liveView.setText("实时状态：Service 未运行");
-        liveView.setTextSize(13);
-        liveView.setTextIsSelectable(true);
-        liveView.setPadding(0, dp(3), 0, dp(3));
-        root.addView(liveView, matchWrap());
+        com.google.android.material.button.MaterialButton toolsButton =
+                GoGoUi.secondaryButton(this, "工具", v -> showMapToolsPanel());
+        LinearLayout.LayoutParams toolsLp = new LinearLayout.LayoutParams(
+                GoGoUi.dp(this, 78), ViewGroup.LayoutParams.WRAP_CONTENT);
+        appBar.addView(toolsButton, toolsLp);
+        root.addView(appBar, GoGoUi.matchWrap());
 
-        routeProgress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-        routeProgress.setMax(1000);
-        routeProgress.setProgress(0);
-        root.addView(routeProgress, matchWrap());
+        statusView = GoGoUi.muted(
+                this,
+                "点地图选择位置 · 默认 98.50895, 16.68914");
+        statusView.setPadding(GoGoUi.dp(this, 4), GoGoUi.dp(this, 6),
+                GoGoUi.dp(this, 4), GoGoUi.dp(this, 6));
+        root.addView(statusView, GoGoUi.matchWrap());
 
         mapView = new MapView(this);
         mapView.onCreate(savedInstanceState);
         LinearLayout.LayoutParams mapLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
-        mapLp.setMargins(0, dp(6), 0, dp(6));
+        mapLp.setMargins(0, GoGoUi.dp(this, 4), 0, GoGoUi.dp(this, 10));
         root.addView(mapView, mapLp);
 
-        root.addView(buttonRow(
-                button("🌐 Liberty", v -> switchStyle(STYLE_LIBERTY)),
-                button("🧱 Demo", v -> switchStyle(STYLE_DEMO)),
-                button("📦 导入 PMTiles", v -> pickPmtilesFile()),
-                button("🗂 离线地图", v -> showOfflineMaps())
-        ));
+        // Bottom command deck.
+        com.google.android.material.card.MaterialCardView controlCard = GoGoUi.card(this);
+        LinearLayout control = GoGoUi.cardContent(this);
+        controlCard.addView(control);
+        control.setPadding(
+                GoGoUi.dp(this, 14),
+                GoGoUi.dp(this, 12),
+                GoGoUi.dp(this, 14),
+                GoGoUi.dp(this, 12));
 
-        followButton = button("🎯 跟随：开", v -> toggleFollow());
-        root.addView(buttonRow(
-                button("📍 模拟这里", v -> simulateSelected()),
-                followButton,
-                button("❤️ 收藏", v -> promptFavorite()),
-                button("⭐ 收藏夹", v -> showSavedPoints(true)),
-                button("🕘 历史", v -> showSavedPoints(false))
-        ));
+        liveView = GoGoUi.muted(this, "Service 未运行");
+        liveView.setTextIsSelectable(true);
+        control.addView(liveView, GoGoUi.matchWrap());
 
-        headingFollowButton = button("🧭 地图朝向：关", v -> toggleHeadingFollow());
-        root.addView(buttonRow(
-                headingFollowButton,
-                button("⬆ 地图归北", v -> resetMapBearing())
-        ));
+        routeProgress = new ProgressBar(
+                this, null, android.R.attr.progressBarStyleHorizontal);
+        routeProgress.setMax(1000);
+        routeProgress.setProgress(0);
+        LinearLayout.LayoutParams progressLp = GoGoUi.matchWrap();
+        progressLp.setMargins(0, GoGoUi.dp(this, 8), 0, 0);
+        control.addView(routeProgress, progressLp);
 
-        root.addView(buttonRow(
-                button("📂 导入 GPX/KML", v -> pickRouteFile()),
-                button("▶ 路线", v -> startRoute()),
-                button("⏹ 路线", v -> stopRoute()),
-                button("🗑 路线", v -> clearRoute())
-        ));
+        routeView = GoGoUi.muted(this, "路线：未导入");
+        routeView.setPadding(0, GoGoUi.dp(this, 4), 0, 0);
+        control.addView(routeView, GoGoUi.matchWrap());
 
-        routeEditButton = button("✏️ 编辑路线：关", v -> toggleRouteEditor());
-        root.addView(buttonRow(
-                routeEditButton,
-                button("↩ 撤销路点", v -> undoRoutePoint()),
-                button("📏 路线信息", v -> showRouteInfo())
-        ));
+        control.addView(GoGoUi.gap(this, 10));
 
-        LinearLayout routeSettings = new LinearLayout(this);
-        routeSettings.setOrientation(LinearLayout.HORIZONTAL);
-        routeSettings.setGravity(Gravity.CENTER_VERTICAL);
-        routeSettings.addView(label("路线速度 m/s "));
-        routeSpeedInput = numberField("1.4", 88);
-        routeSettings.addView(routeSpeedInput);
+        LinearLayout primaryRow = GoGoUi.row(this);
+        primaryRow.addView(
+                GoGoUi.primaryButton(this, "模拟这里", v -> simulateSelected()),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, primaryRow, 8);
+        primaryRow.addView(
+                GoGoUi.secondaryButton(this, "路线", v -> showRoutePanel()),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, primaryRow, 8);
+        primaryRow.addView(
+                GoGoUi.secondaryButton(this, "漫游", v -> showRoamPanel()),
+                GoGoUi.weighted());
+        control.addView(primaryRow, GoGoUi.matchWrap());
 
-        routeSettings.addView(label("  模式 "));
-        routeModeSpinner = new Spinner(this);
-        ArrayAdapter<String> modeAdapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                new String[]{"单次", "循环", "往返"});
-        routeModeSpinner.setAdapter(modeAdapter);
-        routeSettings.addView(routeModeSpinner,
-                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        root.addView(routeSettings, matchWrap());
+        LinearLayout quickRow = GoGoUi.row(this);
+        followButton = GoGoUi.textButton(this, "跟随·开", v -> toggleFollow());
+        quickRow.addView(followButton, GoGoUi.weighted());
 
-        routeView = new TextView(this);
-        routeView.setText("路线：未导入");
-        routeView.setTextSize(13);
-        routeView.setPadding(0, dp(2), 0, dp(4));
-        root.addView(routeView, matchWrap());
+        headingFollowButton =
+                GoGoUi.textButton(this, "朝向·关", v -> toggleHeadingFollow());
+        quickRow.addView(headingFollowButton, GoGoUi.weighted());
 
-        LinearLayout roamSettings = new LinearLayout(this);
-        roamSettings.setOrientation(LinearLayout.HORIZONTAL);
-        roamSettings.setGravity(Gravity.CENTER_VERTICAL);
-        roamSettings.addView(label("漫游半径 m "));
-        roamRadiusInput = numberField("100", 88);
-        roamSettings.addView(roamRadiusInput);
-        roamSettings.addView(label("  速度 m/s "));
-        roamSpeedInput = numberField("1.4", 88);
-        roamSettings.addView(roamSpeedInput);
-        root.addView(roamSettings, matchWrap());
+        quickRow.addView(
+                GoGoUi.textButton(this, "运动", v -> showMotionPanel()),
+                GoGoUi.weighted());
 
-        root.addView(buttonRow(
-                button("🎲 随机漫游", v -> startRoam()),
-                button("⏹ 停止漫游", v -> stopRoam()),
-                button("📟 实验仪表盘", v ->
-                        startActivity(new Intent(this, LabDiagnosticsActivity.class)))
-        ));
+        quickRow.addView(
+                GoGoUi.textButton(this, "实验", v -> showExperimentPanel()),
+                GoGoUi.weighted());
 
-        root.addView(buttonRow(
-                button("⏸ 暂停", v -> sendMotionAction(ServiceGo.ACTION_MOTION_PAUSE)),
-                button("▶ 继续", v -> sendMotionAction(ServiceGo.ACTION_MOTION_RESUME)),
-                button("0.5×", v -> setMotionMultiplier(0.5)),
-                button("1×", v -> setMotionMultiplier(1.0)),
-                button("2×", v -> setMotionMultiplier(2.0)),
-                button("4×", v -> setMotionMultiplier(4.0))
-        ));
+        control.addView(quickRow, GoGoUi.matchWrap());
 
-        root.addView(buttonRow(
-                button("⏺ 开始录轨迹", v -> startTrackRecording()),
-                button("⏹ 停止录制", v -> sendTrackAction(ServiceGo.ACTION_RECORD_STOP)),
-                button("💾 导出 GPX", v -> exportTrack()),
-                button("🧹 清空轨迹", v -> sendTrackAction(ServiceGo.ACTION_RECORD_CLEAR))
-        ));
-
-        root.addView(buttonRow(
-                button("🎛 Scenario / Replay", v ->
-                        startActivity(new Intent(this, ScenarioLabActivity.class))),
-                button("🧪 Motion Audit", v ->
-                        startActivity(new Intent(this, MotionAuditActivity.class))),
-                button("🧠 Resource Broker", v ->
-                        startActivity(new Intent(this, PolicyLabActivity.class))),
-                button("🧬 数据来源链", v -> showProvenanceTimeline()),
-                button("🧹 清来源链", v -> clearProvenanceTimeline()),
-                button("📦 Sandbox / AVF", v ->
-                        startActivity(new Intent(this, SandboxLabActivity.class)))
-        ));
-
-        Button back = button("← 返回定位测试面板", v -> finish());
-        root.addView(back, matchWrap());
-
+        root.addView(controlCard, GoGoUi.matchWrap());
         setContentView(root);
 
         mapView.getMapAsync(mapLibreMap -> {
@@ -306,6 +269,274 @@ public class LabMapActivity extends AppCompatActivity {
         });
     }
 
+    private void showMapToolsPanel() {
+        final String[] items = new String[]{
+                "收藏当前位置",
+                "打开收藏夹",
+                "打开历史记录",
+                "地图归北",
+                "OpenFreeMap Liberty",
+                "MapLibre Demo",
+                "导入 PMTiles",
+                "离线地图管理"
+        };
+
+        new AlertDialog.Builder(this)
+                .setTitle("地图工具")
+                .setItems(items, (dialog, which) -> {
+                    switch (which) {
+                        case 0:
+                            promptFavorite();
+                            break;
+                        case 1:
+                            showSavedPoints(true);
+                            break;
+                        case 2:
+                            showSavedPoints(false);
+                            break;
+                        case 3:
+                            resetMapBearing();
+                            break;
+                        case 4:
+                            switchStyle(STYLE_LIBERTY);
+                            break;
+                        case 5:
+                            switchStyle(STYLE_DEMO);
+                            break;
+                        case 6:
+                            pickPmtilesFile();
+                            break;
+                        case 7:
+                            showOfflineMaps();
+                            break;
+                        default:
+                            break;
+                    }
+                })
+                .setNegativeButton("关闭", null)
+                .show();
+    }
+
+    private void showRoutePanel() {
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        int p = GoGoUi.dp(this, 8);
+        content.setPadding(p, p, p, p);
+
+        content.addView(GoGoUi.muted(
+                this,
+                "导入 GPX/KML，或开启编辑后长按地图添加路点。"),
+                GoGoUi.matchWrap());
+        content.addView(GoGoUi.gap(this, 10));
+
+        content.addView(GoGoUi.muted(this, "路线速度（m/s）"), GoGoUi.matchWrap());
+        routeSpeedInput = numberField(
+                routeSpeedInput == null ? "1.4" : routeSpeedInput.getText().toString(),
+                120);
+        content.addView(routeSpeedInput, GoGoUi.matchWrap());
+
+        content.addView(GoGoUi.gap(this, 10));
+        content.addView(GoGoUi.muted(this, "路线模式"), GoGoUi.matchWrap());
+
+        int previousMode = routeModeSpinner == null
+                ? 0 : routeModeSpinner.getSelectedItemPosition();
+        routeModeSpinner = new Spinner(this);
+        ArrayAdapter<String> modeAdapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_dropdown_item,
+                new String[]{"单次", "循环", "往返"});
+        routeModeSpinner.setAdapter(modeAdapter);
+        routeModeSpinner.setSelection(previousMode);
+        content.addView(routeModeSpinner, GoGoUi.matchWrap());
+
+        content.addView(GoGoUi.gap(this, 12));
+
+        LinearLayout row1 = GoGoUi.row(this);
+        row1.addView(
+                GoGoUi.secondaryButton(this, "导入 GPX/KML", v -> pickRouteFile()),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, row1, 8);
+        row1.addView(
+                GoGoUi.primaryButton(this, "开始路线", v -> startRoute()),
+                GoGoUi.weighted());
+        content.addView(row1, GoGoUi.matchWrap());
+
+        LinearLayout row2 = GoGoUi.row(this);
+        routeEditButton = GoGoUi.secondaryButton(
+                this,
+                routeEditMode ? "编辑·开" : "编辑·关",
+                v -> toggleRouteEditor());
+        row2.addView(routeEditButton, GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, row2, 8);
+        row2.addView(
+                GoGoUi.secondaryButton(this, "撤销路点", v -> undoRoutePoint()),
+                GoGoUi.weighted());
+        content.addView(row2, GoGoUi.matchWrap());
+
+        LinearLayout row3 = GoGoUi.row(this);
+        row3.addView(
+                GoGoUi.secondaryButton(this, "路线信息", v -> showRouteInfo()),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, row3, 8);
+        row3.addView(
+                GoGoUi.dangerButton(this, "停止 / 清空", v -> {
+                    stopRoute();
+                    clearRoute();
+                }),
+                GoGoUi.weighted());
+        content.addView(row3, GoGoUi.matchWrap());
+
+        new AlertDialog.Builder(this)
+                .setTitle("路线控制")
+                .setView(content)
+                .setNegativeButton("完成", null)
+                .show();
+    }
+
+    private void showRoamPanel() {
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        int p = GoGoUi.dp(this, 8);
+        content.setPadding(p, p, p, p);
+
+        content.addView(GoGoUi.muted(
+                this,
+                "以当前选中位置为中心，在设定半径内随机漫游。"),
+                GoGoUi.matchWrap());
+        content.addView(GoGoUi.gap(this, 10));
+
+        content.addView(GoGoUi.muted(this, "漫游半径（m）"), GoGoUi.matchWrap());
+        roamRadiusInput = numberField(
+                roamRadiusInput == null ? "100" : roamRadiusInput.getText().toString(),
+                120);
+        content.addView(roamRadiusInput, GoGoUi.matchWrap());
+
+        content.addView(GoGoUi.gap(this, 10));
+        content.addView(GoGoUi.muted(this, "速度（m/s）"), GoGoUi.matchWrap());
+        roamSpeedInput = numberField(
+                roamSpeedInput == null ? "1.4" : roamSpeedInput.getText().toString(),
+                120);
+        content.addView(roamSpeedInput, GoGoUi.matchWrap());
+
+        content.addView(GoGoUi.gap(this, 12));
+
+        LinearLayout actions = GoGoUi.row(this);
+        actions.addView(
+                GoGoUi.primaryButton(this, "开始漫游", v -> startRoam()),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, actions, 8);
+        actions.addView(
+                GoGoUi.dangerButton(this, "停止", v -> stopRoam()),
+                GoGoUi.weighted());
+        content.addView(actions, GoGoUi.matchWrap());
+
+        new AlertDialog.Builder(this)
+                .setTitle("随机漫游")
+                .setView(content)
+                .setNegativeButton("完成", null)
+                .show();
+    }
+
+    private void showMotionPanel() {
+        final String[] items = new String[]{
+                "暂停运动",
+                "继续运动",
+                "速度 0.5×",
+                "速度 1×",
+                "速度 2×",
+                "速度 4×",
+                "开始录轨迹",
+                "停止录轨迹",
+                "导出轨迹 GPX",
+                "清空轨迹"
+        };
+
+        new AlertDialog.Builder(this)
+                .setTitle("运动与轨迹")
+                .setItems(items, (dialog, which) -> {
+                    switch (which) {
+                        case 0:
+                            sendMotionAction(ServiceGo.ACTION_MOTION_PAUSE);
+                            break;
+                        case 1:
+                            sendMotionAction(ServiceGo.ACTION_MOTION_RESUME);
+                            break;
+                        case 2:
+                            setMotionMultiplier(0.5);
+                            break;
+                        case 3:
+                            setMotionMultiplier(1.0);
+                            break;
+                        case 4:
+                            setMotionMultiplier(2.0);
+                            break;
+                        case 5:
+                            setMotionMultiplier(4.0);
+                            break;
+                        case 6:
+                            startTrackRecording();
+                            break;
+                        case 7:
+                            sendTrackAction(ServiceGo.ACTION_RECORD_STOP);
+                            break;
+                        case 8:
+                            exportTrack();
+                            break;
+                        case 9:
+                            sendTrackAction(ServiceGo.ACTION_RECORD_CLEAR);
+                            break;
+                        default:
+                            break;
+                    }
+                })
+                .setNegativeButton("关闭", null)
+                .show();
+    }
+
+    private void showExperimentPanel() {
+        final String[] items = new String[]{
+                "实验仪表盘",
+                "Scenario / Replay",
+                "Motion Audit",
+                "Resource Broker",
+                "数据来源链",
+                "清空来源链",
+                "Sandbox / AVF"
+        };
+
+        new AlertDialog.Builder(this)
+                .setTitle("实验工具")
+                .setItems(items, (dialog, which) -> {
+                    switch (which) {
+                        case 0:
+                            startActivity(new Intent(this, LabDiagnosticsActivity.class));
+                            break;
+                        case 1:
+                            startActivity(new Intent(this, ScenarioLabActivity.class));
+                            break;
+                        case 2:
+                            startActivity(new Intent(this, MotionAuditActivity.class));
+                            break;
+                        case 3:
+                            startActivity(new Intent(this, PolicyLabActivity.class));
+                            break;
+                        case 4:
+                            showProvenanceTimeline();
+                            break;
+                        case 5:
+                            clearProvenanceTimeline();
+                            break;
+                        case 6:
+                            startActivity(new Intent(this, SandboxLabActivity.class));
+                            break;
+                        default:
+                            break;
+                    }
+                })
+                .setNegativeButton("关闭", null)
+                .show();
+    }
+
     private TextView label(String text) {
         TextView view = new TextView(this);
         view.setText(text);
@@ -316,10 +547,11 @@ public class LabMapActivity extends AppCompatActivity {
     private EditText numberField(String value, int widthDp) {
         EditText input = new EditText(this);
         input.setText(value);
-        input.setSingleLine(true);
         input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
         input.setSelectAllOnFocus(true);
-        input.setLayoutParams(new LinearLayout.LayoutParams(dp(widthDp), ViewGroup.LayoutParams.WRAP_CONTENT));
+        GoGoUi.styleInput(input);
+        input.setLayoutParams(new LinearLayout.LayoutParams(
+                dp(widthDp), ViewGroup.LayoutParams.WRAP_CONTENT));
         return input;
     }
 
@@ -340,11 +572,7 @@ public class LabMapActivity extends AppCompatActivity {
     }
 
     private Button button(String text, android.view.View.OnClickListener listener) {
-        Button b = new Button(this);
-        b.setText(text);
-        b.setAllCaps(false);
-        b.setOnClickListener(listener);
-        return b;
+        return GoGoUi.secondaryButton(this, text, listener);
     }
 
     private LinearLayout.LayoutParams matchWrap() {
