@@ -61,6 +61,9 @@ public class ServiceGo extends Service {
     public static final String ACTION_ROUTE_STOP = "com.soozooq.gogogo.action.ROUTE_STOP";
     public static final String ACTION_ROAM_START = "com.soozooq.gogogo.action.ROAM_START";
     public static final String ACTION_ROAM_STOP = "com.soozooq.gogogo.action.ROAM_STOP";
+    public static final String ACTION_MOTION_PAUSE = "com.soozooq.gogogo.action.MOTION_PAUSE";
+    public static final String ACTION_MOTION_RESUME = "com.soozooq.gogogo.action.MOTION_RESUME";
+    public static final String ACTION_MOTION_SPEED = "com.soozooq.gogogo.action.MOTION_SPEED";
 
     public static final String EXTRA_ROUTE_LATS = "ROUTE_LATS";
     public static final String EXTRA_ROUTE_LNGS = "ROUTE_LNGS";
@@ -74,6 +77,7 @@ public class ServiceGo extends Service {
     public static final String EXTRA_ROAM_CENTER_LNG = "ROAM_CENTER_LNG";
     public static final String EXTRA_ROAM_RADIUS_M = "ROAM_RADIUS_M";
     public static final String EXTRA_ROAM_SPEED_MPS = "ROAM_SPEED_MPS";
+    public static final String EXTRA_MOTION_MULTIPLIER = "MOTION_MULTIPLIER";
 
     private double[] mRouteLats;
     private double[] mRouteLngs;
@@ -93,6 +97,8 @@ public class ServiceGo extends Service {
     private final java.util.Random mRandom = new java.util.Random();
 
     private long mLastMotionElapsed = 0L;
+    private boolean mMotionPaused = false;
+    private double mMotionMultiplier = 1.0;
 
     private static final int HANDLER_MSG_ID = 0;
     // 33ms (~30Hz) tick: 缩短"mock 过期"窗口,避免某些应用在两次 push 之间读到真实位置后漂移
@@ -292,6 +298,33 @@ public class ServiceGo extends Service {
         android.content.SharedPreferences state =
                 getSharedPreferences("mock_location_state", MODE_PRIVATE);
 
+        if (intent != null && ACTION_MOTION_PAUSE.equals(intent.getAction())) {
+            if (mRouteActive || mRoamActive) {
+                mMotionPaused = true;
+                mSpeed = 0.0;
+            }
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_MOTION_RESUME.equals(intent.getAction())) {
+            if (mRouteActive || mRoamActive) {
+                mMotionPaused = false;
+                mLastMotionElapsed = SystemClock.elapsedRealtime();
+                mSpeed = mRouteActive ? mRouteSpeedMps * mMotionMultiplier
+                        : mRoamSpeedMps * mMotionMultiplier;
+            }
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_MOTION_SPEED.equals(intent.getAction())) {
+            mMotionMultiplier = clamp(
+                    intent.getDoubleExtra(EXTRA_MOTION_MULTIPLIER, 1.0), 0.25, 4.0);
+            if (!mMotionPaused) {
+                mSpeed = (mRouteActive ? mRouteSpeedMps : mRoamSpeedMps) * mMotionMultiplier;
+            }
+            return START_STICKY;
+        }
+
         if (intent != null && ACTION_ROUTE_STOP.equals(intent.getAction())) {
             stopLabMotion();
             return START_STICKY;
@@ -318,10 +351,12 @@ public class ServiceGo extends Service {
                         intent.getDoubleExtra(EXTRA_ROUTE_SPEED_MPS, 1.4), 0.2, 60.0);
                 mRouteActive = true;
                 mRoamActive = false;
+                mMotionPaused = false;
+                mMotionMultiplier = 1.0;
                 mCurLat = mRouteLats[0];
                 mCurLng = mRouteLngs[0];
                 mCurAlt = DEFAULT_ALT;
-                mSpeed = mRouteSpeedMps;
+                mSpeed = mRouteSpeedMps * mMotionMultiplier;
                 mLastMotionElapsed = SystemClock.elapsedRealtime();
 
                 persistCurrentLocation(state);
@@ -341,7 +376,9 @@ public class ServiceGo extends Service {
             mCurAlt = DEFAULT_ALT;
             mRouteActive = false;
             mRoamActive = true;
-            mSpeed = mRoamSpeedMps;
+            mMotionPaused = false;
+            mMotionMultiplier = 1.0;
+            mSpeed = mRoamSpeedMps * mMotionMultiplier;
             chooseNewRoamTarget();
             mLastMotionElapsed = SystemClock.elapsedRealtime();
             persistCurrentLocation(state);
@@ -389,6 +426,8 @@ public class ServiceGo extends Service {
         mRouteLngs = null;
         mSpeed = 0.0;
         mLastMotionElapsed = 0L;
+        mMotionPaused = false;
+        mMotionMultiplier = 1.0;
     }
 
     @Override
@@ -546,6 +585,11 @@ public class ServiceGo extends Service {
 
     private void advanceLabMotion() {
         if (!mRouteActive && !mRoamActive) return;
+        if (mMotionPaused) {
+            mLastMotionElapsed = SystemClock.elapsedRealtime();
+            mSpeed = 0.0;
+            return;
+        }
 
         long now = SystemClock.elapsedRealtime();
         if (mLastMotionElapsed <= 0L) {
@@ -559,9 +603,9 @@ public class ServiceGo extends Service {
         dt = clamp(dt, 0.0, 0.25);
 
         if (mRouteActive) {
-            moveAlongRoute(mRouteSpeedMps * dt);
+            moveAlongRoute(mRouteSpeedMps * mMotionMultiplier * dt);
         } else if (mRoamActive) {
-            moveRandomRoam(mRoamSpeedMps * dt);
+            moveRandomRoam(mRoamSpeedMps * mMotionMultiplier * dt);
         }
     }
 
