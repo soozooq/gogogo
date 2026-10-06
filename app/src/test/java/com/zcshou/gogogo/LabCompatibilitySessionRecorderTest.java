@@ -76,6 +76,59 @@ public class LabCompatibilitySessionRecorderTest {
     }
 
     @Test
+    public void heartbeatGapMatchingLocationGapLooksLikeProcessFreeze() {
+        LabCompatibilitySessionRecorder recorder =
+                new LabCompatibilitySessionRecorder();
+
+        recorder.start(1000L);
+
+        recorder.addHeartbeat(1000L, 125, false, true, false, false);
+        recorder.addLocation(1000L, "GPS", 35.0, 139.0, 1f, 0f, 0f, true);
+        recorder.addLocation(1000L, "NETWORK", 35.0, 139.0, 1f, 0f, 0f, true);
+        recorder.addLocation(1000L, "GMS_UPDATES", 35.0, 139.0, 1f, 0f, 0f, true);
+
+        recorder.addHeartbeat(52000L, 125, false, true, false, false);
+        recorder.addLocation(52000L, "GPS", 35.0, 139.0, 1f, 0f, 0f, true);
+        recorder.addLocation(52000L, "NETWORK", 35.0, 139.0, 1f, 0f, 0f, true);
+        recorder.addLocation(52000L, "GMS_UPDATES", 35.0, 139.0, 1f, 0f, 0f, true);
+
+        LabCompatibilitySessionRecorder.Summary summary = recorder.summarize();
+
+        assertEquals("PROCESS_OR_SCHEDULER_FREEZE", summary.freezeDiagnosis());
+        assertEquals(51000L, summary.heartbeat.maxGapMs);
+    }
+
+    @Test
+    public void healthyHeartbeatWithLocationGapLooksLikeLocationThrottle() {
+        LabCompatibilitySessionRecorder recorder =
+                new LabCompatibilitySessionRecorder();
+
+        recorder.start(1000L);
+        recorder.addLocation(1000L, "GPS", 35.0, 139.0, 1f, 0f, 0f, true);
+        recorder.addLocation(1000L, "NETWORK", 35.0, 139.0, 1f, 0f, 0f, true);
+        recorder.addLocation(1000L, "GMS_UPDATES", 35.0, 139.0, 1f, 0f, 0f, true);
+
+        for (int i = 0; i <= 10; i++) {
+            recorder.addHeartbeat(
+                    1000L + i * 500L,
+                    125,
+                    false,
+                    true,
+                    false,
+                    false);
+        }
+
+        recorder.addLocation(6000L, "GPS", 35.0, 139.0, 1f, 0f, 0f, true);
+        recorder.addLocation(6000L, "NETWORK", 35.0, 139.0, 1f, 0f, 0f, true);
+        recorder.addLocation(6000L, "GMS_UPDATES", 35.0, 139.0, 1f, 0f, 0f, true);
+
+        LabCompatibilitySessionRecorder.Summary summary = recorder.summarize();
+
+        assertEquals("LOCATION_CALLBACK_THROTTLE", summary.freezeDiagnosis());
+        assertTrue(summary.heartbeat.maxGapMs <= 500L);
+    }
+
+    @Test
     public void csvContainsMarkersAndLocations() {
         LabCompatibilitySessionRecorder recorder =
                 new LabCompatibilitySessionRecorder();
