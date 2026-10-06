@@ -57,6 +57,7 @@ public class CompatibilitySessionService extends Service {
 
     private PowerManager.WakeLock wakeLock;
     private volatile boolean wakeLockMode = false;
+    private volatile boolean wakeLockLossReported = false;
 
     private final Handler heartbeatHandler = new Handler(Looper.getMainLooper());
     private final Runnable heartbeatTask = new Runnable() {
@@ -107,6 +108,7 @@ public class CompatibilitySessionService extends Service {
         }
 
         wakeLockMode = useWakeLock;
+        wakeLockLossReported = false;
         recorder.start(SystemClock.elapsedRealtime());
         recorder.addMarker(
                 SystemClock.elapsedRealtime(),
@@ -114,8 +116,14 @@ public class CompatibilitySessionService extends Service {
 
         if (useWakeLock) {
             acquireWakeLock();
+            recorder.addMarker(
+                    SystemClock.elapsedRealtime(),
+                    isWakeLockHeld() ? "WAKELOCK_ACQUIRED" : "WAKELOCK_ACQUIRE_FAILED");
         } else {
             releaseWakeLock();
+            recorder.addMarker(
+                    SystemClock.elapsedRealtime(),
+                    "WAKELOCK_BASELINE_OFF");
         }
 
         startForeground(
@@ -308,7 +316,11 @@ public class CompatibilitySessionService extends Service {
                 interactive,
                 hasBackgroundLocationPermission(),
                 ignoringBatteryOptimizations);
-        if (recorder.isRunning() && wakeLockMode && !isWakeLockHeld()) {
+        if (recorder.isRunning()
+                && wakeLockMode
+                && !isWakeLockHeld()
+                && !wakeLockLossReported) {
+            wakeLockLossReported = true;
             recorder.addMarker(
                     SystemClock.elapsedRealtime(),
                     "WAKELOCK_NOT_HELD");
