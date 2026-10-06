@@ -1,12 +1,17 @@
 package com.zcshou.gogogo;
 
 import android.app.AlertDialog;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
 import android.provider.OpenableColumns;
 import android.text.InputType;
 import android.view.Gravity;
@@ -16,6 +21,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -38,36 +44,87 @@ import org.maplibre.android.maps.MapView;
 import org.maplibre.android.style.layers.RasterLayer;
 import org.maplibre.android.style.sources.RasterSource;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.TimeZone;
 
 @SuppressWarnings("deprecation")
 public class LabMapActivity extends AppCompatActivity {
     private static final int REQ_ROUTE_FILE = 2301;
     private static final int REQ_PMTILES_FILE = 2302;
+    private static final int REQ_EXPORT_GPX = 2303;
+
     private static final double DEFAULT_LAT = 16.68914;
     private static final double DEFAULT_LNG = 98.50895;
     private static final String STYLE_DEMO = "https://demotiles.maplibre.org/style.json";
     private static final String STYLE_LIBERTY = "https://tiles.openfreemap.org/styles/liberty";
-    private String currentStyle = STYLE_LIBERTY;
 
     private MapView mapView;
     private MapLibreMap map;
     private Marker selectedMarker;
+    private Marker liveMarker;
     private Polyline routeLine;
     private LatLng selectedPoint = new LatLng(DEFAULT_LAT, DEFAULT_LNG);
     private final List<RouteFileParser.RoutePoint> routePoints = new ArrayList<>();
+    private String currentStyle = STYLE_LIBERTY;
 
     private TextView statusView;
     private TextView routeView;
+    private TextView liveView;
+    private ProgressBar routeProgress;
     private EditText routeSpeedInput;
     private Spinner routeModeSpinner;
     private EditText roamRadiusInput;
     private EditText roamSpeedInput;
+    private Button followButton;
+
+    private ServiceGo.ServiceGoBinder serviceBinder;
+    private boolean serviceBound = false;
+    private boolean followMock = true;
+    private long lastFollowElapsed = 0L;
+
+    private double[] pendingExportLats;
+    private double[] pendingExportLngs;
+    private long[] pendingExportTimes;
+
+    private final Handler uiHandler = new Handler(Looper.getMainLooper());
+
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            if (service instanceof ServiceGo.ServiceGoBinder) {
+                serviceBinder = (ServiceGo.ServiceGoBinder) service;
+                serviceBound = true;
+                refreshLiveState();
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            serviceBinder = null;
+            serviceBound = false;
+        }
+    };
+
+    private final Runnable liveRefreshTask = new Runnable() {
+        @Override
+        public void run() {
+            if (!serviceBound && ServiceGo.sRunning) {
+                bindIfRunning();
+            }
+            refreshLiveState();
+            uiHandler.postDelayed(this, 500L);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,7 +141,7 @@ public class LabMapActivity extends AppCompatActivity {
         root.setPadding(pad, pad, pad, pad);
 
         TextView title = new TextView(this);
-        title.setText("🧪 GoGoGo Lab 3 · MapLibre");
+        title.setText("🧪 GoGoGo Lab 4 · MapLibre");
         title.setTextSize(21);
         title.setGravity(Gravity.CENTER);
         root.addView(title, matchWrap());
@@ -93,6 +150,18 @@ public class LabMapActivity extends AppCompatActivity {
         statusView.setText("点地图选位置。默认：妙瓦底 98.50895, 16.68914");
         statusView.setTextSize(14);
         root.addView(statusView, matchWrap());
+
+        liveView = new TextView(this);
+        liveView.setText("实时状态：Service 未运行");
+        liveView.setTextSize(13);
+        liveView.setTextIsSelectable(true);
+        liveView.setPadding(0, dp(3), 0, dp(3));
+        root.addView(liveView, matchWrap());
+
+        routeProgress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        routeProgress.setMax(1000);
+        routeProgress.setProgress(0);
+        root.addView(routeProgress, matchWrap());
 
         mapView = new MapView(this);
         mapView.onCreate(savedInstanceState);
@@ -104,11 +173,14 @@ public class LabMapActivity extends AppCompatActivity {
         root.addView(buttonRow(
                 button("🌐 Liberty", v -> switchStyle(STYLE_LIBERTY)),
                 button("🧱 Demo", v -> switchStyle(STYLE_DEMO)),
-                button("📦 导入离线 PMTiles", v -> pickPmtilesFile())
+                button("📦 导入 PMTiles", v -> pickPmtilesFile()),
+                button("🗂 离线地图", v -> showOfflineMaps())
         ));
 
+        followButton = button("🎯 跟随：开", v -> toggleFollow());
         root.addView(buttonRow(
                 button("📍 模拟这里", v -> simulateSelected()),
+                followButton,
                 button("❤️ 收藏", v -> promptFavorite()),
                 button("⭐ 收藏夹", v -> showSavedPoints(true)),
                 button("🕘 历史", v -> showSavedPoints(false))
@@ -164,12 +236,19 @@ public class LabMapActivity extends AppCompatActivity {
         ));
 
         root.addView(buttonRow(
-                button("⏸ 暂停运动", v -> sendMotionAction(ServiceGo.ACTION_MOTION_PAUSE)),
-                button("▶ 继续运动", v -> sendMotionAction(ServiceGo.ACTION_MOTION_RESUME)),
+                button("⏸ 暂停", v -> sendMotionAction(ServiceGo.ACTION_MOTION_PAUSE)),
+                button("▶ 继续", v -> sendMotionAction(ServiceGo.ACTION_MOTION_RESUME)),
                 button("0.5×", v -> setMotionMultiplier(0.5)),
                 button("1×", v -> setMotionMultiplier(1.0)),
                 button("2×", v -> setMotionMultiplier(2.0)),
                 button("4×", v -> setMotionMultiplier(4.0))
+        ));
+
+        root.addView(buttonRow(
+                button("⏺ 开始录轨迹", v -> startTrackRecording()),
+                button("⏹ 停止录制", v -> sendTrackAction(ServiceGo.ACTION_RECORD_STOP)),
+                button("💾 导出 GPX", v -> exportTrack()),
+                button("🧹 清空轨迹", v -> sendTrackAction(ServiceGo.ACTION_RECORD_CLEAR))
         ));
 
         Button back = button("← 返回定位测试面板", v -> finish());
@@ -261,6 +340,120 @@ public class LabMapActivity extends AppCompatActivity {
                 "已选择：%.6f, %.6f", point.getLongitude(), point.getLatitude()));
     }
 
+    private void updateLiveMarker(double lat, double lng) {
+        if (map == null) return;
+        LatLng point = new LatLng(lat, lng);
+
+        if (liveMarker == null) {
+            liveMarker = map.addMarker(new MarkerOptions()
+                    .position(point)
+                    .title("当前 Mock 位置"));
+        } else {
+            liveMarker.setPosition(point);
+            map.updateMarker(liveMarker);
+        }
+
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (followMock && now - lastFollowElapsed >= 1000L) {
+            lastFollowElapsed = now;
+            map.moveCamera(CameraUpdateFactory.newLatLng(point));
+        }
+    }
+
+    private void toggleFollow() {
+        followMock = !followMock;
+        followButton.setText(followMock ? "🎯 跟随：开" : "🎯 跟随：关");
+        if (followMock && serviceBinder != null) {
+            updateLiveMarker(serviceBinder.getLatitude(), serviceBinder.getLongitude());
+        }
+    }
+
+    private void refreshLiveState() {
+        ServiceGo.ServiceGoBinder binder = serviceBinder;
+        if (binder == null) {
+            liveView.setText("实时状态：Service 未连接"
+                    + (ServiceGo.sRunning ? "（正在重连）" : "（未运行）"));
+            routeProgress.setProgress(0);
+            return;
+        }
+
+        try {
+            double lat = binder.getLatitude();
+            double lng = binder.getLongitude();
+            double speed = binder.getSpeedMps();
+            double multiplier = binder.getMotionMultiplier();
+            boolean paused = binder.isMotionPaused();
+            boolean route = binder.isRouteActive();
+            boolean roam = binder.isRoamActive();
+            boolean recording = binder.isTrackRecording();
+            int trackPoints = binder.getTrackPointCount();
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format(Locale.US,
+                    "Mock %.6f, %.6f · %.2f m/s · %.1f°",
+                    lng, lat, speed, binder.getBearingDegrees()));
+
+            if (route) {
+                double progress = binder.getRouteProgressFraction();
+                double remain = binder.getRouteRemainingMeters();
+                long eta = binder.getRouteEtaSeconds();
+                routeProgress.setProgress((int) Math.round(progress * 1000.0));
+                sb.append(String.format(Locale.US,
+                        "\n路线 %.1f%% · 剩余 %.0f m · ETA %s · %s · %.2f×",
+                        progress * 100.0,
+                        remain,
+                        eta < 0 ? "--" : formatDuration(eta),
+                        paused ? "暂停" : "运行",
+                        multiplier));
+            } else if (roam) {
+                routeProgress.setProgress(0);
+                sb.append(String.format(Locale.US,
+                        "\n随机漫游 · %s · %.2f×",
+                        paused ? "暂停" : "运行", multiplier));
+            } else {
+                routeProgress.setProgress(0);
+            }
+
+            sb.append("\n轨迹录制：")
+                    .append(recording ? "● 录制中" : "停止")
+                    .append(" · ")
+                    .append(trackPoints)
+                    .append(" 点");
+
+            liveView.setText(sb.toString());
+            updateLiveMarker(lat, lng);
+        } catch (Throwable t) {
+            liveView.setText("实时状态读取失败：" + t.getClass().getSimpleName());
+        }
+    }
+
+    private static String formatDuration(long seconds) {
+        if (seconds < 0) return "--";
+        long h = seconds / 3600;
+        long m = (seconds % 3600) / 60;
+        long s = seconds % 60;
+        if (h > 0) return String.format(Locale.US, "%d:%02d:%02d", h, m, s);
+        return String.format(Locale.US, "%02d:%02d", m, s);
+    }
+
+    private void bindIfRunning() {
+        if (serviceBound || !ServiceGo.sRunning) return;
+        try {
+            bindService(new Intent(this, ServiceGo.class), serviceConnection, 0);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private void unbindFromService() {
+        if (!serviceBound) return;
+        try {
+            unbindService(serviceConnection);
+        } catch (Throwable ignored) {
+        }
+        serviceBound = false;
+        serviceBinder = null;
+    }
+
     private void simulateSelected() {
         if (selectedPoint == null) return;
 
@@ -342,6 +535,13 @@ public class LabMapActivity extends AppCompatActivity {
         startActivityForResult(intent, REQ_ROUTE_FILE);
     }
 
+    private void pickPmtilesFile() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        startActivityForResult(intent, REQ_PMTILES_FILE);
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -349,10 +549,16 @@ public class LabMapActivity extends AppCompatActivity {
         Uri uri = data.getData();
         if (uri == null) return;
 
+        if (requestCode == REQ_EXPORT_GPX) {
+            writePendingGpx(uri);
+            return;
+        }
+
         if (requestCode == REQ_PMTILES_FILE) {
             importPmtiles(uri);
             return;
         }
+
         if (requestCode != REQ_ROUTE_FILE) return;
 
         String name = queryDisplayName(uri);
@@ -377,64 +583,37 @@ public class LabMapActivity extends AppCompatActivity {
         if (map == null) return;
         currentStyle = styleUrl;
         selectedMarker = null;
+        liveMarker = null;
         routeLine = null;
         map.setStyle(styleUrl, style -> {
             selectPoint(selectedPoint, false);
             if (!routePoints.isEmpty()) drawRoute();
+            if (serviceBinder != null) {
+                updateLiveMarker(serviceBinder.getLatitude(), serviceBinder.getLongitude());
+            }
             statusView.setText((STYLE_LIBERTY.equals(styleUrl) ? "OpenFreeMap Liberty" : "MapLibre Demo")
                     + " · " + String.format(Locale.US, "%.6f, %.6f",
                     selectedPoint.getLongitude(), selectedPoint.getLatitude()));
         });
     }
 
-    private void sendMotionAction(String action) {
-        Intent intent = new Intent(this, ServiceGo.class);
-        intent.setAction(action);
-        try {
-            startService(intent);
-            Toast.makeText(this,
-                    ServiceGo.ACTION_MOTION_PAUSE.equals(action) ? "运动已暂停" : "运动继续",
-                    Toast.LENGTH_SHORT).show();
-        } catch (Throwable t) {
-            Toast.makeText(this, "运动控制失败", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void setMotionMultiplier(double multiplier) {
-        Intent intent = new Intent(this, ServiceGo.class);
-        intent.setAction(ServiceGo.ACTION_MOTION_SPEED);
-        intent.putExtra(ServiceGo.EXTRA_MOTION_MULTIPLIER, multiplier);
-        try {
-            startService(intent);
-            Toast.makeText(this,
-                    String.format(Locale.US, "运动倍速：%.2f×", multiplier),
-                    Toast.LENGTH_SHORT).show();
-        } catch (Throwable t) {
-            Toast.makeText(this, "倍速切换失败", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void pickPmtilesFile() {
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("*/*");
-        startActivityForResult(intent, REQ_PMTILES_FILE);
-    }
-
     private void importPmtiles(Uri uri) {
-        File base = getExternalFilesDir(null);
-        if (base == null) {
+        File dir = getOfflineDir();
+        if (dir == null) {
             Toast.makeText(this, "无法访问应用离线目录", Toast.LENGTH_LONG).show();
             return;
         }
 
-        File dir = new File(base, "offline");
-        if (!dir.exists() && !dir.mkdirs()) {
-            Toast.makeText(this, "无法创建离线地图目录", Toast.LENGTH_LONG).show();
-            return;
+        String displayName = queryDisplayName(uri);
+        if (displayName == null || displayName.trim().isEmpty()) {
+            displayName = "offline.pmtiles";
+        }
+        displayName = sanitizeFileName(displayName);
+        if (!displayName.toLowerCase(Locale.US).endsWith(".pmtiles")) {
+            displayName += ".pmtiles";
         }
 
-        File out = new File(dir, "imported-raster.pmtiles");
+        File out = uniqueFile(dir, displayName);
         try (InputStream input = getContentResolver().openInputStream(uri);
              FileOutputStream output = new FileOutputStream(out)) {
             if (input == null) throw new IllegalStateException("input");
@@ -450,6 +629,69 @@ public class LabMapActivity extends AppCompatActivity {
                     "PMTiles 导入失败：" + e.getClass().getSimpleName(),
                     Toast.LENGTH_LONG).show();
         }
+    }
+
+    private File getOfflineDir() {
+        File base = getExternalFilesDir(null);
+        if (base == null) return null;
+        File dir = new File(base, "offline");
+        if (!dir.exists() && !dir.mkdirs()) return null;
+        return dir;
+    }
+
+    private void showOfflineMaps() {
+        File dir = getOfflineDir();
+        if (dir == null) {
+            Toast.makeText(this, "离线地图目录不可用", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        File[] files = dir.listFiles((d, name) ->
+                name != null && name.toLowerCase(Locale.US).endsWith(".pmtiles"));
+        if (files == null || files.length == 0) {
+            Toast.makeText(this, "还没有导入 PMTiles", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        java.util.Arrays.sort(files, (a, b) -> Long.compare(b.lastModified(), a.lastModified()));
+        String[] labels = new String[files.length];
+        for (int i = 0; i < files.length; i++) {
+            labels[i] = files[i].getName() + "\n"
+                    + String.format(Locale.US, "%.1f MB", files[i].length() / 1048576.0);
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("离线 PMTiles")
+                .setItems(labels, (d, which) -> attachRasterPmtiles(files[which]))
+                .setNeutralButton("删除全部", (d, w) -> {
+                    int deleted = 0;
+                    for (File file : files) {
+                        if (file.delete()) deleted++;
+                    }
+                    Toast.makeText(this, "已删除 " + deleted + " 个离线地图", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("关闭", null)
+                .show();
+    }
+
+    private static String sanitizeFileName(String name) {
+        return name.replaceAll("[\\\\/:*?\"<>|]", "_").trim();
+    }
+
+    private static File uniqueFile(File dir, String name) {
+        File first = new File(dir, name);
+        if (!first.exists()) return first;
+
+        int dot = name.lastIndexOf('.');
+        String base = dot > 0 ? name.substring(0, dot) : name;
+        String ext = dot > 0 ? name.substring(dot) : "";
+        int index = 2;
+        File candidate;
+        do {
+            candidate = new File(dir, base + "_" + index + ext);
+            index++;
+        } while (candidate.exists());
+        return candidate;
     }
 
     private void attachRasterPmtiles(File file) {
@@ -468,11 +710,11 @@ public class LabMapActivity extends AppCompatActivity {
                 style.addSource(source);
                 style.addLayer(new RasterLayer("lab-pmtiles-layer", "lab-pmtiles-source"));
                 Toast.makeText(this,
-                        "离线 Raster PMTiles 已挂载 😈\n文件：" + file.getName(),
+                        "离线 Raster PMTiles 已挂载 😈\n" + file.getName(),
                         Toast.LENGTH_LONG).show();
             } catch (Throwable t) {
                 Toast.makeText(this,
-                        "PMTiles 已保存，但当前文件可能不是 Raster 类型",
+                        "文件已保存，但当前 PMTiles 可能不是 Raster 类型",
                         Toast.LENGTH_LONG).show();
             }
         });
@@ -521,8 +763,7 @@ public class LabMapActivity extends AppCompatActivity {
             return;
         }
 
-        double speed = parseNumber(routeSpeedInput, 1.4);
-        speed = clamp(speed, 0.2, 60.0);
+        double speed = clamp(parseNumber(routeSpeedInput, 1.4), 0.2, 60.0);
         int mode = routeModeSpinner.getSelectedItemPosition();
         mode = Math.max(ServiceGo.ROUTE_MODE_ONCE, Math.min(ServiceGo.ROUTE_MODE_PINGPONG, mode));
 
@@ -606,6 +847,132 @@ public class LabMapActivity extends AppCompatActivity {
         }
     }
 
+    private void sendMotionAction(String action) {
+        Intent intent = new Intent(this, ServiceGo.class);
+        intent.setAction(action);
+        try {
+            startService(intent);
+            Toast.makeText(this,
+                    ServiceGo.ACTION_MOTION_PAUSE.equals(action) ? "运动已暂停" : "运动继续",
+                    Toast.LENGTH_SHORT).show();
+        } catch (Throwable t) {
+            Toast.makeText(this, "运动控制失败", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void setMotionMultiplier(double multiplier) {
+        Intent intent = new Intent(this, ServiceGo.class);
+        intent.setAction(ServiceGo.ACTION_MOTION_SPEED);
+        intent.putExtra(ServiceGo.EXTRA_MOTION_MULTIPLIER, multiplier);
+        try {
+            startService(intent);
+            Toast.makeText(this,
+                    String.format(Locale.US, "运动倍速：%.2f×", multiplier),
+                    Toast.LENGTH_SHORT).show();
+        } catch (Throwable t) {
+            Toast.makeText(this, "倍速切换失败", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void startTrackRecording() {
+        if (!ServiceGo.sRunning) {
+            simulateSelected();
+            uiHandler.postDelayed(() -> sendTrackAction(ServiceGo.ACTION_RECORD_START), 200L);
+        } else {
+            sendTrackAction(ServiceGo.ACTION_RECORD_START);
+        }
+    }
+
+    private void sendTrackAction(String action) {
+        Intent intent = new Intent(this, ServiceGo.class);
+        intent.setAction(action);
+        try {
+            if (ServiceGo.ACTION_RECORD_START.equals(action)) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !ServiceGo.sRunning) {
+                    startForegroundService(intent);
+                } else {
+                    startService(intent);
+                }
+                Toast.makeText(this, "轨迹录制开始", Toast.LENGTH_SHORT).show();
+            } else {
+                startService(intent);
+                Toast.makeText(this,
+                        ServiceGo.ACTION_RECORD_CLEAR.equals(action) ? "轨迹已清空" : "轨迹录制停止",
+                        Toast.LENGTH_SHORT).show();
+            }
+            uiHandler.postDelayed(this::bindIfRunning, 150L);
+        } catch (Throwable t) {
+            Toast.makeText(this, "轨迹控制失败", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void exportTrack() {
+        ServiceGo.ServiceGoBinder binder = serviceBinder;
+        if (binder == null) {
+            Toast.makeText(this, "Service 还没有连接", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        pendingExportLats = binder.getTrackLats();
+        pendingExportLngs = binder.getTrackLngs();
+        pendingExportTimes = binder.getTrackTimes();
+
+        if (pendingExportLats.length == 0
+                || pendingExportLats.length != pendingExportLngs.length
+                || pendingExportLats.length != pendingExportTimes.length) {
+            Toast.makeText(this, "还没有可导出的轨迹", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String stamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
+        Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("application/gpx+xml");
+        intent.putExtra(Intent.EXTRA_TITLE, "GoGoGo_track_" + stamp + ".gpx");
+        startActivityForResult(intent, REQ_EXPORT_GPX);
+    }
+
+    private void writePendingGpx(Uri uri) {
+        if (pendingExportLats == null || pendingExportLngs == null || pendingExportTimes == null) {
+            Toast.makeText(this, "导出数据已经失效", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+        iso.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        try (OutputStream output = getContentResolver().openOutputStream(uri);
+             BufferedWriter writer = output == null ? null :
+                     new BufferedWriter(new OutputStreamWriter(output, java.nio.charset.StandardCharsets.UTF_8))) {
+            if (writer == null) throw new IllegalStateException("output");
+
+            writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+            writer.write("<gpx version=\"1.1\" creator=\"GoGoGo Lab 4\" xmlns=\"http://www.topografix.com/GPX/1/1\">\n");
+            writer.write("  <trk><name>GoGoGo Recorded Track</name><trkseg>\n");
+            for (int i = 0; i < pendingExportLats.length; i++) {
+                writer.write(String.format(Locale.US,
+                        "    <trkpt lat=\"%.8f\" lon=\"%.8f\"><time>%s</time></trkpt>\n",
+                        pendingExportLats[i],
+                        pendingExportLngs[i],
+                        iso.format(new Date(pendingExportTimes[i]))));
+            }
+            writer.write("  </trkseg></trk>\n</gpx>\n");
+            writer.flush();
+
+            Toast.makeText(this,
+                    "GPX 已导出：" + pendingExportLats.length + " 个点",
+                    Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(this,
+                    "GPX 导出失败：" + e.getClass().getSimpleName(),
+                    Toast.LENGTH_LONG).show();
+        } finally {
+            pendingExportLats = null;
+            pendingExportLngs = null;
+            pendingExportTimes = null;
+        }
+    }
+
     private boolean startLocationService(Intent intent) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -613,6 +980,7 @@ public class LabMapActivity extends AppCompatActivity {
             } else {
                 startService(intent);
             }
+            uiHandler.postDelayed(this::bindIfRunning, 150L);
             return true;
         } catch (Throwable t) {
             Toast.makeText(this,
@@ -644,6 +1012,9 @@ public class LabMapActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         if (mapView != null) mapView.onStart();
+        uiHandler.removeCallbacks(liveRefreshTask);
+        uiHandler.post(liveRefreshTask);
+        bindIfRunning();
     }
 
     @Override
@@ -660,12 +1031,16 @@ public class LabMapActivity extends AppCompatActivity {
 
     @Override
     protected void onStop() {
+        uiHandler.removeCallbacks(liveRefreshTask);
+        unbindFromService();
         if (mapView != null) mapView.onStop();
         super.onStop();
     }
 
     @Override
     protected void onDestroy() {
+        uiHandler.removeCallbacksAndMessages(null);
+        unbindFromService();
         if (mapView != null) mapView.onDestroy();
         super.onDestroy();
     }
