@@ -346,50 +346,34 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                         + "\n\n" + gmsCurrent.render()
                         + "\n\n" + gmsUpdates.render());
 
-        Channel[] channels = {gps, network, gmsLast, gmsCurrent, gmsUpdates};
-        int fresh = 0;
-        int mock = 0;
-        int available = 0;
-        Location reference = null;
-        double maxSeparation = 0.0;
+        java.util.List<LabConsumerMatrixEvaluator.Sample> samples =
+                new java.util.ArrayList<>();
+        samples.add(gps.asSample());
+        samples.add(network.asSample());
+        samples.add(gmsLast.asSample());
+        samples.add(gmsCurrent.asSample());
+        samples.add(gmsUpdates.asSample());
 
-        for (Channel channel : channels) {
-            if (channel.location == null) continue;
-            available++;
-            if (channel.ageMs() <= 1000L) fresh++;
-            if (channel.isMock()) mock++;
-
-            if (reference == null) {
-                reference = channel.location;
-            } else {
-                maxSeparation = Math.max(
-                        maxSeparation,
-                        reference.distanceTo(channel.location));
-            }
-        }
-
-        String grade;
-        if (fresh >= 4 && maxSeparation <= 10.0) {
-            grade = "CONSISTENT";
-        } else if (fresh >= 2 && maxSeparation <= 50.0) {
-            grade = "PARTIAL";
-        } else {
-            grade = "DEGRADED";
-        }
+        LabConsumerMatrixEvaluator.Result matrix =
+                LabConsumerMatrixEvaluator.evaluate(samples);
 
         comparisonView.setText(String.format(Locale.US,
                 "%s\n"
                         + "available channels: %d / 5\n"
                         + "fresh ≤1s: %d / 5\n"
                         + "mock-marked samples: %d\n"
-                        + "max cross-channel separation: %.1f m\n\n"
+                        + "max cross-channel separation: %.1f m\n"
+                        + "stale: %s\n\n"
                         + "如果这里 CONSISTENT，而目标 App 仍不采用位置，"
                         + "就说明标准消费链本身不是主要故障点。",
-                grade,
-                available,
-                fresh,
-                mock,
-                maxSeparation));
+                matrix.grade,
+                matrix.availableChannels,
+                matrix.freshChannels,
+                matrix.mockMarkedChannels,
+                matrix.maxSeparationMeters,
+                matrix.staleChannels.isEmpty()
+                        ? "none"
+                        : android.text.TextUtils.join(", ", matrix.staleChannels)));
     }
 
     @SuppressLint("MissingPermission")
@@ -473,6 +457,16 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
             }
             Bundle extras = location.getExtras();
             return extras != null && extras.getBoolean("mockLocation", false);
+        }
+
+        LabConsumerMatrixEvaluator.Sample asSample() {
+            return new LabConsumerMatrixEvaluator.Sample(
+                    name,
+                    location != null,
+                    location == null ? 0.0 : location.getLatitude(),
+                    location == null ? 0.0 : location.getLongitude(),
+                    ageMs(),
+                    isMock());
         }
 
         String render() {
