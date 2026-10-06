@@ -499,6 +499,7 @@ public class LabMapActivity extends AppCompatActivity {
                 "Heading Intelligence",
                 "Location Compatibility",
                 "Consumer Matrix",
+                "Compatibility Session",
                 "Scenario / Replay",
                 "Motion Audit",
                 "Resource Broker",
@@ -524,21 +525,24 @@ public class LabMapActivity extends AppCompatActivity {
                             startActivity(new Intent(this, ConsumerLocationProbeActivity.class));
                             break;
                         case 4:
-                            startActivity(new Intent(this, ScenarioLabActivity.class));
+                            startActivity(new Intent(this, CompatibilitySessionActivity.class));
                             break;
                         case 5:
-                            startActivity(new Intent(this, MotionAuditActivity.class));
+                            startActivity(new Intent(this, ScenarioLabActivity.class));
                             break;
                         case 6:
-                            startActivity(new Intent(this, PolicyLabActivity.class));
+                            startActivity(new Intent(this, MotionAuditActivity.class));
                             break;
                         case 7:
-                            showProvenanceTimeline();
+                            startActivity(new Intent(this, PolicyLabActivity.class));
                             break;
                         case 8:
-                            clearProvenanceTimeline();
+                            showProvenanceTimeline();
                             break;
                         case 9:
+                            clearProvenanceTimeline();
+                            break;
+                        case 10:
                             startActivity(new Intent(this, SandboxLabActivity.class));
                             break;
                         default:
