@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.app.ActivityManager;
 import android.content.Intent;
@@ -46,9 +47,15 @@ public class CompatibilitySessionService extends Service {
             "com.soozooq.gogogo.action.LAB17_STOP";
     public static final String ACTION_CLEAR =
             "com.soozooq.gogogo.action.LAB17_CLEAR";
+    public static final String ACTION_START_AUTO =
+            "com.soozooq.gogogo.action.LAB18_START_AUTO";
+    public static final String EXTRA_AUTO_TYPE = "lab18_auto_type";
+    public static final String EXTRA_AUTO_DURATION_MS = "lab18_auto_duration_ms";
 
     private static final String CHANNEL_ID = "gogogo_lab17_session";
     private static final int NOTIFICATION_ID = 1717;
+    private static final int AUTO_DONE_NOTIFICATION_ID = 1818;
+    private static final long DEFAULT_AUTO_DURATION_MS = 60000L;
 
     private final LocalBinder binder = new LocalBinder();
     private final LabCompatibilitySessionRecorder recorder =
@@ -64,6 +71,10 @@ public class CompatibilitySessionService extends Service {
     private volatile boolean wakeLockMode = false;
     private volatile boolean wakeLockLossReported = false;
 
+    private volatile String autoExperimentType = null;
+    private volatile long autoExperimentStartedElapsedMs = -1L;
+    private volatile long autoExperimentRequestedDurationMs = 0L;
+
     private final Handler heartbeatHandler = new Handler(Looper.getMainLooper());
     private ScheduledExecutorService backgroundHeartbeatExecutor;
     private ScheduledFuture<?> backgroundHeartbeatFuture;
@@ -77,6 +88,9 @@ public class CompatibilitySessionService extends Service {
             }
         }
     };
+
+    private final Runnable autoStopTask = () ->
+            finishAutoExperiment("AUTO_TIMER");
 
     @Override
     public void onCreate() {
@@ -93,10 +107,21 @@ public class CompatibilitySessionService extends Service {
             startSession(false);
         } else if (ACTION_START_WAKELOCK.equals(action)) {
             startSession(true);
+        } else if (ACTION_START_AUTO.equals(action)) {
+            String type = intent == null
+                    ? null
+                    : intent.getStringExtra(EXTRA_AUTO_TYPE);
+            long durationMs = intent == null
+                    ? DEFAULT_AUTO_DURATION_MS
+                    : intent.getLongExtra(
+                            EXTRA_AUTO_DURATION_MS,
+                            DEFAULT_AUTO_DURATION_MS);
+            startAutoExperiment(type, durationMs);
         } else if (ACTION_STOP.equals(action)) {
             stopSession();
         } else if (ACTION_CLEAR.equals(action)) {
             recorder.clear();
+            LabAutoExperimentStore.clear(this);
         }
         return START_STICKY;
     }
@@ -146,9 +171,86 @@ public class CompatibilitySessionService extends Service {
         startBackgroundHeartbeat();
     }
 
+    private void startAutoExperiment(String type, long durationMs) {
+        if (recorder.isRunning()) return;
+        if (!LabAutoExperimentStore.TYPE_WECHAT.equals(type)
+                && !LabAutoExperimentStore.TYPE_CONTROL.equals(type)) {
+            return;
+        }
+
+        autoExperimentType = type;
+        autoExperimentRequestedDurationMs =
+                Math.max(15000L, Math.min(durationMs, 5 * 60 * 1000L));
+
+        startSession(false);
+        if (!recorder.isRunning()) {
+            autoExperimentType = null;
+            return;
+        }
+
+        autoExperimentStartedElapsedMs = SystemClock.elapsedRealtime();
+        recorder.addMarker(
+                autoExperimentStartedElapsedMs,
+                "AUTO_EXPERIMENT_" + autoExperimentType);
+        recorder.addMarker(
+                autoExperimentStartedElapsedMs,
+                "AUTO_DURATION_MS_" + autoExperimentRequestedDurationMs);
+
+        heartbeatHandler.removeCallbacks(autoStopTask);
+        heartbeatHandler.postDelayed(
+                autoStopTask,
+                autoExperimentRequestedDurationMs);
+    }
+
+    private void finishAutoExperiment(String reason) {
+        String type = autoExperimentType;
+        if (type == null || !recorder.isRunning()) return;
+
+        long now = SystemClock.elapsedRealtime();
+        recorder.addMarker(now, "AUTO_FINISH_" + reason);
+        recorder.stop(now);
+
+        heartbeatHandler.removeCallbacks(autoStopTask);
+        heartbeatHandler.removeCallbacks(autoStopTask);
+        heartbeatHandler.removeCallbacks(heartbeatTask);
+        stopBackgroundHeartbeat();
+        stopConsumers();
+        releaseWakeLock();
+        wakeLockMode = false;
+
+        LabCompatibilitySessionRecorder.Summary summary =
+                recorder.summarize();
+        long durationMs = recorder.durationMs(now);
+        LabAutoExperimentStore.save(
+                this,
+                type,
+                summary,
+                durationMs,
+                isBatteryOptimizationExempt());
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE);
+        } else {
+            stopForeground(true);
+        }
+
+        postAutoDoneNotification(type, summary, durationMs);
+
+        autoExperimentType = null;
+        autoExperimentStartedElapsedMs = -1L;
+        autoExperimentRequestedDurationMs = 0L;
+    }
+
     private void stopSession() {
         if (!recorder.isRunning()) return;
+
+        if (autoExperimentType != null) {
+            finishAutoExperiment("MANUAL_STOP");
+            return;
+        }
+
         recorder.stop(SystemClock.elapsedRealtime());
+        heartbeatHandler.removeCallbacks(autoStopTask);
         heartbeatHandler.removeCallbacks(heartbeatTask);
         stopBackgroundHeartbeat();
         stopConsumers();
@@ -432,13 +534,56 @@ public class CompatibilitySessionService extends Service {
         nm.createNotificationChannel(channel);
     }
 
+    private void postAutoDoneNotification(
+            String type,
+            LabCompatibilitySessionRecorder.Summary summary,
+            long durationMs) {
+        NotificationManager nm =
+                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (nm == null) return;
+
+        Intent open = new Intent(this, CompatibilitySessionActivity.class);
+        open.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pending = PendingIntent.getActivity(
+                this,
+                1800,
+                open,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        String label = LabAutoExperimentStore.TYPE_WECHAT.equals(type)
+                ? "微信组"
+                : "控制组";
+        String text = label
+                + "完成 · "
+                + summary.grade()
+                + " · "
+                + summary.freezeDiagnosis()
+                + " · "
+                + Math.max(1L, durationMs / 1000L)
+                + "s";
+
+        Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                ? new Notification.Builder(this, CHANNEL_ID)
+                : new Notification.Builder(this);
+
+        Notification notification = builder
+                .setContentTitle("GoGoGo Lab 18 自动实验完成")
+                .setContentText(text)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentIntent(pending)
+                .setAutoCancel(true)
+                .build();
+
+        nm.notify(AUTO_DONE_NOTIFICATION_ID, notification);
+    }
+
     private Notification buildNotification(String text) {
         Notification.Builder builder = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 ? new Notification.Builder(this, CHANNEL_ID)
                 : new Notification.Builder(this);
 
         return builder
-                .setContentTitle("GoGoGo Lab 17.3")
+                .setContentTitle("GoGoGo Lab 18")
                 .setContentText(text)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setOngoing(true)
