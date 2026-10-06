@@ -35,7 +35,11 @@ import org.maplibre.android.camera.CameraUpdateFactory;
 import org.maplibre.android.geometry.LatLng;
 import org.maplibre.android.maps.MapLibreMap;
 import org.maplibre.android.maps.MapView;
+import org.maplibre.android.style.layers.RasterLayer;
+import org.maplibre.android.style.sources.RasterSource;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,9 +48,12 @@ import java.util.Locale;
 @SuppressWarnings("deprecation")
 public class LabMapActivity extends AppCompatActivity {
     private static final int REQ_ROUTE_FILE = 2301;
+    private static final int REQ_PMTILES_FILE = 2302;
     private static final double DEFAULT_LAT = 16.68914;
     private static final double DEFAULT_LNG = 98.50895;
-    private static final String MAP_STYLE = "https://demotiles.maplibre.org/style.json";
+    private static final String STYLE_DEMO = "https://demotiles.maplibre.org/style.json";
+    private static final String STYLE_LIBERTY = "https://tiles.openfreemap.org/styles/liberty";
+    private String currentStyle = STYLE_LIBERTY;
 
     private MapView mapView;
     private MapLibreMap map;
@@ -77,7 +84,7 @@ public class LabMapActivity extends AppCompatActivity {
         root.setPadding(pad, pad, pad, pad);
 
         TextView title = new TextView(this);
-        title.setText("🧪 GoGoGo Lab 2 · MapLibre");
+        title.setText("🧪 GoGoGo Lab 3 · MapLibre");
         title.setTextSize(21);
         title.setGravity(Gravity.CENTER);
         root.addView(title, matchWrap());
@@ -93,6 +100,12 @@ public class LabMapActivity extends AppCompatActivity {
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
         mapLp.setMargins(0, dp(6), 0, dp(6));
         root.addView(mapView, mapLp);
+
+        root.addView(buttonRow(
+                button("🌐 Liberty", v -> switchStyle(STYLE_LIBERTY)),
+                button("🧱 Demo", v -> switchStyle(STYLE_DEMO)),
+                button("📦 导入离线 PMTiles", v -> pickPmtilesFile())
+        ));
 
         root.addView(buttonRow(
                 button("📍 模拟这里", v -> simulateSelected()),
@@ -150,6 +163,15 @@ public class LabMapActivity extends AppCompatActivity {
                         startActivity(new Intent(this, LabDiagnosticsActivity.class)))
         ));
 
+        root.addView(buttonRow(
+                button("⏸ 暂停运动", v -> sendMotionAction(ServiceGo.ACTION_MOTION_PAUSE)),
+                button("▶ 继续运动", v -> sendMotionAction(ServiceGo.ACTION_MOTION_RESUME)),
+                button("0.5×", v -> setMotionMultiplier(0.5)),
+                button("1×", v -> setMotionMultiplier(1.0)),
+                button("2×", v -> setMotionMultiplier(2.0)),
+                button("4×", v -> setMotionMultiplier(4.0))
+        ));
+
         Button back = button("← 返回定位测试面板", v -> finish());
         root.addView(back, matchWrap());
 
@@ -157,17 +179,15 @@ public class LabMapActivity extends AppCompatActivity {
 
         mapView.getMapAsync(mapLibreMap -> {
             map = mapLibreMap;
-            map.setStyle(MAP_STYLE, style -> {
-                map.setCameraPosition(new CameraPosition.Builder()
-                        .target(selectedPoint)
-                        .zoom(14.5)
-                        .build());
-                map.addOnMapClickListener(point -> {
-                    selectPoint(point, true);
-                    return true;
-                });
-                selectPoint(selectedPoint, false);
+            map.addOnMapClickListener(point -> {
+                selectPoint(point, true);
+                return true;
             });
+            map.setCameraPosition(new CameraPosition.Builder()
+                    .target(selectedPoint)
+                    .zoom(14.5)
+                    .build());
+            switchStyle(currentStyle);
         });
     }
 
@@ -325,9 +345,15 @@ public class LabMapActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != REQ_ROUTE_FILE || resultCode != RESULT_OK || data == null) return;
+        if (resultCode != RESULT_OK || data == null) return;
         Uri uri = data.getData();
         if (uri == null) return;
+
+        if (requestCode == REQ_PMTILES_FILE) {
+            importPmtiles(uri);
+            return;
+        }
+        if (requestCode != REQ_ROUTE_FILE) return;
 
         String name = queryDisplayName(uri);
         try (InputStream input = getContentResolver().openInputStream(uri)) {
@@ -345,6 +371,111 @@ public class LabMapActivity extends AppCompatActivity {
         } catch (Exception e) {
             Toast.makeText(this, "路线解析失败：" + e.getClass().getSimpleName(), Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void switchStyle(String styleUrl) {
+        if (map == null) return;
+        currentStyle = styleUrl;
+        selectedMarker = null;
+        routeLine = null;
+        map.setStyle(styleUrl, style -> {
+            selectPoint(selectedPoint, false);
+            if (!routePoints.isEmpty()) drawRoute();
+            statusView.setText((STYLE_LIBERTY.equals(styleUrl) ? "OpenFreeMap Liberty" : "MapLibre Demo")
+                    + " · " + String.format(Locale.US, "%.6f, %.6f",
+                    selectedPoint.getLongitude(), selectedPoint.getLatitude()));
+        });
+    }
+
+    private void sendMotionAction(String action) {
+        Intent intent = new Intent(this, ServiceGo.class);
+        intent.setAction(action);
+        try {
+            startService(intent);
+            Toast.makeText(this,
+                    ServiceGo.ACTION_MOTION_PAUSE.equals(action) ? "运动已暂停" : "运动继续",
+                    Toast.LENGTH_SHORT).show();
+        } catch (Throwable t) {
+            Toast.makeText(this, "运动控制失败", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void setMotionMultiplier(double multiplier) {
+        Intent intent = new Intent(this, ServiceGo.class);
+        intent.setAction(ServiceGo.ACTION_MOTION_SPEED);
+        intent.putExtra(ServiceGo.EXTRA_MOTION_MULTIPLIER, multiplier);
+        try {
+            startService(intent);
+            Toast.makeText(this,
+                    String.format(Locale.US, "运动倍速：%.2f×", multiplier),
+                    Toast.LENGTH_SHORT).show();
+        } catch (Throwable t) {
+            Toast.makeText(this, "倍速切换失败", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void pickPmtilesFile() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("*/*");
+        startActivityForResult(intent, REQ_PMTILES_FILE);
+    }
+
+    private void importPmtiles(Uri uri) {
+        File base = getExternalFilesDir(null);
+        if (base == null) {
+            Toast.makeText(this, "无法访问应用离线目录", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        File dir = new File(base, "offline");
+        if (!dir.exists() && !dir.mkdirs()) {
+            Toast.makeText(this, "无法创建离线地图目录", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        File out = new File(dir, "imported-raster.pmtiles");
+        try (InputStream input = getContentResolver().openInputStream(uri);
+             FileOutputStream output = new FileOutputStream(out)) {
+            if (input == null) throw new IllegalStateException("input");
+            byte[] buffer = new byte[64 * 1024];
+            int read;
+            while ((read = input.read(buffer)) >= 0) {
+                if (read > 0) output.write(buffer, 0, read);
+            }
+            output.flush();
+            attachRasterPmtiles(out);
+        } catch (Exception e) {
+            Toast.makeText(this,
+                    "PMTiles 导入失败：" + e.getClass().getSimpleName(),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void attachRasterPmtiles(File file) {
+        if (map == null || file == null || !file.exists()) return;
+        map.getStyle(style -> {
+            try {
+                if (style.getLayer("lab-pmtiles-layer") != null) {
+                    style.removeLayer("lab-pmtiles-layer");
+                }
+                if (style.getSource("lab-pmtiles-source") != null) {
+                    style.removeSource("lab-pmtiles-source");
+                }
+
+                String uri = "pmtiles://file://" + file.getAbsolutePath();
+                RasterSource source = new RasterSource("lab-pmtiles-source", uri, 256);
+                style.addSource(source);
+                style.addLayer(new RasterLayer("lab-pmtiles-layer", "lab-pmtiles-source"));
+                Toast.makeText(this,
+                        "离线 Raster PMTiles 已挂载 😈\n文件：" + file.getName(),
+                        Toast.LENGTH_LONG).show();
+            } catch (Throwable t) {
+                Toast.makeText(this,
+                        "PMTiles 已保存，但当前文件可能不是 Raster 类型",
+                        Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private String queryDisplayName(Uri uri) {
