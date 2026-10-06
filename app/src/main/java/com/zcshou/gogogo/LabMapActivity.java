@@ -497,6 +497,7 @@ public class LabMapActivity extends AppCompatActivity {
         final String[] items = new String[]{
                 "实验仪表盘",
                 "Heading Intelligence",
+                "Location Compatibility",
                 "Scenario / Replay",
                 "Motion Audit",
                 "Resource Broker",
@@ -516,21 +517,24 @@ public class LabMapActivity extends AppCompatActivity {
                             startActivity(new Intent(this, HeadingLabActivity.class));
                             break;
                         case 2:
-                            startActivity(new Intent(this, ScenarioLabActivity.class));
+                            startActivity(new Intent(this, LocationCompatibilityActivity.class));
                             break;
                         case 3:
-                            startActivity(new Intent(this, MotionAuditActivity.class));
+                            startActivity(new Intent(this, ScenarioLabActivity.class));
                             break;
                         case 4:
-                            startActivity(new Intent(this, PolicyLabActivity.class));
+                            startActivity(new Intent(this, MotionAuditActivity.class));
                             break;
                         case 5:
-                            showProvenanceTimeline();
+                            startActivity(new Intent(this, PolicyLabActivity.class));
                             break;
                         case 6:
-                            clearProvenanceTimeline();
+                            showProvenanceTimeline();
                             break;
                         case 7:
+                            clearProvenanceTimeline();
+                            break;
+                        case 8:
                             startActivity(new Intent(this, SandboxLabActivity.class));
                             break;
                         default:
