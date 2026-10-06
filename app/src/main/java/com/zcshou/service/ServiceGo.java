@@ -55,6 +55,23 @@ public class ServiceGo extends Service {
     private double mCurAlt = DEFAULT_ALT;
     private float mCurBea = DEFAULT_BEA;
     private double mSpeed = 0.0;        /* 默认的速度，单位 m/s */
+
+    // GoGoGo Lab route playback. Intent arrays stay small enough for Binder by capping imports at 5000 points.
+    public static final String ACTION_ROUTE_START = "com.soozooq.gogogo.action.ROUTE_START";
+    public static final String ACTION_ROUTE_STOP = "com.soozooq.gogogo.action.ROUTE_STOP";
+    public static final String EXTRA_ROUTE_LATS = "ROUTE_LATS";
+    public static final String EXTRA_ROUTE_LNGS = "ROUTE_LNGS";
+    public static final String EXTRA_ROUTE_STEP_MS = "ROUTE_STEP_MS";
+    public static final String EXTRA_ROUTE_LOOP = "ROUTE_LOOP";
+
+    private double[] mRouteLats;
+    private double[] mRouteLngs;
+    private int mRouteIndex = 0;
+    private long mRouteStepMs = 1000L;
+    private long mNextRouteStepElapsed = 0L;
+    private boolean mRouteLoop = false;
+    private boolean mRouteActive = false;
+
     private static final int HANDLER_MSG_ID = 0;
     // 33ms (~30Hz) tick: 缩短"mock 过期"窗口,避免某些应用在两次 push 之间读到真实位置后漂移
     private static final long TICK_INTERVAL_MS = 33;
@@ -253,10 +270,51 @@ public class ServiceGo extends Service {
         android.content.SharedPreferences state =
                 getSharedPreferences("mock_location_state", MODE_PRIVATE);
 
+        if (intent != null && ACTION_ROUTE_STOP.equals(intent.getAction())) {
+            mRouteActive = false;
+            mRouteLats = null;
+            mRouteLngs = null;
+            mSpeed = 0.0;
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_ROUTE_START.equals(intent.getAction())) {
+            double[] lats = intent.getDoubleArrayExtra(EXTRA_ROUTE_LATS);
+            double[] lngs = intent.getDoubleArrayExtra(EXTRA_ROUTE_LNGS);
+            if (lats != null && lngs != null && lats.length > 0 && lats.length == lngs.length) {
+                mRouteLats = lats;
+                mRouteLngs = lngs;
+                mRouteIndex = 0;
+                mRouteStepMs = Math.max(250L, intent.getLongExtra(EXTRA_ROUTE_STEP_MS, 1000L));
+                mRouteLoop = intent.getBooleanExtra(EXTRA_ROUTE_LOOP, false);
+                mRouteActive = true;
+                mNextRouteStepElapsed = SystemClock.elapsedRealtime() + mRouteStepMs;
+                mCurLat = mRouteLats[0];
+                mCurLng = mRouteLngs[0];
+                mCurAlt = DEFAULT_ALT;
+                mSpeed = 0.0;
+
+                state.edit()
+                        .putLong("lng_bits", Double.doubleToRawLongBits(mCurLng))
+                        .putLong("lat_bits", Double.doubleToRawLongBits(mCurLat))
+                        .putLong("alt_bits", Double.doubleToRawLongBits(mCurAlt))
+                        .apply();
+                XLog.i("SERVICEGO: Lab route started, points=" + lats.length
+                        + " stepMs=" + mRouteStepMs + " loop=" + mRouteLoop);
+                return START_STICKY;
+            }
+        }
+
         if (intent != null) {
+            // Any ordinary manual location command cancels an active route.
+            mRouteActive = false;
+            mRouteLats = null;
+            mRouteLngs = null;
+
             mCurLng = intent.getDoubleExtra(MainActivity.LNG_MSG_ID, DEFAULT_LNG);
             mCurLat = intent.getDoubleExtra(MainActivity.LAT_MSG_ID, DEFAULT_LAT);
             mCurAlt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
+            mSpeed = 0.0;
             state.edit()
                     .putLong("lng_bits", Double.doubleToRawLongBits(mCurLng))
                     .putLong("lat_bits", Double.doubleToRawLongBits(mCurLat))
@@ -275,7 +333,7 @@ public class ServiceGo extends Service {
             mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
         }
 
-        // 被系统回收后尽量以同一坐标恢复，避免切到高德一段时间后服务消失。
+        // 被系统回收后尽量以同一坐标恢复，避免切到地图应用一段时间后服务消失。
         return START_STICKY;
     }
 
@@ -412,6 +470,7 @@ public class ServiceGo extends Service {
                     Thread.sleep(TICK_INTERVAL_MS);
 
                     if (!isStop) {
+                        advanceRouteIfNeeded();
                         setLocationNetwork();
                         setLocationGPS();
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -429,6 +488,72 @@ public class ServiceGo extends Service {
         };
 
         mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
+    }
+
+    private void advanceRouteIfNeeded() {
+        if (!mRouteActive || mRouteLats == null || mRouteLngs == null
+                || mRouteLats.length == 0 || mRouteLats.length != mRouteLngs.length) {
+            return;
+        }
+
+        long now = SystemClock.elapsedRealtime();
+        if (now < mNextRouteStepElapsed) return;
+
+        int nextIndex = mRouteIndex + 1;
+        if (nextIndex >= mRouteLats.length) {
+            if (mRouteLoop && mRouteLats.length > 1) {
+                nextIndex = 0;
+            } else {
+                mRouteActive = false;
+                mSpeed = 0.0;
+                XLog.i("SERVICEGO: Lab route finished at point " + mRouteIndex);
+                return;
+            }
+        }
+
+        double oldLat = mCurLat;
+        double oldLng = mCurLng;
+        double newLat = mRouteLats[nextIndex];
+        double newLng = mRouteLngs[nextIndex];
+
+        double distance = distanceMeters(oldLat, oldLng, newLat, newLng);
+        mSpeed = Math.max(0.0, Math.min(80.0, distance / (mRouteStepMs / 1000.0)));
+        if (!mHeadingAvailable && distance > 0.5) {
+            mCurBea = bearingDegrees(oldLat, oldLng, newLat, newLng);
+        }
+
+        mCurLat = newLat;
+        mCurLng = newLng;
+        mRouteIndex = nextIndex;
+
+        mNextRouteStepElapsed += mRouteStepMs;
+        if (mNextRouteStepElapsed < now) {
+            mNextRouteStepElapsed = now + mRouteStepMs;
+        }
+    }
+
+    private static double distanceMeters(double lat1, double lon1, double lat2, double lon2) {
+        final double earth = 6371000.0;
+        double p1 = Math.toRadians(lat1);
+        double p2 = Math.toRadians(lat2);
+        double dp = Math.toRadians(lat2 - lat1);
+        double dl = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dp / 2.0) * Math.sin(dp / 2.0)
+                + Math.cos(p1) * Math.cos(p2)
+                * Math.sin(dl / 2.0) * Math.sin(dl / 2.0);
+        return earth * 2.0 * Math.atan2(Math.sqrt(a), Math.sqrt(1.0 - a));
+    }
+
+    private static float bearingDegrees(double lat1, double lon1, double lat2, double lon2) {
+        double p1 = Math.toRadians(lat1);
+        double p2 = Math.toRadians(lat2);
+        double dl = Math.toRadians(lon2 - lon1);
+        double y = Math.sin(dl) * Math.cos(p2);
+        double x = Math.cos(p1) * Math.sin(p2)
+                - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+        double result = Math.toDegrees(Math.atan2(y, x));
+        if (result < 0.0) result += 360.0;
+        return (float) result;
     }
 
     private void removeTestProviderGPS() {
