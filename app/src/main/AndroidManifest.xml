@@ -148,6 +148,12 @@
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
 
+        <activity
+            android:name=".ConsumerLocationProbeActivity"
+            android:exported="false"
+            android:process=":consumer"
+            android:theme="@style/AppTheme.NoActionBar" />
+
         <receiver
             android:name=".LabDeviceAdminReceiver"
             android:permission="android.permission.BIND_DEVICE_ADMIN"
