@@ -34,7 +34,6 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.zcshou.gogogo.MainActivity;
 import com.zcshou.gogogo.R;
-import com.zcshou.gogogo.SimpleMockActivity;
 import com.zcshou.joystick.JoyStick;
 
 public class ServiceGo extends Service {
@@ -67,7 +66,7 @@ public class ServiceGo extends Service {
     private static final String SERVICE_GO_NOTE_CHANNEL_NAME = "SERVICE_GO_NOTE";
     private NoteActionReceiver mActReceiver;
     // 摇杆相关。测试版默认禁用 overlay，避免遮挡其它应用。
-    private static final boolean ENABLE_JOYSTICK_OVERLAY = false;
+    private static final boolean ENABLE_JOYSTICK_OVERLAY = true;
     private JoyStick mJoyStick;
 
     private final ServiceGoBinder mBinder = new ServiceGoBinder();
@@ -101,7 +100,7 @@ public class ServiceGo extends Service {
         initNotification();
 
         if (ENABLE_JOYSTICK_OVERLAY) {
-            // No-map test build: floating joystick intentionally disabled.
+            initJoyStick();
         }
 
         // 关键:维持 Provider 活跃订阅。Android 12+ 上没有活跃 listener 的 Provider
@@ -206,7 +205,11 @@ public class ServiceGo extends Service {
         IntentFilter filter = new IntentFilter();
         filter.addAction(SERVICE_GO_NOTE_ACTION_JOYSTICK_SHOW);
         filter.addAction(SERVICE_GO_NOTE_ACTION_JOYSTICK_HIDE);
-        registerReceiver(mActReceiver, filter);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(mActReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(mActReceiver, filter);
+        }
 
         NotificationChannel mChannel = new NotificationChannel(SERVICE_GO_NOTE_CHANNEL_ID, SERVICE_GO_NOTE_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -216,7 +219,7 @@ public class ServiceGo extends Service {
         }
 
         //准备intent
-        Intent clickIntent = new Intent(this, SimpleMockActivity.class);
+        Intent clickIntent = new Intent(this, MainActivity.class);
         PendingIntent clickPI = PendingIntent.getActivity(this, 1, clickIntent, PendingIntent.FLAG_IMMUTABLE);
         Intent showIntent = new Intent(SERVICE_GO_NOTE_ACTION_JOYSTICK_SHOW);
         PendingIntent showPendingPI = PendingIntent.getBroadcast(this, 0, showIntent, PendingIntent.FLAG_IMMUTABLE);
