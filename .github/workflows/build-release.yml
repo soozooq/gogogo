@@ -23,6 +23,7 @@ on:
       - feat/gogogo-heading-lab14
       - feat/gogogo-heading-lab15
       - feat/gogogo-consumer-lab16
+      - feat/gogogo-session-lab17
 
 permissions:
   contents: read
@@ -83,7 +84,7 @@ jobs:
         if: env.BUILD_EXIT_CODE == '0'
         uses: actions/upload-artifact@v4
         with:
-          name: gogogo-consumer-lab16
+          name: gogogo-session-lab17
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
