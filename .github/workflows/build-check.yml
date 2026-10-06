@@ -19,7 +19,7 @@ on:
 
 # 一个 workflow 执行一个或多个 job，这些 job 被组织在 jobs 字段下
 concurrency:
-  group: gogogo-build-check-${{ github.ref }}
+  group: gogogo-build-check-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: true
 
 jobs:
