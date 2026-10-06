@@ -130,3 +130,20 @@ Next:
 4. Every synthetic transformation should be auditable.
 5. Experimental privileged actions should be explicit and user-initiated.
 6. Keep the stable mock-location branch independent from Lab experiments.
+
+
+## Lab 10 implementation status
+
+Implemented on the `feat/gogogo-lab-phase10` research branch:
+
+- Android `isolatedProcess=true` capsule with an independent isolated UID.
+- A normal-app Binder Reference Monitor backed by the Lab Resource Broker.
+- Explicit injection of the monitor Binder into the isolated capsule.
+- Direct-access probes for files, location, network state, and SharedPreferences.
+- Brokered resource snapshot requests from the capsule.
+- Reference Monitor auditing of `Binder.getCallingUid()` / caller PID.
+- Host → Capsule and Capsule → Monitor synchronous Binder RTT benchmarks.
+- P50 / P95 / average / min / max latency reporting.
+
+Lab 11 can now build on this boundary with deterministic resource scenarios,
+signed experiment reports, reproducible seeded noise, and policy-latency measurements.
