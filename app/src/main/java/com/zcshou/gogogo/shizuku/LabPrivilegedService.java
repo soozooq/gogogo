@@ -100,6 +100,29 @@ public class LabPrivilegedService extends ILabPrivilegedService.Stub {
         return trim(out);
     }
 
+    @Override
+    public String getVirtualizationReport() {
+        StringBuilder out = new StringBuilder();
+        out.append("Android Virtualization Framework / pKVM readiness\n");
+        appendProbe(out, "$ pm list features | grep virtualization",
+                new String[]{"sh", "-c",
+                        "pm list features 2>/dev/null | grep -i virtualization"});
+        appendProbe(out, "$ ls -ld /apex/com.android.virt",
+                new String[]{"sh", "-c",
+                        "ls -ld /apex/com.android.virt 2>/dev/null || true"});
+        appendProbe(out, "$ ls -l /apex/com.android.virt/bin/vm",
+                new String[]{"sh", "-c",
+                        "ls -l /apex/com.android.virt/bin/vm 2>/dev/null || true"});
+        appendProbe(out, "$ getprop | grep hypervisor",
+                new String[]{"sh", "-c",
+                        "getprop 2>/dev/null | grep -i hypervisor | head -n 80"});
+        appendProbe(out, "$ getprop ro.boot.hypervisor.vm.supported",
+                new String[]{"getprop", "ro.boot.hypervisor.vm.supported"});
+        appendProbe(out, "$ getprop ro.boot.hypervisor.protected_vm.supported",
+                new String[]{"getprop", "ro.boot.hypervisor.protected_vm.supported"});
+        return trim(out);
+    }
+
     private static void appendProbe(StringBuilder out, String title, String[] command) {
         if (out.length() >= MAX_OUTPUT_CHARS) return;
         out.append("\n").append(title).append("\n");
