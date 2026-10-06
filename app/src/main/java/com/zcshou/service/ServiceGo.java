@@ -1138,6 +1138,35 @@ public class ServiceGo extends Service {
             }
         }
 
+        public double getTrackDistanceMeters() {
+            synchronized (mTrackLock) {
+                if (mTrackLats.size() < 2 || mTrackLats.size() != mTrackLngs.size()) {
+                    return 0.0;
+                }
+                double total = 0.0;
+                for (int i = 1; i < mTrackLats.size(); i++) {
+                    total += distanceMeters(
+                            mTrackLats.get(i - 1), mTrackLngs.get(i - 1),
+                            mTrackLats.get(i), mTrackLngs.get(i));
+                }
+                return total;
+            }
+        }
+
+        public long getTrackDurationSeconds() {
+            synchronized (mTrackLock) {
+                if (mTrackTimes.size() < 2) return 0L;
+                long ms = mTrackTimes.get(mTrackTimes.size() - 1) - mTrackTimes.get(0);
+                return Math.max(0L, ms / 1000L);
+            }
+        }
+
+        public double getTrackAverageSpeedMps() {
+            long seconds = getTrackDurationSeconds();
+            if (seconds <= 0L) return 0.0;
+            return getTrackDistanceMeters() / seconds;
+        }
+
         public double[] getTrackLats() {
             synchronized (mTrackLock) {
                 double[] out = new double[mTrackLats.size()];
