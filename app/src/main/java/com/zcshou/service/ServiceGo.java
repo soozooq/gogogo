@@ -376,7 +376,9 @@ public class ServiceGo extends Service {
             Location loc = new Location(LocationManager.GPS_PROVIDER);
             loc.setAccuracy(0.8f);    // 设定此位置的估计水平精度，以米为单位。
             loc.setAltitude(mCurAlt);                     // 设置高度，在 WGS 84 参考坐标系中的米
-            loc.setBearing(mCurBea);                       // 方向（度）
+            if (mSpeed > 0.3) {
+                loc.setBearing(mCurBea); // 只有真实模拟移动时才提供航向；静止时让高德使用手机罗盘
+            }
             loc.setLatitude(mCurLat);                   // 纬度（度）
             loc.setLongitude(mCurLng);                  // 经度（度）
             loc.setTime(System.currentTimeMillis());    // 本地时间
@@ -385,7 +387,9 @@ public class ServiceGo extends Service {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 loc.setVerticalAccuracyMeters(1.5f);
                 loc.setSpeedAccuracyMetersPerSecond(0.2f);
-                loc.setBearingAccuracyDegrees(1.0f);
+                if (mSpeed > 0.3) {
+                    loc.setBearingAccuracyDegrees(1.0f);
+                }
             }
             Bundle bundle = new Bundle();
             bundle.putInt("satellites", 12);
@@ -439,7 +443,9 @@ public class ServiceGo extends Service {
             // 高德会融合网络定位；把 mock NETWORK 也保持为较高质量，减少真实网络定位抢回。
             loc.setAccuracy(2.0f);  // 设定此位置的估计水平精度，以米为单位。
             loc.setAltitude(mCurAlt);                     // 设置高度，在 WGS 84 参考坐标系中的米
-            loc.setBearing(mCurBea);                       // 方向（度）
+            if (mSpeed > 0.3) {
+                loc.setBearing(mCurBea); // 只有真实模拟移动时才提供航向；静止时让高德使用手机罗盘
+            }
             loc.setLatitude(mCurLat);                   // 纬度（度）
             loc.setLongitude(mCurLng);                  // 经度（度）
             loc.setTime(System.currentTimeMillis());    // 本地时间
@@ -449,7 +455,9 @@ public class ServiceGo extends Service {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 loc.setVerticalAccuracyMeters(3.0f);
                 loc.setSpeedAccuracyMetersPerSecond(0.5f);
-                loc.setBearingAccuracyDegrees(2.0f);
+                if (mSpeed > 0.3) {
+                    loc.setBearingAccuracyDegrees(2.0f);
+                }
             }
             mLocManager.setTestProviderLocation(LocationManager.NETWORK_PROVIDER, loc);
         } catch (Exception e) {
@@ -489,7 +497,9 @@ public class ServiceGo extends Service {
             Location loc = new Location(LocationManager.FUSED_PROVIDER);
             loc.setAccuracy(Criteria.ACCURACY_FINE);
             loc.setAltitude(mCurAlt);
-            loc.setBearing(mCurBea);
+            if (mSpeed > 0.3) {
+                loc.setBearing(mCurBea);
+            }
             loc.setLatitude(mCurLat);
             loc.setLongitude(mCurLng);
             loc.setTime(System.currentTimeMillis());
@@ -509,7 +519,9 @@ public class ServiceGo extends Service {
             Location loc = new Location("fused");
             loc.setAccuracy(Criteria.ACCURACY_FINE);
             loc.setAltitude(mCurAlt);
-            loc.setBearing(mCurBea);
+            if (mSpeed > 0.3) {
+                loc.setBearing(mCurBea);
+            }
             loc.setLatitude(mCurLat);
             loc.setLongitude(mCurLng);
             loc.setTime(System.currentTimeMillis());
