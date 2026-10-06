@@ -36,6 +36,7 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     private TextView statusView;
+    private TextView autoResultView;
     private TextView streamsView;
     private TextView timelineView;
     private TextView guidanceView;
@@ -103,7 +104,7 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title, GoGoUi.matchWrap());
         titleBlock.addView(
-                GoGoUi.muted(this, "Lab 17.3 · OEM Survival Profiler"),
+                GoGoUi.muted(this, "Lab 18 · Auto Experiment Runner"),
                 GoGoUi.matchWrap());
         appBar.addView(titleBlock, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
@@ -155,6 +156,53 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
 
         GoGoUi.addCard(root, statusCard, 16);
 
+        com.google.android.material.card.MaterialCardView autoCard = GoGoUi.card(this);
+        LinearLayout autoContent = GoGoUi.cardContent(this);
+        autoCard.addView(autoContent);
+        autoContent.addView(
+                GoGoUi.sectionTitle(this, "一键自动实验"),
+                GoGoUi.matchWrap());
+        autoContent.addView(
+                GoGoUi.muted(
+                        this,
+                        "不用手动掐表：点一次后自动开始记录、打开目标、60 秒后自动停止并通知。"),
+                GoGoUi.matchWrap());
+        autoContent.addView(GoGoUi.gap(this, 10));
+
+        LinearLayout autoButtons = GoGoUi.row(this);
+        autoButtons.addView(
+                GoGoUi.primaryButton(
+                        this,
+                        "一键微信 60s",
+                        v -> startAutoExperiment(LabAutoExperimentStore.TYPE_WECHAT)),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, autoButtons, 8);
+        autoButtons.addView(
+                GoGoUi.secondaryButton(
+                        this,
+                        "一键控制组 60s",
+                        v -> startAutoExperiment(LabAutoExperimentStore.TYPE_CONTROL)),
+                GoGoUi.weighted());
+        autoContent.addView(autoButtons, GoGoUi.matchWrap());
+
+        autoContent.addView(GoGoUi.gap(this, 10));
+        autoResultView = GoGoUi.muted(this, "还没有自动实验结果。");
+        autoResultView.setTextIsSelectable(true);
+        autoContent.addView(autoResultView, GoGoUi.matchWrap());
+
+        autoContent.addView(GoGoUi.gap(this, 8));
+        autoContent.addView(
+                GoGoUi.secondaryButton(
+                        this,
+                        "清空自动对比",
+                        v -> {
+                            LabAutoExperimentStore.clear(this);
+                            render();
+                        }),
+                GoGoUi.matchWrap());
+
+        GoGoUi.addCard(root, autoCard, 12);
+
         com.google.android.material.card.MaterialCardView streamsCard = GoGoUi.card(this);
         LinearLayout streamsContent = GoGoUi.cardContent(this);
         streamsCard.addView(streamsContent);
@@ -196,6 +244,8 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
                         + "• heartbeat 不断、只有位置流断 → 后台定位回调节流。\n"
                         + "• WakeLock 后恢复 → CPU/休眠调度因素。\n"
                         + "• 只有电池优化豁免后恢复 → 系统/厂商后台电池策略。\n\n"
+                        + "Lab 18 推荐直接用上面的“一键微信 / 一键控制组”，"
+                        + "系统会自动计时、停止、保存和比较；手动 A/B 只保留给深度排查。\n\n"
                         + "Recorder 不读取微信内部信息，也不会隐藏或修改 isMock 标记。");
         guideContent.addView(guidanceView, GoGoUi.matchWrap());
         GoGoUi.addCard(root, guideCard, 12);
@@ -208,7 +258,11 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
                 == PackageManager.PERMISSION_GRANTED
                 || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
-            startSessionInternal();
+            if (pendingAutoType != null) {
+                startAutoSessionInternal(pendingAutoType);
+            } else {
+                startSessionInternal();
+            }
             return;
         }
 
@@ -222,9 +276,21 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
     }
 
     private boolean pendingWakeLockMode = false;
+    private String pendingAutoType = null;
 
     private void startSession(boolean useWakeLock) {
+        pendingAutoType = null;
         pendingWakeLockMode = useWakeLock;
+        ensurePermissionThenStart();
+    }
+
+    private void startAutoExperiment(String type) {
+        if (binder != null && binder.isRunning()) {
+            guidanceView.setText("当前已有会话在运行，请先等待结束或停止它。");
+            return;
+        }
+        pendingWakeLockMode = false;
+        pendingAutoType = type;
         ensurePermissionThenStart();
     }
 
@@ -237,6 +303,49 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
         ContextCompat.startForegroundService(this, intent);
         bindRecorder();
         handler.postDelayed(this::render, 350L);
+    }
+
+    private void startAutoSessionInternal(String type) {
+        Intent intent = new Intent(this, CompatibilitySessionService.class);
+        intent.setAction(CompatibilitySessionService.ACTION_START_AUTO);
+        intent.putExtra(CompatibilitySessionService.EXTRA_AUTO_TYPE, type);
+        intent.putExtra(
+                CompatibilitySessionService.EXTRA_AUTO_DURATION_MS,
+                60000L);
+        ContextCompat.startForegroundService(this, intent);
+        bindRecorder();
+
+        final String launchType = type;
+        handler.postDelayed(
+                () -> launchAutoTarget(launchType),
+                650L);
+    }
+
+    private void launchAutoTarget(String type) {
+        try {
+            Intent target;
+            if (LabAutoExperimentStore.TYPE_WECHAT.equals(type)) {
+                target = getPackageManager()
+                        .getLaunchIntentForPackage("com.tencent.mm");
+                if (target == null) {
+                    guidanceView.setText("没有找到微信启动入口，自动实验已停止。");
+                    stopSession();
+                    pendingAutoType = null;
+                    return;
+                }
+                target.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            } else {
+                target = new Intent(Settings.ACTION_SETTINGS);
+            }
+
+            pendingAutoType = null;
+            startActivity(target);
+        } catch (Throwable t) {
+            guidanceView.setText(
+                    "自动打开目标失败：" + t.getClass().getSimpleName());
+            stopSession();
+            pendingAutoType = null;
+        }
     }
 
     private void stopSession() {
@@ -333,6 +442,8 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
         }
 
         LabCompatibilitySessionRecorder.Summary summary = b.getSummary();
+
+        renderAutoComparison();
 
         String displayedMode = b.isRunning()
                 ? (b.isWakeLockMode() ? "WAKELOCK" : "BASELINE")
@@ -438,6 +549,35 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
                 freezeHint));
     }
 
+    private void renderAutoComparison() {
+        if (autoResultView == null) return;
+
+        LabAutoExperimentStore.Comparison comparison =
+                LabAutoExperimentStore.compare(this);
+
+        autoResultView.setText(
+                "微信组: " + formatAutoResult(comparison.wechat) + "\n"
+                        + "控制组: " + formatAutoResult(comparison.control) + "\n\n"
+                        + "自动判定: " + comparison.verdict + "\n"
+                        + comparison.explanation);
+    }
+
+    private static String formatAutoResult(
+            LabAutoExperimentStore.Result result) {
+        if (result == null || !result.present) {
+            return "未完成";
+        }
+
+        return String.format(
+                Locale.US,
+                "%s · p99=%d ms · max=%d ms · %s · batteryExempt=%s",
+                result.grade,
+                result.worstP99Ms,
+                result.worstGapMs,
+                result.diagnosis,
+                result.batteryOptimizationExempt ? "YES" : "NO");
+    }
+
     private void openBatteryOptimizationSettings() {
         try {
             startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
@@ -520,7 +660,11 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
                     || ActivityCompat.checkSelfPermission(
                     this, Manifest.permission.ACCESS_COARSE_LOCATION)
                     == PackageManager.PERMISSION_GRANTED) {
-                startSessionInternal();
+                if (pendingAutoType != null) {
+                    startAutoSessionInternal(pendingAutoType);
+                } else {
+                    startSessionInternal();
+                }
             } else {
                 guidanceView.setText("没有位置权限，Lab 17 无法启动消费者记录。");
             }
