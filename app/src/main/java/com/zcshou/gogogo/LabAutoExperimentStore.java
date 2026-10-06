@@ -83,8 +83,14 @@ public final class LabAutoExperimentStore {
     }
 
     public static Comparison compare(Context context) {
-        Result wechat = load(context, TYPE_WECHAT);
-        Result control = load(context, TYPE_CONTROL);
+        return compare(
+                load(context, TYPE_WECHAT),
+                load(context, TYPE_CONTROL));
+    }
+
+    public static Comparison compare(Result wechat, Result control) {
+        if (wechat == null) wechat = Result.missing(TYPE_WECHAT);
+        if (control == null) control = Result.missing(TYPE_CONTROL);
 
         if (!wechat.present || !control.present) {
             return new Comparison(
