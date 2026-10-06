@@ -719,7 +719,10 @@ public class LabMapActivity extends AppCompatActivity {
             selectPoint(selectedPoint, false);
             if (!routePoints.isEmpty()) drawRoute();
             if (serviceBinder != null) {
-                updateLiveMarker(serviceBinder.getLatitude(), serviceBinder.getLongitude());
+                updateLiveMarker(
+                        serviceBinder.getLatitude(),
+                        serviceBinder.getLongitude(),
+                        serviceBinder.getPublishedBearingDegrees());
             }
             statusView.setText((STYLE_LIBERTY.equals(styleUrl) ? "OpenFreeMap Liberty" : "MapLibre Demo")
                     + " · " + String.format(Locale.US, "%.6f, %.6f",
