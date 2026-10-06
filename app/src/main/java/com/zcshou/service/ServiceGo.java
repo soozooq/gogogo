@@ -41,6 +41,7 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.zcshou.gogogo.MainActivity;
 import com.zcshou.gogogo.LabPolicyEngine;
+import com.zcshou.gogogo.LabScenarioEngine;
 import com.zcshou.gogogo.R;
 import com.zcshou.gogogo.SimpleMockActivity;
 import com.zcshou.joystick.JoyStick;
@@ -68,6 +69,7 @@ public class ServiceGo extends Service {
     public static final String ACTION_RECORD_START = "com.soozooq.gogogo.action.RECORD_START";
     public static final String ACTION_RECORD_STOP = "com.soozooq.gogogo.action.RECORD_STOP";
     public static final String ACTION_RECORD_CLEAR = "com.soozooq.gogogo.action.RECORD_CLEAR";
+    public static final String ACTION_SCENARIO_RESET = "com.soozooq.gogogo.action.SCENARIO_RESET";
 
     public static final String EXTRA_ROUTE_LATS = "ROUTE_LATS";
     public static final String EXTRA_ROUTE_LNGS = "ROUTE_LNGS";
@@ -140,6 +142,16 @@ public class ServiceGo extends Service {
     private volatile String mPolicySummary = "PERSONAL · location=EXACT";
     private String mLastPolicySignature = "";
 
+    private LabScenarioEngine mScenarioEngine;
+    private volatile long mScenarioStep = 0L;
+    private volatile long mScenarioVirtualTimeMillis = LabScenarioEngine.DEFAULT_BASE_EPOCH_MS;
+    private volatile int mScenarioBatteryPercent = 37;
+    private volatile float mScenarioHeadingDegrees = 90.0f;
+    private volatile String mScenarioSummary = "OFF";
+    private volatile double mScenarioNoiseNorthMeters = 0.0;
+    private volatile double mScenarioNoiseEastMeters = 0.0;
+    private String mLastScenarioSignature = "";
+
     private static final int HANDLER_MSG_ID = 0;
     // 33ms (~30Hz) tick: 缩短"mock 过期"窗口,避免某些应用在两次 push 之间读到真实位置后漂移
     private static final long TICK_INTERVAL_MS = 33;
@@ -193,6 +205,7 @@ public class ServiceGo extends Service {
         }
 
         mPolicyEngine = new LabPolicyEngine(this);
+        mScenarioEngine = new LabScenarioEngine(this);
         refreshPublishedPolicy();
 
         mLocManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
@@ -342,6 +355,13 @@ public class ServiceGo extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         android.content.SharedPreferences state =
                 getSharedPreferences("mock_location_state", MODE_PRIVATE);
+
+        if (intent != null && ACTION_SCENARIO_RESET.equals(intent.getAction())) {
+            mScenarioStep = 0L;
+            recordProvenance("SCENARIO", "replay reset to tick 0");
+            refreshPublishedPolicy();
+            return START_STICKY;
+        }
 
         if (intent != null && ACTION_RECORD_START.equals(intent.getAction())) {
             synchronized (mTrackLock) {
@@ -576,6 +596,14 @@ public class ServiceGo extends Service {
             }
         }
 
+        if (mScenarioEngine != null) {
+            try {
+                mScenarioEngine.close();
+            } catch (Throwable ignored) {
+            }
+            mScenarioEngine = null;
+        }
+
         if (mPolicyEngine != null) {
             try {
                 mPolicyEngine.close();
@@ -673,6 +701,10 @@ public class ServiceGo extends Service {
                         sampleTrackIfNeeded(false);
                         sampleProvenanceIfNeeded();
                         refreshPublishedPolicy();
+                        LabScenarioEngine scenario = mScenarioEngine;
+                        if (scenario != null && scenario.isEnabled() && mScenarioStep < Long.MAX_VALUE) {
+                            mScenarioStep++;
+                        }
                         setLocationNetwork();
                         setLocationGPS();
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -749,31 +781,73 @@ public class ServiceGo extends Service {
 
     private void refreshPublishedPolicy() {
         LabPolicyEngine engine = mPolicyEngine;
+        LabPolicyEngine.LocationDecision decision;
+
         if (engine == null) {
-            mPolicyPublish = true;
-            mPublishedLat = mCurLat;
-            mPublishedLng = mCurLng;
-            mPublishedAlt = mCurAlt;
-            mPublishedSpeed = mSpeed;
-            mPublishedBearing = mCurBea;
-            mPublishedAccuracy = 0.8f;
-            mPublishedIncludeMotion = true;
+            decision = new LabPolicyEngine.LocationDecision(
+                    true,
+                    mCurLat,
+                    mCurLng,
+                    mCurAlt,
+                    mSpeed,
+                    mCurBea,
+                    0.8f,
+                    true,
+                    "FALLBACK");
             mPolicySummary = "FALLBACK · location=EXACT";
-            return;
+        } else {
+            decision = engine.decideLocation(
+                    mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea);
+            mPolicySummary = engine.summary();
         }
 
-        LabPolicyEngine.LocationDecision decision = engine.decideLocation(
-                mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea);
+        LabScenarioEngine scenario = mScenarioEngine;
+        if (scenario != null) {
+            LabScenarioEngine.ScenarioLocation transformed = scenario.applyLocation(
+                    decision.publish,
+                    decision.latitude,
+                    decision.longitude,
+                    decision.altitude,
+                    decision.speedMps,
+                    decision.bearingDegrees,
+                    decision.accuracyMeters,
+                    decision.includeMotion,
+                    mScenarioStep);
 
-        mPolicyPublish = decision.publish;
-        mPublishedLat = decision.latitude;
-        mPublishedLng = decision.longitude;
-        mPublishedAlt = decision.altitude;
-        mPublishedSpeed = decision.speedMps;
-        mPublishedBearing = decision.bearingDegrees;
-        mPublishedAccuracy = decision.accuracyMeters;
-        mPublishedIncludeMotion = decision.includeMotion;
-        mPolicySummary = engine.summary();
+            mPolicyPublish = transformed.publish;
+            mPublishedLat = transformed.latitude;
+            mPublishedLng = transformed.longitude;
+            mPublishedAlt = transformed.altitude;
+            mPublishedSpeed = transformed.speedMps;
+            mPublishedBearing = transformed.bearingDegrees;
+            mPublishedAccuracy = transformed.accuracyMeters;
+            mPublishedIncludeMotion = transformed.includeMotion;
+            mScenarioNoiseNorthMeters = transformed.noiseNorthMeters;
+            mScenarioNoiseEastMeters = transformed.noiseEastMeters;
+            mScenarioVirtualTimeMillis = scenario.virtualTimeMillis(
+                    mScenarioStep, TICK_INTERVAL_MS);
+            mScenarioBatteryPercent = scenario.batteryPercent(mScenarioStep);
+            mScenarioHeadingDegrees = scenario.headingDegrees(mScenarioStep);
+            mScenarioSummary = scenario.summary();
+
+            String scenarioSignature = mScenarioSummary;
+            if (!scenarioSignature.equals(mLastScenarioSignature)) {
+                mLastScenarioSignature = scenarioSignature;
+                recordProvenance("SCENARIO", scenarioSignature);
+            }
+        } else {
+            mPolicyPublish = decision.publish;
+            mPublishedLat = decision.latitude;
+            mPublishedLng = decision.longitude;
+            mPublishedAlt = decision.altitude;
+            mPublishedSpeed = decision.speedMps;
+            mPublishedBearing = decision.bearingDegrees;
+            mPublishedAccuracy = decision.accuracyMeters;
+            mPublishedIncludeMotion = decision.includeMotion;
+            mScenarioSummary = "UNAVAILABLE";
+            mScenarioNoiseNorthMeters = 0.0;
+            mScenarioNoiseEastMeters = 0.0;
+        }
 
         String signature = mPolicySummary + " · publish=" + mPolicyPublish;
         if (!signature.equals(mLastPolicySignature)) {
@@ -1235,6 +1309,20 @@ public class ServiceGo extends Service {
         public float getPublishedBearingDegrees() { return mPublishedBearing; }
         public float getPublishedAccuracyMeters() { return mPublishedAccuracy; }
         public String getPolicySummary() { return mPolicySummary; }
+
+        public long getScenarioStep() { return mScenarioStep; }
+        public String getScenarioSummary() { return mScenarioSummary; }
+        public long getScenarioVirtualTimeMillis() { return mScenarioVirtualTimeMillis; }
+        public int getScenarioBatteryPercent() { return mScenarioBatteryPercent; }
+        public float getScenarioHeadingDegrees() { return mScenarioHeadingDegrees; }
+        public double getScenarioNoiseNorthMeters() { return mScenarioNoiseNorthMeters; }
+        public double getScenarioNoiseEastMeters() { return mScenarioNoiseEastMeters; }
+        public void resetScenarioStep() {
+            mScenarioStep = 0L;
+            recordProvenance("SCENARIO", "replay reset to tick 0 via Binder");
+            refreshPublishedPolicy();
+        }
+
         public boolean isRouteActive() { return mRouteActive; }
         public boolean isRoamActive() { return mRoamActive; }
         public boolean isMotionPaused() { return mMotionPaused; }
