@@ -88,11 +88,13 @@ public class LabMapActivity extends AppCompatActivity {
     private EditText roamRadiusInput;
     private EditText roamSpeedInput;
     private Button followButton;
+    private Button headingFollowButton;
     private Button routeEditButton;
 
     private ServiceGo.ServiceGoBinder serviceBinder;
     private boolean serviceBound = false;
     private boolean followMock = true;
+    private boolean followHeading = false;
     private long lastFollowElapsed = 0L;
 
     private double[] pendingExportLats;
@@ -187,6 +189,12 @@ public class LabMapActivity extends AppCompatActivity {
                 button("❤️ 收藏", v -> promptFavorite()),
                 button("⭐ 收藏夹", v -> showSavedPoints(true)),
                 button("🕘 历史", v -> showSavedPoints(false))
+        ));
+
+        headingFollowButton = button("🧭 地图朝向：关", v -> toggleHeadingFollow());
+        root.addView(buttonRow(
+                headingFollowButton,
+                button("⬆ 地图归北", v -> resetMapBearing())
         ));
 
         root.addView(buttonRow(
@@ -366,7 +374,7 @@ public class LabMapActivity extends AppCompatActivity {
                 "已选择：%.6f, %.6f", point.getLongitude(), point.getLatitude()));
     }
 
-    private void updateLiveMarker(double lat, double lng) {
+    private void updateLiveMarker(double lat, double lng, float bearingDegrees) {
         if (map == null) return;
         LatLng point = new LatLng(lat, lng);
 
@@ -380,9 +388,16 @@ public class LabMapActivity extends AppCompatActivity {
         }
 
         long now = android.os.SystemClock.elapsedRealtime();
-        if (followMock && now - lastFollowElapsed >= 1000L) {
+        if (followMock && now - lastFollowElapsed >= 250L) {
             lastFollowElapsed = now;
-            map.moveCamera(CameraUpdateFactory.newLatLng(point));
+            CameraPosition current = map.getCameraPosition();
+            CameraPosition next = new CameraPosition.Builder()
+                    .target(point)
+                    .zoom(current.zoom)
+                    .tilt(current.tilt)
+                    .bearing(followHeading ? bearingDegrees : current.bearing)
+                    .build();
+            map.moveCamera(CameraUpdateFactory.newCameraPosition(next));
         }
     }
 
@@ -390,8 +405,36 @@ public class LabMapActivity extends AppCompatActivity {
         followMock = !followMock;
         followButton.setText(followMock ? "🎯 跟随：开" : "🎯 跟随：关");
         if (followMock && serviceBinder != null) {
-            updateLiveMarker(serviceBinder.getLatitude(), serviceBinder.getLongitude());
+            updateLiveMarker(
+                    serviceBinder.getLatitude(),
+                    serviceBinder.getLongitude(),
+                    serviceBinder.getPublishedBearingDegrees());
         }
+    }
+
+    private void toggleHeadingFollow() {
+        followHeading = !followHeading;
+        headingFollowButton.setText(followHeading ? "🧭 地图朝向：开" : "🧭 地图朝向：关");
+        if (followHeading) {
+            followMock = true;
+            followButton.setText("🎯 跟随：开");
+        }
+    }
+
+    private void resetMapBearing() {
+        followHeading = false;
+        if (headingFollowButton != null) {
+            headingFollowButton.setText("🧭 地图朝向：关");
+        }
+        if (map == null) return;
+        CameraPosition current = map.getCameraPosition();
+        CameraPosition north = new CameraPosition.Builder()
+                .target(current.target)
+                .zoom(current.zoom)
+                .tilt(current.tilt)
+                .bearing(0.0)
+                .build();
+        map.animateCamera(CameraUpdateFactory.newCameraPosition(north));
     }
 
     private void refreshLiveState() {
@@ -438,6 +481,27 @@ public class LabMapActivity extends AppCompatActivity {
                     binder.getScenarioHeadingDegrees(),
                     binder.getScenarioSummary()));
 
+            sb.append(String.format(Locale.US,
+                    "\n🧭 Device %s%.1f° · %s · acc=%d | Published %.1f°",
+                    binder.isDeviceHeadingAvailable() ? "" : "(无) ",
+                    binder.getDeviceHeadingDegrees(),
+                    binder.getHeadingSensorSource(),
+                    binder.getDeviceHeadingAccuracy(),
+                    binder.getPublishedBearingDegrees()));
+
+            String ledger = binder.getKinematicLedgerHash();
+            if (ledger != null && ledger.length() > 16) {
+                ledger = ledger.substring(0, 16);
+            }
+            sb.append(String.format(Locale.US,
+                    "\n⚙ %s · a=%+.2f m/s² · jerk=%+.2f · turn=%+.1f°/s · %s · h=%s",
+                    binder.getKinematicState(),
+                    binder.getKinematicAccelerationMps2(),
+                    binder.getKinematicJerkMps3(),
+                    binder.getKinematicTurnRateDegPerSec(),
+                    binder.getKinematicBearingSource(),
+                    ledger));
+
             if (route) {
                 double progress = binder.getRouteProgressFraction();
                 double remain = binder.getRouteRemainingMeters();
@@ -477,7 +541,7 @@ public class LabMapActivity extends AppCompatActivity {
             }
 
             liveView.setText(sb.toString());
-            updateLiveMarker(lat, lng);
+            updateLiveMarker(lat, lng, binder.getPublishedBearingDegrees());
         } catch (Throwable t) {
             liveView.setText("实时状态读取失败：" + t.getClass().getSimpleName());
         }
