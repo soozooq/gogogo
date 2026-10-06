@@ -191,7 +191,8 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
                 button("🧬 身份报告", v -> runPrivilegedProbe(1)),
                 button("📍 定位系统报告", v -> runPrivilegedProbe(2)),
                 button("🖥 系统报告", v -> runPrivilegedProbe(3)),
-                button("👥 用户 / Device Policy", v -> runPrivilegedProbe(4))
+                button("👥 用户 / Device Policy", v -> runPrivilegedProbe(4)),
+                button("🧪 AVF / pKVM", v -> runPrivilegedProbe(5))
         ));
 
         Button sandbox = button("📦 打开 Sandbox Lab / Work Profile 探测", v ->
@@ -584,8 +585,10 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
                     report = service.getLocationReport();
                 } else if (type == 3) {
                     report = service.getSystemReport();
-                } else {
+                } else if (type == 4) {
                     report = service.getUserPolicyReport();
+                } else {
+                    report = service.getVirtualizationReport();
                 }
             } catch (Throwable t) {
                 report = "高权限诊断失败：" + t.getClass().getSimpleName()
@@ -605,7 +608,8 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         if (type == 1) title = "🧬 UserService 身份报告";
         else if (type == 2) title = "📍 高权限定位系统报告";
         else if (type == 3) title = "🖥 高权限系统报告";
-        else title = "👥 高权限用户 / Device Policy 报告";
+        else if (type == 4) title = "👥 高权限用户 / Device Policy 报告";
+        else title = "🧪 AVF / pKVM / Microdroid 报告";
 
         TextView view = new TextView(this);
         int pad = dp(16);
