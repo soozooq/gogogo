@@ -44,6 +44,8 @@ import com.zcshou.gogogo.LabPolicyEngine;
 import com.zcshou.gogogo.LabScenarioEngine;
 import com.zcshou.gogogo.LabKinematicsEngine;
 import com.zcshou.gogogo.LabHeadingIntelligenceEngine;
+import com.zcshou.gogogo.LabAttitudeHeadingEngine;
+import com.zcshou.gogogo.LabHeadingTraceRecorder;
 import com.zcshou.gogogo.R;
 import com.zcshou.gogogo.SimpleMockActivity;
 import com.zcshou.joystick.JoyStick;
@@ -169,8 +171,27 @@ public class ServiceGo extends Service {
     // magnetically-independent relative rotation. We fuse them only inside GoGoGo.
     private LabHeadingIntelligenceEngine mHeadingFusionEngine;
     private volatile LabHeadingIntelligenceEngine.Frame mHeadingFrame;
+    private LabAttitudeHeadingEngine mAttitudeHeadingEngine;
+    private volatile LabAttitudeHeadingEngine.Frame mAttitudeHeadingFrame;
+    private LabHeadingTraceRecorder mHeadingTraceRecorder;
+    private volatile float mDevicePitchDegrees = 0.0f;
+    private volatile float mDeviceRollDegrees = 0.0f;
     private Sensor mGameHeadingSensor;
     private Sensor mMagneticSensor;
+
+    // Standard location publication observatory. These counters only describe
+    // GoGoGo's own provider/GMS publishing attempts for compatibility diagnostics.
+    private volatile long mGpsPublishCount = 0L;
+    private volatile long mNetworkPublishCount = 0L;
+    private volatile long mFusedProviderPublishCount = 0L;
+    private volatile long mGmsFusedDispatchCount = 0L;
+    private volatile long mGpsPublishFailureCount = 0L;
+    private volatile long mNetworkPublishFailureCount = 0L;
+    private volatile long mFusedProviderPublishFailureCount = 0L;
+    private volatile long mLastGpsPublishElapsed = -1L;
+    private volatile long mLastNetworkPublishElapsed = -1L;
+    private volatile long mLastFusedProviderPublishElapsed = -1L;
+    private volatile long mLastGmsFusedDispatchElapsed = -1L;
 
     private static final int HANDLER_MSG_ID = 0;
     // 33ms (~30Hz) tick: 缩短"mock 过期"窗口,避免某些应用在两次 push 之间读到真实位置后漂移
@@ -228,6 +249,8 @@ public class ServiceGo extends Service {
         mScenarioEngine = new LabScenarioEngine(this);
         mKinematicsEngine = new LabKinematicsEngine();
         mHeadingFusionEngine = new LabHeadingIntelligenceEngine();
+        mAttitudeHeadingEngine = new LabAttitudeHeadingEngine();
+        mHeadingTraceRecorder = new LabHeadingTraceRecorder();
         refreshPublishedPolicy();
 
         mLocManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
@@ -326,10 +349,20 @@ public class ServiceGo extends Service {
                                     heading,
                                     mDeviceHeadingAccuracy,
                                     event.timestamp);
+                            updateAttitudeHeading(
+                                    adjusted,
+                                    orientation,
+                                    heading);
                         } else if (event.sensor == mGameHeadingSensor) {
                             float heading = headingFromRotationVector(
                                     event.values, rotation, adjusted, orientation);
                             frame = engine.onGameHeading(heading, event.timestamp);
+                            if (mHeadingSensor == null) {
+                                updateAttitudeHeading(
+                                        adjusted,
+                                        orientation,
+                                        frame == null ? heading : frame.fusedHeadingDeg);
+                            }
                         } else if (event.sensor == mMagneticSensor
                                 && event.values.length >= 3) {
                             frame = engine.onMagneticField(
@@ -342,6 +375,7 @@ public class ServiceGo extends Service {
 
                         if (frame != null) {
                             applyHeadingFrame(frame);
+                            recordHeadingTrace();
                         }
                     } catch (Throwable ignored) {
                     }
@@ -438,6 +472,46 @@ public class ServiceGo extends Service {
                             0.34f)
                     : frame.fusedHeadingDeg;
         }
+    }
+
+    private void updateAttitudeHeading(
+            float[] remappedRotation,
+            float[] orientation,
+            float northReferenceDeg) {
+        if (orientation == null || orientation.length < 3) return;
+
+        mDevicePitchDegrees = (float) Math.toDegrees(orientation[1]);
+        mDeviceRollDegrees = (float) Math.toDegrees(orientation[2]);
+
+        LabAttitudeHeadingEngine engine = mAttitudeHeadingEngine;
+        if (engine != null) {
+            mAttitudeHeadingFrame = engine.update(
+                    remappedRotation,
+                    mDevicePitchDegrees,
+                    mDeviceRollDegrees,
+                    northReferenceDeg);
+        }
+    }
+
+    private void recordHeadingTrace() {
+        LabHeadingTraceRecorder recorder = mHeadingTraceRecorder;
+        LabHeadingIntelligenceEngine.Frame heading = mHeadingFrame;
+        if (recorder == null || heading == null) return;
+
+        LabAttitudeHeadingEngine.Frame attitude = mAttitudeHeadingFrame;
+        recorder.add(
+                SystemClock.elapsedRealtime(),
+                heading.fusedHeadingDeg,
+                heading.absoluteHeadingDeg,
+                heading.gameHeadingDeg,
+                attitude == null ? Float.NaN : attitude.headingDeg,
+                mDevicePitchDegrees,
+                mDeviceRollDegrees,
+                attitude == null ? "UNKNOWN" : attitude.posture,
+                heading.magneticNormUt,
+                heading.confidence,
+                heading.state,
+                heading.source);
     }
 
     @SuppressLint("MissingPermission")
@@ -738,6 +812,15 @@ public class ServiceGo extends Service {
         mKinematicsEngine = null;
         mHeadingFrame = null;
         mHeadingFusionEngine = null;
+        mAttitudeHeadingFrame = null;
+        if (mAttitudeHeadingEngine != null) {
+            mAttitudeHeadingEngine.reset();
+        }
+        mAttitudeHeadingEngine = null;
+        if (mHeadingTraceRecorder != null) {
+            mHeadingTraceRecorder.clear();
+        }
+        mHeadingTraceRecorder = null;
 
         if (mPolicyEngine != null) {
             try {
