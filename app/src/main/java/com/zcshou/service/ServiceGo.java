@@ -40,6 +40,7 @@ import com.elvishew.xlog.XLog;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.zcshou.gogogo.MainActivity;
+import com.zcshou.gogogo.LabPolicyEngine;
 import com.zcshou.gogogo.R;
 import com.zcshou.gogogo.SimpleMockActivity;
 import com.zcshou.joystick.JoyStick;
@@ -125,6 +126,20 @@ public class ServiceGo extends Service {
     private String mProvenanceSource = "RESTORED";
     private long mLastProvenanceSampleElapsed = 0L;
 
+    // MockDroid/MOSES-inspired Resource Broker: raw state stays internal,
+    // providers only see the policy-filtered published state.
+    private LabPolicyEngine mPolicyEngine;
+    private volatile boolean mPolicyPublish = true;
+    private volatile double mPublishedLat = DEFAULT_LAT;
+    private volatile double mPublishedLng = DEFAULT_LNG;
+    private volatile double mPublishedAlt = DEFAULT_ALT;
+    private volatile double mPublishedSpeed = 0.0;
+    private volatile float mPublishedBearing = DEFAULT_BEA;
+    private volatile float mPublishedAccuracy = 0.8f;
+    private volatile boolean mPublishedIncludeMotion = true;
+    private volatile String mPolicySummary = "PERSONAL · location=EXACT";
+    private String mLastPolicySignature = "";
+
     private static final int HANDLER_MSG_ID = 0;
     // 33ms (~30Hz) tick: 缩短"mock 过期"窗口,避免某些应用在两次 push 之间读到真实位置后漂移
     private static final long TICK_INTERVAL_MS = 33;
@@ -176,6 +191,9 @@ public class ServiceGo extends Service {
             } catch (Throwable ignored) {
             }
         }
+
+        mPolicyEngine = new LabPolicyEngine(this);
+        refreshPublishedPolicy();
 
         mLocManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         initHeadingSensor();
@@ -558,6 +576,14 @@ public class ServiceGo extends Service {
             }
         }
 
+        if (mPolicyEngine != null) {
+            try {
+                mPolicyEngine.close();
+            } catch (Throwable ignored) {
+            }
+            mPolicyEngine = null;
+        }
+
         super.onDestroy();
     }
 
@@ -646,6 +672,7 @@ public class ServiceGo extends Service {
                         advanceLabMotion();
                         sampleTrackIfNeeded(false);
                         sampleProvenanceIfNeeded();
+                        refreshPublishedPolicy();
                         setLocationNetwork();
                         setLocationGPS();
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -717,6 +744,41 @@ public class ServiceGo extends Service {
             mLastTrackLat = mCurLat;
             mLastTrackLng = mCurLng;
             mLastTrackSampleElapsed = now;
+        }
+    }
+
+    private void refreshPublishedPolicy() {
+        LabPolicyEngine engine = mPolicyEngine;
+        if (engine == null) {
+            mPolicyPublish = true;
+            mPublishedLat = mCurLat;
+            mPublishedLng = mCurLng;
+            mPublishedAlt = mCurAlt;
+            mPublishedSpeed = mSpeed;
+            mPublishedBearing = mCurBea;
+            mPublishedAccuracy = 0.8f;
+            mPublishedIncludeMotion = true;
+            mPolicySummary = "FALLBACK · location=EXACT";
+            return;
+        }
+
+        LabPolicyEngine.LocationDecision decision = engine.decideLocation(
+                mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea);
+
+        mPolicyPublish = decision.publish;
+        mPublishedLat = decision.latitude;
+        mPublishedLng = decision.longitude;
+        mPublishedAlt = decision.altitude;
+        mPublishedSpeed = decision.speedMps;
+        mPublishedBearing = decision.bearingDegrees;
+        mPublishedAccuracy = decision.accuracyMeters;
+        mPublishedIncludeMotion = decision.includeMotion;
+        mPolicySummary = engine.summary();
+
+        String signature = mPolicySummary + " · publish=" + mPolicyPublish;
+        if (!signature.equals(mLastPolicySignature)) {
+            mLastPolicySignature = signature;
+            recordProvenance("POLICY", signature);
         }
     }
 
@@ -971,23 +1033,23 @@ public class ServiceGo extends Service {
     }
 
     private void setLocationGPS() {
+        if (!mPolicyPublish) return;
         try {
-            // 尽可能模拟真实的 GPS 数据
             Location loc = new Location(LocationManager.GPS_PROVIDER);
-            loc.setAccuracy(0.8f);    // 设定此位置的估计水平精度，以米为单位。
-            loc.setAltitude(mCurAlt);                     // 设置高度，在 WGS 84 参考坐标系中的米
-            if (mHeadingAvailable || mSpeed > 0.3) {
-                loc.setBearing(mCurBea);
+            loc.setAccuracy(Math.max(0.8f, mPublishedAccuracy));
+            loc.setAltitude(mPublishedAlt);
+            if (mPublishedIncludeMotion && (mHeadingAvailable || mPublishedSpeed > 0.3)) {
+                loc.setBearing(mPublishedBearing);
             }
-            loc.setLatitude(mCurLat);                   // 纬度（度）
-            loc.setLongitude(mCurLng);                  // 经度（度）
-            loc.setTime(System.currentTimeMillis());    // 本地时间
-            loc.setSpeed((float) mSpeed);
+            loc.setLatitude(mPublishedLat);
+            loc.setLongitude(mPublishedLng);
+            loc.setTime(System.currentTimeMillis());
+            loc.setSpeed((float) mPublishedSpeed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 loc.setVerticalAccuracyMeters(1.5f);
                 loc.setSpeedAccuracyMetersPerSecond(0.2f);
-                if (mHeadingAvailable || mSpeed > 0.3) {
+                if (mPublishedIncludeMotion && (mHeadingAvailable || mPublishedSpeed > 0.3)) {
                     loc.setBearingAccuracyDegrees(2.0f);
                 }
             }
@@ -1037,25 +1099,24 @@ public class ServiceGo extends Service {
     }
 
     private void setLocationNetwork() {
+        if (!mPolicyPublish) return;
         try {
-            // 尽可能模拟真实的 NETWORK 数据
             Location loc = new Location(LocationManager.NETWORK_PROVIDER);
-            // 高德会融合网络定位；把 mock NETWORK 也保持为较高质量，减少真实网络定位抢回。
-            loc.setAccuracy(2.0f);  // 设定此位置的估计水平精度，以米为单位。
-            loc.setAltitude(mCurAlt);                     // 设置高度，在 WGS 84 参考坐标系中的米
-            if (mHeadingAvailable || mSpeed > 0.3) {
-                loc.setBearing(mCurBea);
+            loc.setAccuracy(Math.max(2.0f, mPublishedAccuracy));
+            loc.setAltitude(mPublishedAlt);
+            if (mPublishedIncludeMotion && (mHeadingAvailable || mPublishedSpeed > 0.3)) {
+                loc.setBearing(mPublishedBearing);
             }
-            loc.setLatitude(mCurLat);                   // 纬度（度）
-            loc.setLongitude(mCurLng);                  // 经度（度）
-            loc.setTime(System.currentTimeMillis());    // 本地时间
-            loc.setSpeed((float) mSpeed);
+            loc.setLatitude(mPublishedLat);
+            loc.setLongitude(mPublishedLng);
+            loc.setTime(System.currentTimeMillis());
+            loc.setSpeed((float) mPublishedSpeed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 loc.setVerticalAccuracyMeters(3.0f);
                 loc.setSpeedAccuracyMetersPerSecond(0.5f);
-                if (mHeadingAvailable || mSpeed > 0.3) {
+                if (mPublishedIncludeMotion && (mHeadingAvailable || mPublishedSpeed > 0.3)) {
                     loc.setBearingAccuracyDegrees(3.0f);
                 }
             }
@@ -1093,17 +1154,18 @@ public class ServiceGo extends Service {
     }
 
     private void setLocationFused() {
+        if (!mPolicyPublish) return;
         try {
             Location loc = new Location(LocationManager.FUSED_PROVIDER);
-            loc.setAccuracy(Criteria.ACCURACY_FINE);
-            loc.setAltitude(mCurAlt);
-            if (mHeadingAvailable || mSpeed > 0.3) {
-                loc.setBearing(mCurBea);
+            loc.setAccuracy(Math.max(1.0f, mPublishedAccuracy));
+            loc.setAltitude(mPublishedAlt);
+            if (mPublishedIncludeMotion && (mHeadingAvailable || mPublishedSpeed > 0.3)) {
+                loc.setBearing(mPublishedBearing);
             }
-            loc.setLatitude(mCurLat);
-            loc.setLongitude(mCurLng);
+            loc.setLatitude(mPublishedLat);
+            loc.setLongitude(mPublishedLng);
             loc.setTime(System.currentTimeMillis());
-            loc.setSpeed((float) mSpeed);
+            loc.setSpeed((float) mPublishedSpeed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
 
             mLocManager.setTestProviderLocation(LocationManager.FUSED_PROVIDER, loc);
@@ -1114,18 +1176,18 @@ public class ServiceGo extends Service {
 
     @SuppressLint("MissingPermission")
     private void setLocationFusedClient() {
-        if (mFusedClient == null || !mFusedMockEnabled) return;
+        if (!mPolicyPublish || mFusedClient == null || !mFusedMockEnabled) return;
         try {
             Location loc = new Location("fused");
-            loc.setAccuracy(Criteria.ACCURACY_FINE);
-            loc.setAltitude(mCurAlt);
-            if (mHeadingAvailable || mSpeed > 0.3) {
-                loc.setBearing(mCurBea);
+            loc.setAccuracy(Math.max(1.0f, mPublishedAccuracy));
+            loc.setAltitude(mPublishedAlt);
+            if (mPublishedIncludeMotion && (mHeadingAvailable || mPublishedSpeed > 0.3)) {
+                loc.setBearing(mPublishedBearing);
             }
-            loc.setLatitude(mCurLat);
-            loc.setLongitude(mCurLng);
+            loc.setLatitude(mPublishedLat);
+            loc.setLongitude(mPublishedLng);
             loc.setTime(System.currentTimeMillis());
-            loc.setSpeed((float) mSpeed);
+            loc.setSpeed((float) mPublishedSpeed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
             mFusedClient.setMockLocation(loc);
         } catch (Throwable t) {
@@ -1164,6 +1226,15 @@ public class ServiceGo extends Service {
         public double getAltitude() { return mCurAlt; }
         public double getSpeedMps() { return mSpeed; }
         public float getBearingDegrees() { return mCurBea; }
+
+        public boolean isPolicyPublishing() { return mPolicyPublish; }
+        public double getPublishedLongitude() { return mPublishedLng; }
+        public double getPublishedLatitude() { return mPublishedLat; }
+        public double getPublishedAltitude() { return mPublishedAlt; }
+        public double getPublishedSpeedMps() { return mPublishedSpeed; }
+        public float getPublishedBearingDegrees() { return mPublishedBearing; }
+        public float getPublishedAccuracyMeters() { return mPublishedAccuracy; }
+        public String getPolicySummary() { return mPolicySummary; }
         public boolean isRouteActive() { return mRouteActive; }
         public boolean isRoamActive() { return mRoamActive; }
         public boolean isMotionPaused() { return mMotionPaused; }
