@@ -1,8 +1,10 @@
 package com.zcshou.gogogo;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -30,6 +32,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.net.InetAddress;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -141,6 +145,12 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
 
         Button refresh = button("↻ 立即刷新", v -> refreshViews());
         root.addView(refresh, matchWrap());
+
+        Button saveSnapshot = button("📸 保存环境快照", v -> saveEnvironmentSnapshot());
+        root.addView(saveSnapshot, matchWrap());
+
+        Button compareSnapshot = button("🔍 对比上次快照", v -> compareEnvironmentSnapshot());
+        root.addView(compareSnapshot, matchWrap());
 
         Button back = button("← 返回 GoGoGo Lab", v -> finish());
         root.addView(back, matchWrap());
@@ -464,6 +474,95 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
                     "Shizuku 连接异常：" + t.getClass().getSimpleName(),
                     Toast.LENGTH_LONG).show();
         }
+    }
+
+    private String buildFullEnvironmentSnapshot() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[系统]\n").append(buildSystemSnapshot()).append("\n\n");
+        sb.append("[网络]\n").append(buildNetworkSnapshot()).append("\n\n");
+        sb.append("[Shizuku]\n").append(buildShizukuSnapshot()).append("\n\n");
+
+        if (hasOrientation) {
+            sb.append("[传感器]\n");
+            sb.append(String.format(Locale.US,
+                    "Heading: %.1f°\nPitch: %.1f°\nRoll: %.1f°\n"
+                            + "Accel: %.2f, %.2f, %.2f\n"
+                            + "Gyro: %.3f, %.3f, %.3f",
+                    heading, pitch, roll,
+                    accel[0], accel[1], accel[2],
+                    gyro[0], gyro[1], gyro[2]));
+        } else {
+            sb.append("[传感器]\n暂无方向数据");
+        }
+        return sb.toString().trim();
+    }
+
+    private void saveEnvironmentSnapshot() {
+        String snapshot = buildFullEnvironmentSnapshot();
+        long now = System.currentTimeMillis();
+        SharedPreferences prefs = getSharedPreferences("lab_environment_snapshots", MODE_PRIVATE);
+        prefs.edit()
+                .putString("snapshot", snapshot)
+                .putLong("snapshot_time", now)
+                .apply();
+
+        String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+                .format(new Date(now));
+        Toast.makeText(this, "环境快照已保存 · " + time, Toast.LENGTH_SHORT).show();
+    }
+
+    private void compareEnvironmentSnapshot() {
+        SharedPreferences prefs = getSharedPreferences("lab_environment_snapshots", MODE_PRIVATE);
+        String oldSnapshot = prefs.getString("snapshot", null);
+        long oldTime = prefs.getLong("snapshot_time", 0L);
+
+        if (oldSnapshot == null || oldSnapshot.trim().isEmpty()) {
+            Toast.makeText(this, "还没有保存过环境快照", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String current = buildFullEnvironmentSnapshot();
+        String diff = diffSnapshots(oldSnapshot, current);
+        String time = oldTime > 0L
+                ? new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(new Date(oldTime))
+                : "未知";
+
+        TextView view = new TextView(this);
+        int pad = dp(16);
+        view.setPadding(pad, pad, pad, pad);
+        view.setTextIsSelectable(true);
+        view.setText("基准快照：" + time + "\n\n" + diff);
+
+        new AlertDialog.Builder(this)
+                .setTitle("环境变化")
+                .setView(view)
+                .setPositiveButton("关闭", null)
+                .setNeutralButton("用当前覆盖基准", (d, w) -> saveEnvironmentSnapshot())
+                .show();
+    }
+
+    private static String diffSnapshots(String before, String after) {
+        String[] a = before.split("\\n", -1);
+        String[] b = after.split("\\n", -1);
+        int max = Math.max(a.length, b.length);
+        StringBuilder out = new StringBuilder();
+        int changes = 0;
+
+        for (int i = 0; i < max; i++) {
+            String oldLine = i < a.length ? a[i] : "";
+            String newLine = i < b.length ? b[i] : "";
+            if (!oldLine.equals(newLine)) {
+                changes++;
+                out.append("• 第 ").append(i + 1).append(" 行\n")
+                        .append("  之前：").append(oldLine.isEmpty() ? "（空）" : oldLine).append("\n")
+                        .append("  现在：").append(newLine.isEmpty() ? "（空）" : newLine).append("\n\n");
+            }
+        }
+
+        if (changes == 0) {
+            return "没有检测到变化 ✅";
+        }
+        return "检测到 " + changes + " 处变化：\n\n" + out.toString().trim();
     }
 
     private boolean isPackageInstalled(String pkg) {
