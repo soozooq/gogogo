@@ -13,6 +13,7 @@ on:
       - feat/gogogo-lab-phase13
       - feat/gogogo-ui-refresh
       - feat/gogogo-heading-lab14
+      - feat/gogogo-heading-lab15
   # 仓库收到 pull_request 时触发
   pull_request:
     branches:
