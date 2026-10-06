@@ -70,85 +70,135 @@ public class PolicyLabActivity extends AppCompatActivity {
     }
 
     private void buildUi() {
-        int pad = dp(14);
+        int pad = GoGoUi.dp(this, 18);
 
         ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        GoGoUi.applyScreenBackground(scroll);
+
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(pad, pad, pad, pad);
+        root.setPadding(pad, GoGoUi.dp(this, 16), pad, GoGoUi.dp(this, 24));
         scroll.addView(root);
 
-        TextView title = new TextView(this);
-        title.setText("🧠 GoGoGo Resource Broker · Lab 8");
-        title.setTextSize(22);
-        title.setGravity(Gravity.CENTER);
-        root.addView(title, matchWrap());
+        LinearLayout appBar = GoGoUi.row(this);
+        appBar.addView(
+                GoGoUi.textButton(this, "←", v -> finish()),
+                new LinearLayout.LayoutParams(
+                        GoGoUi.dp(this, 52),
+                        ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        TextView intro = new TextView(this);
-        intro.setText(
-                "论文思路实验：把 GoGoGo 内部的原始资源和最终发布资源拆开。"
-                        + "\n定位策略会真正作用到 GoGoGo 的 Mock Provider；"
-                        + "网络 / 传感器策略目前只改变 Lab 的 shadow view，不会偷偷改系统真实网络或传感器。");
-        intro.setTextSize(14);
-        intro.setPadding(0, dp(8), 0, dp(8));
-        root.addView(intro, matchWrap());
+        LinearLayout titleBlock = new LinearLayout(this);
+        titleBlock.setOrientation(LinearLayout.VERTICAL);
+        TextView title = GoGoUi.sectionTitle(this, "Resource Broker");
+        title.setTextSize(20);
+        title.setPadding(0, 0, 0, 0);
+        titleBlock.addView(title, GoGoUi.matchWrap());
+        titleBlock.addView(
+                GoGoUi.muted(this, "Raw → Policy → Published"),
+                GoGoUi.matchWrap());
+        appBar.addView(titleBlock, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        root.addView(appBar, GoGoUi.matchWrap());
 
-        currentView = body();
-        root.addView(currentView, matchWrap());
+        com.google.android.material.card.MaterialCardView currentCard = GoGoUi.card(this);
+        LinearLayout currentContent = GoGoUi.cardContent(this);
+        currentCard.addView(currentContent);
+        currentContent.addView(GoGoUi.sectionTitle(this, "当前策略"), GoGoUi.matchWrap());
+        currentView = GoGoUi.status(this, "");
+        currentContent.addView(currentView, GoGoUi.matchWrap());
+        GoGoUi.addCard(root, currentCard, 16);
 
-        root.addView(sectionTitle("安全域 Presets"));
-        root.addView(buttonRow(
-                button("🏠 Personal", v -> applyPreset(LabPolicyEngine.DOMAIN_PERSONAL)),
-                button("💼 Work", v -> applyPreset(LabPolicyEngine.DOMAIN_WORK)),
-                button("🧪 Lab", v -> applyPreset(LabPolicyEngine.DOMAIN_LAB))
-        ));
+        com.google.android.material.card.MaterialCardView presetCard = GoGoUi.card(this);
+        LinearLayout presetContent = GoGoUi.cardContent(this);
+        presetCard.addView(presetContent);
+        presetContent.addView(GoGoUi.sectionTitle(this, "安全域 Presets"), GoGoUi.matchWrap());
+        presetContent.addView(
+                GoGoUi.muted(this, "快速切换常用资源发布策略。"),
+                GoGoUi.matchWrap());
+        presetContent.addView(GoGoUi.gap(this, 10));
 
-        root.addView(sectionTitle("Lab 自定义资源策略"));
+        LinearLayout presetRow = GoGoUi.row(this);
+        presetRow.addView(
+                GoGoUi.secondaryButton(this, "Personal",
+                        v -> applyPreset(LabPolicyEngine.DOMAIN_PERSONAL)),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, presetRow, 8);
+        presetRow.addView(
+                GoGoUi.secondaryButton(this, "Work",
+                        v -> applyPreset(LabPolicyEngine.DOMAIN_WORK)),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, presetRow, 8);
+        presetRow.addView(
+                GoGoUi.primaryButton(this, "Lab",
+                        v -> applyPreset(LabPolicyEngine.DOMAIN_LAB)),
+                GoGoUi.weighted());
+        presetContent.addView(presetRow, GoGoUi.matchWrap());
 
-        root.addView(label("定位发布"));
+        GoGoUi.addCard(root, presetCard, 12);
+
+        com.google.android.material.card.MaterialCardView customCard = GoGoUi.card(this);
+        LinearLayout custom = GoGoUi.cardContent(this);
+        customCard.addView(custom);
+        custom.addView(GoGoUi.sectionTitle(this, "Lab 自定义策略"), GoGoUi.matchWrap());
+
+        custom.addView(GoGoUi.muted(this, "定位发布"), GoGoUi.matchWrap());
         locationSpinner = spinner(new String[]{
                 "精确",
                 "粗略 250 m",
                 "粗略 1000 m",
                 "暂停发布"
         });
-        root.addView(locationSpinner, matchWrap());
+        custom.addView(locationSpinner, GoGoUi.matchWrap());
 
-        root.addView(label("网络 Shadow View"));
+        custom.addView(GoGoUi.gap(this, 10));
+        custom.addView(GoGoUi.muted(this, "网络 Shadow View"), GoGoUi.matchWrap());
         networkSpinner = spinner(new String[]{
                 "LIVE",
                 "REDACTED",
                 "OFFLINE_SHADOW"
         });
-        root.addView(networkSpinner, matchWrap());
+        custom.addView(networkSpinner, GoGoUi.matchWrap());
 
-        root.addView(label("传感器 Shadow View"));
+        custom.addView(GoGoUi.gap(this, 10));
+        custom.addView(GoGoUi.muted(this, "传感器 Shadow View"), GoGoUi.matchWrap());
         sensorSpinner = spinner(new String[]{
                 "LIVE",
                 "QUANTIZED",
                 "UNAVAILABLE_SHADOW"
         });
-        root.addView(sensorSpinner, matchWrap());
+        custom.addView(sensorSpinner, GoGoUi.matchWrap());
 
-        Button apply = button("🔥 应用自定义 Lab Policy", v -> applyCustom());
-        root.addView(apply, matchWrap());
+        custom.addView(GoGoUi.gap(this, 12));
+        custom.addView(
+                GoGoUi.primaryButton(this, "应用自定义 Policy", v -> applyCustom()),
+                GoGoUi.matchWrap());
 
-        root.addView(sectionTitle("Raw → Broker → Published"));
-        previewView = body();
-        root.addView(previewView, matchWrap());
+        GoGoUi.addCard(root, customCard, 12);
 
-        TextView note = body();
-        note.setText(
-                "策略说明：\n"
-                        + "• EXACT：原始坐标直接发布。\n"
-                        + "• COARSE：坐标量化到约 250 m / 1000 m 网格，并移除速度/方向细节。\n"
-                        + "• PAUSE_PUBLISH：停止产生新的 Mock 样本；系统或目标 App 可能仍保留上一次缓存位置。\n"
-                        + "• Network/Sensor shadow 仅用于 GoGoGo 自己的资源视图，"
-                        + "不是全系统网络/传感器伪造。");
-        root.addView(note, matchWrap());
+        com.google.android.material.card.MaterialCardView previewCard = GoGoUi.card(this);
+        LinearLayout previewContent = GoGoUi.cardContent(this);
+        previewCard.addView(previewContent);
+        previewContent.addView(
+                GoGoUi.sectionTitle(this, "Raw → Broker → Published"),
+                GoGoUi.matchWrap());
+        previewView = GoGoUi.muted(this, "");
+        previewView.setTextIsSelectable(true);
+        previewContent.addView(previewView, GoGoUi.matchWrap());
+        GoGoUi.addCard(root, previewCard, 12);
 
-        Button map = button("🗺 返回 Lab 地图", v -> finish());
-        root.addView(map, matchWrap());
+        com.google.android.material.card.MaterialCardView noteCard = GoGoUi.card(this);
+        LinearLayout noteContent = GoGoUi.cardContent(this);
+        noteCard.addView(noteContent);
+        noteContent.addView(
+                GoGoUi.sectionTitle(this, "说明"),
+                GoGoUi.matchWrap());
+        noteContent.addView(
+                GoGoUi.muted(
+                        this,
+                        "EXACT 直接发布原始坐标；COARSE 会量化位置并移除运动细节；PAUSE_PUBLISH 停止产生新的 Mock 样本。Network / Sensor Shadow 只影响 GoGoGo 自己的资源视图，不修改系统真实网络或传感器。"),
+                GoGoUi.matchWrap());
+        GoGoUi.addCard(root, noteCard, 12);
 
         setContentView(scroll);
         syncSpinnersFromEngine();
@@ -156,26 +206,16 @@ public class PolicyLabActivity extends AppCompatActivity {
     }
 
     private TextView sectionTitle(String text) {
-        TextView v = new TextView(this);
-        v.setText(text);
-        v.setTextSize(18);
-        v.setPadding(0, dp(14), 0, dp(4));
-        return v;
+        return GoGoUi.sectionTitle(this, text);
     }
 
     private TextView label(String text) {
-        TextView v = new TextView(this);
-        v.setText(text);
-        v.setTextSize(14);
-        v.setPadding(0, dp(8), 0, dp(2));
-        return v;
+        return GoGoUi.muted(this, text);
     }
 
     private TextView body() {
-        TextView v = new TextView(this);
-        v.setTextSize(14);
+        TextView v = GoGoUi.muted(this, "");
         v.setTextIsSelectable(true);
-        v.setPadding(dp(8), dp(8), dp(8), dp(8));
         return v;
     }
 
@@ -206,11 +246,7 @@ public class PolicyLabActivity extends AppCompatActivity {
     }
 
     private Button button(String text, android.view.View.OnClickListener listener) {
-        Button b = new Button(this);
-        b.setText(text);
-        b.setAllCaps(false);
-        b.setOnClickListener(listener);
-        return b;
+        return GoGoUi.secondaryButton(this, text, listener);
     }
 
     private LinearLayout.LayoutParams matchWrap() {
