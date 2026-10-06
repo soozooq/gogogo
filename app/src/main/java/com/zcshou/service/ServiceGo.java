@@ -43,6 +43,7 @@ import com.zcshou.gogogo.MainActivity;
 import com.zcshou.gogogo.LabPolicyEngine;
 import com.zcshou.gogogo.LabScenarioEngine;
 import com.zcshou.gogogo.LabKinematicsEngine;
+import com.zcshou.gogogo.LabHeadingIntelligenceEngine;
 import com.zcshou.gogogo.R;
 import com.zcshou.gogogo.SimpleMockActivity;
 import com.zcshou.joystick.JoyStick;
@@ -162,6 +163,14 @@ public class ServiceGo extends Service {
     private volatile String mHeadingSensorSource = "NONE";
     private String mLastKinematicSignature = "";
 
+    // Lab 14: magnetic-aware heading intelligence.
+    // Absolute rotation vector gives north reference; game rotation vector gives
+    // magnetically-independent relative rotation. We fuse them only inside GoGoGo.
+    private LabHeadingIntelligenceEngine mHeadingFusionEngine;
+    private volatile LabHeadingIntelligenceEngine.Frame mHeadingFrame;
+    private Sensor mGameHeadingSensor;
+    private Sensor mMagneticSensor;
+
     private static final int HANDLER_MSG_ID = 0;
     // 33ms (~30Hz) tick: 缩短"mock 过期"窗口,避免某些应用在两次 push 之间读到真实位置后漂移
     private static final long TICK_INTERVAL_MS = 33;
@@ -217,6 +226,7 @@ public class ServiceGo extends Service {
         mPolicyEngine = new LabPolicyEngine(this);
         mScenarioEngine = new LabScenarioEngine(this);
         mKinematicsEngine = new LabKinematicsEngine();
+        mHeadingFusionEngine = new LabHeadingIntelligenceEngine();
         refreshPublishedPolicy();
 
         mLocManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
@@ -263,19 +273,35 @@ public class ServiceGo extends Service {
                 return;
             }
 
+            // North-referenced absolute orientation.
             mHeadingSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
             if (mHeadingSensor != null) {
                 mHeadingSensorSource = "ROTATION_VECTOR";
             }
             if (mHeadingSensor == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                mHeadingSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR);
+                mHeadingSensor = mSensorManager.getDefaultSensor(
+                        Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR);
                 if (mHeadingSensor != null) {
                     mHeadingSensorSource = "GEOMAGNETIC_ROTATION_VECTOR";
                 }
             }
-            if (mHeadingSensor == null) {
-                XLog.e("SERVICEGO: no rotation-vector heading sensor");
+
+            // Relative orientation that deliberately ignores geomagnetism.
+            mGameHeadingSensor = mSensorManager.getDefaultSensor(
+                    Sensor.TYPE_GAME_ROTATION_VECTOR);
+            mMagneticSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+
+            if (mHeadingSensor == null && mGameHeadingSensor == null) {
+                XLog.e("SERVICEGO: no usable rotation-vector sensor");
                 return;
+            }
+
+            if (mGameHeadingSensor != null && mMagneticSensor != null) {
+                mHeadingSensorSource = "LAB14_ABS+GAME+MAG";
+            } else if (mGameHeadingSensor != null) {
+                mHeadingSensorSource = "LAB14_ABS+GAME";
+            } else {
+                mHeadingSensorSource = "LAB14_ABSOLUTE";
             }
 
             mHeadingListener = new SensorEventListener() {
@@ -285,54 +311,128 @@ public class ServiceGo extends Service {
 
                 @Override
                 public void onSensorChanged(SensorEvent event) {
-                    if (event == null || event.values == null) return;
+                    if (event == null || event.sensor == null || event.values == null) return;
+                    LabHeadingIntelligenceEngine engine = mHeadingFusionEngine;
+                    if (engine == null) return;
+
                     try {
-                        SensorManager.getRotationMatrixFromVector(rotation, event.values);
+                        LabHeadingIntelligenceEngine.Frame frame = null;
 
-                        int displayRotation = Surface.ROTATION_0;
-                        WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-                        if (wm != null) {
-                            displayRotation = wm.getDefaultDisplay().getRotation();
+                        if (event.sensor == mHeadingSensor) {
+                            float heading = headingFromRotationVector(
+                                    event.values, rotation, adjusted, orientation);
+                            frame = engine.onAbsoluteHeading(
+                                    heading,
+                                    mDeviceHeadingAccuracy,
+                                    event.timestamp);
+                        } else if (event.sensor == mGameHeadingSensor) {
+                            float heading = headingFromRotationVector(
+                                    event.values, rotation, adjusted, orientation);
+                            frame = engine.onGameHeading(heading, event.timestamp);
+                        } else if (event.sensor == mMagneticSensor
+                                && event.values.length >= 3) {
+                            frame = engine.onMagneticField(
+                                    event.values[0],
+                                    event.values[1],
+                                    event.values[2],
+                                    mDeviceHeadingAccuracy,
+                                    event.timestamp);
                         }
 
-                        int axisX = SensorManager.AXIS_X;
-                        int axisY = SensorManager.AXIS_Y;
-                        if (displayRotation == Surface.ROTATION_90) {
-                            axisX = SensorManager.AXIS_Y;
-                            axisY = SensorManager.AXIS_MINUS_X;
-                        } else if (displayRotation == Surface.ROTATION_180) {
-                            axisX = SensorManager.AXIS_MINUS_X;
-                            axisY = SensorManager.AXIS_MINUS_Y;
-                        } else if (displayRotation == Surface.ROTATION_270) {
-                            axisX = SensorManager.AXIS_MINUS_Y;
-                            axisY = SensorManager.AXIS_X;
+                        if (frame != null) {
+                            applyHeadingFrame(frame);
                         }
-
-                        SensorManager.remapCoordinateSystem(rotation, axisX, axisY, adjusted);
-                        SensorManager.getOrientation(adjusted, orientation);
-
-                        float heading = (float) Math.toDegrees(orientation[0]);
-                        if (heading < 0f) heading += 360f;
-                        mDeviceHeadingDegrees = mHeadingAvailable
-                                ? smoothHeadingDegrees(mDeviceHeadingDegrees, heading, 0.25f)
-                                : heading;
-                        mHeadingAvailable = true;
                     } catch (Throwable ignored) {
                     }
                 }
 
                 @Override
                 public void onAccuracyChanged(Sensor sensor, int accuracy) {
-                    mDeviceHeadingAccuracy = accuracy;
+                    if (sensor == null) return;
+
+                    if (sensor == mHeadingSensor) {
+                        mDeviceHeadingAccuracy = accuracy;
+                    }
+
+                    LabHeadingIntelligenceEngine engine = mHeadingFusionEngine;
+                    if (engine != null) {
+                        LabHeadingIntelligenceEngine.Frame frame = engine.updateAccuracy(
+                                sensor.getType(),
+                                accuracy,
+                                SystemClock.elapsedRealtimeNanos());
+                        applyHeadingFrame(frame);
+                    }
+                }
+
+                private float headingFromRotationVector(
+                        float[] values,
+                        float[] rotation,
+                        float[] adjusted,
+                        float[] orientation) {
+                    SensorManager.getRotationMatrixFromVector(rotation, values);
+
+                    int displayRotation = Surface.ROTATION_0;
+                    WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+                    if (wm != null) {
+                        displayRotation = wm.getDefaultDisplay().getRotation();
+                    }
+
+                    int axisX = SensorManager.AXIS_X;
+                    int axisY = SensorManager.AXIS_Y;
+                    if (displayRotation == Surface.ROTATION_90) {
+                        axisX = SensorManager.AXIS_Y;
+                        axisY = SensorManager.AXIS_MINUS_X;
+                    } else if (displayRotation == Surface.ROTATION_180) {
+                        axisX = SensorManager.AXIS_MINUS_X;
+                        axisY = SensorManager.AXIS_MINUS_Y;
+                    } else if (displayRotation == Surface.ROTATION_270) {
+                        axisX = SensorManager.AXIS_MINUS_Y;
+                        axisY = SensorManager.AXIS_X;
+                    }
+
+                    SensorManager.remapCoordinateSystem(rotation, axisX, axisY, adjusted);
+                    SensorManager.getOrientation(adjusted, orientation);
+
+                    float heading = (float) Math.toDegrees(orientation[0]);
+                    if (heading < 0f) heading += 360f;
+                    return heading;
                 }
             };
 
-            boolean registered = mSensorManager.registerListener(
-                    mHeadingListener, mHeadingSensor, SensorManager.SENSOR_DELAY_GAME);
-            XLog.i("SERVICEGO: heading sensor registered=" + registered
-                    + " type=" + mHeadingSensor.getType());
+            boolean absRegistered = mHeadingSensor != null && mSensorManager.registerListener(
+                    mHeadingListener,
+                    mHeadingSensor,
+                    SensorManager.SENSOR_DELAY_GAME);
+
+            boolean gameRegistered = mGameHeadingSensor != null && mSensorManager.registerListener(
+                    mHeadingListener,
+                    mGameHeadingSensor,
+                    SensorManager.SENSOR_DELAY_GAME);
+
+            boolean magRegistered = mMagneticSensor != null && mSensorManager.registerListener(
+                    mHeadingListener,
+                    mMagneticSensor,
+                    SensorManager.SENSOR_DELAY_GAME);
+
+            XLog.i("SERVICEGO: Lab14 heading registered abs=" + absRegistered
+                    + " game=" + gameRegistered
+                    + " mag=" + magRegistered);
         } catch (Throwable t) {
             XLog.e("SERVICEGO: heading sensor init failed: " + t.getMessage());
+        }
+    }
+
+    private void applyHeadingFrame(LabHeadingIntelligenceEngine.Frame frame) {
+        if (frame == null) return;
+        mHeadingFrame = frame;
+        mHeadingAvailable = frame.available;
+        if (frame.available) {
+            mDeviceHeadingDegrees = mHeadingAvailable
+                    ? smoothHeadingDegrees(
+                            mDeviceHeadingDegrees,
+                            frame.fusedHeadingDeg,
+                            0.34f)
+                    : frame.fusedHeadingDeg;
         }
     }
 
@@ -632,6 +732,8 @@ public class ServiceGo extends Service {
 
         mKinematicFrame = null;
         mKinematicsEngine = null;
+        mHeadingFrame = null;
+        mHeadingFusionEngine = null;
 
         if (mPolicyEngine != null) {
             try {
@@ -1382,6 +1484,51 @@ public class ServiceGo extends Service {
         public float getDeviceHeadingDegrees() { return mDeviceHeadingDegrees; }
         public int getDeviceHeadingAccuracy() { return mDeviceHeadingAccuracy; }
         public String getHeadingSensorSource() { return mHeadingSensorSource; }
+
+        public String getHeadingFusionState() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? "UNAVAILABLE" : f.state;
+        }
+        public String getHeadingFusionSource() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? "NONE" : f.source;
+        }
+        public String getHeadingCalibrationState() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? "UNAVAILABLE" : f.calibration;
+        }
+        public double getHeadingConfidence() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? 0.0 : f.confidence;
+        }
+        public float getHeadingAbsoluteDegrees() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? Float.NaN : f.absoluteHeadingDeg;
+        }
+        public float getHeadingGameDegrees() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? Float.NaN : f.gameHeadingDeg;
+        }
+        public double getMagneticFieldMicroTesla() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? Double.NaN : f.magneticNormUt;
+        }
+        public double getMagneticBaselineMicroTesla() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? Double.NaN : f.magneticBaselineUt;
+        }
+        public double getMagneticDeviationRatio() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? 1.0 : f.magneticDeviationRatio;
+        }
+        public boolean isMagneticDisturbed() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null || f.magneticDisturbed;
+        }
+        public String getHeadingFusionSummary() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? "UNAVAILABLE" : f.summary();
+        }
 
         public String getKinematicState() {
             LabKinematicsEngine.Frame f = mKinematicFrame;
