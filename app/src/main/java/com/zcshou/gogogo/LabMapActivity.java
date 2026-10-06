@@ -144,7 +144,7 @@ public class LabMapActivity extends AppCompatActivity {
         root.setPadding(pad, pad, pad, pad);
 
         TextView title = new TextView(this);
-        title.setText("🧪 GoGoGo Lab 6 · MapLibre");
+        title.setText("🧪 GoGoGo Lab 7 · Research Mode");
         title.setTextSize(21);
         title.setGravity(Gravity.CENTER);
         root.addView(title, matchWrap());
@@ -259,6 +259,13 @@ public class LabMapActivity extends AppCompatActivity {
                 button("⏹ 停止录制", v -> sendTrackAction(ServiceGo.ACTION_RECORD_STOP)),
                 button("💾 导出 GPX", v -> exportTrack()),
                 button("🧹 清空轨迹", v -> sendTrackAction(ServiceGo.ACTION_RECORD_CLEAR))
+        ));
+
+        root.addView(buttonRow(
+                button("🧬 数据来源链", v -> showProvenanceTimeline()),
+                button("🧹 清来源链", v -> clearProvenanceTimeline()),
+                button("📦 Sandbox / AVF", v ->
+                        startActivity(new Intent(this, SandboxLabActivity.class)))
         ));
 
         Button back = button("← 返回定位测试面板", v -> finish());
@@ -405,8 +412,9 @@ public class LabMapActivity extends AppCompatActivity {
 
             StringBuilder sb = new StringBuilder();
             sb.append(String.format(Locale.US,
-                    "Mock %.6f, %.6f · %.2f m/s · %.1f°",
-                    lng, lat, speed, binder.getBearingDegrees()));
+                    "Mock %.6f, %.6f · %.2f m/s · %.1f° · 来源 %s",
+                    lng, lat, speed, binder.getBearingDegrees(),
+                    binder.getProvenanceSource()));
 
             if (route) {
                 double progress = binder.getRouteProgressFraction();
@@ -1058,6 +1066,55 @@ public class LabMapActivity extends AppCompatActivity {
         } catch (Throwable t) {
             Toast.makeText(this, "倍速切换失败", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void showProvenanceTimeline() {
+        ServiceGo.ServiceGoBinder binder = serviceBinder;
+        if (binder == null) {
+            Toast.makeText(this, "Service 还没有连接", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] events = binder.getProvenanceEvents();
+        StringBuilder text = new StringBuilder();
+        text.append("当前来源：").append(binder.getProvenanceSource())
+                .append("\n事件数：").append(events.length)
+                .append("\n\n");
+
+        if (events.length == 0) {
+            text.append("还没有 provenance 事件。");
+        } else {
+            // Show newest first so the most relevant state is immediately visible.
+            for (int i = events.length - 1; i >= 0; i--) {
+                text.append(events[i]);
+                if (i > 0) text.append("\n");
+            }
+        }
+
+        TextView view = new TextView(this);
+        int pad = dp(16);
+        view.setPadding(pad, pad, pad, pad);
+        view.setTextIsSelectable(true);
+        view.setText(text.toString());
+
+        android.widget.ScrollView scroll = new android.widget.ScrollView(this);
+        scroll.addView(view);
+
+        new AlertDialog.Builder(this)
+                .setTitle("🧬 GoGoGo Data Provenance")
+                .setView(scroll)
+                .setPositiveButton("关闭", null)
+                .show();
+    }
+
+    private void clearProvenanceTimeline() {
+        ServiceGo.ServiceGoBinder binder = serviceBinder;
+        if (binder == null) {
+            Toast.makeText(this, "Service 还没有连接", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        binder.clearProvenanceEvents();
+        Toast.makeText(this, "来源时间线已清空", Toast.LENGTH_SHORT).show();
     }
 
     private void startTrackRecording() {
