@@ -82,12 +82,14 @@ public class LabCompatibilitySessionRecorderTest {
 
         recorder.start(1000L);
 
-        recorder.addHeartbeat(1000L, 125, false, true, false, false);
+        recorder.addHeartbeatMain(1000L, 10L, 125, false, true, false, false);
+        recorder.addHeartbeatBackground(1000L, 10L);
         recorder.addLocation(1000L, "GPS", 35.0, 139.0, 1f, 0f, 0f, true);
         recorder.addLocation(1000L, "NETWORK", 35.0, 139.0, 1f, 0f, 0f, true);
         recorder.addLocation(1000L, "GMS_UPDATES", 35.0, 139.0, 1f, 0f, 0f, true);
 
-        recorder.addHeartbeat(52000L, 125, false, true, false, false);
+        recorder.addHeartbeatMain(52000L, 20L, 125, false, true, false, false);
+        recorder.addHeartbeatBackground(52000L, 20L);
         recorder.addLocation(52000L, "GPS", 35.0, 139.0, 1f, 0f, 0f, true);
         recorder.addLocation(52000L, "NETWORK", 35.0, 139.0, 1f, 0f, 0f, true);
         recorder.addLocation(52000L, "GMS_UPDATES", 35.0, 139.0, 1f, 0f, 0f, true);
@@ -109,13 +111,16 @@ public class LabCompatibilitySessionRecorderTest {
         recorder.addLocation(1000L, "GMS_UPDATES", 35.0, 139.0, 1f, 0f, 0f, true);
 
         for (int i = 0; i <= 10; i++) {
-            recorder.addHeartbeat(
-                    1000L + i * 500L,
+            long t = 1000L + i * 500L;
+            recorder.addHeartbeatMain(
+                    t,
+                    10L + i,
                     125,
                     false,
                     true,
                     false,
                     false);
+            recorder.addHeartbeatBackground(t, 10L + i);
         }
 
         recorder.addLocation(6000L, "GPS", 35.0, 139.0, 1f, 0f, 0f, true);
@@ -129,6 +134,56 @@ public class LabCompatibilitySessionRecorderTest {
     }
 
     @Test
+    public void mainThreadOnlyGapIsClassifiedSeparately() {
+        LabCompatibilitySessionRecorder recorder =
+                new LabCompatibilitySessionRecorder();
+
+        recorder.start(1000L);
+        recorder.addLocation(1000L, "GPS", 35.0, 139.0, 1f, 0f, 0f, true);
+        recorder.addLocation(1000L, "NETWORK", 35.0, 139.0, 1f, 0f, 0f, true);
+        recorder.addLocation(1000L, "GMS_UPDATES", 35.0, 139.0, 1f, 0f, 0f, true);
+
+        recorder.addHeartbeatMain(1000L, 10L, 100, false, true, false, true);
+        recorder.addHeartbeatBackground(1000L, 10L);
+        for (int i = 1; i <= 10; i++) {
+            recorder.addHeartbeatBackground(1000L + i * 500L, 10L + i);
+        }
+        recorder.addHeartbeatMain(6000L, 20L, 100, false, true, false, true);
+
+        recorder.addLocation(6000L, "GPS", 35.0, 139.0, 1f, 0f, 0f, true);
+        recorder.addLocation(6000L, "NETWORK", 35.0, 139.0, 1f, 0f, 0f, true);
+        recorder.addLocation(6000L, "GMS_UPDATES", 35.0, 139.0, 1f, 0f, 0f, true);
+
+        LabCompatibilitySessionRecorder.Summary summary = recorder.summarize();
+
+        assertEquals("MAIN_THREAD_STALL", summary.freezeDiagnosis());
+        assertTrue(summary.heartbeat.maxGapMs >= 5000L);
+        assertTrue(summary.backgroundHeartbeat.maxGapMs <= 500L);
+    }
+
+    @Test
+    public void gapProfilesExposeTailLatency() {
+        LabCompatibilitySessionRecorder recorder =
+                new LabCompatibilitySessionRecorder();
+
+        recorder.start(1000L);
+        long t = 1000L;
+        for (int i = 0; i < 20; i++) {
+            recorder.addHeartbeatMain(t, i, 100, false, true, false, true);
+            recorder.addHeartbeatBackground(t, i);
+            t += 500L;
+        }
+        recorder.addHeartbeatMain(t + 4000L, 50L, 100, false, true, false, true);
+        recorder.addHeartbeatBackground(t + 4000L, 50L);
+
+        LabCompatibilitySessionRecorder.Summary summary = recorder.summarize();
+
+        assertTrue(summary.heartbeat.gaps.p95Ms >= 500L);
+        assertEquals(1, summary.heartbeat.gaps.over3000);
+        assertEquals(1, summary.backgroundHeartbeat.gaps.over3000);
+    }
+
+    @Test
     public void survivalModeAndWakeLockEvidenceRemainAfterStop() {
         LabCompatibilitySessionRecorder recorder =
                 new LabCompatibilitySessionRecorder();
@@ -136,7 +191,8 @@ public class LabCompatibilitySessionRecorderTest {
         recorder.start(1000L);
         recorder.addMarker(1010L, "SURVIVAL_MODE_WAKELOCK");
         recorder.addMarker(1020L, "WAKELOCK_ACQUIRED");
-        recorder.addHeartbeat(1100L, 100, false, true, false, false);
+        recorder.addHeartbeatMain(1100L, 10L, 100, false, true, false, false);
+        recorder.addHeartbeatBackground(1100L, 10L);
         recorder.addMarker(1200L, "WAKELOCK_NOT_HELD");
         recorder.stop(1300L);
 
