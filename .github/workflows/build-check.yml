@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - master
+      - feat/gogogo-lab-phase12
   # 仓库收到 pull_request 时触发
   pull_request:
     branches:
