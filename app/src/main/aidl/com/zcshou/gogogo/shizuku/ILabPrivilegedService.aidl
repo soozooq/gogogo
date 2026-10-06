@@ -6,4 +6,5 @@ interface ILabPrivilegedService {
     String getLocationReport() = 2;
     String getSystemReport() = 3;
     String getUserPolicyReport() = 4;
+    String getVirtualizationReport() = 5;
 }
