@@ -1628,6 +1628,95 @@ public class ServiceGo extends Service {
             return f == null ? "UNAVAILABLE" : f.summary();
         }
 
+        public float getAttitudeHeadingDegrees() {
+            LabAttitudeHeadingEngine.Frame f = mAttitudeHeadingFrame;
+            return f == null ? Float.NaN : f.headingDeg;
+        }
+        public String getHeadingPosture() {
+            LabAttitudeHeadingEngine.Frame f = mAttitudeHeadingFrame;
+            return f == null ? "UNKNOWN" : f.posture;
+        }
+        public String getHeadingAttitudeAxis() {
+            LabAttitudeHeadingEngine.Frame f = mAttitudeHeadingFrame;
+            return f == null ? "NONE" : f.axis;
+        }
+        public double getHeadingAttitudeConfidence() {
+            LabAttitudeHeadingEngine.Frame f = mAttitudeHeadingFrame;
+            return f == null ? 0.0 : f.confidence;
+        }
+        public float getDevicePitchDegrees() { return mDevicePitchDegrees; }
+        public float getDeviceRollDegrees() { return mDeviceRollDegrees; }
+        public String getAttitudeHeadingSummary() {
+            LabAttitudeHeadingEngine.Frame f = mAttitudeHeadingFrame;
+            return f == null ? "UNAVAILABLE" : f.summary();
+        }
+
+        public int getHeadingTraceCount() {
+            LabHeadingTraceRecorder recorder = mHeadingTraceRecorder;
+            return recorder == null ? 0 : recorder.size();
+        }
+        public String[] getHeadingTraceCsvRows() {
+            LabHeadingTraceRecorder recorder = mHeadingTraceRecorder;
+            return recorder == null ? new String[0] : recorder.toCsvRows();
+        }
+        public void clearHeadingTrace() {
+            LabHeadingTraceRecorder recorder = mHeadingTraceRecorder;
+            if (recorder != null) recorder.clear();
+        }
+
+        public long getGpsPublishCount() { return mGpsPublishCount; }
+        public long getNetworkPublishCount() { return mNetworkPublishCount; }
+        public long getFusedProviderPublishCount() { return mFusedProviderPublishCount; }
+        public long getGmsFusedDispatchCount() { return mGmsFusedDispatchCount; }
+        public long getGpsPublishFailureCount() { return mGpsPublishFailureCount; }
+        public long getNetworkPublishFailureCount() { return mNetworkPublishFailureCount; }
+        public long getFusedProviderPublishFailureCount() {
+            return mFusedProviderPublishFailureCount;
+        }
+        public long getGpsPublishAgeMs() {
+            return ageMs(mLastGpsPublishElapsed);
+        }
+        public long getNetworkPublishAgeMs() {
+            return ageMs(mLastNetworkPublishElapsed);
+        }
+        public long getFusedProviderPublishAgeMs() {
+            return ageMs(mLastFusedProviderPublishElapsed);
+        }
+        public long getGmsFusedDispatchAgeMs() {
+            return ageMs(mLastGmsFusedDispatchElapsed);
+        }
+        public boolean isGmsFusedMockEnabled() { return mFusedMockEnabled; }
+        public boolean isGpsProviderEnabled() {
+            try {
+                return mLocManager != null
+                        && mLocManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            } catch (Throwable t) {
+                return false;
+            }
+        }
+        public boolean isNetworkProviderEnabled() {
+            try {
+                return mLocManager != null
+                        && mLocManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+            } catch (Throwable t) {
+                return false;
+            }
+        }
+        public boolean isFusedProviderEnabled() {
+            try {
+                return Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                        && mLocManager != null
+                        && mLocManager.isProviderEnabled(LocationManager.FUSED_PROVIDER);
+            } catch (Throwable t) {
+                return false;
+            }
+        }
+
+        private long ageMs(long elapsed) {
+            if (elapsed < 0L) return -1L;
+            return Math.max(0L, SystemClock.elapsedRealtime() - elapsed);
+        }
+
         public String getKinematicState() {
             LabKinematicsEngine.Frame f = mKinematicFrame;
             return f == null ? "UNAVAILABLE" : f.state;
