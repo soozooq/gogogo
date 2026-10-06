@@ -27,6 +27,7 @@ public final class LabMotionQualityEngine {
             issues.add("样本不足：至少需要 2 个轨迹点");
             return new Result(
                     n, 0L, 0.0, 0.0, 0.0, 0L,
+                    0.0, 0.0, 0, 0,
                     0, 0, 0, 0, 0, 0.0,
                     0, "INSUFFICIENT", issues,
                     sha256("insufficient|" + n));
@@ -48,6 +49,7 @@ public final class LabMotionQualityEngine {
         long firstTime = times[0];
         long lastTime = times[0];
         List<Long> positiveIntervals = new ArrayList<>();
+        List<Double> segmentSpeeds = new ArrayList<>();
 
         for (int i = 1; i < n; i++) {
             long dtMs = times[i] - times[i - 1];
@@ -77,6 +79,7 @@ public final class LabMotionQualityEngine {
             maxSpeed = Math.max(maxSpeed, speed);
             speedSum += speed;
             speedSamples++;
+            segmentSpeeds.add(speed);
 
             if (speed > 80.0) {
                 teleportSegments++;
@@ -112,6 +115,7 @@ public final class LabMotionQualityEngine {
                 : (speedSamples == 0 ? 0.0 : speedSum / speedSamples);
 
         long medianIntervalMs = median(positiveIntervals);
+        LabRobustMotionStats.Result robust = LabRobustMotionStats.analyze(segmentSpeeds);
         double duplicateRatio = Math.max(0, n - 1) == 0
                 ? 0.0
                 : nearDuplicateSegments / (double) (n - 1);
@@ -122,6 +126,7 @@ public final class LabMotionQualityEngine {
         score -= Math.min(18, longGaps * 3);
         score -= Math.min(18, accelerationSpikes * 3);
         score -= Math.min(12, turnRateSpikes * 2);
+        score -= Math.min(10, robust.robustOutlierCount * 2);
 
         if (medianIntervalMs > 15000L) score -= 12;
         else if (medianIntervalMs > 5000L) score -= 6;
@@ -137,13 +142,22 @@ public final class LabMotionQualityEngine {
         if (teleportSegments > 0) issues.add("段速度 >80m/s ×" + teleportSegments);
         if (accelerationSpikes > 0) issues.add("加速度突变 >15m/s² ×" + accelerationSpikes);
         if (turnRateSpikes > 0) issues.add("转向变化 >180°/s ×" + turnRateSpikes);
+        if (robust.robustOutlierCount > 0) {
+            issues.add("MAD 鲁棒速度离群点 ×" + robust.robustOutlierCount);
+        }
+        if (robust.cusumChangePointCount > 0) {
+            issues.add("CUSUM 运动模式变化点 ×" + robust.cusumChangePointCount);
+        }
         if (medianIntervalMs > 5000L) issues.add("采样中位间隔偏大：" + medianIntervalMs + "ms");
         if (issues.isEmpty()) issues.add("未发现明显时间/运动连续性异常");
 
         String canonical = String.format(Locale.US,
-                "n=%d|dur=%d|dist=%.3f|avg=%.4f|max=%.4f|median=%d|nonmono=%d|gaps=%d|"
-                        + "teleport=%d|accel=%d|turn=%d|dup=%.6f|score=%d|grade=%s",
+                "n=%d|dur=%d|dist=%.3f|avg=%.4f|max=%.4f|median=%d|"
+                        + "speedMedian=%.4f|speedMad=%.4f|robustOutliers=%d|cusum=%d|"
+                        + "nonmono=%d|gaps=%d|teleport=%d|accel=%d|turn=%d|dup=%.6f|"
+                        + "score=%d|grade=%s",
                 n, durationMs, totalDistance, avgSpeed, maxSpeed, medianIntervalMs,
+                robust.median, robust.mad, robust.robustOutlierCount, robust.cusumChangePointCount,
                 nonMonotonic, longGaps, teleportSegments, accelerationSpikes,
                 turnRateSpikes, duplicateRatio, score, grade);
 
@@ -154,6 +168,10 @@ public final class LabMotionQualityEngine {
                 avgSpeed,
                 maxSpeed,
                 medianIntervalMs,
+                robust.median,
+                robust.mad,
+                robust.robustOutlierCount,
+                robust.cusumChangePointCount,
                 nonMonotonic,
                 longGaps,
                 teleportSegments,
@@ -234,6 +252,10 @@ public final class LabMotionQualityEngine {
         public final double averageSpeedMps;
         public final double maxSegmentSpeedMps;
         public final long medianIntervalMs;
+        public final double medianSegmentSpeedMps;
+        public final double speedMadMps;
+        public final int robustSpeedOutlierCount;
+        public final int cusumChangePointCount;
         public final int nonMonotonicTimestamps;
         public final int longGapCount;
         public final int teleportSegmentCount;
@@ -252,6 +274,10 @@ public final class LabMotionQualityEngine {
                 double averageSpeedMps,
                 double maxSegmentSpeedMps,
                 long medianIntervalMs,
+                double medianSegmentSpeedMps,
+                double speedMadMps,
+                int robustSpeedOutlierCount,
+                int cusumChangePointCount,
                 int nonMonotonicTimestamps,
                 int longGapCount,
                 int teleportSegmentCount,
@@ -268,6 +294,10 @@ public final class LabMotionQualityEngine {
             this.averageSpeedMps = averageSpeedMps;
             this.maxSegmentSpeedMps = maxSegmentSpeedMps;
             this.medianIntervalMs = medianIntervalMs;
+            this.medianSegmentSpeedMps = medianSegmentSpeedMps;
+            this.speedMadMps = speedMadMps;
+            this.robustSpeedOutlierCount = robustSpeedOutlierCount;
+            this.cusumChangePointCount = cusumChangePointCount;
             this.nonMonotonicTimestamps = nonMonotonicTimestamps;
             this.longGapCount = longGapCount;
             this.teleportSegmentCount = teleportSegmentCount;
