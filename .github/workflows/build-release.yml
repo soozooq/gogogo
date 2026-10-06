@@ -10,7 +10,11 @@ on:
       - feat/gogogo-lab-phase1
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: gogogo-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -50,15 +54,15 @@ jobs:
           echo "BUILD_EXIT_CODE=$code" >> "$GITHUB_ENV"
           exit 0
 
-      - name: Persist diagnostics
+      - name: Upload diagnostics
         if: always()
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f ci/diagnostic.txt ci/latest-build.txt 2>/dev/null || true
-          git commit -m "[skip ci] ci: persist build diagnostics" || true
-          git push || true
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-${{ github.run_number }}
+          path: |
+            ci/diagnostic.txt
+            ci/latest-build.txt
+          if-no-files-found: ignore
 
       - name: Upload APK
         if: env.BUILD_EXIT_CODE == '0'
