@@ -138,6 +138,11 @@
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
 
+        <activity
+            android:name=".HeadingLabActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
+
         <receiver
             android:name=".LabDeviceAdminReceiver"
             android:permission="android.permission.BIND_DEVICE_ADMIN"
