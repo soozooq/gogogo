@@ -115,6 +115,37 @@ public final class LabCompatibilitySessionRecorder {
                 false));
     }
 
+    public synchronized void addHeartbeat(
+            long elapsedMs,
+            int processImportance,
+            boolean powerSave,
+            boolean interactive,
+            boolean backgroundLocationGranted,
+            boolean ignoringBatteryOptimizations) {
+        if (!running) return;
+
+        String label = String.format(Locale.US,
+                "importance=%d|powerSave=%s|interactive=%s|bgLocation=%s|batteryOptExempt=%s",
+                processImportance,
+                powerSave,
+                interactive,
+                backgroundLocationGranted,
+                ignoringBatteryOptimizations);
+
+        addEventLocked(new Event(
+                relative(elapsedMs),
+                elapsedMs,
+                "HEARTBEAT",
+                label,
+                false,
+                0.0,
+                0.0,
+                0f,
+                0f,
+                0f,
+                false));
+    }
+
     private long relative(long elapsedMs) {
         if (sessionStartElapsedMs < 0L) return 0L;
         return Math.max(0L, elapsedMs - sessionStartElapsedMs);
@@ -135,6 +166,7 @@ public final class LabCompatibilitySessionRecorder {
         int foregroundMarkers = 0;
         int errorCount = 0;
         int mockMarkedLocations = 0;
+        HeartbeatStats heartbeat = new HeartbeatStats();
 
         for (Event event : events) {
             if ("MARKER".equals(event.kind)) {
@@ -144,6 +176,10 @@ public final class LabCompatibilitySessionRecorder {
             }
             if ("ERROR".equals(event.kind)) {
                 errorCount++;
+                continue;
+            }
+            if ("HEARTBEAT".equals(event.kind)) {
+                heartbeat.accept(event);
                 continue;
             }
             if (!"LOCATION".equals(event.kind)) continue;
@@ -170,6 +206,7 @@ public final class LabCompatibilitySessionRecorder {
                 errorCount,
                 mockMarkedLocations,
                 maxSeparation,
+                heartbeat.freeze(),
                 events.size());
     }
 
@@ -271,6 +308,48 @@ public final class LabCompatibilitySessionRecorder {
         }
     }
 
+    private static final class HeartbeatStats {
+        int count;
+        long lastRelativeMs = -1L;
+        long maxGapMs = 0L;
+        String lastSystemState = "N/A";
+
+        void accept(Event event) {
+            count++;
+            if (lastRelativeMs >= 0L) {
+                maxGapMs = Math.max(maxGapMs, event.relativeMs - lastRelativeMs);
+            }
+            lastRelativeMs = event.relativeMs;
+            lastSystemState = event.label;
+        }
+
+        HeartbeatSummary freeze() {
+            return new HeartbeatSummary(
+                    count,
+                    lastRelativeMs,
+                    maxGapMs,
+                    lastSystemState);
+        }
+    }
+
+    public static final class HeartbeatSummary {
+        public final int count;
+        public final long lastRelativeMs;
+        public final long maxGapMs;
+        public final String lastSystemState;
+
+        HeartbeatSummary(
+                int count,
+                long lastRelativeMs,
+                long maxGapMs,
+                String lastSystemState) {
+            this.count = count;
+            this.lastRelativeMs = lastRelativeMs;
+            this.maxGapMs = maxGapMs;
+            this.lastSystemState = lastSystemState;
+        }
+    }
+
     private static final class StreamStats {
         final String name;
         int count;
@@ -328,6 +407,7 @@ public final class LabCompatibilitySessionRecorder {
         public final int errorCount;
         public final int mockMarkedLocations;
         public final double maxLastSeparationMeters;
+        public final HeartbeatSummary heartbeat;
         public final int eventCount;
 
         Summary(
@@ -339,6 +419,7 @@ public final class LabCompatibilitySessionRecorder {
                 int errorCount,
                 int mockMarkedLocations,
                 double maxLastSeparationMeters,
+                HeartbeatSummary heartbeat,
                 int eventCount) {
             this.gps = gps;
             this.network = network;
@@ -348,7 +429,26 @@ public final class LabCompatibilitySessionRecorder {
             this.errorCount = errorCount;
             this.mockMarkedLocations = mockMarkedLocations;
             this.maxLastSeparationMeters = maxLastSeparationMeters;
+            this.heartbeat = heartbeat;
             this.eventCount = eventCount;
+        }
+
+        public String freezeDiagnosis() {
+            long locationGap = Math.max(
+                    gps.maxGapMs,
+                    Math.max(network.maxGapMs, gms.maxGapMs));
+            long heartbeatGap = heartbeat == null ? 0L : heartbeat.maxGapMs;
+
+            if (locationGap <= 1500L) {
+                return "NO_LONG_GAP";
+            }
+            if (heartbeatGap >= Math.max(2000L, locationGap - 2000L)) {
+                return "PROCESS_OR_SCHEDULER_FREEZE";
+            }
+            if (heartbeatGap <= 1500L) {
+                return "LOCATION_CALLBACK_THROTTLE";
+            }
+            return "MIXED_OR_UNKNOWN";
         }
 
         public String grade() {
@@ -356,6 +456,7 @@ public final class LabCompatibilitySessionRecorder {
                     && gps.maxGapMs <= 1500L
                     && network.maxGapMs <= 1500L
                     && gms.maxGapMs <= 1500L
+                    && (heartbeat == null || heartbeat.maxGapMs <= 1500L)
                     && maxLastSeparationMeters <= 10.0
                     && errorCount == 0) {
                 return "STABLE";
