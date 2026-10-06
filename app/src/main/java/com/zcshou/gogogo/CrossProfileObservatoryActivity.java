@@ -220,7 +220,9 @@ public class CrossProfileObservatoryActivity extends AppCompatActivity {
 
         try {
             if (um != null) {
-                managed = um.isManagedProfile();
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    managed = um.isManagedProfile();
+                }
                 serial = um.getSerialNumberForUser(Process.myUserHandle());
             }
         } catch (Throwable ignored) {
