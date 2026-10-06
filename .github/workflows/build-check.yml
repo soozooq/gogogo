@@ -16,6 +16,10 @@ on:
       - master
 
 # 一个 workflow 执行一个或多个 job，这些 job 被组织在 jobs 字段下
+concurrency:
+  group: gogogo-build-check-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # 一个名为 build 的 job。每一个Job都是并发执行的并不是按照申明的先后顺序执行的，
   # 如果多个job 之间存在依赖关系，需要使用 needs，例如
