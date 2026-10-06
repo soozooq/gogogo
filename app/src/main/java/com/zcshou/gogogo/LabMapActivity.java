@@ -144,7 +144,7 @@ public class LabMapActivity extends AppCompatActivity {
         root.setPadding(pad, pad, pad, pad);
 
         TextView title = new TextView(this);
-        title.setText("🧪 GoGoGo Lab 7 · Research Mode");
+        title.setText("🧪 GoGoGo Lab 8 · Resource Broker");
         title.setTextSize(21);
         title.setGravity(Gravity.CENTER);
         root.addView(title, matchWrap());
@@ -262,6 +262,8 @@ public class LabMapActivity extends AppCompatActivity {
         ));
 
         root.addView(buttonRow(
+                button("🧠 Resource Broker", v ->
+                        startActivity(new Intent(this, PolicyLabActivity.class))),
                 button("🧬 数据来源链", v -> showProvenanceTimeline()),
                 button("🧹 清来源链", v -> clearProvenanceTimeline()),
                 button("📦 Sandbox / AVF", v ->
@@ -412,9 +414,20 @@ public class LabMapActivity extends AppCompatActivity {
 
             StringBuilder sb = new StringBuilder();
             sb.append(String.format(Locale.US,
-                    "Mock %.6f, %.6f · %.2f m/s · %.1f° · 来源 %s",
+                    "Raw %.6f, %.6f · %.2f m/s · %.1f° · 来源 %s",
                     lng, lat, speed, binder.getBearingDegrees(),
                     binder.getProvenanceSource()));
+
+            if (binder.isPolicyPublishing()) {
+                sb.append(String.format(Locale.US,
+                        "\nPublished %.6f, %.6f · acc %.0f m · %s",
+                        binder.getPublishedLongitude(),
+                        binder.getPublishedLatitude(),
+                        binder.getPublishedAccuracyMeters(),
+                        binder.getPolicySummary()));
+            } else {
+                sb.append("\nPublished PAUSED · ").append(binder.getPolicySummary());
+            }
 
             if (route) {
                 double progress = binder.getRouteProgressFraction();
