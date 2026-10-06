@@ -258,7 +258,7 @@ public final class LabPolicyEngine implements SharedPreferences.OnSharedPreferen
         public final boolean includeMotion;
         public final String mode;
 
-        LocationDecision(
+        public LocationDecision(
                 boolean publish,
                 double latitude,
                 double longitude,
