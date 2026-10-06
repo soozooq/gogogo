@@ -206,7 +206,11 @@ public class ServiceGo extends Service {
         IntentFilter filter = new IntentFilter();
         filter.addAction(SERVICE_GO_NOTE_ACTION_JOYSTICK_SHOW);
         filter.addAction(SERVICE_GO_NOTE_ACTION_JOYSTICK_HIDE);
-        registerReceiver(mActReceiver, filter);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(mActReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(mActReceiver, filter);
+        }
 
         NotificationChannel mChannel = new NotificationChannel(SERVICE_GO_NOTE_CHANNEL_ID, SERVICE_GO_NOTE_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
