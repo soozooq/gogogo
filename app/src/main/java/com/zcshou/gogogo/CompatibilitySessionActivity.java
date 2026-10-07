@@ -101,7 +101,7 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
 
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
-        TextView title = GoGoUi.sectionTitle(this, "Compatibility Session Recorder");
+        TextView title = GoGoUi.sectionTitle(this, "Survival Guard");
         title.setTextSize(20);
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title, GoGoUi.matchWrap());
