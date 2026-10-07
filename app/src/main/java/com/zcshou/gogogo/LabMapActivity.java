@@ -499,7 +499,7 @@ public class LabMapActivity extends AppCompatActivity {
                 "Heading Intelligence",
                 "Location Compatibility",
                 "Consumer Matrix",
-                "Compatibility Session",
+                "Survival Guard",
                 "Scenario / Replay",
                 "Motion Audit",
                 "Resource Broker",
