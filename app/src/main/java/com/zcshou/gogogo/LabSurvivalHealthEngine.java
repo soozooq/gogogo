@@ -37,9 +37,39 @@ public final class LabSurvivalHealthEngine {
         }
 
         if (summary == null) {
-            score -= 12;
-            findings.add("暂无近期 Survival 会话");
-            actions.add("运行一次一键自动实验建立基线");
+            LabAutoExperimentStore.Result best = bestStoredResult(comparison);
+            if (best == null || !best.present) {
+                score -= 12;
+                findings.add("暂无近期 Survival 会话");
+                actions.add("运行一次一键自动实验建立基线");
+                return finish(score, findings, actions, comparison);
+            }
+
+            if (best.errors > 0) {
+                score -= 10;
+                findings.add("最近自动实验存在 API error");
+            }
+            if (best.worstGapMs > 10000L) {
+                score -= 35;
+                findings.add("最近自动实验出现 >10s 严重冻结");
+            } else if (best.worstGapMs > 3000L) {
+                score -= 16;
+                findings.add("最近自动实验出现 >3s 后台抖动");
+            } else if (best.worstGapMs > 1500L) {
+                score -= 5;
+                findings.add("最近自动实验存在轻微尾部抖动");
+            } else {
+                findings.add("最近自动实验未发现长 gap");
+            }
+
+            if (best.worstP99Ms > 1500L) {
+                score -= 8;
+                findings.add("最近实验 p99 偏高：" + best.worstP99Ms + " ms");
+            } else if (best.worstP99Ms > 900L) {
+                score -= 2;
+                findings.add("最近实验仅有轻微 p99 抖动：" + best.worstP99Ms + " ms");
+            }
+
             return finish(score, findings, actions, comparison);
         }
 
@@ -161,6 +191,20 @@ public final class LabSurvivalHealthEngine {
         }
 
         return finish(score, findings, actions, comparison);
+    }
+
+    private static LabAutoExperimentStore.Result bestStoredResult(
+            LabAutoExperimentStore.Comparison comparison) {
+        if (comparison == null) return null;
+        LabAutoExperimentStore.Result a = comparison.wechat;
+        LabAutoExperimentStore.Result b = comparison.control;
+
+        if (a != null && a.present && b != null && b.present) {
+            return a.worstGapMs >= b.worstGapMs ? a : b;
+        }
+        if (a != null && a.present) return a;
+        if (b != null && b.present) return b;
+        return null;
     }
 
     private static Report finish(
