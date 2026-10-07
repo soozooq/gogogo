@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.provider.Settings;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
@@ -36,6 +37,7 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     private TextView statusView;
+    private TextView survivalHealthView;
     private TextView autoResultView;
     private TextView streamsView;
     private TextView timelineView;
@@ -104,11 +106,41 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title, GoGoUi.matchWrap());
         titleBlock.addView(
-                GoGoUi.muted(this, "Lab 18 · Auto Experiment Runner"),
+                GoGoUi.muted(this, "Lab 19 · Survival Guard + Auto Experiment"),
                 GoGoUi.matchWrap());
         appBar.addView(titleBlock, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         root.addView(appBar, GoGoUi.matchWrap());
+
+        com.google.android.material.card.MaterialCardView survivalCard = GoGoUi.card(this);
+        LinearLayout survivalContent = GoGoUi.cardContent(this);
+        survivalCard.addView(survivalContent);
+        survivalContent.addView(
+                GoGoUi.sectionTitle(this, "Survival Guard"),
+                GoGoUi.matchWrap());
+        survivalHealthView = GoGoUi.status(this, "正在计算后台健康度…");
+        survivalHealthView.setTextSize(16);
+        survivalHealthView.setTextIsSelectable(true);
+        survivalContent.addView(survivalHealthView, GoGoUi.matchWrap());
+        survivalContent.addView(GoGoUi.gap(this, 10));
+
+        LinearLayout survivalActions = GoGoUi.row(this);
+        survivalActions.addView(
+                GoGoUi.primaryButton(
+                        this,
+                        "修复后台设置",
+                        v -> openBatteryOptimizationSettings()),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, survivalActions, 8);
+        survivalActions.addView(
+                GoGoUi.secondaryButton(
+                        this,
+                        "一键体检 60s",
+                        v -> startAutoExperiment(LabAutoExperimentStore.TYPE_CONTROL)),
+                GoGoUi.weighted());
+        survivalContent.addView(survivalActions, GoGoUi.matchWrap());
+
+        GoGoUi.addCard(root, survivalCard, 16);
 
         com.google.android.material.card.MaterialCardView statusCard = GoGoUi.card(this);
         LinearLayout statusContent = GoGoUi.cardContent(this);
@@ -438,11 +470,14 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
             statusView.setText("Recorder service 未连接");
             streamsView.setText("暂无会话数据");
             timelineView.setText("暂无事件");
+            renderSurvivalHealth(null);
+            renderAutoComparison();
             return;
         }
 
         LabCompatibilitySessionRecorder.Summary summary = b.getSummary();
 
+        renderSurvivalHealth(summary);
         renderAutoComparison();
 
         String displayedMode = b.isRunning()
@@ -547,6 +582,62 @@ public class CompatibilitySessionActivity extends AppCompatActivity {
                 diagnosis,
                 summary.heartbeat == null ? "N/A" : summary.heartbeat.lastSystemState,
                 freezeHint));
+    }
+
+    private void renderSurvivalHealth(
+            LabCompatibilitySessionRecorder.Summary summary) {
+        if (survivalHealthView == null) return;
+
+        LabAutoExperimentStore.Comparison comparison =
+                LabAutoExperimentStore.compare(this);
+        LabSurvivalHealthEngine.Report report =
+                LabSurvivalHealthEngine.evaluate(
+                        isBatteryOptimizationExempt(),
+                        hasBackgroundLocationPermission(),
+                        summary,
+                        comparison);
+
+        StringBuilder text = new StringBuilder();
+        text.append(report.headline())
+                .append(" · ")
+                .append(report.score)
+                .append("/100")
+                .append("\n");
+
+        int shown = 0;
+        for (String finding : report.findings) {
+            if (shown >= 3) break;
+            text.append("• ").append(finding).append("\n");
+            shown++;
+        }
+
+        if (!report.actions.isEmpty()
+                && !"无需额外处理".equals(report.actions.get(0))) {
+            text.append("建议：").append(report.actions.get(0));
+        } else {
+            text.append("状态：无需额外处理");
+        }
+
+        survivalHealthView.setText(text.toString().trim());
+    }
+
+    private boolean isBatteryOptimizationExempt() {
+        try {
+            PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+            return pm != null && pm.isIgnoringBatteryOptimizations(getPackageName());
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    private boolean hasBackgroundLocationPermission() {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) {
+            return true;
+        }
+        return ActivityCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
     }
 
     private void renderAutoComparison() {
