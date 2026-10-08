@@ -41,6 +41,8 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.zcshou.gogogo.MainActivity;
 import com.zcshou.gogogo.LabPolicyEngine;
+import com.zcshou.gogogo.LabProviderReliabilityController;
+import com.zcshou.gogogo.LabRouteCheckpointStore;
 import com.zcshou.gogogo.LabScenarioEngine;
 import com.zcshou.gogogo.LabKinematicsEngine;
 import com.zcshou.gogogo.LabHeadingIntelligenceEngine;
@@ -193,6 +195,13 @@ public class ServiceGo extends Service {
     private volatile long mLastFusedProviderPublishElapsed = -1L;
     private volatile long mLastGmsFusedDispatchElapsed = -1L;
 
+    // Lab 20 reliability core.
+    private LabProviderReliabilityController mProviderReliability;
+    private LabRouteCheckpointStore mRouteCheckpointStore;
+    private static final long ROUTE_CHECKPOINT_INTERVAL_MS = 5000L;
+    private long mLastRouteCheckpointElapsed = -1L;
+    private volatile String mRouteRecoverySummary = "NONE";
+
     private static final int HANDLER_MSG_ID = 0;
     // 33ms (~30Hz) tick: 缩短"mock 过期"窗口,避免某些应用在两次 push 之间读到真实位置后漂移
     private static final long TICK_INTERVAL_MS = 33;
@@ -254,6 +263,9 @@ public class ServiceGo extends Service {
         refreshPublishedPolicy();
 
         mLocManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        mProviderReliability = new LabProviderReliabilityController(this, mLocManager);
+        mProviderReliability.sweepBeforeRegistration();
+        mRouteCheckpointStore = new LabRouteCheckpointStore(this);
         initHeadingSensor();
 
         removeTestProviderNetwork();
@@ -599,6 +611,7 @@ public class ServiceGo extends Service {
                 mMotionPaused = true;
                 mSpeed = 0.0;
                 recordProvenance("MOTION", "paused");
+                checkpointRoute(true);
             }
             return START_STICKY;
         }
@@ -610,6 +623,7 @@ public class ServiceGo extends Service {
                 mSpeed = mRouteActive ? mRouteSpeedMps * mMotionMultiplier
                         : mRoamSpeedMps * mMotionMultiplier;
                 recordProvenance("MOTION", "resumed");
+                checkpointRoute(true);
             }
             return START_STICKY;
         }
@@ -621,11 +635,13 @@ public class ServiceGo extends Service {
                 mSpeed = (mRouteActive ? mRouteSpeedMps : mRoamSpeedMps) * mMotionMultiplier;
             }
             recordProvenance("MOTION", "multiplier=" + mMotionMultiplier + "x");
+            checkpointRoute(true);
             return START_STICKY;
         }
 
         if (intent != null && ACTION_ROUTE_STOP.equals(intent.getAction())) {
             recordProvenance("ROUTE", "route stopped");
+            clearRouteCheckpoint();
             stopLabMotion();
             mProvenanceSource = "IDLE";
             return START_STICKY;
@@ -667,6 +683,7 @@ public class ServiceGo extends Service {
                 recordProvenance("ROUTE", "started points=" + lats.length
                         + " speed=" + mRouteSpeedMps + "m/s mode=" + mRouteMode);
                 persistCurrentLocation(state);
+                replaceRouteCheckpoint();
                 XLog.i("SERVICEGO: Lab route started, points=" + lats.length
                         + " speed=" + mRouteSpeedMps + " mode=" + mRouteMode);
                 return START_STICKY;
@@ -674,6 +691,7 @@ public class ServiceGo extends Service {
         }
 
         if (intent != null && ACTION_ROAM_START.equals(intent.getAction())) {
+            clearRouteCheckpoint();
             mRoamCenterLat = intent.getDoubleExtra(EXTRA_ROAM_CENTER_LAT, mCurLat);
             mRoamCenterLng = intent.getDoubleExtra(EXTRA_ROAM_CENTER_LNG, mCurLng);
             mRoamRadiusM = clamp(intent.getDoubleExtra(EXTRA_ROAM_RADIUS_M, 100.0), 5.0, 5000.0);
@@ -699,6 +717,7 @@ public class ServiceGo extends Service {
 
         if (intent != null) {
             // Ordinary manual position commands cancel Lab motion.
+            clearRouteCheckpoint();
             stopLabMotion();
 
             mCurLng = intent.getDoubleExtra(MainActivity.LNG_MSG_ID, DEFAULT_LNG);
@@ -708,6 +727,13 @@ public class ServiceGo extends Service {
             recordProvenance("MANUAL", "position selected");
             persistCurrentLocation(state);
         } else {
+            if (restoreRouteCheckpoint()) {
+                if (mJoyStick != null) {
+                    mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+                }
+                return START_STICKY;
+            }
+
             mCurLng = Double.longBitsToDouble(
                     state.getLong("lng_bits", Double.doubleToRawLongBits(DEFAULT_LNG)));
             mCurLat = Double.longBitsToDouble(
@@ -732,6 +758,144 @@ public class ServiceGo extends Service {
                 .apply();
     }
 
+    private LabRouteCheckpointStore.Progress currentRouteProgress() {
+        return new LabRouteCheckpointStore.Progress(
+                mRouteIndex,
+                mRouteDirection,
+                mRouteMode,
+                mRouteSpeedMps,
+                mMotionPaused,
+                mMotionMultiplier,
+                mCurLat,
+                mCurLng,
+                mCurAlt,
+                mCurBea);
+    }
+
+    private void replaceRouteCheckpoint() {
+        LabRouteCheckpointStore store = mRouteCheckpointStore;
+        if (store == null || !mRouteActive || mRouteLats == null || mRouteLngs == null) {
+            return;
+        }
+
+        try {
+            store.replaceRoute(mRouteLats, mRouteLngs, currentRouteProgress());
+            mLastRouteCheckpointElapsed = SystemClock.elapsedRealtime();
+            mRouteRecoverySummary = "CHECKPOINTED";
+            recordProvenance("ROUTE_RECOVERY", "definition + progress checkpointed");
+        } catch (Throwable t) {
+            // Never allow a stale previous route to be restored after a failed replace.
+            try {
+                store.clear();
+            } catch (Throwable ignored) {
+            }
+            mRouteRecoverySummary = "WRITE_FAILED";
+            recordProvenance("ROUTE_RECOVERY",
+                    "checkpoint replace failed: " + t.getClass().getSimpleName());
+        }
+    }
+
+    private void checkpointRoute(boolean force) {
+        LabRouteCheckpointStore store = mRouteCheckpointStore;
+        if (store == null || !mRouteActive) return;
+
+        long now = SystemClock.elapsedRealtime();
+        if (!force
+                && mLastRouteCheckpointElapsed > 0L
+                && now - mLastRouteCheckpointElapsed < ROUTE_CHECKPOINT_INTERVAL_MS) {
+            return;
+        }
+
+        try {
+            store.saveProgress(currentRouteProgress());
+            mLastRouteCheckpointElapsed = now;
+            mRouteRecoverySummary = "CHECKPOINTED";
+        } catch (Throwable t) {
+            mRouteRecoverySummary = "WRITE_FAILED";
+        }
+    }
+
+    private boolean restoreRouteCheckpoint() {
+        LabRouteCheckpointStore store = mRouteCheckpointStore;
+        if (store == null || mRouteActive || mRoamActive) return false;
+
+        try {
+            LabRouteCheckpointStore.Checkpoint checkpoint = store.load();
+            if (checkpoint == null
+                    || checkpoint.routeLats == null
+                    || checkpoint.routeLngs == null
+                    || checkpoint.routeLats.length < 2
+                    || checkpoint.routeLats.length != checkpoint.routeLngs.length) {
+                return false;
+            }
+
+            LabRouteCheckpointStore.Progress p = checkpoint.progress;
+            mRouteLats = checkpoint.routeLats;
+            mRouteLngs = checkpoint.routeLngs;
+            buildRouteMetrics();
+
+            mRouteIndex = Math.max(0, Math.min(mRouteLats.length - 1, p.routeIndex));
+            mRouteDirection = p.routeDirection < 0 ? -1 : 1;
+            mRouteMode = Math.max(
+                    ROUTE_MODE_ONCE,
+                    Math.min(ROUTE_MODE_PINGPONG, p.routeMode));
+            mRouteSpeedMps = clamp(p.routeSpeedMps, 0.2, 60.0);
+            mMotionPaused = p.paused;
+            mMotionMultiplier = clamp(p.multiplier, 0.25, 4.0);
+
+            mCurLat = Double.isFinite(p.latitude)
+                    ? p.latitude
+                    : mRouteLats[mRouteIndex];
+            mCurLng = Double.isFinite(p.longitude)
+                    ? p.longitude
+                    : mRouteLngs[mRouteIndex];
+            mCurAlt = Double.isFinite(p.altitude) ? p.altitude : DEFAULT_ALT;
+            mCurBea = Float.isFinite(p.bearingDegrees) ? p.bearingDegrees : DEFAULT_BEA;
+
+            mRouteActive = true;
+            mRoamActive = false;
+            mSpeed = mMotionPaused ? 0.0 : mRouteSpeedMps * mMotionMultiplier;
+            mLastMotionElapsed = SystemClock.elapsedRealtime();
+            mLastRouteCheckpointElapsed = mLastMotionElapsed;
+            mProvenanceSource = "ROUTE";
+
+            long ageMs = checkpoint.savedAtWallMs <= 0L
+                    ? -1L
+                    : Math.max(0L, System.currentTimeMillis() - checkpoint.savedAtWallMs);
+            mRouteRecoverySummary = ageMs < 0L
+                    ? "RESTORED"
+                    : "RESTORED · age=" + (ageMs / 1000L) + "s";
+            recordProvenance("ROUTE_RECOVERY",
+                    "restored index=" + mRouteIndex
+                            + " direction=" + mRouteDirection
+                            + " mode=" + mRouteMode
+                            + " ageMs=" + ageMs);
+            return true;
+        } catch (Throwable t) {
+            try {
+                store.clear();
+            } catch (Throwable ignored) {
+            }
+            mRouteRecoverySummary = "CORRUPT_CLEARED";
+            recordProvenance("ROUTE_RECOVERY",
+                    "restore failed; checkpoint cleared: "
+                            + t.getClass().getSimpleName());
+            return false;
+        }
+    }
+
+    private void clearRouteCheckpoint() {
+        LabRouteCheckpointStore store = mRouteCheckpointStore;
+        if (store != null) {
+            try {
+                store.clear();
+            } catch (Throwable ignored) {
+            }
+        }
+        mLastRouteCheckpointElapsed = -1L;
+        mRouteRecoverySummary = "CLEARED";
+    }
+
     private void stopLabMotion() {
         mRouteActive = false;
         mRoamActive = false;
@@ -747,6 +911,9 @@ public class ServiceGo extends Service {
 
     @Override
     public void onDestroy() {
+        if (mRouteActive) {
+            checkpointRoute(true);
+        }
         isStop = true;
         sRunning = false;
         mLocHandler.removeMessages(HANDLER_MSG_ID);
@@ -1177,6 +1344,7 @@ public class ServiceGo extends Service {
 
         if (mRouteActive) {
             moveAlongRoute(mRouteSpeedMps * mMotionMultiplier * dt);
+            checkpointRoute(false);
         } else if (mRoamActive) {
             moveRandomRoam(mRoamSpeedMps * mMotionMultiplier * dt);
         }
@@ -1185,6 +1353,7 @@ public class ServiceGo extends Service {
     private void moveAlongRoute(double metersToMove) {
         if (mRouteLats == null || mRouteLngs == null
                 || mRouteLats.length < 2 || mRouteLats.length != mRouteLngs.length) {
+            clearRouteCheckpoint();
             stopLabMotion();
             return;
         }
@@ -1203,6 +1372,7 @@ public class ServiceGo extends Service {
                 } else {
                     mRouteActive = false;
                     mSpeed = 0.0;
+                    clearRouteCheckpoint();
                     XLog.i("SERVICEGO: Lab route finished");
                     return;
                 }
@@ -1334,11 +1504,21 @@ public class ServiceGo extends Service {
 
     private void removeTestProviderGPS() {
         try {
-            if (mLocManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            try {
                 mLocManager.setTestProviderEnabled(LocationManager.GPS_PROVIDER, false);
-                mLocManager.removeTestProvider(LocationManager.GPS_PROVIDER);
+            } catch (IllegalArgumentException ignored) {
             }
-        } catch (Exception e) {
+            try {
+                mLocManager.removeTestProvider(LocationManager.GPS_PROVIDER);
+            } catch (IllegalArgumentException ignored) {
+            }
+            if (mProviderReliability != null) {
+                mProviderReliability.markClean(LocationManager.GPS_PROVIDER);
+            }
+        } catch (Throwable e) {
+            if (mProviderReliability != null) {
+                mProviderReliability.markCleanupFailure(LocationManager.GPS_PROVIDER, e);
+            }
             XLog.e("SERVICEGO: ERROR - removeTestProviderGPS");
         }
     }
@@ -1358,7 +1538,13 @@ public class ServiceGo extends Service {
             if (!mLocManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 mLocManager.setTestProviderEnabled(LocationManager.GPS_PROVIDER, true);
             }
+            if (mProviderReliability != null) {
+                mProviderReliability.markActive(LocationManager.GPS_PROVIDER);
+            }
         } catch (Exception e) {
+            if (mProviderReliability != null) {
+                mProviderReliability.markRegistrationFailure(LocationManager.GPS_PROVIDER, e);
+            }
             XLog.e("SERVICEGO: ERROR - addTestProviderGPS");
         }
     }
@@ -1393,6 +1579,10 @@ public class ServiceGo extends Service {
             mLastGpsPublishElapsed = SystemClock.elapsedRealtime();
         } catch (Exception e) {
             mGpsPublishFailureCount++;
+            if (mProviderReliability != null) {
+                mProviderReliability.markPublishFailure(LocationManager.GPS_PROVIDER, e);
+                mProviderReliability.retryDeferredCleanup();
+            }
             XLog.e("SERVICEGO: ERROR - setLocationGPS, reinitializing provider");
             removeTestProviderGPS();
             addTestProviderGPS();
@@ -1401,11 +1591,21 @@ public class ServiceGo extends Service {
 
     private void removeTestProviderNetwork() {
         try {
-            if (mLocManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+            try {
                 mLocManager.setTestProviderEnabled(LocationManager.NETWORK_PROVIDER, false);
-                mLocManager.removeTestProvider(LocationManager.NETWORK_PROVIDER);
+            } catch (IllegalArgumentException ignored) {
             }
-        } catch (Exception e) {
+            try {
+                mLocManager.removeTestProvider(LocationManager.NETWORK_PROVIDER);
+            } catch (IllegalArgumentException ignored) {
+            }
+            if (mProviderReliability != null) {
+                mProviderReliability.markClean(LocationManager.NETWORK_PROVIDER);
+            }
+        } catch (Throwable e) {
+            if (mProviderReliability != null) {
+                mProviderReliability.markCleanupFailure(LocationManager.NETWORK_PROVIDER, e);
+            }
             XLog.e("SERVICEGO: ERROR - removeTestProviderNetwork");
         }
     }
@@ -1427,7 +1627,13 @@ public class ServiceGo extends Service {
             if (!mLocManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
                 mLocManager.setTestProviderEnabled(LocationManager.NETWORK_PROVIDER, true);
             }
-        } catch (SecurityException e) {
+            if (mProviderReliability != null) {
+                mProviderReliability.markActive(LocationManager.NETWORK_PROVIDER);
+            }
+        } catch (Exception e) {
+            if (mProviderReliability != null) {
+                mProviderReliability.markRegistrationFailure(LocationManager.NETWORK_PROVIDER, e);
+            }
             XLog.e("SERVICEGO: ERROR - addTestProviderNetwork");
         }
     }
@@ -1459,6 +1665,10 @@ public class ServiceGo extends Service {
             mLastNetworkPublishElapsed = SystemClock.elapsedRealtime();
         } catch (Exception e) {
             mNetworkPublishFailureCount++;
+            if (mProviderReliability != null) {
+                mProviderReliability.markPublishFailure(LocationManager.NETWORK_PROVIDER, e);
+                mProviderReliability.retryDeferredCleanup();
+            }
             XLog.e("SERVICEGO: ERROR - setLocationNetwork, reinitializing provider");
             removeTestProviderNetwork();
             addTestProviderNetwork();
@@ -1467,12 +1677,21 @@ public class ServiceGo extends Service {
 
     private void removeTestProviderFused() {
         try {
-            if (mLocManager.isProviderEnabled(LocationManager.FUSED_PROVIDER)) {
+            try {
                 mLocManager.setTestProviderEnabled(LocationManager.FUSED_PROVIDER, false);
-                mLocManager.removeTestProvider(LocationManager.FUSED_PROVIDER);
+            } catch (IllegalArgumentException ignored) {
             }
-        } catch (Exception e) {
-            // 系统 fused 通常不让 addTestProvider,失败正常 — 不写日志免刷屏
+            try {
+                mLocManager.removeTestProvider(LocationManager.FUSED_PROVIDER);
+            } catch (IllegalArgumentException ignored) {
+            }
+            if (mProviderReliability != null) {
+                mProviderReliability.markClean(LocationManager.FUSED_PROVIDER);
+            }
+        } catch (Throwable e) {
+            if (mProviderReliability != null) {
+                mProviderReliability.markCleanupFailure(LocationManager.FUSED_PROVIDER, e);
+            }
         }
     }
 
@@ -1484,8 +1703,14 @@ public class ServiceGo extends Service {
             if (!mLocManager.isProviderEnabled(LocationManager.FUSED_PROVIDER)) {
                 mLocManager.setTestProviderEnabled(LocationManager.FUSED_PROVIDER, true);
             }
+            if (mProviderReliability != null) {
+                mProviderReliability.markActive(LocationManager.FUSED_PROVIDER);
+            }
             XLog.i("SERVICEGO: FUSED_PROVIDER test provider added");
         } catch (Exception e) {
+            if (mProviderReliability != null) {
+                mProviderReliability.markRegistrationFailure(LocationManager.FUSED_PROVIDER, e);
+            }
             // 系统 fused 通常不让 addTestProvider,失败正常 — GMS 路径仍可覆盖
         }
     }
@@ -1510,6 +1735,9 @@ public class ServiceGo extends Service {
             mLastFusedProviderPublishElapsed = SystemClock.elapsedRealtime();
         } catch (Exception e) {
             mFusedProviderPublishFailureCount++;
+            if (mProviderReliability != null) {
+                mProviderReliability.markPublishFailure(LocationManager.FUSED_PROVIDER, e);
+            }
             // fused test provider 没注上时这里会 fail,正常
         }
     }
@@ -1577,6 +1805,20 @@ public class ServiceGo extends Service {
         public float getPublishedBearingDegrees() { return mPublishedBearing; }
         public float getPublishedAccuracyMeters() { return mPublishedAccuracy; }
         public String getPolicySummary() { return mPolicySummary; }
+
+        public String getProviderReliabilitySummary() {
+            LabProviderReliabilityController controller = mProviderReliability;
+            return controller == null ? "UNAVAILABLE" : controller.summary();
+        }
+
+        public int getProviderOrphanedCount() {
+            LabProviderReliabilityController controller = mProviderReliability;
+            return controller == null ? 0 : controller.orphanedCount();
+        }
+
+        public String getRouteRecoverySummary() {
+            return mRouteRecoverySummary;
+        }
 
         public boolean isDeviceHeadingAvailable() { return mHeadingAvailable; }
         public float getDeviceHeadingDegrees() { return mDeviceHeadingDegrees; }
