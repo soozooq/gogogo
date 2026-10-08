@@ -1485,12 +1485,24 @@ public class ServiceGo extends Service {
             return 0.0;
         }
 
+        int count = mRouteLats.length;
         int previous = vertex - direction;
         int following = vertex + direction;
 
-        if (previous < 0 || previous >= mRouteLats.length) return 0.0;
-        if (following < 0 || following >= mRouteLats.length) {
-            return mRouteMode == ROUTE_MODE_PINGPONG ? 180.0 : 0.0;
+        if (mRouteMode == ROUTE_MODE_LOOP) {
+            if (previous < 0) previous = count - 1;
+            if (previous >= count) previous = 0;
+            if (following < 0) following = count - 1;
+            if (following >= count) following = 0;
+        } else {
+            if (previous < 0 || previous >= count) return 0.0;
+            if (following < 0 || following >= count) {
+                return mRouteMode == ROUTE_MODE_PINGPONG ? 180.0 : 0.0;
+            }
+        }
+
+        if (previous == vertex || following == vertex || previous == following) {
+            return 0.0;
         }
 
         float incoming = bearingDegrees(
