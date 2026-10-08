@@ -1981,6 +1981,10 @@ public class ServiceGo extends Service {
     }
 
     private void removeTestProviderGPS() {
+        if (mProviderReliability != null) {
+            mProviderReliability.cleanupDuringService(LocationManager.GPS_PROVIDER);
+            return;
+        }
         try {
             try {
                 mLocManager.setTestProviderEnabled(LocationManager.GPS_PROVIDER, false);
@@ -2068,6 +2072,10 @@ public class ServiceGo extends Service {
     }
 
     private void removeTestProviderNetwork() {
+        if (mProviderReliability != null) {
+            mProviderReliability.cleanupDuringService(LocationManager.NETWORK_PROVIDER);
+            return;
+        }
         try {
             try {
                 mLocManager.setTestProviderEnabled(LocationManager.NETWORK_PROVIDER, false);
@@ -2154,6 +2162,10 @@ public class ServiceGo extends Service {
     }
 
     private void removeTestProviderFused() {
+        if (mProviderReliability != null) {
+            mProviderReliability.cleanupDuringService(LocationManager.FUSED_PROVIDER);
+            return;
+        }
         try {
             try {
                 mLocManager.setTestProviderEnabled(LocationManager.FUSED_PROVIDER, false);
