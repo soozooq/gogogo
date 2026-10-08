@@ -71,6 +71,16 @@ public final class LabProviderReliabilityController {
         state.lastError = "";
     }
 
+    public synchronized void markRegistrationFailure(String provider, Throwable error) {
+        ProviderState state = stateFor(provider);
+        if (error instanceof SecurityException || !isMockOpAllowed()) {
+            state.state = State.ORPHANED;
+        } else {
+            state.state = State.DEGRADED;
+        }
+        state.lastError = shortError(error);
+    }
+
     public synchronized void markPublishFailure(String provider, Throwable error) {
         ProviderState state = stateFor(provider);
         state.publishFailures++;
