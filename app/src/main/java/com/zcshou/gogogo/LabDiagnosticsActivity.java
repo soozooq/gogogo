@@ -69,6 +69,7 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
     private TextView systemView;
     private TextView shizukuView;
     private TextView serviceLifecycleView;
+    private TextView providerEvidenceView;
     private TextView privilegedView;
     private TextView brokerView;
     private LabPolicyEngine policyEngine;
@@ -186,6 +187,11 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         serviceLifecycleView.setTextIsSelectable(true);
         root.addView(serviceLifecycleView, matchWrap());
         root.addView(button("↻ 刷新服务取证", v -> refreshViews()), matchWrap());
+
+        root.addView(sectionTitle("Test Provider 清理取证（Lab 25）"));
+        providerEvidenceView = body();
+        providerEvidenceView.setTextIsSelectable(true);
+        root.addView(providerEvidenceView, matchWrap());
 
         root.addView(sectionTitle("Shizuku 高级模式"));
         shizukuView = body();
@@ -387,6 +393,7 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         systemView.setText(buildSystemSnapshot());
         shizukuView.setText(buildShizukuSnapshot());
         serviceLifecycleView.setText(LabServiceLifecycleJournal.report(this, ServiceGo.sRunning));
+        providerEvidenceView.setText(LabProviderReliabilityController.savedAuditSummary(this));
 
         if (policyEngine != null) {
             StringBuilder broker = new StringBuilder();
@@ -707,6 +714,9 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         sb.append("[Shizuku]\n").append(buildShizukuSnapshot()).append("\n\n");
         sb.append("[模拟服务生命周期]\n")
                 .append(LabServiceLifecycleJournal.report(this, ServiceGo.sRunning))
+                .append("\n\n");
+        sb.append("[Test Provider 清理取证]\n")
+                .append(LabProviderReliabilityController.savedAuditSummary(this))
                 .append("\n\n");
         if (policyEngine != null) {
             sb.append("[Resource Broker]\n")

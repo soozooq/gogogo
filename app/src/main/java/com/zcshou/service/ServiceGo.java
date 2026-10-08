@@ -241,7 +241,8 @@ public class ServiceGo extends Service {
     private Handler mLocHandler;
     private LocationListener mPersistentListener;     // 保持 Provider 活跃订阅,见 onCreate 注释
     private FusedLocationProviderClient mFusedClient; // Google Play Services fused mock, null = GMS 不可用
-    private boolean mFusedMockEnabled = false;
+    private volatile boolean mFusedMockEnabled = false;
+    private volatile boolean mFusedShutdownRequested = false;
     // Read by the location HandlerThread and written during main-thread teardown.
     private volatile boolean isStop = false;
     private PowerManager.WakeLock mWakeLock;
@@ -342,6 +343,11 @@ public class ServiceGo extends Service {
         // 覆盖走 Google Play Services 路径的应用(部分 WeChat/腾讯小程序场景)。
         // 设备没装 GMS 就 try/catch 静默跳过。
         initFusedMock();
+        // Observe permission changes without changing any AppOps value.
+        // The observer lives only as long as this ServiceGo instance.
+        if (mProviderReliability != null) {
+            mProviderReliability.startMonitoring();
+        }
     }
 
     private void initHeadingSensor() {
@@ -571,18 +577,69 @@ public class ServiceGo extends Service {
 
     @SuppressLint("MissingPermission")
     private void initFusedMock() {
+        mFusedShutdownRequested = false;
         try {
             mFusedClient = LocationServices.getFusedLocationProviderClient(this);
+            LabProviderReliabilityController.recordGmsEvent(this, "ENABLE_REQUESTED");
             mFusedClient.setMockMode(true)
                     .addOnSuccessListener(unused -> {
+                        if (mFusedShutdownRequested || isStop) {
+                            // The async enable completed after the Service was stopped.
+                            // Request disable again to avoid leaving GMS mock mode enabled.
+                            LabProviderReliabilityController.recordGmsEvent(this,
+                                    "LATE_ENABLE_AFTER_STOP");
+                            requestGmsMockDisable("LATE_ENABLE");
+                            return;
+                        }
                         mFusedMockEnabled = true;
+                        LabProviderReliabilityController.recordGmsEvent(this, "ENABLE_SUCCEEDED");
                         XLog.i("SERVICEGO: FusedLocation setMockMode(true) OK");
                     })
-                    .addOnFailureListener(e -> XLog.e("SERVICEGO: FusedLocation setMockMode failed: " + e.getMessage()));
+                    .addOnFailureListener(e -> {
+                        LabProviderReliabilityController.recordGmsEvent(this,
+                                "ENABLE_FAILED_" + e.getClass().getSimpleName());
+                        XLog.e("SERVICEGO: FusedLocation setMockMode failed: " + e.getMessage());
+                    });
         } catch (Throwable t) {
-            // 设备没 GMS / play-services-location 不可用 → 退化到仅 LocationManager 注入
+            LabProviderReliabilityController.recordGmsEvent(this,
+                    "ENABLE_EXCEPTION_" + t.getClass().getSimpleName());
+            // GMS may be unavailable; framework providers still work.
             XLog.e("SERVICEGO: FusedLocation init failed (GMS not available?): " + t.getMessage());
             mFusedClient = null;
+        }
+    }
+
+    private void requestGmsMockDisable(String reason) {
+        if (mFusedClient == null) return;
+        LabProviderReliabilityController.recordGmsEvent(this,
+                "DISABLE_REQUESTED_" + reason);
+        // Lint can verify this local permission check. Permission may have
+        // been revoked between this check and the asynchronous GMS request.
+        boolean fine = checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        boolean coarse = checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        if (!fine && !coarse) {
+            LabProviderReliabilityController.recordGmsEvent(this,
+                    "DISABLE_BLOCKED_NO_LOCATION_PERMISSION_" + reason);
+            return;
+        }
+        try {
+            mFusedClient.setMockMode(false)
+                    .addOnSuccessListener(unused -> {
+                        mFusedMockEnabled = false;
+                        LabProviderReliabilityController.recordGmsEvent(
+                                ServiceGo.this, "DISABLE_SUCCEEDED_" + reason);
+                    })
+                    .addOnFailureListener(e ->
+                            LabProviderReliabilityController.recordGmsEvent(
+                                    ServiceGo.this, "DISABLE_FAILED_" + e.getClass().getSimpleName()));
+        } catch (SecurityException e) {
+            LabProviderReliabilityController.recordGmsEvent(this,
+                    "DISABLE_DENIED_" + reason);
+        } catch (RuntimeException e) {
+            LabProviderReliabilityController.recordGmsEvent(this,
+                    "DISABLE_EXCEPTION_" + e.getClass().getSimpleName());
         }
     }
 
@@ -1059,17 +1116,42 @@ public class ServiceGo extends Service {
 
     @Override
     public void onDestroy() {
-        if (mRouteActive) {
-            checkpointRoute(true);
-        }
+        mFusedShutdownRequested = true;
         isStop = true;
         sRunning = false;
-        // onCreate can fail before the HandlerThread is fully initialized.
+        // A failed route checkpoint must never skip provider/GMS teardown.
+        if (mRouteActive) {
+            try {
+                checkpointRoute(true);
+            } catch (RuntimeException e) {
+                XLog.e("SERVICEGO: route checkpoint on exit failed: "
+                        + e.getClass().getSimpleName());
+            }
+        }
+        // Stop and briefly join the publisher before removing providers to
+        // reduce a publish-vs-remove race. Avoid an unbounded main-thread wait.
         if (mLocHandler != null) {
-            mLocHandler.removeMessages(HANDLER_MSG_ID);
+            try {
+                mLocHandler.removeMessages(HANDLER_MSG_ID);
+            } catch (RuntimeException ignored) {
+            }
         }
         if (mLocHandlerThread != null) {
-            mLocHandlerThread.quit();
+            try {
+                mLocHandlerThread.quit();
+                if (Thread.currentThread() != mLocHandlerThread) {
+                    mLocHandlerThread.join(350L);
+                }
+                if (mLocHandlerThread.isAlive()) {
+                    XLog.e("SERVICEGO: publisher thread still alive after teardown wait");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                XLog.e("SERVICEGO: publisher thread join interrupted");
+            } catch (RuntimeException e) {
+                XLog.e("SERVICEGO: publisher thread shutdown failed: "
+                        + e.getClass().getSimpleName());
+            }
         }
 
         if (mJoyStick != null) {
@@ -1102,18 +1184,9 @@ public class ServiceGo extends Service {
             }
         }
 
-        if (mFusedClient != null && mFusedMockEnabled) {
-            try {
-                boolean fine = checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
-                        == android.content.pm.PackageManager.PERMISSION_GRANTED;
-                boolean coarse = checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
-                        == android.content.pm.PackageManager.PERMISSION_GRANTED;
-                if (fine || coarse) {
-                    mFusedClient.setMockMode(false);
-                }
-            } catch (Exception ignored) {
-            }
-        }
+        // Always request the GMS mock reset, even if enable is still pending.
+        // Neither a returned Task nor onDestroy() itself proves reset success.
+        requestGmsMockDisable("SERVICE_STOP");
 
         // A partially initialized service may never have registered the receiver.
         if (mActReceiverRegistered && mActReceiver != null) {
@@ -1175,6 +1248,9 @@ public class ServiceGo extends Service {
         }
 
         try {
+            if (mProviderReliability != null) {
+                mProviderReliability.stopMonitoring();
+            }
             LabServiceLifecycleJournal.onServiceDestroyed(this);
         } finally {
             super.onDestroy();
@@ -1973,6 +2049,10 @@ public class ServiceGo extends Service {
     }
 
     private void removeTestProviderGPS() {
+        if (mProviderReliability != null) {
+            mProviderReliability.cleanupDuringService(LocationManager.GPS_PROVIDER);
+            return;
+        }
         try {
             try {
                 mLocManager.setTestProviderEnabled(LocationManager.GPS_PROVIDER, false);
@@ -2060,6 +2140,10 @@ public class ServiceGo extends Service {
     }
 
     private void removeTestProviderNetwork() {
+        if (mProviderReliability != null) {
+            mProviderReliability.cleanupDuringService(LocationManager.NETWORK_PROVIDER);
+            return;
+        }
         try {
             try {
                 mLocManager.setTestProviderEnabled(LocationManager.NETWORK_PROVIDER, false);
@@ -2146,6 +2230,10 @@ public class ServiceGo extends Service {
     }
 
     private void removeTestProviderFused() {
+        if (mProviderReliability != null) {
+            mProviderReliability.cleanupDuringService(LocationManager.FUSED_PROVIDER);
+            return;
+        }
         try {
             try {
                 mLocManager.setTestProviderEnabled(LocationManager.FUSED_PROVIDER, false);

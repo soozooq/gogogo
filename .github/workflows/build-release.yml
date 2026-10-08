@@ -35,6 +35,7 @@ on:
       - feat/gogogo-replay-lab22
       - feat/gogogo-lifecycle-lab23
       - feat/gogogo-tencent-probe-lab24
+      - feat/gogogo-provider-evidence-lab25
 
 permissions:
   contents: read
@@ -95,7 +96,7 @@ jobs:
         if: env.BUILD_EXIT_CODE == '0'
         uses: actions/upload-artifact@v4
         with:
-          name: gogogo-tencent-lab24
+          name: gogogo-provider-evidence-lab25
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
