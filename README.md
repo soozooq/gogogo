@@ -1,3 +1,15 @@
+> **soozooq / GoGoGo 集成测试版说明（2026-10-09）**：本 Fork 已整合历史 Lab 1–25 的实验开发成果，开发代码已通过 GitHub Actions 自动构建，但**尚未完成所有目标手机、腾讯真实密钥与第三方定位消费者的实机验收**。此仓库当前 APK 属于 **Preview / 测试版**，并非官方上游稳定发行版。
+>
+> - 本 Fork 源码： https://github.com/soozooq/gogogo
+> - 自动构建： https://github.com/soozooq/gogogo/actions
+> - Lab 25 验收清单： [docs/lab25-release-readiness.md](docs/lab25-release-readiness.md)
+> - 备份旧 main： [backup/main-before-labs-20261009](https://github.com/soozooq/gogogo/tree/backup/main-before-labs-20261009)
+> - **重要**：仓库中已有公开的测试签名密钥和密码，不能把它当作私密的正式发行签名；更换签名可能需要重新安装，务必先保留应用数据。
+>
+> 以下为上游项目说明，版权和 GPL 协议要求继续适用。
+
+---
+
 <p align="center">
 <img src="./docs/images/LOGO.png" height="80"/>
 </p>
