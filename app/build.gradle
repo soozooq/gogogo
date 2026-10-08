@@ -28,9 +28,9 @@ android {
         applicationId "com.soozooq.gogogo.test"
         minSdkVersion 27
         //noinspection ExpiredTargetSdkVersion
-        targetSdkVersion 32
-        versionCode 2103003
-        versionName '2.1.3-test3' // https://semver.org/lang/zh-CN/
+        targetSdkVersion 35
+        versionCode 2400030
+        versionName '2.4.0-lab25' // https://semver.org/lang/zh-CN/
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += ['zh', 'zh-rCN', 'en', 'en-rUS']
         ndk {
@@ -66,6 +66,13 @@ android {
     // 要存取 secret value 必須要使用到一個 BuildScript 的類別，默认会从 local.properties 中获取
     buildFeatures {
         buildConfig = true
+        aidl = true
+    }
+
+    sourceSets {
+        main {
+            aidl.srcDirs = ['src/main/aidl']
+        }
     }
 
     compileOptions {
@@ -109,11 +116,17 @@ android {
 }
 
 dependencies {
+    // GoGoGo Lab: active open-source GPU map renderer.
+    implementation 'org.maplibre.gl:android-sdk-opengl:13.5.2'
+    implementation 'dev.rikka.shizuku:api:13.1.5'
+    implementation 'dev.rikka.shizuku:provider:13.1.5'
     // 腾讯地图 SDK (GCJ02 坐标系，与微信小程序一致)
     // 官方分包: vector-sdk (核心绘制) + openmap:foundation (LatLng/MapPoi 等基础类型)
     implementation 'com.tencent.map:tencent-map-vector-sdk:6.11.0.260507.ab2310c2.209828299'
     implementation 'com.tencent.openmap:foundation:0.9.0.e5ea763-pro'
     implementation 'com.tencent.map:sdk-utilities:1.0.10'
+    // Tencent LBS location consumer SDK; read-only diagnostic, no provider injection.
+    implementation 'com.tencent.map.geolocation:TencentLocationSdk-openplatform:7.6.1.12'
     // Google Play Services Location: 用于 FusedLocationProviderClient.setMockLocation
     // (WeChat 等部分应用在 Android 12+ 走 fused 路径,绕过 LocationManager test provider)
     implementation 'com.google.android.gms:play-services-location:21.3.0'

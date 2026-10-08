@@ -5,9 +5,45 @@ on:
   push:
     branches:
       - main
+      - integration/gogogo-labs-main-20261009
+      - x8-compat
+      - fix/x8-modern-amap
+      - feat/gogogo-lab-phase1
+      - feat/gogogo-lab-phase2
+      - feat/gogogo-lab-phase3
+      - feat/gogogo-lab-phase4
+      - feat/gogogo-lab-phase5
+      - feat/gogogo-lab-phase6
+      - feat/gogogo-lab-phase7
+      - feat/gogogo-lab-phase8
+      - feat/gogogo-lab-phase9
+      - feat/gogogo-lab-phase10
+      - feat/gogogo-lab-phase12
+      - feat/gogogo-lab-phase13
+      - feat/gogogo-ui-refresh
+      - feat/gogogo-heading-lab14
+      - feat/gogogo-heading-lab15
+      - feat/gogogo-consumer-lab16
+      - feat/gogogo-session-lab17
+      - feat/gogogo-session-lab17-1
+      - feat/gogogo-session-lab17-2
+      - feat/gogogo-session-lab17-2-1
+      - feat/gogogo-session-lab17-3
+      - feat/gogogo-auto-lab18
+      - feat/gogogo-survival-lab19
+      - feat/gogogo-reliability-lab20
+      - feat/gogogo-simulation-lab21
+      - feat/gogogo-replay-lab22
+      - feat/gogogo-lifecycle-lab23
+      - feat/gogogo-tencent-probe-lab24
+      - feat/gogogo-provider-evidence-lab25
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: gogogo-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -47,21 +83,21 @@ jobs:
           echo "BUILD_EXIT_CODE=$code" >> "$GITHUB_ENV"
           exit 0
 
-      - name: Persist diagnostics
+      - name: Upload diagnostics
         if: always()
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f ci/diagnostic.txt ci/latest-build.txt 2>/dev/null || true
-          git commit -m "[skip ci] ci: persist build diagnostics" || true
-          git push || true
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-${{ github.run_number }}
+          path: |
+            ci/diagnostic.txt
+            ci/latest-build.txt
+          if-no-files-found: ignore
 
       - name: Upload APK
         if: env.BUILD_EXIT_CODE == '0'
         uses: actions/upload-artifact@v4
         with:
-          name: gogogo-no-map-wechat-test
+          name: gogogo-unified-labs-preview
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 

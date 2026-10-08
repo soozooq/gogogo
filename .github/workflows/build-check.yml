@@ -8,13 +8,39 @@ on:
   # 仓库收到 Push 时触发
   push:
     branches:
+      - main
       - master
+      - integration/gogogo-labs-main-20261009
+      - feat/gogogo-lab-phase12
+      - feat/gogogo-lab-phase13
+      - feat/gogogo-ui-refresh
+      - feat/gogogo-heading-lab14
+      - feat/gogogo-heading-lab15
+      - feat/gogogo-consumer-lab16
+      - feat/gogogo-session-lab17
+      - feat/gogogo-session-lab17-1
+      - feat/gogogo-session-lab17-2
+      - feat/gogogo-session-lab17-2-1
+      - feat/gogogo-session-lab17-3
+      - feat/gogogo-auto-lab18
+      - feat/gogogo-survival-lab19
+      - feat/gogogo-reliability-lab20
+      - feat/gogogo-simulation-lab21
+      - feat/gogogo-replay-lab22
+      - feat/gogogo-lifecycle-lab23
+      - feat/gogogo-tencent-probe-lab24
+      - feat/gogogo-provider-evidence-lab25
   # 仓库收到 pull_request 时触发
   pull_request:
     branches:
+      - main
       - master
 
 # 一个 workflow 执行一个或多个 job，这些 job 被组织在 jobs 字段下
+concurrency:
+  group: gogogo-build-check-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # 一个名为 build 的 job。每一个Job都是并发执行的并不是按照申明的先后顺序执行的，
   # 如果多个job 之间存在依赖关系，需要使用 needs，例如
@@ -43,8 +69,9 @@ jobs:
       - name: Create local.properties
         run: |
           cat << EOF > local.properties
-          MAPS_API_KEY=${{ secrets.MAPS_API_KEY }}
-          MAPS_SAFE_CODE=${{ secrets.MAPS_SAFE_CODE }}
+          MAPS_API_KEY=DUMMY
+          MAPS_SAFE_CODE=DUMMY
+          TENCENT_MAP_KEY=DUMMY
           EOF
       # 给 gradlew 增加执行权限
       - name: Grant execute permission for gradlew
@@ -52,4 +79,15 @@ jobs:
       
       # 启动构建
       - name: Build with Gradle
-        run: ./gradlew build
+        shell: bash
+        run: |
+          set +e
+          ./gradlew build
+          code=$?
+          lint_report="app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt"
+          if [ -f "$lint_report" ]; then
+            echo ""
+            echo "===== FULL ANDROID LINT REPORT ====="
+            cat "$lint_report"
+          fi
+          exit "$code"

@@ -1,0 +1,240 @@
+package com.zcshou.gogogo;
+
+import android.content.Context;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.Space;
+import android.widget.TextView;
+
+import androidx.annotation.ColorInt;
+import androidx.core.content.ContextCompat;
+
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
+
+/**
+ * Small UI kit for GoGoGo's programmatic screens.
+ *
+ * Keeps spacing, typography, cards and actions consistent without forcing a large
+ * XML migration. It is deliberately presentation-only.
+ */
+public final class GoGoUi {
+    private GoGoUi() {}
+
+    public static int dp(Context context, int value) {
+        return Math.round(value * context.getResources().getDisplayMetrics().density);
+    }
+
+    @ColorInt
+    public static int color(Context context, int resId) {
+        return ContextCompat.getColor(context, resId);
+    }
+
+    public static void applyScreenBackground(View view) {
+        view.setBackgroundColor(color(view.getContext(), R.color.gogogo_bg));
+    }
+
+    public static TextView heroTitle(Context context, String text) {
+        TextView view = new TextView(context);
+        view.setText(text);
+        view.setTextSize(28);
+        view.setTextColor(color(context, R.color.gogogo_text));
+        view.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        view.setGravity(Gravity.START);
+        view.setPadding(0, dp(context, 4), 0, 0);
+        return view;
+    }
+
+    public static TextView subtitle(Context context, String text) {
+        TextView view = new TextView(context);
+        view.setText(text);
+        view.setTextSize(14);
+        view.setTextColor(color(context, R.color.gogogo_text_muted));
+        view.setLineSpacing(0f, 1.12f);
+        return view;
+    }
+
+    public static TextView sectionTitle(Context context, String text) {
+        TextView view = new TextView(context);
+        view.setText(text);
+        view.setTextSize(16);
+        view.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        view.setTextColor(color(context, R.color.gogogo_text));
+        view.setPadding(0, 0, 0, dp(context, 10));
+        return view;
+    }
+
+    public static TextView muted(Context context, String text) {
+        TextView view = new TextView(context);
+        view.setText(text);
+        view.setTextSize(13);
+        view.setTextColor(color(context, R.color.gogogo_text_muted));
+        view.setLineSpacing(0f, 1.10f);
+        return view;
+    }
+
+    public static TextView status(Context context, String text) {
+        TextView view = new TextView(context);
+        view.setText(text);
+        view.setTextSize(14);
+        view.setTextColor(color(context, R.color.gogogo_text));
+        view.setTextIsSelectable(true);
+        view.setLineSpacing(0f, 1.08f);
+        return view;
+    }
+
+    public static MaterialCardView card(Context context) {
+        MaterialCardView card = new MaterialCardView(context);
+        card.setCardBackgroundColor(color(context, R.color.gogogo_surface));
+        card.setRadius(dp(context, 18));
+        card.setCardElevation(dp(context, 1));
+        card.setStrokeColor(color(context, R.color.gogogo_border));
+        card.setStrokeWidth(dp(context, 1));
+        card.setUseCompatPadding(false);
+        return card;
+    }
+
+    public static LinearLayout cardContent(Context context) {
+        LinearLayout content = new LinearLayout(context);
+        content.setOrientation(LinearLayout.VERTICAL);
+        int p = dp(context, 16);
+        content.setPadding(p, p, p, p);
+        return content;
+    }
+
+    public static MaterialButton primaryButton(
+            Context context,
+            String text,
+            View.OnClickListener listener) {
+        MaterialButton button = baseButton(context, text, listener);
+        button.setBackgroundTintList(ColorStateList.valueOf(
+                color(context, R.color.gogogo_primary)));
+        button.setTextColor(Color.WHITE);
+        button.setStrokeWidth(0);
+        return button;
+    }
+
+    public static MaterialButton secondaryButton(
+            Context context,
+            String text,
+            View.OnClickListener listener) {
+        MaterialButton button = baseButton(context, text, listener);
+        button.setBackgroundTintList(ColorStateList.valueOf(
+                color(context, R.color.gogogo_surface)));
+        button.setTextColor(color(context, R.color.gogogo_primary));
+        button.setStrokeWidth(dp(context, 1));
+        button.setStrokeColor(ColorStateList.valueOf(
+                color(context, R.color.gogogo_border)));
+        return button;
+    }
+
+    public static MaterialButton dangerButton(
+            Context context,
+            String text,
+            View.OnClickListener listener) {
+        MaterialButton button = baseButton(context, text, listener);
+        button.setBackgroundTintList(ColorStateList.valueOf(
+                color(context, R.color.gogogo_surface)));
+        button.setTextColor(color(context, R.color.gogogo_danger));
+        button.setStrokeWidth(dp(context, 1));
+        button.setStrokeColor(ColorStateList.valueOf(
+                color(context, R.color.gogogo_border)));
+        return button;
+    }
+
+    public static MaterialButton textButton(
+            Context context,
+            String text,
+            View.OnClickListener listener) {
+        MaterialButton button = baseButton(context, text, listener);
+        button.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
+        button.setTextColor(color(context, R.color.gogogo_primary));
+        button.setStrokeWidth(0);
+        button.setInsetTop(0);
+        button.setInsetBottom(0);
+        return button;
+    }
+
+    private static MaterialButton baseButton(
+            Context context,
+            String text,
+            View.OnClickListener listener) {
+        MaterialButton button = new MaterialButton(
+                context,
+                null,
+                com.google.android.material.R.attr.materialButtonOutlinedStyle);
+        button.setText(text);
+        button.setAllCaps(false);
+        button.setTextSize(14);
+        button.setCornerRadius(dp(context, 14));
+        button.setMinHeight(dp(context, 48));
+        button.setInsetTop(dp(context, 2));
+        button.setInsetBottom(dp(context, 2));
+        button.setOnClickListener(listener);
+        return button;
+    }
+
+    public static void styleInput(EditText input) {
+        Context context = input.getContext();
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(color(context, R.color.gogogo_surface));
+        bg.setCornerRadius(dp(context, 14));
+        bg.setStroke(dp(context, 1), color(context, R.color.gogogo_border));
+        input.setBackground(bg);
+        input.setTextColor(color(context, R.color.gogogo_text));
+        input.setHintTextColor(color(context, R.color.gogogo_text_muted));
+        input.setTextSize(15);
+        input.setSingleLine(true);
+        int h = dp(context, 14);
+        int v = dp(context, 12);
+        input.setPadding(h, v, h, v);
+    }
+
+    public static LinearLayout row(Context context) {
+        LinearLayout row = new LinearLayout(context);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        return row;
+    }
+
+    public static LinearLayout.LayoutParams weighted() {
+        return new LinearLayout.LayoutParams(
+                0,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                1f);
+    }
+
+    public static LinearLayout.LayoutParams matchWrap() {
+        return new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+    }
+
+    public static Space gap(Context context, int dp) {
+        Space space = new Space(context);
+        space.setLayoutParams(new LinearLayout.LayoutParams(1, GoGoUi.dp(context, dp)));
+        return space;
+    }
+
+    public static void addHorizontalGap(Context context, LinearLayout row, int dp) {
+        Space space = new Space(context);
+        space.setLayoutParams(new LinearLayout.LayoutParams(GoGoUi.dp(context, dp), 1));
+        row.addView(space);
+    }
+
+    public static void addCard(
+            LinearLayout parent,
+            MaterialCardView card,
+            int topMarginDp) {
+        LinearLayout.LayoutParams lp = matchWrap();
+        lp.setMargins(0, dp(parent.getContext(), topMarginDp), 0, 0);
+        parent.addView(card, lp);
+    }
+}

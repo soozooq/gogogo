@@ -11,6 +11,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ServiceInfo;
+import android.view.WindowManager;
+import android.view.Surface;
+import android.hardware.SensorManager;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorEvent;
+import android.hardware.Sensor;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -24,6 +30,7 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Process;
+import android.os.PowerManager;
 import android.os.SystemClock;
 
 import androidx.annotation.NonNull;
@@ -33,6 +40,20 @@ import com.elvishew.xlog.XLog;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.zcshou.gogogo.MainActivity;
+import com.zcshou.gogogo.LabPolicyEngine;
+import com.zcshou.gogogo.LabProviderReliabilityController;
+import com.zcshou.gogogo.LabServiceLifecycleJournal;
+import com.zcshou.gogogo.LabRouteCheckpointStore;
+import com.zcshou.gogogo.LabRoutePhysicsEngine;
+import com.zcshou.gogogo.LabScenarioEngine;
+import com.zcshou.gogogo.LabSimulationBackend;
+import com.zcshou.gogogo.LabSimulationSample;
+import com.zcshou.gogogo.LabMutableSimulationBackend;
+import com.zcshou.gogogo.LabTimedReplayEngine;
+import com.zcshou.gogogo.LabKinematicsEngine;
+import com.zcshou.gogogo.LabHeadingIntelligenceEngine;
+import com.zcshou.gogogo.LabAttitudeHeadingEngine;
+import com.zcshou.gogogo.LabHeadingTraceRecorder;
 import com.zcshou.gogogo.R;
 import com.zcshou.gogogo.SimpleMockActivity;
 import com.zcshou.joystick.JoyStick;
@@ -47,7 +68,170 @@ public class ServiceGo extends Service {
     private double mCurLng = DEFAULT_LNG;
     private double mCurAlt = DEFAULT_ALT;
     private float mCurBea = DEFAULT_BEA;
-    private double mSpeed = 1.2;        /* 默认的速度，单位 m/s */
+    private double mSpeed = 0.0;        /* 默认的速度，单位 m/s */
+
+    // GoGoGo Lab motion engine. Imported routes are capped at 5000 points to stay Binder-safe.
+    public static final String ACTION_ROUTE_START = "com.soozooq.gogogo.action.ROUTE_START";
+    public static final String ACTION_ROUTE_STOP = "com.soozooq.gogogo.action.ROUTE_STOP";
+    public static final String ACTION_REPLAY_START = "com.soozooq.gogogo.action.REPLAY_START";
+    public static final String ACTION_REPLAY_STOP = "com.soozooq.gogogo.action.REPLAY_STOP";
+    public static final String ACTION_ROAM_START = "com.soozooq.gogogo.action.ROAM_START";
+    public static final String ACTION_ROAM_STOP = "com.soozooq.gogogo.action.ROAM_STOP";
+    public static final String ACTION_MOTION_PAUSE = "com.soozooq.gogogo.action.MOTION_PAUSE";
+    public static final String ACTION_MOTION_RESUME = "com.soozooq.gogogo.action.MOTION_RESUME";
+    public static final String ACTION_MOTION_SPEED = "com.soozooq.gogogo.action.MOTION_SPEED";
+    public static final String ACTION_RECORD_START = "com.soozooq.gogogo.action.RECORD_START";
+    public static final String ACTION_RECORD_STOP = "com.soozooq.gogogo.action.RECORD_STOP";
+    public static final String ACTION_RECORD_CLEAR = "com.soozooq.gogogo.action.RECORD_CLEAR";
+    public static final String ACTION_SCENARIO_RESET = "com.soozooq.gogogo.action.SCENARIO_RESET";
+
+    public static final String EXTRA_ROUTE_LATS = "ROUTE_LATS";
+    public static final String EXTRA_ROUTE_LNGS = "ROUTE_LNGS";
+    public static final String EXTRA_ROUTE_SPEED_MPS = "ROUTE_SPEED_MPS";
+    public static final String EXTRA_ROUTE_MODE = "ROUTE_MODE";
+    public static final String EXTRA_ROUTE_MOTION_PROFILE = "ROUTE_MOTION_PROFILE";
+    public static final String EXTRA_REPLAY_ALTS = "REPLAY_ALTS";
+    public static final String EXTRA_REPLAY_TIMES_MS = "REPLAY_TIMES_MS";
+    public static final int MOTION_PROFILE_WALK = 0;
+    public static final int MOTION_PROFILE_BIKE = 1;
+    public static final int MOTION_PROFILE_CAR = 2;
+    public static final int ROUTE_MODE_ONCE = 0;
+    public static final int ROUTE_MODE_LOOP = 1;
+    public static final int ROUTE_MODE_PINGPONG = 2;
+
+    public static final String EXTRA_ROAM_CENTER_LAT = "ROAM_CENTER_LAT";
+    public static final String EXTRA_ROAM_CENTER_LNG = "ROAM_CENTER_LNG";
+    public static final String EXTRA_ROAM_RADIUS_M = "ROAM_RADIUS_M";
+    public static final String EXTRA_ROAM_SPEED_MPS = "ROAM_SPEED_MPS";
+    public static final String EXTRA_MOTION_MULTIPLIER = "MOTION_MULTIPLIER";
+
+    private double[] mRouteLats;
+    private double[] mRouteLngs;
+    private int mRouteIndex = 0;
+    private int mRouteDirection = 1;
+    private int mRouteMode = ROUTE_MODE_ONCE;
+    private double mRouteSpeedMps = 1.4;
+    private int mRouteMotionProfile = MOTION_PROFILE_WALK;
+    private boolean mRouteActive = false;
+    private double[] mRouteCumulative;
+    private double mRouteTotalDistance = 0.0;
+
+    private boolean mRoamActive = false;
+    private double mRoamCenterLat;
+    private double mRoamCenterLng;
+    private double mRoamRadiusM = 100.0;
+    private double mRoamSpeedMps = 1.4;
+    private double mRoamTargetLat;
+    private double mRoamTargetLng;
+    private final java.util.Random mRandom = new java.util.Random();
+
+    private long mLastMotionElapsed = 0L;
+    private boolean mMotionPaused = false;
+    private double mMotionMultiplier = 1.0;
+
+    // Lab 21: unified simulation backends + route physics.
+    private LabMutableSimulationBackend mFixedBackend;
+    private LabMutableSimulationBackend mRouteBackend;
+    private LabMutableSimulationBackend mRoamBackend;
+    private LabMutableSimulationBackend mReplayBackend;
+    private LabTimedReplayEngine mReplayEngine;
+    private volatile LabTimedReplayEngine.Frame mReplayFrame;
+    private boolean mReplayActive = false;
+    private volatile String mReplaySummary = "IDLE";
+    private volatile LabSimulationBackend mActiveSimulationBackend;
+    private LabRoutePhysicsEngine mRoutePhysicsEngine;
+    private volatile LabRoutePhysicsEngine.Frame mRoutePhysicsFrame;
+    private volatile String mSimulationBackendSummary = "FIXED";
+    private volatile String mRoutePhysicsSummary = "IDLE";
+
+    public static volatile boolean sRunning = false;
+
+    private final Object mTrackLock = new Object();
+    private final java.util.ArrayList<Double> mTrackLats = new java.util.ArrayList<>();
+    private final java.util.ArrayList<Double> mTrackLngs = new java.util.ArrayList<>();
+    private final java.util.ArrayList<Long> mTrackTimes = new java.util.ArrayList<>();
+    private boolean mTrackRecording = false;
+    private long mLastTrackSampleElapsed = 0L;
+    private double mLastTrackLat = Double.NaN;
+    private double mLastTrackLng = Double.NaN;
+    private static final int MAX_TRACK_POINTS = 20000;
+
+    // TaintDroid-inspired lightweight provenance for GoGoGo's own synthetic data pipeline.
+    // This is NOT OS-wide taint tracking; it records where our emitted mock samples came from.
+    private final Object mProvenanceLock = new Object();
+    private final java.util.ArrayDeque<String> mProvenanceEvents = new java.util.ArrayDeque<>();
+    private static final int MAX_PROVENANCE_EVENTS = 300;
+    private String mProvenanceSource = "RESTORED";
+    private long mLastProvenanceSampleElapsed = 0L;
+
+    // MockDroid/MOSES-inspired Resource Broker: raw state stays internal,
+    // providers only see the policy-filtered published state.
+    private LabPolicyEngine mPolicyEngine;
+    private volatile boolean mPolicyPublish = true;
+    private volatile double mPublishedLat = DEFAULT_LAT;
+    private volatile double mPublishedLng = DEFAULT_LNG;
+    private volatile double mPublishedAlt = DEFAULT_ALT;
+    private volatile double mPublishedSpeed = 0.0;
+    private volatile float mPublishedBearing = DEFAULT_BEA;
+    private volatile float mPublishedAccuracy = 0.8f;
+    private volatile boolean mPublishedIncludeMotion = true;
+    private volatile String mPolicySummary = "PERSONAL · location=EXACT";
+    private String mLastPolicySignature = "";
+
+    private LabScenarioEngine mScenarioEngine;
+    private volatile long mScenarioStep = 0L;
+    private volatile long mScenarioVirtualTimeMillis = LabScenarioEngine.DEFAULT_BASE_EPOCH_MS;
+    private volatile int mScenarioBatteryPercent = 37;
+    private volatile float mScenarioHeadingDegrees = 90.0f;
+    private volatile String mScenarioSummary = "OFF";
+    private volatile double mScenarioNoiseNorthMeters = 0.0;
+    private volatile double mScenarioNoiseEastMeters = 0.0;
+    private String mLastScenarioSignature = "";
+
+    // Lab 12: keep movement course and handset orientation separate, then arbitrate
+    // a published bearing and derive kinematic telemetry without spoofing sensors.
+    private LabKinematicsEngine mKinematicsEngine;
+    private volatile LabKinematicsEngine.Frame mKinematicFrame;
+    private volatile float mDeviceHeadingDegrees = 0.0f;
+    private volatile int mDeviceHeadingAccuracy = SensorManager.SENSOR_STATUS_UNRELIABLE;
+    private volatile int mMagneticAccuracy = SensorManager.SENSOR_STATUS_UNRELIABLE;
+    private volatile String mHeadingSensorSource = "NONE";
+    private String mLastKinematicSignature = "";
+
+    // Lab 14: magnetic-aware heading intelligence.
+    // Absolute rotation vector gives north reference; game rotation vector gives
+    // magnetically-independent relative rotation. We fuse them only inside GoGoGo.
+    private LabHeadingIntelligenceEngine mHeadingFusionEngine;
+    private volatile LabHeadingIntelligenceEngine.Frame mHeadingFrame;
+    private LabAttitudeHeadingEngine mAttitudeHeadingEngine;
+    private volatile LabAttitudeHeadingEngine.Frame mAttitudeHeadingFrame;
+    private LabHeadingTraceRecorder mHeadingTraceRecorder;
+    private volatile float mDevicePitchDegrees = 0.0f;
+    private volatile float mDeviceRollDegrees = 0.0f;
+    private Sensor mGameHeadingSensor;
+    private Sensor mMagneticSensor;
+
+    // Standard location publication observatory. These counters only describe
+    // GoGoGo's own provider/GMS publishing attempts for compatibility diagnostics.
+    private volatile long mGpsPublishCount = 0L;
+    private volatile long mNetworkPublishCount = 0L;
+    private volatile long mFusedProviderPublishCount = 0L;
+    private volatile long mGmsFusedDispatchCount = 0L;
+    private volatile long mGpsPublishFailureCount = 0L;
+    private volatile long mNetworkPublishFailureCount = 0L;
+    private volatile long mFusedProviderPublishFailureCount = 0L;
+    private volatile long mLastGpsPublishElapsed = -1L;
+    private volatile long mLastNetworkPublishElapsed = -1L;
+    private volatile long mLastFusedProviderPublishElapsed = -1L;
+    private volatile long mLastGmsFusedDispatchElapsed = -1L;
+
+    // Lab 20 reliability core.
+    private LabProviderReliabilityController mProviderReliability;
+    private LabRouteCheckpointStore mRouteCheckpointStore;
+    private static final long ROUTE_CHECKPOINT_INTERVAL_MS = 5000L;
+    private long mLastRouteCheckpointElapsed = -1L;
+    private volatile String mRouteRecoverySummary = "NONE";
+
     private static final int HANDLER_MSG_ID = 0;
     // 33ms (~30Hz) tick: 缩短"mock 过期"窗口,避免某些应用在两次 push 之间读到真实位置后漂移
     private static final long TICK_INTERVAL_MS = 33;
@@ -57,8 +241,17 @@ public class ServiceGo extends Service {
     private Handler mLocHandler;
     private LocationListener mPersistentListener;     // 保持 Provider 活跃订阅,见 onCreate 注释
     private FusedLocationProviderClient mFusedClient; // Google Play Services fused mock, null = GMS 不可用
-    private boolean mFusedMockEnabled = false;
-    private boolean isStop = false;
+    private volatile boolean mFusedMockEnabled = false;
+    private volatile boolean mFusedShutdownRequested = false;
+    // Read by the location HandlerThread and written during main-thread teardown.
+    private volatile boolean isStop = false;
+    private PowerManager.WakeLock mWakeLock;
+
+    // 手机朝向：直接从系统方向传感器读取，避免高德在 Mock 模式下不再更新自身罗盘。
+    private SensorManager mSensorManager;
+    private Sensor mHeadingSensor;
+    private SensorEventListener mHeadingListener;
+    private volatile boolean mHeadingAvailable = false;
     // 通知栏消息
     private static final int SERVICE_GO_NOTE_ID = 1;
     private static final String SERVICE_GO_NOTE_ACTION_JOYSTICK_SHOW = "ShowJoyStick";
@@ -66,6 +259,7 @@ public class ServiceGo extends Service {
     private static final String SERVICE_GO_NOTE_CHANNEL_ID = "SERVICE_GO_NOTE";
     private static final String SERVICE_GO_NOTE_CHANNEL_NAME = "SERVICE_GO_NOTE";
     private NoteActionReceiver mActReceiver;
+    private boolean mActReceiverRegistered = false;
     // 摇杆相关。测试版默认禁用 overlay，避免遮挡其它应用。
     private static final boolean ENABLE_JOYSTICK_OVERLAY = false;
     private JoyStick mJoyStick;
@@ -80,8 +274,43 @@ public class ServiceGo extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        sRunning = true;
+        LabServiceLifecycleJournal.onServiceCreated(this);
+        recordProvenance("SERVICE", "ServiceGo created");
+
+        PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        if (powerManager != null) {
+            mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "GoGoGo:MockLocation");
+            mWakeLock.setReferenceCounted(false);
+            try {
+                mWakeLock.acquire();
+            } catch (Throwable ignored) {
+            }
+        }
+
+        mPolicyEngine = new LabPolicyEngine(this);
+        mScenarioEngine = new LabScenarioEngine(this);
+        mKinematicsEngine = new LabKinematicsEngine();
+        mFixedBackend = new LabMutableSimulationBackend("FIXED");
+        mRouteBackend = new LabMutableSimulationBackend("ROUTE");
+        mRoamBackend = new LabMutableSimulationBackend("ROAM");
+        mReplayBackend = new LabMutableSimulationBackend("REPLAY");
+        mReplayEngine = new LabTimedReplayEngine();
+        mRoutePhysicsEngine = new LabRoutePhysicsEngine();
+        mRoutePhysicsEngine.setProfile(LabRoutePhysicsEngine.Profile.WALK);
+        mFixedBackend.activate(
+                mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+        mActiveSimulationBackend = mFixedBackend;
+        mHeadingFusionEngine = new LabHeadingIntelligenceEngine();
+        mAttitudeHeadingEngine = new LabAttitudeHeadingEngine();
+        mHeadingTraceRecorder = new LabHeadingTraceRecorder();
+        refreshPublishedPolicy();
 
         mLocManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        mProviderReliability = new LabProviderReliabilityController(this, mLocManager);
+        mProviderReliability.sweepBeforeRegistration();
+        mRouteCheckpointStore = new LabRouteCheckpointStore(this);
+        initHeadingSensor();
 
         removeTestProviderNetwork();
         addTestProviderNetwork();
@@ -114,22 +343,303 @@ public class ServiceGo extends Service {
         // 覆盖走 Google Play Services 路径的应用(部分 WeChat/腾讯小程序场景)。
         // 设备没装 GMS 就 try/catch 静默跳过。
         initFusedMock();
+        // Observe permission changes without changing any AppOps value.
+        // The observer lives only as long as this ServiceGo instance.
+        if (mProviderReliability != null) {
+            mProviderReliability.startMonitoring();
+        }
+    }
+
+    private void initHeadingSensor() {
+        try {
+            mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+            if (mSensorManager == null) {
+                XLog.e("SERVICEGO: SensorManager unavailable");
+                return;
+            }
+
+            // North-referenced absolute orientation.
+            mHeadingSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+            if (mHeadingSensor != null) {
+                mHeadingSensorSource = "ROTATION_VECTOR";
+            }
+            if (mHeadingSensor == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                mHeadingSensor = mSensorManager.getDefaultSensor(
+                        Sensor.TYPE_GEOMAGNETIC_ROTATION_VECTOR);
+                if (mHeadingSensor != null) {
+                    mHeadingSensorSource = "GEOMAGNETIC_ROTATION_VECTOR";
+                }
+            }
+
+            // Relative orientation that deliberately ignores geomagnetism.
+            mGameHeadingSensor = mSensorManager.getDefaultSensor(
+                    Sensor.TYPE_GAME_ROTATION_VECTOR);
+            mMagneticSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+
+            if (mHeadingSensor == null && mGameHeadingSensor == null) {
+                XLog.e("SERVICEGO: no usable rotation-vector sensor");
+                return;
+            }
+
+            if (mGameHeadingSensor != null && mMagneticSensor != null) {
+                mHeadingSensorSource = "LAB14_ABS+GAME+MAG";
+            } else if (mGameHeadingSensor != null) {
+                mHeadingSensorSource = "LAB14_ABS+GAME";
+            } else {
+                mHeadingSensorSource = "LAB14_ABSOLUTE";
+            }
+
+            mHeadingListener = new SensorEventListener() {
+                private final float[] rotation = new float[9];
+                private final float[] adjusted = new float[9];
+                private final float[] orientation = new float[3];
+
+                @Override
+                public void onSensorChanged(SensorEvent event) {
+                    if (event == null || event.sensor == null || event.values == null) return;
+                    LabHeadingIntelligenceEngine engine = mHeadingFusionEngine;
+                    if (engine == null) return;
+
+                    try {
+                        LabHeadingIntelligenceEngine.Frame frame = null;
+
+                        if (event.sensor == mHeadingSensor) {
+                            float heading = headingFromRotationVector(
+                                    event.values, rotation, adjusted, orientation);
+                            frame = engine.onAbsoluteHeading(
+                                    heading,
+                                    mDeviceHeadingAccuracy,
+                                    event.timestamp);
+                            updateAttitudeHeading(
+                                    adjusted,
+                                    orientation,
+                                    heading);
+                        } else if (event.sensor == mGameHeadingSensor) {
+                            float heading = headingFromRotationVector(
+                                    event.values, rotation, adjusted, orientation);
+                            frame = engine.onGameHeading(heading, event.timestamp);
+                            if (mHeadingSensor == null) {
+                                updateAttitudeHeading(
+                                        adjusted,
+                                        orientation,
+                                        frame == null ? heading : frame.fusedHeadingDeg);
+                            }
+                        } else if (event.sensor == mMagneticSensor
+                                && event.values.length >= 3) {
+                            frame = engine.onMagneticField(
+                                    event.values[0],
+                                    event.values[1],
+                                    event.values[2],
+                                    mMagneticAccuracy,
+                                    event.timestamp);
+                        }
+
+                        if (frame != null) {
+                            applyHeadingFrame(frame);
+                            recordHeadingTrace();
+                        }
+                    } catch (Throwable ignored) {
+                    }
+                }
+
+                @Override
+                public void onAccuracyChanged(Sensor sensor, int accuracy) {
+                    if (sensor == null) return;
+
+                    if (sensor == mHeadingSensor) {
+                        mDeviceHeadingAccuracy = accuracy;
+                    } else if (sensor == mMagneticSensor) {
+                        mMagneticAccuracy = accuracy;
+                    }
+
+                    LabHeadingIntelligenceEngine engine = mHeadingFusionEngine;
+                    if (engine != null) {
+                        LabHeadingIntelligenceEngine.Frame frame = engine.updateAccuracy(
+                                sensor.getType(),
+                                accuracy,
+                                SystemClock.elapsedRealtimeNanos());
+                        applyHeadingFrame(frame);
+                    }
+                }
+
+                private float headingFromRotationVector(
+                        float[] values,
+                        float[] rotation,
+                        float[] adjusted,
+                        float[] orientation) {
+                    SensorManager.getRotationMatrixFromVector(rotation, values);
+
+                    int displayRotation = Surface.ROTATION_0;
+                    WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+                    if (wm != null) {
+                        displayRotation = wm.getDefaultDisplay().getRotation();
+                    }
+
+                    int axisX = SensorManager.AXIS_X;
+                    int axisY = SensorManager.AXIS_Y;
+                    if (displayRotation == Surface.ROTATION_90) {
+                        axisX = SensorManager.AXIS_Y;
+                        axisY = SensorManager.AXIS_MINUS_X;
+                    } else if (displayRotation == Surface.ROTATION_180) {
+                        axisX = SensorManager.AXIS_MINUS_X;
+                        axisY = SensorManager.AXIS_MINUS_Y;
+                    } else if (displayRotation == Surface.ROTATION_270) {
+                        axisX = SensorManager.AXIS_MINUS_Y;
+                        axisY = SensorManager.AXIS_X;
+                    }
+
+                    SensorManager.remapCoordinateSystem(rotation, axisX, axisY, adjusted);
+                    SensorManager.getOrientation(adjusted, orientation);
+
+                    float heading = (float) Math.toDegrees(orientation[0]);
+                    if (heading < 0f) heading += 360f;
+                    return heading;
+                }
+            };
+
+            boolean absRegistered = mHeadingSensor != null && mSensorManager.registerListener(
+                    mHeadingListener,
+                    mHeadingSensor,
+                    SensorManager.SENSOR_DELAY_GAME);
+
+            boolean gameRegistered = mGameHeadingSensor != null && mSensorManager.registerListener(
+                    mHeadingListener,
+                    mGameHeadingSensor,
+                    SensorManager.SENSOR_DELAY_GAME);
+
+            boolean magRegistered = mMagneticSensor != null && mSensorManager.registerListener(
+                    mHeadingListener,
+                    mMagneticSensor,
+                    SensorManager.SENSOR_DELAY_GAME);
+
+            XLog.i("SERVICEGO: Lab14 heading registered abs=" + absRegistered
+                    + " game=" + gameRegistered
+                    + " mag=" + magRegistered);
+        } catch (Throwable t) {
+            XLog.e("SERVICEGO: heading sensor init failed: " + t.getMessage());
+        }
+    }
+
+    private void applyHeadingFrame(LabHeadingIntelligenceEngine.Frame frame) {
+        if (frame == null) return;
+        mHeadingFrame = frame;
+        boolean wasAvailable = mHeadingAvailable;
+        mHeadingAvailable = frame.available;
+        if (frame.available) {
+            mDeviceHeadingDegrees = wasAvailable
+                    ? smoothHeadingDegrees(
+                            mDeviceHeadingDegrees,
+                            frame.fusedHeadingDeg,
+                            0.34f)
+                    : frame.fusedHeadingDeg;
+        }
+    }
+
+    private void updateAttitudeHeading(
+            float[] remappedRotation,
+            float[] orientation,
+            float northReferenceDeg) {
+        if (orientation == null || orientation.length < 3) return;
+
+        mDevicePitchDegrees = (float) Math.toDegrees(orientation[1]);
+        mDeviceRollDegrees = (float) Math.toDegrees(orientation[2]);
+
+        LabAttitudeHeadingEngine engine = mAttitudeHeadingEngine;
+        if (engine != null) {
+            mAttitudeHeadingFrame = engine.update(
+                    remappedRotation,
+                    mDevicePitchDegrees,
+                    mDeviceRollDegrees,
+                    northReferenceDeg);
+        }
+    }
+
+    private void recordHeadingTrace() {
+        LabHeadingTraceRecorder recorder = mHeadingTraceRecorder;
+        LabHeadingIntelligenceEngine.Frame heading = mHeadingFrame;
+        if (recorder == null || heading == null) return;
+
+        LabAttitudeHeadingEngine.Frame attitude = mAttitudeHeadingFrame;
+        recorder.add(
+                SystemClock.elapsedRealtime(),
+                heading.fusedHeadingDeg,
+                heading.absoluteHeadingDeg,
+                heading.gameHeadingDeg,
+                attitude == null ? Float.NaN : attitude.headingDeg,
+                mDevicePitchDegrees,
+                mDeviceRollDegrees,
+                attitude == null ? "UNKNOWN" : attitude.posture,
+                heading.magneticNormUt,
+                heading.confidence,
+                heading.state,
+                heading.source);
     }
 
     @SuppressLint("MissingPermission")
     private void initFusedMock() {
+        mFusedShutdownRequested = false;
         try {
             mFusedClient = LocationServices.getFusedLocationProviderClient(this);
+            LabProviderReliabilityController.recordGmsEvent(this, "ENABLE_REQUESTED");
             mFusedClient.setMockMode(true)
                     .addOnSuccessListener(unused -> {
+                        if (mFusedShutdownRequested || isStop) {
+                            // The async enable completed after the Service was stopped.
+                            // Request disable again to avoid leaving GMS mock mode enabled.
+                            LabProviderReliabilityController.recordGmsEvent(this,
+                                    "LATE_ENABLE_AFTER_STOP");
+                            requestGmsMockDisable("LATE_ENABLE");
+                            return;
+                        }
                         mFusedMockEnabled = true;
+                        LabProviderReliabilityController.recordGmsEvent(this, "ENABLE_SUCCEEDED");
                         XLog.i("SERVICEGO: FusedLocation setMockMode(true) OK");
                     })
-                    .addOnFailureListener(e -> XLog.e("SERVICEGO: FusedLocation setMockMode failed: " + e.getMessage()));
+                    .addOnFailureListener(e -> {
+                        LabProviderReliabilityController.recordGmsEvent(this,
+                                "ENABLE_FAILED_" + e.getClass().getSimpleName());
+                        XLog.e("SERVICEGO: FusedLocation setMockMode failed: " + e.getMessage());
+                    });
         } catch (Throwable t) {
-            // 设备没 GMS / play-services-location 不可用 → 退化到仅 LocationManager 注入
+            LabProviderReliabilityController.recordGmsEvent(this,
+                    "ENABLE_EXCEPTION_" + t.getClass().getSimpleName());
+            // GMS may be unavailable; framework providers still work.
             XLog.e("SERVICEGO: FusedLocation init failed (GMS not available?): " + t.getMessage());
             mFusedClient = null;
+        }
+    }
+
+    private void requestGmsMockDisable(String reason) {
+        if (mFusedClient == null) return;
+        LabProviderReliabilityController.recordGmsEvent(this,
+                "DISABLE_REQUESTED_" + reason);
+        // Lint can verify this local permission check. Permission may have
+        // been revoked between this check and the asynchronous GMS request.
+        boolean fine = checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        boolean coarse = checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        if (!fine && !coarse) {
+            LabProviderReliabilityController.recordGmsEvent(this,
+                    "DISABLE_BLOCKED_NO_LOCATION_PERMISSION_" + reason);
+            return;
+        }
+        try {
+            mFusedClient.setMockMode(false)
+                    .addOnSuccessListener(unused -> {
+                        mFusedMockEnabled = false;
+                        LabProviderReliabilityController.recordGmsEvent(
+                                ServiceGo.this, "DISABLE_SUCCEEDED_" + reason);
+                    })
+                    .addOnFailureListener(e ->
+                            LabProviderReliabilityController.recordGmsEvent(
+                                    ServiceGo.this, "DISABLE_FAILED_" + e.getClass().getSimpleName()));
+        } catch (SecurityException e) {
+            LabProviderReliabilityController.recordGmsEvent(this,
+                    "DISABLE_DENIED_" + reason);
+        } catch (RuntimeException e) {
+            LabProviderReliabilityController.recordGmsEvent(this,
+                    "DISABLE_EXCEPTION_" + e.getClass().getSimpleName());
         }
     }
 
@@ -153,26 +663,505 @@ public class ServiceGo extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        mCurLng = intent.getDoubleExtra(MainActivity.LNG_MSG_ID, DEFAULT_LNG);
-        mCurLat = intent.getDoubleExtra(MainActivity.LAT_MSG_ID, DEFAULT_LAT);
-        mCurAlt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
+        android.content.SharedPreferences state =
+                getSharedPreferences("mock_location_state", MODE_PRIVATE);
+
+        if (intent != null && ACTION_SCENARIO_RESET.equals(intent.getAction())) {
+            mScenarioStep = 0L;
+            recordProvenance("SCENARIO", "replay reset to tick 0");
+            refreshPublishedPolicy();
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_RECORD_START.equals(intent.getAction())) {
+            synchronized (mTrackLock) {
+                mTrackRecording = true;
+                mLastTrackSampleElapsed = 0L;
+                mLastTrackLat = Double.NaN;
+                mLastTrackLng = Double.NaN;
+            }
+            sampleTrackIfNeeded(true);
+            recordProvenance("TRACK", "recording started");
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_RECORD_STOP.equals(intent.getAction())) {
+            synchronized (mTrackLock) {
+                mTrackRecording = false;
+            }
+            recordProvenance("TRACK", "recording stopped");
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_RECORD_CLEAR.equals(intent.getAction())) {
+            synchronized (mTrackLock) {
+                mTrackLats.clear();
+                mTrackLngs.clear();
+                mTrackTimes.clear();
+                mLastTrackSampleElapsed = 0L;
+                mLastTrackLat = Double.NaN;
+                mLastTrackLng = Double.NaN;
+            }
+            recordProvenance("TRACK", "recording buffer cleared");
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_MOTION_PAUSE.equals(intent.getAction())) {
+            if (mRouteActive || mRoamActive || mReplayActive) {
+                mMotionPaused = true;
+                mSpeed = 0.0;
+                if (mRoutePhysicsEngine != null && mRouteActive) {
+                    mRoutePhysicsEngine.hardStop("PAUSED");
+                    mRoutePhysicsFrame = mRoutePhysicsEngine.frame();
+                    mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
+                }
+                recordProvenance("MOTION", "paused");
+                checkpointRoute(true);
+            }
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_MOTION_RESUME.equals(intent.getAction())) {
+            if (mRouteActive || mRoamActive || mReplayActive) {
+                mMotionPaused = false;
+                mLastMotionElapsed = SystemClock.elapsedRealtime();
+                if (mRouteActive) {
+                    mSpeed = 0.0;
+                    if (mRoutePhysicsEngine != null) {
+                        mRoutePhysicsEngine.reset(0.0);
+                    }
+                } else if (mRoamActive) {
+                    mSpeed = mRoamSpeedMps * mMotionMultiplier;
+                } else if (mReplayActive) {
+                    LabTimedReplayEngine.Frame replay = mReplayFrame;
+                    // Frame speed already reflects the replay playback multiplier.
+                    mSpeed = replay == null ? 0.0 : replay.speedMps;
+                }
+                recordProvenance("MOTION", "resumed");
+                checkpointRoute(true);
+            }
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_MOTION_SPEED.equals(intent.getAction())) {
+            mMotionMultiplier = clamp(
+                    intent.getDoubleExtra(EXTRA_MOTION_MULTIPLIER, 1.0), 0.25, 4.0);
+            if (!mMotionPaused && mRoamActive) {
+                mSpeed = mRoamSpeedMps * mMotionMultiplier;
+            }
+            recordProvenance("MOTION", "multiplier=" + mMotionMultiplier + "x");
+            checkpointRoute(true);
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_REPLAY_STOP.equals(intent.getAction())) {
+            stopTimedReplay(true);
+            mProvenanceSource = "IDLE";
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_REPLAY_START.equals(intent.getAction())) {
+            double[] lats = intent.getDoubleArrayExtra(EXTRA_ROUTE_LATS);
+            double[] lngs = intent.getDoubleArrayExtra(EXTRA_ROUTE_LNGS);
+            double[] alts = intent.getDoubleArrayExtra(EXTRA_REPLAY_ALTS);
+            long[] times = intent.getLongArrayExtra(EXTRA_REPLAY_TIMES_MS);
+
+            try {
+                if (mReplayEngine == null) mReplayEngine = new LabTimedReplayEngine();
+                mReplayEngine.load(lats, lngs, alts, times);
+                clearRouteCheckpoint();
+                mRouteActive = false;
+                mRoamActive = false;
+                mReplayActive = true;
+                mMotionPaused = false;
+                mMotionMultiplier = 1.0;
+                mReplayFrame = mReplayEngine.current();
+                applyReplayFrame(mReplayFrame);
+                mLastMotionElapsed = SystemClock.elapsedRealtime();
+                mProvenanceSource = "REPLAY";
+                activateSimulationBackend("REPLAY");
+                mReplaySummary = mReplayFrame == null
+                        ? "REPLAY · READY"
+                        : mReplayFrame.summary();
+                recordProvenance(
+                        "REPLAY",
+                        "timestamped GPX started · duration="
+                                + mReplayEngine.durationMs() + "ms");
+                return START_STICKY;
+            } catch (Throwable t) {
+                stopTimedReplay(false);
+                recordProvenance(
+                        "REPLAY",
+                        "start failed: " + t.getClass().getSimpleName());
+                XLog.e("SERVICEGO: timestamped replay start failed: " + t.getMessage());
+                return START_STICKY;
+            }
+        }
+
+        if (intent != null && ACTION_ROUTE_STOP.equals(intent.getAction())) {
+            recordProvenance("ROUTE", "route stopped");
+            clearRouteCheckpoint();
+            stopLabMotion();
+            mProvenanceSource = "IDLE";
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_ROAM_STOP.equals(intent.getAction())) {
+            mRoamActive = false;
+            mSpeed = 0.0;
+            recordProvenance("ROAM", "random roam stopped");
+            mProvenanceSource = "IDLE";
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_ROUTE_START.equals(intent.getAction())) {
+            stopTimedReplay(false);
+            double[] lats = intent.getDoubleArrayExtra(EXTRA_ROUTE_LATS);
+            double[] lngs = intent.getDoubleArrayExtra(EXTRA_ROUTE_LNGS);
+            if (lats != null && lngs != null && lats.length > 1 && lats.length == lngs.length) {
+                mRouteLats = lats;
+                mRouteLngs = lngs;
+                buildRouteMetrics();
+                mRouteIndex = 0;
+                mRouteDirection = 1;
+                mRouteMode = Math.max(ROUTE_MODE_ONCE,
+                        Math.min(ROUTE_MODE_PINGPONG,
+                                intent.getIntExtra(EXTRA_ROUTE_MODE, ROUTE_MODE_ONCE)));
+                mRouteSpeedMps = clamp(
+                        intent.getDoubleExtra(EXTRA_ROUTE_SPEED_MPS, 1.4), 0.2, 60.0);
+                mRouteMotionProfile = Math.max(
+                        MOTION_PROFILE_WALK,
+                        Math.min(
+                                MOTION_PROFILE_CAR,
+                                intent.getIntExtra(
+                                        EXTRA_ROUTE_MOTION_PROFILE,
+                                        MOTION_PROFILE_WALK)));
+                if (mRoutePhysicsEngine != null) {
+                    mRoutePhysicsEngine.setProfile(routePhysicsProfile(mRouteMotionProfile));
+                }
+                mRouteActive = true;
+                mRoamActive = false;
+                mMotionPaused = false;
+                mMotionMultiplier = 1.0;
+                mCurLat = mRouteLats[0];
+                mCurLng = mRouteLngs[0];
+                mCurAlt = DEFAULT_ALT;
+                mSpeed = 0.0;
+                if (mRoutePhysicsEngine != null) {
+                    mRoutePhysicsEngine.reset(0.0);
+                    mRoutePhysicsFrame = mRoutePhysicsEngine.frame();
+                    mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
+                }
+                mLastMotionElapsed = SystemClock.elapsedRealtime();
+                activateSimulationBackend("ROUTE");
+
+                mProvenanceSource = "ROUTE";
+                recordProvenance("ROUTE", "started points=" + lats.length
+                        + " speed=" + mRouteSpeedMps + "m/s mode=" + mRouteMode);
+                persistCurrentLocation(state);
+                replaceRouteCheckpoint();
+                XLog.i("SERVICEGO: Lab route started, points=" + lats.length
+                        + " speed=" + mRouteSpeedMps + " mode=" + mRouteMode);
+                return START_STICKY;
+            }
+        }
+
+        if (intent != null && ACTION_ROAM_START.equals(intent.getAction())) {
+            stopTimedReplay(false);
+            clearRouteCheckpoint();
+            mRoamCenterLat = intent.getDoubleExtra(EXTRA_ROAM_CENTER_LAT, mCurLat);
+            mRoamCenterLng = intent.getDoubleExtra(EXTRA_ROAM_CENTER_LNG, mCurLng);
+            mRoamRadiusM = clamp(intent.getDoubleExtra(EXTRA_ROAM_RADIUS_M, 100.0), 5.0, 5000.0);
+            mRoamSpeedMps = clamp(intent.getDoubleExtra(EXTRA_ROAM_SPEED_MPS, 1.4), 0.2, 30.0);
+            mCurLat = mRoamCenterLat;
+            mCurLng = mRoamCenterLng;
+            mCurAlt = DEFAULT_ALT;
+            mRouteActive = false;
+            mRoamActive = true;
+            mMotionPaused = false;
+            mMotionMultiplier = 1.0;
+            mSpeed = mRoamSpeedMps * mMotionMultiplier;
+            activateSimulationBackend("ROAM");
+            chooseNewRoamTarget();
+            mLastMotionElapsed = SystemClock.elapsedRealtime();
+            mProvenanceSource = "ROAM";
+            recordProvenance("ROAM", "started radius=" + mRoamRadiusM
+                    + "m speed=" + mRoamSpeedMps + "m/s");
+            persistCurrentLocation(state);
+            XLog.i("SERVICEGO: Lab random roam started, radius=" + mRoamRadiusM
+                    + " speed=" + mRoamSpeedMps);
+            return START_STICKY;
+        }
+
+        if (intent != null) {
+            // Ordinary manual position commands cancel Lab motion.
+            clearRouteCheckpoint();
+            stopLabMotion();
+
+            mCurLng = intent.getDoubleExtra(MainActivity.LNG_MSG_ID, DEFAULT_LNG);
+            mCurLat = intent.getDoubleExtra(MainActivity.LAT_MSG_ID, DEFAULT_LAT);
+            mCurAlt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
+            mProvenanceSource = "MANUAL";
+            activateSimulationBackend("FIXED");
+            recordProvenance("MANUAL", "position selected");
+            persistCurrentLocation(state);
+        } else {
+            if (restoreRouteCheckpoint()) {
+                if (mJoyStick != null) {
+                    mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+                }
+                return START_STICKY;
+            }
+
+            mCurLng = Double.longBitsToDouble(
+                    state.getLong("lng_bits", Double.doubleToRawLongBits(DEFAULT_LNG)));
+            mCurLat = Double.longBitsToDouble(
+                    state.getLong("lat_bits", Double.doubleToRawLongBits(DEFAULT_LAT)));
+            mCurAlt = Double.longBitsToDouble(
+                    state.getLong("alt_bits", Double.doubleToRawLongBits(DEFAULT_ALT)));
+            mProvenanceSource = "RESTORED";
+            activateSimulationBackend("FIXED");
+        }
 
         if (mJoyStick != null) {
             mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
         }
 
-        return super.onStartCommand(intent, flags, startId);
+        return START_STICKY;
+    }
+
+    private void persistCurrentLocation(android.content.SharedPreferences state) {
+        state.edit()
+                .putLong("lng_bits", Double.doubleToRawLongBits(mCurLng))
+                .putLong("lat_bits", Double.doubleToRawLongBits(mCurLat))
+                .putLong("alt_bits", Double.doubleToRawLongBits(mCurAlt))
+                .apply();
+    }
+
+    private LabRouteCheckpointStore.Progress currentRouteProgress() {
+        return new LabRouteCheckpointStore.Progress(
+                mRouteIndex,
+                mRouteDirection,
+                mRouteMode,
+                mRouteMotionProfile,
+                mRouteSpeedMps,
+                mMotionPaused,
+                mMotionMultiplier,
+                mCurLat,
+                mCurLng,
+                mCurAlt,
+                mCurBea);
+    }
+
+    private void replaceRouteCheckpoint() {
+        LabRouteCheckpointStore store = mRouteCheckpointStore;
+        if (store == null || !mRouteActive || mRouteLats == null || mRouteLngs == null) {
+            return;
+        }
+
+        try {
+            store.replaceRoute(mRouteLats, mRouteLngs, currentRouteProgress());
+            mLastRouteCheckpointElapsed = SystemClock.elapsedRealtime();
+            mRouteRecoverySummary = "CHECKPOINTED";
+            recordProvenance("ROUTE_RECOVERY", "definition + progress checkpointed");
+        } catch (Throwable t) {
+            // Never allow a stale previous route to be restored after a failed replace.
+            try {
+                store.clear();
+            } catch (Throwable ignored) {
+            }
+            mRouteRecoverySummary = "WRITE_FAILED";
+            recordProvenance("ROUTE_RECOVERY",
+                    "checkpoint replace failed: " + t.getClass().getSimpleName());
+        }
+    }
+
+    private void checkpointRoute(boolean force) {
+        LabRouteCheckpointStore store = mRouteCheckpointStore;
+        if (store == null || !mRouteActive) return;
+
+        long now = SystemClock.elapsedRealtime();
+        if (!force
+                && mLastRouteCheckpointElapsed > 0L
+                && now - mLastRouteCheckpointElapsed < ROUTE_CHECKPOINT_INTERVAL_MS) {
+            return;
+        }
+
+        try {
+            store.saveProgress(currentRouteProgress());
+            mLastRouteCheckpointElapsed = now;
+            mRouteRecoverySummary = "CHECKPOINTED";
+        } catch (Throwable t) {
+            mRouteRecoverySummary = "WRITE_FAILED";
+        }
+    }
+
+    private boolean restoreRouteCheckpoint() {
+        LabRouteCheckpointStore store = mRouteCheckpointStore;
+        if (store == null || mRouteActive || mRoamActive) return false;
+
+        try {
+            LabRouteCheckpointStore.Checkpoint checkpoint = store.load();
+            if (checkpoint == null
+                    || checkpoint.routeLats == null
+                    || checkpoint.routeLngs == null
+                    || checkpoint.routeLats.length < 2
+                    || checkpoint.routeLats.length != checkpoint.routeLngs.length) {
+                return false;
+            }
+
+            LabRouteCheckpointStore.Progress p = checkpoint.progress;
+            mRouteLats = checkpoint.routeLats;
+            mRouteLngs = checkpoint.routeLngs;
+            buildRouteMetrics();
+
+            mRouteIndex = Math.max(0, Math.min(mRouteLats.length - 1, p.routeIndex));
+            mRouteDirection = p.routeDirection < 0 ? -1 : 1;
+            mRouteMode = Math.max(
+                    ROUTE_MODE_ONCE,
+                    Math.min(ROUTE_MODE_PINGPONG, p.routeMode));
+            mRouteMotionProfile = Math.max(
+                    MOTION_PROFILE_WALK,
+                    Math.min(MOTION_PROFILE_CAR, p.motionProfile));
+            mRouteSpeedMps = clamp(p.routeSpeedMps, 0.2, 60.0);
+            mMotionPaused = p.paused;
+            mMotionMultiplier = clamp(p.multiplier, 0.25, 4.0);
+
+            mCurLat = Double.isFinite(p.latitude)
+                    ? p.latitude
+                    : mRouteLats[mRouteIndex];
+            mCurLng = Double.isFinite(p.longitude)
+                    ? p.longitude
+                    : mRouteLngs[mRouteIndex];
+            mCurAlt = Double.isFinite(p.altitude) ? p.altitude : DEFAULT_ALT;
+            mCurBea = Float.isFinite(p.bearingDegrees) ? p.bearingDegrees : DEFAULT_BEA;
+
+            mRouteActive = true;
+            mRoamActive = false;
+            mSpeed = 0.0;
+            if (mRoutePhysicsEngine != null) {
+                mRoutePhysicsEngine.setProfile(routePhysicsProfile(mRouteMotionProfile));
+                mRoutePhysicsEngine.reset(0.0);
+                mRoutePhysicsFrame = mRoutePhysicsEngine.frame();
+                mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
+            }
+            mLastMotionElapsed = SystemClock.elapsedRealtime();
+            activateSimulationBackend("ROUTE");
+            mLastRouteCheckpointElapsed = mLastMotionElapsed;
+            mProvenanceSource = "ROUTE";
+
+            long ageMs = checkpoint.savedAtWallMs <= 0L
+                    ? -1L
+                    : Math.max(0L, System.currentTimeMillis() - checkpoint.savedAtWallMs);
+            mRouteRecoverySummary = ageMs < 0L
+                    ? "RESTORED"
+                    : "RESTORED · age=" + (ageMs / 1000L) + "s";
+            recordProvenance("ROUTE_RECOVERY",
+                    "restored index=" + mRouteIndex
+                            + " direction=" + mRouteDirection
+                            + " mode=" + mRouteMode
+                            + " ageMs=" + ageMs);
+            return true;
+        } catch (Throwable t) {
+            try {
+                store.clear();
+            } catch (Throwable ignored) {
+            }
+            mRouteRecoverySummary = "CORRUPT_CLEARED";
+            recordProvenance("ROUTE_RECOVERY",
+                    "restore failed; checkpoint cleared: "
+                            + t.getClass().getSimpleName());
+            return false;
+        }
+    }
+
+    private void clearRouteCheckpoint() {
+        LabRouteCheckpointStore store = mRouteCheckpointStore;
+        if (store != null) {
+            try {
+                store.clear();
+            } catch (Throwable ignored) {
+            }
+        }
+        mLastRouteCheckpointElapsed = -1L;
+        mRouteRecoverySummary = "CLEARED";
+    }
+
+    private void stopLabMotion() {
+        mRouteActive = false;
+        mRoamActive = false;
+        mReplayActive = false;
+        if (mReplayEngine != null) {
+            mReplayEngine.stop();
+        }
+        if (mReplayBackend != null) {
+            mReplayBackend.deactivate();
+        }
+        mReplaySummary = "IDLE";
+        mRouteLats = null;
+        mRouteLngs = null;
+        mRouteCumulative = null;
+        mRouteTotalDistance = 0.0;
+        mSpeed = 0.0;
+        mLastMotionElapsed = 0L;
+        mMotionPaused = false;
+        mMotionMultiplier = 1.0;
+        if (mRoutePhysicsEngine != null) {
+            mRoutePhysicsEngine.hardStop("IDLE");
+            mRoutePhysicsFrame = mRoutePhysicsEngine.frame();
+            mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
+        }
+        activateSimulationBackend("FIXED");
     }
 
     @Override
     public void onDestroy() {
+        mFusedShutdownRequested = true;
         isStop = true;
-        mLocHandler.removeMessages(HANDLER_MSG_ID);
-        mLocHandlerThread.quit();
+        sRunning = false;
+        // A failed route checkpoint must never skip provider/GMS teardown.
+        if (mRouteActive) {
+            try {
+                checkpointRoute(true);
+            } catch (RuntimeException e) {
+                XLog.e("SERVICEGO: route checkpoint on exit failed: "
+                        + e.getClass().getSimpleName());
+            }
+        }
+        // Stop and briefly join the publisher before removing providers to
+        // reduce a publish-vs-remove race. Avoid an unbounded main-thread wait.
+        if (mLocHandler != null) {
+            try {
+                mLocHandler.removeMessages(HANDLER_MSG_ID);
+            } catch (RuntimeException ignored) {
+            }
+        }
+        if (mLocHandlerThread != null) {
+            try {
+                mLocHandlerThread.quit();
+                if (Thread.currentThread() != mLocHandlerThread) {
+                    mLocHandlerThread.join(350L);
+                }
+                if (mLocHandlerThread.isAlive()) {
+                    XLog.e("SERVICEGO: publisher thread still alive after teardown wait");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                XLog.e("SERVICEGO: publisher thread join interrupted");
+            } catch (RuntimeException e) {
+                XLog.e("SERVICEGO: publisher thread shutdown failed: "
+                        + e.getClass().getSimpleName());
+            }
+        }
 
         if (mJoyStick != null) {
-            if (mJoyStick != null) mJoyStick.destroy();
-            mJoyStick = null;
+            try {
+                mJoyStick.destroy();
+            } catch (RuntimeException e) {
+                XLog.e("SERVICEGO: joystick cleanup failed: " + e.getClass().getSimpleName());
+            } finally {
+                mJoyStick = null;
+            }
         }
 
         removeTestProviderNetwork();
@@ -188,17 +1177,84 @@ public class ServiceGo extends Service {
             }
         }
 
-        if (mFusedClient != null && mFusedMockEnabled) {
+        if (mSensorManager != null && mHeadingListener != null) {
             try {
-                mFusedClient.setMockMode(false);
-            } catch (Exception ignored) {
+                mSensorManager.unregisterListener(mHeadingListener);
+            } catch (Throwable ignored) {
             }
         }
 
-        unregisterReceiver(mActReceiver);
-        stopForeground(STOP_FOREGROUND_REMOVE);
+        // Always request the GMS mock reset, even if enable is still pending.
+        // Neither a returned Task nor onDestroy() itself proves reset success.
+        requestGmsMockDisable("SERVICE_STOP");
 
-        super.onDestroy();
+        // A partially initialized service may never have registered the receiver.
+        if (mActReceiverRegistered && mActReceiver != null) {
+            try {
+                unregisterReceiver(mActReceiver);
+            } catch (IllegalArgumentException ignored) {
+                // Already unregistered by the framework or an earlier cleanup.
+            } finally {
+                mActReceiverRegistered = false;
+            }
+        }
+        try {
+            stopForeground(STOP_FOREGROUND_REMOVE);
+        } catch (RuntimeException e) {
+            XLog.e("SERVICEGO: foreground cleanup failed: " + e.getClass().getSimpleName());
+        }
+
+        if (mWakeLock != null && mWakeLock.isHeld()) {
+            try {
+                mWakeLock.release();
+            } catch (Throwable ignored) {
+            }
+        }
+
+        if (mScenarioEngine != null) {
+            try {
+                mScenarioEngine.close();
+            } catch (Throwable ignored) {
+            }
+            mScenarioEngine = null;
+        }
+
+        mKinematicFrame = null;
+        mKinematicsEngine = null;
+        mHeadingFrame = null;
+        mHeadingFusionEngine = null;
+        mAttitudeHeadingFrame = null;
+        if (mAttitudeHeadingEngine != null) {
+            try {
+                mAttitudeHeadingEngine.reset();
+            } catch (RuntimeException ignored) {
+            }
+        }
+        mAttitudeHeadingEngine = null;
+        if (mHeadingTraceRecorder != null) {
+            try {
+                mHeadingTraceRecorder.clear();
+            } catch (RuntimeException ignored) {
+            }
+        }
+        mHeadingTraceRecorder = null;
+
+        if (mPolicyEngine != null) {
+            try {
+                mPolicyEngine.close();
+            } catch (Throwable ignored) {
+            }
+            mPolicyEngine = null;
+        }
+
+        try {
+            if (mProviderReliability != null) {
+                mProviderReliability.stopMonitoring();
+            }
+            LabServiceLifecycleJournal.onServiceDestroyed(this);
+        } finally {
+            super.onDestroy();
+        }
     }
 
     private void initNotification() {
@@ -206,7 +1262,13 @@ public class ServiceGo extends Service {
         IntentFilter filter = new IntentFilter();
         filter.addAction(SERVICE_GO_NOTE_ACTION_JOYSTICK_SHOW);
         filter.addAction(SERVICE_GO_NOTE_ACTION_JOYSTICK_HIDE);
-        registerReceiver(mActReceiver, filter);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(mActReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            //noinspection UnspecifiedRegisterReceiverFlag
+            registerReceiver(mActReceiver, filter);
+        }
+        mActReceiverRegistered = true;
 
         NotificationChannel mChannel = new NotificationChannel(SERVICE_GO_NOTE_CHANNEL_ID, SERVICE_GO_NOTE_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -279,6 +1341,14 @@ public class ServiceGo extends Service {
                     Thread.sleep(TICK_INTERVAL_MS);
 
                     if (!isStop) {
+                        advanceLabMotion();
+                        sampleTrackIfNeeded(false);
+                        sampleProvenanceIfNeeded();
+                        refreshPublishedPolicy();
+                        LabScenarioEngine scenario = mScenarioEngine;
+                        if (scenario != null && scenario.isEnabled() && mScenarioStep < Long.MAX_VALUE) {
+                            mScenarioStep++;
+                        }
                         setLocationNetwork();
                         setLocationGPS();
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -298,13 +1368,707 @@ public class ServiceGo extends Service {
         mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
     }
 
-    private void removeTestProviderGPS() {
-        try {
-            if (mLocManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                mLocManager.setTestProviderEnabled(LocationManager.GPS_PROVIDER, false);
-                mLocManager.removeTestProvider(LocationManager.GPS_PROVIDER);
+    private void buildRouteMetrics() {
+        if (mRouteLats == null || mRouteLngs == null
+                || mRouteLats.length == 0 || mRouteLats.length != mRouteLngs.length) {
+            mRouteCumulative = null;
+            mRouteTotalDistance = 0.0;
+            return;
+        }
+
+        mRouteCumulative = new double[mRouteLats.length];
+        mRouteCumulative[0] = 0.0;
+        double total = 0.0;
+        for (int i = 1; i < mRouteLats.length; i++) {
+            total += distanceMeters(
+                    mRouteLats[i - 1], mRouteLngs[i - 1],
+                    mRouteLats[i], mRouteLngs[i]);
+            mRouteCumulative[i] = total;
+        }
+        mRouteTotalDistance = total;
+    }
+
+    private void sampleTrackIfNeeded(boolean force) {
+        synchronized (mTrackLock) {
+            if (!mTrackRecording) return;
+
+            long now = SystemClock.elapsedRealtime();
+            if (!force && mLastTrackSampleElapsed > 0L
+                    && now - mLastTrackSampleElapsed < 1000L) {
+                return;
             }
-        } catch (Exception e) {
+
+            double moved = (Double.isNaN(mLastTrackLat) || Double.isNaN(mLastTrackLng))
+                    ? Double.MAX_VALUE
+                    : distanceMeters(mLastTrackLat, mLastTrackLng, mCurLat, mCurLng);
+
+            if (!force && moved < 0.5
+                    && mLastTrackSampleElapsed > 0L
+                    && now - mLastTrackSampleElapsed < 5000L) {
+                return;
+            }
+
+            if (mTrackLats.size() >= MAX_TRACK_POINTS) {
+                mTrackLats.remove(0);
+                mTrackLngs.remove(0);
+                mTrackTimes.remove(0);
+            }
+
+            mTrackLats.add(mCurLat);
+            mTrackLngs.add(mCurLng);
+            mTrackTimes.add(System.currentTimeMillis());
+            mLastTrackLat = mCurLat;
+            mLastTrackLng = mCurLng;
+            mLastTrackSampleElapsed = now;
+        }
+    }
+
+    private void refreshPublishedPolicy() {
+        syncSimulationBackend();
+        LabSimulationSample sample = currentSimulationSample();
+
+        LabPolicyEngine engine = mPolicyEngine;
+        LabPolicyEngine.LocationDecision decision;
+
+        if (engine == null) {
+            decision = new LabPolicyEngine.LocationDecision(
+                    true,
+                    sample.latitude,
+                    sample.longitude,
+                    sample.altitude,
+                    sample.speedMps,
+                    sample.bearingDegrees,
+                    sample.accuracyMeters,
+                    true,
+                    "FALLBACK");
+            mPolicySummary = "FALLBACK · location=EXACT";
+        } else {
+            decision = engine.decideLocation(
+                    sample.latitude,
+                    sample.longitude,
+                    sample.altitude,
+                    sample.speedMps,
+                    sample.bearingDegrees);
+            mPolicySummary = engine.summary();
+        }
+
+        LabScenarioEngine scenario = mScenarioEngine;
+        if (scenario != null) {
+            LabScenarioEngine.ScenarioLocation transformed = scenario.applyLocation(
+                    decision.publish,
+                    decision.latitude,
+                    decision.longitude,
+                    decision.altitude,
+                    decision.speedMps,
+                    decision.bearingDegrees,
+                    decision.accuracyMeters,
+                    decision.includeMotion,
+                    mScenarioStep);
+
+            mPolicyPublish = transformed.publish;
+            mPublishedLat = transformed.latitude;
+            mPublishedLng = transformed.longitude;
+            mPublishedAlt = transformed.altitude;
+            mPublishedSpeed = transformed.speedMps;
+            mPublishedBearing = transformed.bearingDegrees;
+            mPublishedAccuracy = transformed.accuracyMeters;
+            mPublishedIncludeMotion = transformed.includeMotion;
+            mScenarioNoiseNorthMeters = transformed.noiseNorthMeters;
+            mScenarioNoiseEastMeters = transformed.noiseEastMeters;
+            mScenarioVirtualTimeMillis = scenario.virtualTimeMillis(
+                    mScenarioStep, TICK_INTERVAL_MS);
+            mScenarioBatteryPercent = scenario.batteryPercent(mScenarioStep);
+            mScenarioHeadingDegrees = scenario.headingDegrees(mScenarioStep);
+            mScenarioSummary = scenario.summary();
+
+            String scenarioSignature = mScenarioSummary;
+            if (!scenarioSignature.equals(mLastScenarioSignature)) {
+                mLastScenarioSignature = scenarioSignature;
+                recordProvenance("SCENARIO", scenarioSignature);
+            }
+        } else {
+            mPolicyPublish = decision.publish;
+            mPublishedLat = decision.latitude;
+            mPublishedLng = decision.longitude;
+            mPublishedAlt = decision.altitude;
+            mPublishedSpeed = decision.speedMps;
+            mPublishedBearing = decision.bearingDegrees;
+            mPublishedAccuracy = decision.accuracyMeters;
+            mPublishedIncludeMotion = decision.includeMotion;
+            mScenarioSummary = "UNAVAILABLE";
+            mScenarioNoiseNorthMeters = 0.0;
+            mScenarioNoiseEastMeters = 0.0;
+        }
+
+        LabKinematicsEngine kinematics = mKinematicsEngine;
+        if (kinematics != null) {
+            LabKinematicsEngine.Frame frame = kinematics.update(
+                    mPublishedLat,
+                    mPublishedLng,
+                    mPublishedSpeed,
+                    mPublishedBearing,
+                    mMotionPaused,
+                    mHeadingAvailable,
+                    mDeviceHeadingDegrees,
+                    mProvenanceSource,
+                    mScenarioStep,
+                    TICK_INTERVAL_MS);
+            mKinematicFrame = frame;
+            if (mPublishedIncludeMotion) {
+                mPublishedBearing = frame.effectiveBearingDeg;
+            }
+
+            String kinematicSignature = frame.state + " · " + frame.bearingSource;
+            if (!kinematicSignature.equals(mLastKinematicSignature)) {
+                mLastKinematicSignature = kinematicSignature;
+                recordProvenance("KINEMATICS",
+                        kinematicSignature + " · ledger=" + frame.shortHash());
+            }
+        }
+
+        String signature = mPolicySummary + " · publish=" + mPolicyPublish;
+        if (!signature.equals(mLastPolicySignature)) {
+            mLastPolicySignature = signature;
+            recordProvenance("POLICY", signature);
+        }
+    }
+
+    private void sampleProvenanceIfNeeded() {
+        long now = SystemClock.elapsedRealtime();
+        if (mLastProvenanceSampleElapsed > 0L
+                && now - mLastProvenanceSampleElapsed < 5000L) {
+            return;
+        }
+        mLastProvenanceSampleElapsed = now;
+        recordProvenance("SAMPLE",
+                String.format(java.util.Locale.US,
+                        "src=%s lng=%.6f lat=%.6f speed=%.2fm/s bearing=%.1f°",
+                        mProvenanceSource, mCurLng, mCurLat, mSpeed, mCurBea));
+    }
+
+    private void recordProvenance(String kind, String detail) {
+        String stamp;
+        try {
+            java.text.SimpleDateFormat format =
+                    new java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.US);
+            stamp = format.format(new java.util.Date());
+        } catch (Throwable t) {
+            stamp = String.valueOf(System.currentTimeMillis());
+        }
+
+        String line = stamp + "  [" + kind + "]  " + detail;
+        synchronized (mProvenanceLock) {
+            while (mProvenanceEvents.size() >= MAX_PROVENANCE_EVENTS) {
+                mProvenanceEvents.removeFirst();
+            }
+            mProvenanceEvents.addLast(line);
+        }
+    }
+
+    private void activateSimulationBackend(String id) {
+        if ("REPLAY".equals(id)) {
+            if (mFixedBackend != null) mFixedBackend.deactivate();
+            if (mRouteBackend != null) mRouteBackend.deactivate();
+            if (mRoamBackend != null) mRoamBackend.deactivate();
+            if (mReplayBackend != null) mReplayBackend.activate(
+                    mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+            mActiveSimulationBackend = mReplayBackend;
+        } else if ("ROUTE".equals(id)) {
+            if (mFixedBackend != null) mFixedBackend.deactivate();
+            if (mReplayBackend != null) mReplayBackend.deactivate();
+            if (mRoamBackend != null) mRoamBackend.deactivate();
+            if (mRouteBackend != null) mRouteBackend.activate(
+                    mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+            mActiveSimulationBackend = mRouteBackend;
+        } else if ("ROAM".equals(id)) {
+            if (mFixedBackend != null) mFixedBackend.deactivate();
+            if (mRouteBackend != null) mRouteBackend.deactivate();
+            if (mReplayBackend != null) mReplayBackend.deactivate();
+            if (mRoamBackend != null) mRoamBackend.activate(
+                    mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+            mActiveSimulationBackend = mRoamBackend;
+        } else {
+            if (mRouteBackend != null) mRouteBackend.deactivate();
+            if (mRoamBackend != null) mRoamBackend.deactivate();
+            if (mReplayBackend != null) mReplayBackend.deactivate();
+            if (mFixedBackend != null) mFixedBackend.activate(
+                    mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+            mActiveSimulationBackend = mFixedBackend;
+        }
+        syncSimulationBackend();
+    }
+
+    private void syncSimulationBackend() {
+        LabMutableSimulationBackend backend;
+        if (mReplayActive) {
+            backend = mReplayBackend;
+        } else if (mRouteActive) {
+            backend = mRouteBackend;
+        } else if (mRoamActive) {
+            backend = mRoamBackend;
+        } else {
+            backend = mFixedBackend;
+        }
+
+        if (backend == null) return;
+        if (!backend.isActive()) {
+            backend.activate(mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+        } else {
+            backend.update(mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+        }
+        mActiveSimulationBackend = backend;
+        mSimulationBackendSummary = backend.id();
+    }
+
+    private LabSimulationSample currentSimulationSample() {
+        LabSimulationBackend backend = mActiveSimulationBackend;
+        LabSimulationSample sample = backend == null ? null : backend.snapshot();
+        if (sample != null) return sample;
+
+        return new LabSimulationSample(
+                mCurLat,
+                mCurLng,
+                mCurAlt,
+                mSpeed,
+                mCurBea,
+                0.8f,
+                "FALLBACK",
+                SystemClock.elapsedRealtime());
+    }
+
+    private LabRoutePhysicsEngine.Profile routePhysicsProfile(int profile) {
+        if (profile == MOTION_PROFILE_CAR) {
+            return LabRoutePhysicsEngine.Profile.CAR;
+        }
+        if (profile == MOTION_PROFILE_BIKE) {
+            return LabRoutePhysicsEngine.Profile.BIKE;
+        }
+        return LabRoutePhysicsEngine.Profile.WALK;
+    }
+
+    private String routeMotionProfileName() {
+        return routePhysicsProfile(mRouteMotionProfile).id;
+    }
+
+    private void advanceTimedReplay(double dtSeconds) {
+        LabTimedReplayEngine engine = mReplayEngine;
+        if (engine == null || !mReplayActive) return;
+
+        LabTimedReplayEngine.Frame frame =
+                engine.advance(dtSeconds, mMotionMultiplier);
+        mReplayFrame = frame;
+        applyReplayFrame(frame);
+
+        if (frame != null) {
+            mReplaySummary = frame.summary();
+        }
+
+        if (engine.isFinished()) {
+            mReplayActive = false;
+            mSpeed = 0.0;
+            if (mReplayBackend != null) mReplayBackend.deactivate();
+            mReplaySummary = "FINISHED";
+            recordProvenance("REPLAY", "timestamped GPX finished");
+            activateSimulationBackend("FIXED");
+        }
+    }
+
+    private void applyReplayFrame(LabTimedReplayEngine.Frame frame) {
+        if (frame == null) return;
+        mCurLat = frame.latitude;
+        mCurLng = frame.longitude;
+        mCurAlt = frame.altitude;
+        mSpeed = frame.speedMps;
+        mCurBea = frame.bearingDegrees;
+        if (mReplayBackend != null) {
+            if (!mReplayBackend.isActive()) {
+                mReplayBackend.activate(
+                        mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+            } else {
+                mReplayBackend.update(
+                        mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+            }
+        }
+    }
+
+    private void stopTimedReplay(boolean record) {
+        if (mReplayEngine != null) {
+            mReplayEngine.stop();
+        }
+        boolean wasActive = mReplayActive;
+        mReplayActive = false;
+        mReplayFrame = null;
+        mReplaySummary = "IDLE";
+        if (mReplayBackend != null) mReplayBackend.deactivate();
+        if (wasActive && record) {
+            recordProvenance("REPLAY", "timestamped GPX stopped");
+        }
+    }
+
+    private LabRoutePhysicsEngine.Context buildRoutePhysicsContext(
+            double dtSeconds,
+            long elapsedRealtimeMs) {
+        double distanceToNext = distanceToNextRouteVertexMeters();
+        double turnAngle = upcomingRouteTurnAngleDeg();
+        double routeRemaining = Math.max(
+                0.0,
+                mRouteTotalDistance - getCurrentPassProgressMeters());
+
+        return new LabRoutePhysicsEngine.Context(
+                mRouteSpeedMps,
+                mMotionMultiplier,
+                dtSeconds,
+                distanceToNext,
+                turnAngle,
+                routeRemaining,
+                mRouteMode == ROUTE_MODE_ONCE,
+                mMotionPaused,
+                elapsedRealtimeMs);
+    }
+
+    private double distanceToNextRouteVertexMeters() {
+        if (!mRouteActive || mRouteLats == null || mRouteLngs == null
+                || mRouteIndex < 0 || mRouteIndex >= mRouteLats.length) {
+            return 0.0;
+        }
+
+        int next = mRouteIndex + mRouteDirection;
+        if (next < 0 || next >= mRouteLats.length) {
+            if (mRouteMode == ROUTE_MODE_LOOP) {
+                next = mRouteDirection > 0 ? 0 : mRouteLats.length - 1;
+            } else if (mRouteMode == ROUTE_MODE_PINGPONG) {
+                next = mRouteIndex - mRouteDirection;
+            } else {
+                return Math.max(0.0,
+                        distanceMeters(
+                                mCurLat,
+                                mCurLng,
+                                mRouteLats[mRouteIndex],
+                                mRouteLngs[mRouteIndex]));
+            }
+        }
+
+        return distanceMeters(
+                mCurLat,
+                mCurLng,
+                mRouteLats[next],
+                mRouteLngs[next]);
+    }
+
+    private double upcomingRouteTurnAngleDeg() {
+        if (!mRouteActive || mRouteLats == null || mRouteLats.length < 2) return 0.0;
+
+        int target = mRouteIndex + mRouteDirection;
+        if (target < 0 || target >= mRouteLats.length) {
+            return mRouteMode == ROUTE_MODE_PINGPONG ? 180.0 : 0.0;
+        }
+        return routeTurnAngleAtVertex(target, mRouteDirection);
+    }
+
+    private double routeTurnAngleAtVertex(int vertex, int direction) {
+        if (mRouteLats == null || mRouteLngs == null
+                || vertex < 0 || vertex >= mRouteLats.length) {
+            return 0.0;
+        }
+
+        int count = mRouteLats.length;
+        int previous = vertex - direction;
+        int following = vertex + direction;
+
+        if (mRouteMode == ROUTE_MODE_LOOP) {
+            if (previous < 0) previous = count - 1;
+            if (previous >= count) previous = 0;
+            if (following < 0) following = count - 1;
+            if (following >= count) following = 0;
+        } else {
+            if (previous < 0 || previous >= count) return 0.0;
+            if (following < 0 || following >= count) {
+                return mRouteMode == ROUTE_MODE_PINGPONG ? 180.0 : 0.0;
+            }
+        }
+
+        if (previous == vertex || following == vertex || previous == following) {
+            return 0.0;
+        }
+
+        float incoming = bearingDegrees(
+                mRouteLats[previous], mRouteLngs[previous],
+                mRouteLats[vertex], mRouteLngs[vertex]);
+        float outgoing = bearingDegrees(
+                mRouteLats[vertex], mRouteLngs[vertex],
+                mRouteLats[following], mRouteLngs[following]);
+
+        double delta = Math.abs(outgoing - incoming);
+        if (delta > 180.0) delta = 360.0 - delta;
+        return clamp(delta, 0.0, 180.0);
+    }
+
+    private double getCurrentPassProgressMeters() {
+        if (!mRouteActive || mRouteLats == null || mRouteCumulative == null
+                || mRouteLats.length < 2 || mRouteIndex < 0 || mRouteIndex >= mRouteLats.length) {
+            return 0.0;
+        }
+
+        int next = mRouteIndex + mRouteDirection;
+        double fromVertexDistance = 0.0;
+        if (next >= 0 && next < mRouteLats.length) {
+            fromVertexDistance = distanceMeters(
+                    mRouteLats[mRouteIndex], mRouteLngs[mRouteIndex],
+                    mCurLat, mCurLng);
+        }
+
+        if (mRouteDirection >= 0) {
+            return clamp(mRouteCumulative[mRouteIndex] + fromVertexDistance,
+                    0.0, mRouteTotalDistance);
+        } else {
+            return clamp((mRouteTotalDistance - mRouteCumulative[mRouteIndex])
+                    + fromVertexDistance, 0.0, mRouteTotalDistance);
+        }
+    }
+
+    private void advanceLabMotion() {
+        if (!mRouteActive && !mRoamActive && !mReplayActive) return;
+        if (mMotionPaused) {
+            mLastMotionElapsed = SystemClock.elapsedRealtime();
+            mSpeed = 0.0;
+            return;
+        }
+
+        long now = SystemClock.elapsedRealtime();
+        if (mLastMotionElapsed <= 0L) {
+            mLastMotionElapsed = now;
+            return;
+        }
+
+        double dt = (now - mLastMotionElapsed) / 1000.0;
+        mLastMotionElapsed = now;
+        // Avoid a giant teleport after the process/thread was paused for a while.
+        dt = clamp(dt, 0.0, 0.25);
+
+        if (mReplayActive) {
+            advanceTimedReplay(dt);
+        } else if (mRouteActive) {
+            LabRoutePhysicsEngine physics = mRoutePhysicsEngine;
+            if (physics != null) {
+                LabRoutePhysicsEngine.Context context = buildRoutePhysicsContext(dt, now);
+                mRoutePhysicsFrame = physics.update(context);
+                mSpeed = mRoutePhysicsFrame.speedMps;
+                mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
+            } else {
+                mSpeed = mRouteSpeedMps * mMotionMultiplier;
+                mRoutePhysicsSummary = "FALLBACK · constant speed";
+            }
+
+            moveAlongRoute(mSpeed * dt);
+            checkpointRoute(false);
+        } else if (mRoamActive) {
+            moveRandomRoam(mRoamSpeedMps * mMotionMultiplier * dt);
+        }
+
+        syncSimulationBackend();
+    }
+
+    private void moveAlongRoute(double metersToMove) {
+        if (mRouteLats == null || mRouteLngs == null
+                || mRouteLats.length < 2 || mRouteLats.length != mRouteLngs.length) {
+            clearRouteCheckpoint();
+            stopLabMotion();
+            return;
+        }
+
+        int guard = 0;
+        while (metersToMove > 0.0001 && mRouteActive && guard++ < 20) {
+            int next = mRouteIndex + mRouteDirection;
+
+            if (next < 0 || next >= mRouteLats.length) {
+                if (mRouteMode == ROUTE_MODE_LOOP) {
+                    next = mRouteDirection > 0 ? 0 : mRouteLats.length - 1;
+                } else if (mRouteMode == ROUTE_MODE_PINGPONG) {
+                    mRouteDirection *= -1;
+                    next = mRouteIndex + mRouteDirection;
+                } else {
+                    mRouteActive = false;
+                    mSpeed = 0.0;
+                    if (mRoutePhysicsEngine != null) {
+                        mRoutePhysicsEngine.hardStop("FINISHED");
+                        mRoutePhysicsFrame = mRoutePhysicsEngine.frame();
+                        mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
+                    }
+                    clearRouteCheckpoint();
+                    activateSimulationBackend("FIXED");
+                    XLog.i("SERVICEGO: Lab route finished");
+                    return;
+                }
+            }
+
+            double targetLat = mRouteLats[next];
+            double targetLng = mRouteLngs[next];
+            double remaining = distanceMeters(mCurLat, mCurLng, targetLat, targetLng);
+
+            if (remaining < 0.05) {
+                mCurLat = targetLat;
+                mCurLng = targetLng;
+                mRouteIndex = next;
+                double turnAngle = routeTurnAngleAtVertex(mRouteIndex, mRouteDirection);
+                if (mRoutePhysicsEngine != null
+                        && mRoutePhysicsEngine.onVertexReached(
+                                turnAngle,
+                                mRouteActive,
+                                SystemClock.elapsedRealtime())) {
+                    mRoutePhysicsFrame = mRoutePhysicsEngine.frame();
+                    mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
+                    mSpeed = 0.0;
+                    break;
+                }
+                continue;
+            }
+
+            // Route course is geometry-derived. Do not let handset orientation overwrite it.
+            mCurBea = bearingDegrees(mCurLat, mCurLng, targetLat, targetLng);
+
+            if (metersToMove >= remaining) {
+                mCurLat = targetLat;
+                mCurLng = targetLng;
+                mRouteIndex = next;
+                metersToMove -= remaining;
+
+                double turnAngle = routeTurnAngleAtVertex(mRouteIndex, mRouteDirection);
+                if (mRoutePhysicsEngine != null
+                        && mRoutePhysicsEngine.onVertexReached(
+                                turnAngle,
+                                mRouteActive,
+                                SystemClock.elapsedRealtime())) {
+                    mRoutePhysicsFrame = mRoutePhysicsEngine.frame();
+                    mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
+                    mSpeed = 0.0;
+                    metersToMove = 0.0;
+                }
+            } else {
+                double fraction = metersToMove / remaining;
+                mCurLat += (targetLat - mCurLat) * fraction;
+                mCurLng += shortestLongitudeDelta(mCurLng, targetLng) * fraction;
+                normalizeCurrentLongitude();
+                metersToMove = 0.0;
+            }
+        }
+    }
+
+    private void moveRandomRoam(double metersToMove) {
+        mSpeed = mRoamSpeedMps * mMotionMultiplier;
+        int guard = 0;
+        while (metersToMove > 0.0001 && mRoamActive && guard++ < 10) {
+            double remaining = distanceMeters(mCurLat, mCurLng, mRoamTargetLat, mRoamTargetLng);
+            if (remaining < 0.5) {
+                chooseNewRoamTarget();
+                continue;
+            }
+
+            // Roam course is geometry-derived. Device heading is tracked separately.
+            mCurBea = bearingDegrees(mCurLat, mCurLng, mRoamTargetLat, mRoamTargetLng);
+
+            if (metersToMove >= remaining) {
+                mCurLat = mRoamTargetLat;
+                mCurLng = mRoamTargetLng;
+                metersToMove -= remaining;
+                chooseNewRoamTarget();
+            } else {
+                double fraction = metersToMove / remaining;
+                mCurLat += (mRoamTargetLat - mCurLat) * fraction;
+                mCurLng += shortestLongitudeDelta(mCurLng, mRoamTargetLng) * fraction;
+                normalizeCurrentLongitude();
+                metersToMove = 0.0;
+            }
+        }
+    }
+
+    private void chooseNewRoamTarget() {
+        double angle = mRandom.nextDouble() * Math.PI * 2.0;
+        double radius = Math.sqrt(mRandom.nextDouble()) * mRoamRadiusM;
+        double north = Math.cos(angle) * radius;
+        double east = Math.sin(angle) * radius;
+
+        mRoamTargetLat = mRoamCenterLat + north / 111320.0;
+        double cos = Math.max(0.05, Math.cos(Math.toRadians(mRoamCenterLat)));
+        mRoamTargetLng = mRoamCenterLng + east / (111320.0 * cos);
+        if (mRoamTargetLng > 180.0) mRoamTargetLng -= 360.0;
+        if (mRoamTargetLng < -180.0) mRoamTargetLng += 360.0;
+    }
+
+    private static double shortestLongitudeDelta(double from, double to) {
+        double d = to - from;
+        if (d > 180.0) d -= 360.0;
+        if (d < -180.0) d += 360.0;
+        return d;
+    }
+
+    private void normalizeCurrentLongitude() {
+        if (mCurLng > 180.0) mCurLng -= 360.0;
+        if (mCurLng < -180.0) mCurLng += 360.0;
+    }
+
+    private static double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private static double distanceMeters(double lat1, double lon1, double lat2, double lon2) {
+        final double earth = 6371000.0;
+        double p1 = Math.toRadians(lat1);
+        double p2 = Math.toRadians(lat2);
+        double dp = Math.toRadians(lat2 - lat1);
+        double dl = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dp / 2.0) * Math.sin(dp / 2.0)
+                + Math.cos(p1) * Math.cos(p2)
+                * Math.sin(dl / 2.0) * Math.sin(dl / 2.0);
+        return earth * 2.0 * Math.atan2(Math.sqrt(a), Math.sqrt(1.0 - a));
+    }
+
+    private static float bearingDegrees(double lat1, double lon1, double lat2, double lon2) {
+        double p1 = Math.toRadians(lat1);
+        double p2 = Math.toRadians(lat2);
+        double dl = Math.toRadians(lon2 - lon1);
+        double y = Math.sin(dl) * Math.cos(p2);
+        double x = Math.cos(p1) * Math.sin(p2)
+                - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+        double result = Math.toDegrees(Math.atan2(y, x));
+        if (result < 0.0) result += 360.0;
+        return (float) result;
+    }
+
+    private static float smoothHeadingDegrees(float previous, float next, float alpha) {
+        float from = previous % 360f;
+        if (from < 0f) from += 360f;
+        float to = next % 360f;
+        if (to < 0f) to += 360f;
+        float delta = to - from;
+        if (delta > 180f) delta -= 360f;
+        if (delta < -180f) delta += 360f;
+        float out = from + delta * Math.max(0f, Math.min(1f, alpha));
+        out %= 360f;
+        if (out < 0f) out += 360f;
+        return out;
+    }
+
+    private void removeTestProviderGPS() {
+        if (mProviderReliability != null) {
+            mProviderReliability.cleanupDuringService(LocationManager.GPS_PROVIDER);
+            return;
+        }
+        try {
+            try {
+                mLocManager.setTestProviderEnabled(LocationManager.GPS_PROVIDER, false);
+            } catch (IllegalArgumentException ignored) {
+            }
+            try {
+                mLocManager.removeTestProvider(LocationManager.GPS_PROVIDER);
+            } catch (IllegalArgumentException ignored) {
+            }
+            if (mProviderReliability != null) {
+                mProviderReliability.markClean(LocationManager.GPS_PROVIDER);
+            }
+        } catch (Throwable e) {
+            if (mProviderReliability != null) {
+                mProviderReliability.markCleanupFailure(LocationManager.GPS_PROVIDER, e);
+            }
             XLog.e("SERVICEGO: ERROR - removeTestProviderGPS");
         }
     }
@@ -324,40 +2088,78 @@ public class ServiceGo extends Service {
             if (!mLocManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 mLocManager.setTestProviderEnabled(LocationManager.GPS_PROVIDER, true);
             }
+            if (mProviderReliability != null) {
+                mProviderReliability.markActive(LocationManager.GPS_PROVIDER);
+            }
         } catch (Exception e) {
+            if (mProviderReliability != null) {
+                mProviderReliability.markRegistrationFailure(LocationManager.GPS_PROVIDER, e);
+            }
             XLog.e("SERVICEGO: ERROR - addTestProviderGPS");
         }
     }
 
     private void setLocationGPS() {
+        if (!mPolicyPublish) return;
         try {
-            // 尽可能模拟真实的 GPS 数据
             Location loc = new Location(LocationManager.GPS_PROVIDER);
-            loc.setAccuracy(Criteria.ACCURACY_FINE);    // 设定此位置的估计水平精度，以米为单位。
-            loc.setAltitude(mCurAlt);                     // 设置高度，在 WGS 84 参考坐标系中的米
-            loc.setBearing(mCurBea);                       // 方向（度）
-            loc.setLatitude(mCurLat);                   // 纬度（度）
-            loc.setLongitude(mCurLng);                  // 经度（度）
-            loc.setTime(System.currentTimeMillis());    // 本地时间
-            loc.setSpeed((float) mSpeed);
+            loc.setAccuracy(Math.max(0.8f, mPublishedAccuracy));
+            loc.setAltitude(mPublishedAlt);
+            if (mPublishedIncludeMotion) {
+                loc.setBearing(mPublishedBearing);
+            }
+            loc.setLatitude(mPublishedLat);
+            loc.setLongitude(mPublishedLng);
+            loc.setTime(System.currentTimeMillis());
+            loc.setSpeed((float) mPublishedSpeed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                loc.setVerticalAccuracyMeters(1.5f);
+                loc.setSpeedAccuracyMetersPerSecond(0.2f);
+                if (mPublishedIncludeMotion) {
+                    loc.setBearingAccuracyDegrees(2.0f);
+                }
+            }
             Bundle bundle = new Bundle();
-            bundle.putInt("satellites", 7);
+            bundle.putInt("satellites", 12);
             loc.setExtras(bundle);
 
             mLocManager.setTestProviderLocation(LocationManager.GPS_PROVIDER, loc);
+            mGpsPublishCount++;
+            mLastGpsPublishElapsed = SystemClock.elapsedRealtime();
         } catch (Exception e) {
-            XLog.e("SERVICEGO: ERROR - setLocationGPS");
+            mGpsPublishFailureCount++;
+            if (mProviderReliability != null) {
+                mProviderReliability.markPublishFailure(LocationManager.GPS_PROVIDER, e);
+                mProviderReliability.retryDeferredCleanup();
+            }
+            XLog.e("SERVICEGO: ERROR - setLocationGPS, reinitializing provider");
+            removeTestProviderGPS();
+            addTestProviderGPS();
         }
     }
 
     private void removeTestProviderNetwork() {
+        if (mProviderReliability != null) {
+            mProviderReliability.cleanupDuringService(LocationManager.NETWORK_PROVIDER);
+            return;
+        }
         try {
-            if (mLocManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+            try {
                 mLocManager.setTestProviderEnabled(LocationManager.NETWORK_PROVIDER, false);
-                mLocManager.removeTestProvider(LocationManager.NETWORK_PROVIDER);
+            } catch (IllegalArgumentException ignored) {
             }
-        } catch (Exception e) {
+            try {
+                mLocManager.removeTestProvider(LocationManager.NETWORK_PROVIDER);
+            } catch (IllegalArgumentException ignored) {
+            }
+            if (mProviderReliability != null) {
+                mProviderReliability.markClean(LocationManager.NETWORK_PROVIDER);
+            }
+        } catch (Throwable e) {
+            if (mProviderReliability != null) {
+                mProviderReliability.markCleanupFailure(LocationManager.NETWORK_PROVIDER, e);
+            }
             XLog.e("SERVICEGO: ERROR - removeTestProviderNetwork");
         }
     }
@@ -379,38 +2181,75 @@ public class ServiceGo extends Service {
             if (!mLocManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
                 mLocManager.setTestProviderEnabled(LocationManager.NETWORK_PROVIDER, true);
             }
-        } catch (SecurityException e) {
+            if (mProviderReliability != null) {
+                mProviderReliability.markActive(LocationManager.NETWORK_PROVIDER);
+            }
+        } catch (Exception e) {
+            if (mProviderReliability != null) {
+                mProviderReliability.markRegistrationFailure(LocationManager.NETWORK_PROVIDER, e);
+            }
             XLog.e("SERVICEGO: ERROR - addTestProviderNetwork");
         }
     }
 
     private void setLocationNetwork() {
+        if (!mPolicyPublish) return;
         try {
-            // 尽可能模拟真实的 NETWORK 数据
             Location loc = new Location(LocationManager.NETWORK_PROVIDER);
-            loc.setAccuracy(Criteria.ACCURACY_COARSE);  // 设定此位置的估计水平精度，以米为单位。
-            loc.setAltitude(mCurAlt);                     // 设置高度，在 WGS 84 参考坐标系中的米
-            loc.setBearing(mCurBea);                       // 方向（度）
-            loc.setLatitude(mCurLat);                   // 纬度（度）
-            loc.setLongitude(mCurLng);                  // 经度（度）
-            loc.setTime(System.currentTimeMillis());    // 本地时间
-            loc.setSpeed((float) mSpeed);
+            loc.setAccuracy(Math.max(2.0f, mPublishedAccuracy));
+            loc.setAltitude(mPublishedAlt);
+            if (mPublishedIncludeMotion) {
+                loc.setBearing(mPublishedBearing);
+            }
+            loc.setLatitude(mPublishedLat);
+            loc.setLongitude(mPublishedLng);
+            loc.setTime(System.currentTimeMillis());
+            loc.setSpeed((float) mPublishedSpeed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
 
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                loc.setVerticalAccuracyMeters(3.0f);
+                loc.setSpeedAccuracyMetersPerSecond(0.5f);
+                if (mPublishedIncludeMotion) {
+                    loc.setBearingAccuracyDegrees(3.0f);
+                }
+            }
             mLocManager.setTestProviderLocation(LocationManager.NETWORK_PROVIDER, loc);
+            mNetworkPublishCount++;
+            mLastNetworkPublishElapsed = SystemClock.elapsedRealtime();
         } catch (Exception e) {
-            XLog.e("SERVICEGO: ERROR - setLocationNetwork");
+            mNetworkPublishFailureCount++;
+            if (mProviderReliability != null) {
+                mProviderReliability.markPublishFailure(LocationManager.NETWORK_PROVIDER, e);
+                mProviderReliability.retryDeferredCleanup();
+            }
+            XLog.e("SERVICEGO: ERROR - setLocationNetwork, reinitializing provider");
+            removeTestProviderNetwork();
+            addTestProviderNetwork();
         }
     }
 
     private void removeTestProviderFused() {
+        if (mProviderReliability != null) {
+            mProviderReliability.cleanupDuringService(LocationManager.FUSED_PROVIDER);
+            return;
+        }
         try {
-            if (mLocManager.isProviderEnabled(LocationManager.FUSED_PROVIDER)) {
+            try {
                 mLocManager.setTestProviderEnabled(LocationManager.FUSED_PROVIDER, false);
-                mLocManager.removeTestProvider(LocationManager.FUSED_PROVIDER);
+            } catch (IllegalArgumentException ignored) {
             }
-        } catch (Exception e) {
-            // 系统 fused 通常不让 addTestProvider,失败正常 — 不写日志免刷屏
+            try {
+                mLocManager.removeTestProvider(LocationManager.FUSED_PROVIDER);
+            } catch (IllegalArgumentException ignored) {
+            }
+            if (mProviderReliability != null) {
+                mProviderReliability.markClean(LocationManager.FUSED_PROVIDER);
+            }
+        } catch (Throwable e) {
+            if (mProviderReliability != null) {
+                mProviderReliability.markCleanupFailure(LocationManager.FUSED_PROVIDER, e);
+            }
         }
     }
 
@@ -422,44 +2261,63 @@ public class ServiceGo extends Service {
             if (!mLocManager.isProviderEnabled(LocationManager.FUSED_PROVIDER)) {
                 mLocManager.setTestProviderEnabled(LocationManager.FUSED_PROVIDER, true);
             }
+            if (mProviderReliability != null) {
+                mProviderReliability.markActive(LocationManager.FUSED_PROVIDER);
+            }
             XLog.i("SERVICEGO: FUSED_PROVIDER test provider added");
         } catch (Exception e) {
+            if (mProviderReliability != null) {
+                mProviderReliability.markRegistrationFailure(LocationManager.FUSED_PROVIDER, e);
+            }
             // 系统 fused 通常不让 addTestProvider,失败正常 — GMS 路径仍可覆盖
         }
     }
 
     private void setLocationFused() {
+        if (!mPolicyPublish) return;
         try {
             Location loc = new Location(LocationManager.FUSED_PROVIDER);
-            loc.setAccuracy(Criteria.ACCURACY_FINE);
-            loc.setAltitude(mCurAlt);
-            loc.setBearing(mCurBea);
-            loc.setLatitude(mCurLat);
-            loc.setLongitude(mCurLng);
+            loc.setAccuracy(Math.max(1.0f, mPublishedAccuracy));
+            loc.setAltitude(mPublishedAlt);
+            if (mPublishedIncludeMotion) {
+                loc.setBearing(mPublishedBearing);
+            }
+            loc.setLatitude(mPublishedLat);
+            loc.setLongitude(mPublishedLng);
             loc.setTime(System.currentTimeMillis());
-            loc.setSpeed((float) mSpeed);
+            loc.setSpeed((float) mPublishedSpeed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
 
             mLocManager.setTestProviderLocation(LocationManager.FUSED_PROVIDER, loc);
+            mFusedProviderPublishCount++;
+            mLastFusedProviderPublishElapsed = SystemClock.elapsedRealtime();
         } catch (Exception e) {
+            mFusedProviderPublishFailureCount++;
+            if (mProviderReliability != null) {
+                mProviderReliability.markPublishFailure(LocationManager.FUSED_PROVIDER, e);
+            }
             // fused test provider 没注上时这里会 fail,正常
         }
     }
 
     @SuppressLint("MissingPermission")
     private void setLocationFusedClient() {
-        if (mFusedClient == null || !mFusedMockEnabled) return;
+        if (!mPolicyPublish || mFusedClient == null || !mFusedMockEnabled) return;
         try {
             Location loc = new Location("fused");
-            loc.setAccuracy(Criteria.ACCURACY_FINE);
-            loc.setAltitude(mCurAlt);
-            loc.setBearing(mCurBea);
-            loc.setLatitude(mCurLat);
-            loc.setLongitude(mCurLng);
+            loc.setAccuracy(Math.max(1.0f, mPublishedAccuracy));
+            loc.setAltitude(mPublishedAlt);
+            if (mPublishedIncludeMotion) {
+                loc.setBearing(mPublishedBearing);
+            }
+            loc.setLatitude(mPublishedLat);
+            loc.setLongitude(mPublishedLng);
             loc.setTime(System.currentTimeMillis());
-            loc.setSpeed((float) mSpeed);
+            loc.setSpeed((float) mPublishedSpeed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
             mFusedClient.setMockLocation(loc);
+            mGmsFusedDispatchCount++;
+            mLastGmsFusedDispatchElapsed = SystemClock.elapsedRealtime();
         } catch (Throwable t) {
             // 不打日志,避免每 33ms 刷屏
         }
@@ -489,6 +2347,374 @@ public class ServiceGo extends Service {
             mCurAlt = alt;
             mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
             if (mJoyStick != null) mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+        }
+
+        public double getLongitude() { return mCurLng; }
+        public double getLatitude() { return mCurLat; }
+        public double getAltitude() { return mCurAlt; }
+        public double getSpeedMps() { return mSpeed; }
+        public float getBearingDegrees() { return mCurBea; }
+
+        public boolean isPolicyPublishing() { return mPolicyPublish; }
+        public double getPublishedLongitude() { return mPublishedLng; }
+        public double getPublishedLatitude() { return mPublishedLat; }
+        public double getPublishedAltitude() { return mPublishedAlt; }
+        public double getPublishedSpeedMps() { return mPublishedSpeed; }
+        public float getPublishedBearingDegrees() { return mPublishedBearing; }
+        public float getPublishedAccuracyMeters() { return mPublishedAccuracy; }
+        public String getPolicySummary() { return mPolicySummary; }
+
+        public String getProviderReliabilitySummary() {
+            LabProviderReliabilityController controller = mProviderReliability;
+            return controller == null ? "UNAVAILABLE" : controller.summary();
+        }
+
+        public int getProviderOrphanedCount() {
+            LabProviderReliabilityController controller = mProviderReliability;
+            return controller == null ? 0 : controller.orphanedCount();
+        }
+
+        public String getRouteRecoverySummary() {
+            return mRouteRecoverySummary;
+        }
+
+        public String getSimulationBackendSummary() {
+            return mSimulationBackendSummary;
+        }
+
+        public String getRoutePhysicsSummary() {
+            return mRoutePhysicsSummary;
+        }
+
+        public String getRouteMotionProfileName() {
+            return routeMotionProfileName();
+        }
+
+        public boolean isReplayActive() {
+            return mReplayActive;
+        }
+
+        public String getReplaySummary() {
+            return mReplaySummary;
+        }
+
+        public double getReplayProgressFraction() {
+            LabTimedReplayEngine engine = mReplayEngine;
+            return engine == null ? 0.0 : engine.progressFraction();
+        }
+
+        public long getReplayPlayheadMs() {
+            LabTimedReplayEngine engine = mReplayEngine;
+            return engine == null ? 0L : engine.playheadMs();
+        }
+
+        public long getReplayDurationMs() {
+            LabTimedReplayEngine engine = mReplayEngine;
+            return engine == null ? 0L : engine.durationMs();
+        }
+
+        public double getRoutePhysicsSpeedMps() {
+            LabRoutePhysicsEngine.Frame f = mRoutePhysicsFrame;
+            return f == null ? mSpeed : f.speedMps;
+        }
+
+        public double getRoutePhysicsTargetSpeedMps() {
+            LabRoutePhysicsEngine.Frame f = mRoutePhysicsFrame;
+            return f == null ? mSpeed : f.targetSpeedMps;
+        }
+
+        public String getRoutePhysicsPhase() {
+            LabRoutePhysicsEngine.Frame f = mRoutePhysicsFrame;
+            return f == null ? "IDLE" : f.phase;
+        }
+
+        public boolean isDeviceHeadingAvailable() { return mHeadingAvailable; }
+        public float getDeviceHeadingDegrees() { return mDeviceHeadingDegrees; }
+        public int getDeviceHeadingAccuracy() { return mDeviceHeadingAccuracy; }
+        public String getHeadingSensorSource() { return mHeadingSensorSource; }
+
+        public String getHeadingFusionState() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? "UNAVAILABLE" : f.state;
+        }
+        public String getHeadingFusionSource() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? "NONE" : f.source;
+        }
+        public String getHeadingCalibrationState() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? "UNAVAILABLE" : f.calibration;
+        }
+        public double getHeadingConfidence() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? 0.0 : f.confidence;
+        }
+        public float getHeadingAbsoluteDegrees() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? Float.NaN : f.absoluteHeadingDeg;
+        }
+        public float getHeadingGameDegrees() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? Float.NaN : f.gameHeadingDeg;
+        }
+        public double getMagneticFieldMicroTesla() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? Double.NaN : f.magneticNormUt;
+        }
+        public double getMagneticBaselineMicroTesla() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? Double.NaN : f.magneticBaselineUt;
+        }
+        public double getMagneticDeviationRatio() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? 1.0 : f.magneticDeviationRatio;
+        }
+        public boolean isMagneticDisturbed() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null || f.magneticDisturbed;
+        }
+        public String getHeadingFusionSummary() {
+            LabHeadingIntelligenceEngine.Frame f = mHeadingFrame;
+            return f == null ? "UNAVAILABLE" : f.summary();
+        }
+
+        public float getAttitudeHeadingDegrees() {
+            LabAttitudeHeadingEngine.Frame f = mAttitudeHeadingFrame;
+            return f == null ? Float.NaN : f.headingDeg;
+        }
+        public String getHeadingPosture() {
+            LabAttitudeHeadingEngine.Frame f = mAttitudeHeadingFrame;
+            return f == null ? "UNKNOWN" : f.posture;
+        }
+        public String getHeadingAttitudeAxis() {
+            LabAttitudeHeadingEngine.Frame f = mAttitudeHeadingFrame;
+            return f == null ? "NONE" : f.axis;
+        }
+        public double getHeadingAttitudeConfidence() {
+            LabAttitudeHeadingEngine.Frame f = mAttitudeHeadingFrame;
+            return f == null ? 0.0 : f.confidence;
+        }
+        public float getDevicePitchDegrees() { return mDevicePitchDegrees; }
+        public float getDeviceRollDegrees() { return mDeviceRollDegrees; }
+        public String getAttitudeHeadingSummary() {
+            LabAttitudeHeadingEngine.Frame f = mAttitudeHeadingFrame;
+            return f == null ? "UNAVAILABLE" : f.summary();
+        }
+
+        public int getHeadingTraceCount() {
+            LabHeadingTraceRecorder recorder = mHeadingTraceRecorder;
+            return recorder == null ? 0 : recorder.size();
+        }
+        public String[] getHeadingTraceCsvRows() {
+            LabHeadingTraceRecorder recorder = mHeadingTraceRecorder;
+            return recorder == null ? new String[0] : recorder.toCsvRows();
+        }
+        public void clearHeadingTrace() {
+            LabHeadingTraceRecorder recorder = mHeadingTraceRecorder;
+            if (recorder != null) recorder.clear();
+        }
+
+        public long getGpsPublishCount() { return mGpsPublishCount; }
+        public long getNetworkPublishCount() { return mNetworkPublishCount; }
+        public long getFusedProviderPublishCount() { return mFusedProviderPublishCount; }
+        public long getGmsFusedDispatchCount() { return mGmsFusedDispatchCount; }
+        public long getGpsPublishFailureCount() { return mGpsPublishFailureCount; }
+        public long getNetworkPublishFailureCount() { return mNetworkPublishFailureCount; }
+        public long getFusedProviderPublishFailureCount() {
+            return mFusedProviderPublishFailureCount;
+        }
+        public long getGpsPublishAgeMs() {
+            return ageMs(mLastGpsPublishElapsed);
+        }
+        public long getNetworkPublishAgeMs() {
+            return ageMs(mLastNetworkPublishElapsed);
+        }
+        public long getFusedProviderPublishAgeMs() {
+            return ageMs(mLastFusedProviderPublishElapsed);
+        }
+        public long getGmsFusedDispatchAgeMs() {
+            return ageMs(mLastGmsFusedDispatchElapsed);
+        }
+        public boolean isGmsFusedMockEnabled() { return mFusedMockEnabled; }
+        public boolean isGpsProviderEnabled() {
+            try {
+                return mLocManager != null
+                        && mLocManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+            } catch (Throwable t) {
+                return false;
+            }
+        }
+        public boolean isNetworkProviderEnabled() {
+            try {
+                return mLocManager != null
+                        && mLocManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+            } catch (Throwable t) {
+                return false;
+            }
+        }
+        public boolean isFusedProviderEnabled() {
+            try {
+                return Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                        && mLocManager != null
+                        && mLocManager.isProviderEnabled(LocationManager.FUSED_PROVIDER);
+            } catch (Throwable t) {
+                return false;
+            }
+        }
+
+        private long ageMs(long elapsed) {
+            if (elapsed < 0L) return -1L;
+            return Math.max(0L, SystemClock.elapsedRealtime() - elapsed);
+        }
+
+        public String getKinematicState() {
+            LabKinematicsEngine.Frame f = mKinematicFrame;
+            return f == null ? "UNAVAILABLE" : f.state;
+        }
+        public double getKinematicAccelerationMps2() {
+            LabKinematicsEngine.Frame f = mKinematicFrame;
+            return f == null ? 0.0 : f.accelerationMps2;
+        }
+        public double getKinematicJerkMps3() {
+            LabKinematicsEngine.Frame f = mKinematicFrame;
+            return f == null ? 0.0 : f.jerkMps3;
+        }
+        public double getKinematicTurnRateDegPerSec() {
+            LabKinematicsEngine.Frame f = mKinematicFrame;
+            return f == null ? 0.0 : f.turnRateDegPerSec;
+        }
+        public String getKinematicBearingSource() {
+            LabKinematicsEngine.Frame f = mKinematicFrame;
+            return f == null ? "UNAVAILABLE" : f.bearingSource;
+        }
+        public String getKinematicLedgerHash() {
+            LabKinematicsEngine.Frame f = mKinematicFrame;
+            return f == null ? "UNAVAILABLE" : f.chainHash;
+        }
+        public String getKinematicSummary() {
+            LabKinematicsEngine.Frame f = mKinematicFrame;
+            return f == null ? "UNAVAILABLE" : f.summary();
+        }
+
+        public long getScenarioStep() { return mScenarioStep; }
+        public String getScenarioSummary() { return mScenarioSummary; }
+        public long getScenarioVirtualTimeMillis() { return mScenarioVirtualTimeMillis; }
+        public int getScenarioBatteryPercent() { return mScenarioBatteryPercent; }
+        public float getScenarioHeadingDegrees() { return mScenarioHeadingDegrees; }
+        public double getScenarioNoiseNorthMeters() { return mScenarioNoiseNorthMeters; }
+        public double getScenarioNoiseEastMeters() { return mScenarioNoiseEastMeters; }
+        public void resetScenarioStep() {
+            mScenarioStep = 0L;
+            recordProvenance("SCENARIO", "replay reset to tick 0 via Binder");
+            refreshPublishedPolicy();
+        }
+
+        public boolean isRouteActive() { return mRouteActive; }
+        public boolean isRoamActive() { return mRoamActive; }
+        public boolean isMotionPaused() { return mMotionPaused; }
+        public double getMotionMultiplier() { return mMotionMultiplier; }
+
+        public double getRouteProgressFraction() {
+            if (mRouteTotalDistance <= 0.0) return 0.0;
+            return clamp(getCurrentPassProgressMeters() / mRouteTotalDistance, 0.0, 1.0);
+        }
+
+        public double getRouteRemainingMeters() {
+            if (!mRouteActive || mRouteTotalDistance <= 0.0) return 0.0;
+            return Math.max(0.0, mRouteTotalDistance - getCurrentPassProgressMeters());
+        }
+
+        public long getRouteEtaSeconds() {
+            double effective = Math.max(
+                    mSpeed,
+                    Math.min(mRouteSpeedMps * mMotionMultiplier,
+                            getRoutePhysicsTargetSpeedMps()));
+            if (!mRouteActive || mMotionPaused || effective <= 0.01) return -1L;
+            return Math.round(getRouteRemainingMeters() / effective);
+        }
+
+        public int getRouteMode() { return mRouteMode; }
+
+        public String getProvenanceSource() {
+            return mProvenanceSource;
+        }
+
+        public String[] getProvenanceEvents() {
+            synchronized (mProvenanceLock) {
+                return mProvenanceEvents.toArray(new String[0]);
+            }
+        }
+
+        public void clearProvenanceEvents() {
+            synchronized (mProvenanceLock) {
+                mProvenanceEvents.clear();
+            }
+            recordProvenance("PROVENANCE", "timeline cleared");
+        }
+
+        public boolean isTrackRecording() {
+            synchronized (mTrackLock) {
+                return mTrackRecording;
+            }
+        }
+
+        public int getTrackPointCount() {
+            synchronized (mTrackLock) {
+                return mTrackLats.size();
+            }
+        }
+
+        public double getTrackDistanceMeters() {
+            synchronized (mTrackLock) {
+                if (mTrackLats.size() < 2 || mTrackLats.size() != mTrackLngs.size()) {
+                    return 0.0;
+                }
+                double total = 0.0;
+                for (int i = 1; i < mTrackLats.size(); i++) {
+                    total += distanceMeters(
+                            mTrackLats.get(i - 1), mTrackLngs.get(i - 1),
+                            mTrackLats.get(i), mTrackLngs.get(i));
+                }
+                return total;
+            }
+        }
+
+        public long getTrackDurationSeconds() {
+            synchronized (mTrackLock) {
+                if (mTrackTimes.size() < 2) return 0L;
+                long ms = mTrackTimes.get(mTrackTimes.size() - 1) - mTrackTimes.get(0);
+                return Math.max(0L, ms / 1000L);
+            }
+        }
+
+        public double getTrackAverageSpeedMps() {
+            long seconds = getTrackDurationSeconds();
+            if (seconds <= 0L) return 0.0;
+            return getTrackDistanceMeters() / seconds;
+        }
+
+        public double[] getTrackLats() {
+            synchronized (mTrackLock) {
+                double[] out = new double[mTrackLats.size()];
+                for (int i = 0; i < out.length; i++) out[i] = mTrackLats.get(i);
+                return out;
+            }
+        }
+
+        public double[] getTrackLngs() {
+            synchronized (mTrackLock) {
+                double[] out = new double[mTrackLngs.size()];
+                for (int i = 0; i < out.length; i++) out[i] = mTrackLngs.get(i);
+                return out;
+            }
+        }
+
+        public long[] getTrackTimes() {
+            synchronized (mTrackLock) {
+                long[] out = new long[mTrackTimes.size()];
+                for (int i = 0; i < out.length; i++) out[i] = mTrackTimes.get(i);
+                return out;
+            }
         }
     }
 }
