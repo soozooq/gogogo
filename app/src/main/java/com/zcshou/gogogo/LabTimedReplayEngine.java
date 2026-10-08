@@ -14,6 +14,7 @@ public final class LabTimedReplayEngine {
     private long[] relativeTimesMs;
     private long durationMs;
     private double playheadMs;
+    private double playbackMultiplier = 1.0;
     private boolean active;
     private boolean finished;
 
@@ -47,6 +48,7 @@ public final class LabTimedReplayEngine {
         }
 
         playheadMs = 0.0;
+        playbackMultiplier = 1.0;
         active = true;
         finished = false;
     }
@@ -56,6 +58,7 @@ public final class LabTimedReplayEngine {
 
         double dtMs = Math.max(0.0, Math.min(1000.0, dtSeconds * 1000.0));
         double speedFactor = Math.max(0.0, Math.min(16.0, multiplier));
+        playbackMultiplier = speedFactor;
         playheadMs += dtMs * speedFactor;
 
         if (playheadMs >= durationMs) {
@@ -148,7 +151,7 @@ public final class LabTimedReplayEngine {
                 lat,
                 lng,
                 alt,
-                Math.max(0.0, speedMps),
+                Math.max(0.0, speedMps * playbackMultiplier),
                 bearing,
                 progressFraction(),
                 hi);
