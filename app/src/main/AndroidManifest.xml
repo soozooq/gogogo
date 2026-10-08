@@ -150,6 +150,12 @@
             android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
+            android:name=".TencentLocationProbeActivity"
+            android:exported="false"
+            android:process=":consumer"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
             android:name=".ConsumerLocationProbeActivity"
             android:exported="false"
             android:process=":consumer"
