@@ -168,3 +168,105 @@ When evaluating new repositories, classify them separately:
 6. Root/Xposed/injection-oriented
 
 For GoGoGo, prefer categories 1, 2, 3, 4, and 5 through documented/public Android mechanisms.
+
+## Projects that actually modify Android location
+
+This section is intentionally restricted to projects that really publish mock locations or drive location simulation, rather than GNSS-only observers.
+
+### Strong non-root candidates
+
+#### shortcuts/locationjoystick
+- Standard Android mock-location mechanism.
+- Foreground mock service.
+- Floating joystick overlay.
+- Saved routes + GPX import.
+- Loop / reverse / return-to-start / roaming.
+- Floating map/widget architecture.
+- Clear modular split between core location, routes, joystick, widget, settings.
+- Particularly interesting for GoGoGo: overlay control, route UX, modular service/state architecture.
+
+#### Akylas/gps-mocker-rs
+- Android self-mocking plus desktop-driven device control in one project.
+- Publishes bearing, speed, altitude, accuracy.
+- GPX / GeoJSON import.
+- Valhalla route building and map matching.
+- Believable speed model and corner easing.
+- Uses route curvature and maneuver data.
+- Particularly interesting for GoGoGo: route physics, desktop/ADB bridge, route annotation.
+
+#### vincenzobpt/gps-mock-location
+- Android test-provider injection to GPS / NETWORK / FUSED.
+- Physically integrated route simulation.
+- Acceleration / braking / corner speed limits / stops.
+- Concurrency-safe transport controls with epoch invalidation.
+- Mock backend hidden behind a testable port abstraction.
+- Particularly interesting for GoGoGo: motion engine and transport-state correctness.
+
+#### Lanjunyee/virtual-location
+- No-root fixed point, two-point trip, multi-waypoint route playback.
+- GPX import.
+- GPS / NETWORK / FUSED coverage.
+- Foreground service.
+- WGS84 / GCJ-02 display conversion while keeping canonical data in WGS84.
+- Particularly interesting for GoGoGo: China-friendly map/coordinate UX and strict GPX validation.
+
+#### 0xfnzero/gps-locator
+- No-root Android mock location.
+- GPX / KML route replay.
+- ADB multi-device control.
+- Scenario / suite automation and machine-readable reports.
+- Particularly interesting for GoGoGo: QA harness and readiness model.
+
+#### BuriXon-code/MockGPS
+- GPS + NETWORK test-provider publication.
+- Foreground service.
+- Optional external broadcast API and Termux control.
+- Persistent state + reboot restoration.
+- Optional drift.
+- Particularly interesting for GoGoGo: external control and boot/session restoration.
+
+#### gamedirty/mock-location
+- Publishes GPS / NETWORK / FUSED.
+- Foreground service.
+- Accuracy / altitude / speed / bearing variation.
+- WGS84 / GCJ-02 conversion.
+- Lightweight map implementation.
+- Particularly interesting for GoGoGo: compact provider engine and China-map compatibility.
+
+### Interesting but use with caution
+
+#### niegl/MockLocation
+- Publishes GPS / NETWORK / FUSED and additional provider names.
+- Foreground service + wandering mode.
+- MIUI/HyperOS compatibility experiments using reflection.
+- Important caveat: its provider list includes PASSIVE, while AOSP-oriented research from URnetwork says PASSIVE should not be mocked. Treat this repository as a source of OEM-compatibility clues, not as a design authority.
+
+#### r69shabh/spoofer
+- Kotlin/Compose mock-location project.
+- OSRM routes and joystick movement.
+- Appium/Pytest QA automation.
+- Useful for test architecture and route UX.
+- Any anti-detection / integrity-bypass claims are out of scope for GoGoGo.
+
+#### 0xsimaa/Smart_Route
+- Structured engine/service/storage split.
+- Boot recovery and persistent session concepts.
+- GPX export and route simulation.
+- Useful as another architecture comparison point.
+
+## New shortlist for source-level study
+
+Highest priority:
+1. shortcuts/locationjoystick — overlay + modular architecture
+2. Akylas/gps-mocker-rs — believable route playback + desktop/device dual target
+3. vincenzobpt/gps-mock-location — physics + concurrency-safe transport
+4. 0xfnzero/gps-locator — automation and device readiness
+5. URnetwork/android — provider lifecycle correctness
+6. narumiruna/kestrel — process-death resume
+
+Secondary:
+7. Lanjunyee/virtual-location — GPX validation + WGS84/GCJ-02 UX
+8. BuriXon-code/MockGPS — broadcast/Termux control + boot restore
+9. gamedirty/mock-location — compact triple-provider engine
+10. niegl/MockLocation — OEM compatibility clues only
+
