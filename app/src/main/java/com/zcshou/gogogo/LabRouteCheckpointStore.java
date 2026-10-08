@@ -58,6 +58,7 @@ public final class LabRouteCheckpointStore {
                 .putInt("index", progress.routeIndex)
                 .putInt("direction", progress.routeDirection)
                 .putInt("mode", progress.routeMode)
+                .putInt("motion_profile", progress.motionProfile)
                 .putLong("speed_bits", Double.doubleToRawLongBits(progress.routeSpeedMps))
                 .putBoolean("paused", progress.paused)
                 .putLong("multiplier_bits", Double.doubleToRawLongBits(progress.multiplier))
@@ -88,6 +89,7 @@ public final class LabRouteCheckpointStore {
                 prefs.getInt("index", 0),
                 prefs.getInt("direction", 1),
                 prefs.getInt("mode", 0),
+                prefs.getInt("motion_profile", 1),
                 Double.longBitsToDouble(
                         prefs.getLong("speed_bits", Double.doubleToRawLongBits(1.4))),
                 prefs.getBoolean("paused", false),
@@ -179,6 +181,7 @@ public final class LabRouteCheckpointStore {
         public final int routeIndex;
         public final int routeDirection;
         public final int routeMode;
+        public final int motionProfile;
         public final double routeSpeedMps;
         public final boolean paused;
         public final double multiplier;
@@ -198,9 +201,36 @@ public final class LabRouteCheckpointStore {
                 double longitude,
                 double altitude,
                 float bearingDegrees) {
+            this(
+                    routeIndex,
+                    routeDirection,
+                    routeMode,
+                    1,
+                    routeSpeedMps,
+                    paused,
+                    multiplier,
+                    latitude,
+                    longitude,
+                    altitude,
+                    bearingDegrees);
+        }
+
+        public Progress(
+                int routeIndex,
+                int routeDirection,
+                int routeMode,
+                int motionProfile,
+                double routeSpeedMps,
+                boolean paused,
+                double multiplier,
+                double latitude,
+                double longitude,
+                double altitude,
+                float bearingDegrees) {
             this.routeIndex = routeIndex;
             this.routeDirection = routeDirection;
             this.routeMode = routeMode;
+            this.motionProfile = motionProfile;
             this.routeSpeedMps = routeSpeedMps;
             this.paused = paused;
             this.multiplier = multiplier;
