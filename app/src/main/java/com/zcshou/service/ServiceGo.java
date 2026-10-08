@@ -43,7 +43,11 @@ import com.zcshou.gogogo.MainActivity;
 import com.zcshou.gogogo.LabPolicyEngine;
 import com.zcshou.gogogo.LabProviderReliabilityController;
 import com.zcshou.gogogo.LabRouteCheckpointStore;
+import com.zcshou.gogogo.LabRoutePhysicsEngine;
 import com.zcshou.gogogo.LabScenarioEngine;
+import com.zcshou.gogogo.LabSimulationBackend;
+import com.zcshou.gogogo.LabSimulationSample;
+import com.zcshou.gogogo.LabMutableSimulationBackend;
 import com.zcshou.gogogo.LabKinematicsEngine;
 import com.zcshou.gogogo.LabHeadingIntelligenceEngine;
 import com.zcshou.gogogo.LabAttitudeHeadingEngine;
@@ -113,6 +117,16 @@ public class ServiceGo extends Service {
     private long mLastMotionElapsed = 0L;
     private boolean mMotionPaused = false;
     private double mMotionMultiplier = 1.0;
+
+    // Lab 21: unified simulation backends + route physics.
+    private LabMutableSimulationBackend mFixedBackend;
+    private LabMutableSimulationBackend mRouteBackend;
+    private LabMutableSimulationBackend mRoamBackend;
+    private volatile LabSimulationBackend mActiveSimulationBackend;
+    private LabRoutePhysicsEngine mRoutePhysicsEngine;
+    private volatile LabRoutePhysicsEngine.Frame mRoutePhysicsFrame;
+    private volatile String mSimulationBackendSummary = "FIXED";
+    private volatile String mRoutePhysicsSummary = "IDLE";
 
     public static volatile boolean sRunning = false;
 
@@ -257,6 +271,13 @@ public class ServiceGo extends Service {
         mPolicyEngine = new LabPolicyEngine(this);
         mScenarioEngine = new LabScenarioEngine(this);
         mKinematicsEngine = new LabKinematicsEngine();
+        mFixedBackend = new LabMutableSimulationBackend("FIXED");
+        mRouteBackend = new LabMutableSimulationBackend("ROUTE");
+        mRoamBackend = new LabMutableSimulationBackend("ROAM");
+        mRoutePhysicsEngine = new LabRoutePhysicsEngine();
+        mFixedBackend.activate(
+                mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+        mActiveSimulationBackend = mFixedBackend;
         mHeadingFusionEngine = new LabHeadingIntelligenceEngine();
         mAttitudeHeadingEngine = new LabAttitudeHeadingEngine();
         mHeadingTraceRecorder = new LabHeadingTraceRecorder();
@@ -610,6 +631,11 @@ public class ServiceGo extends Service {
             if (mRouteActive || mRoamActive) {
                 mMotionPaused = true;
                 mSpeed = 0.0;
+                if (mRoutePhysicsEngine != null && mRouteActive) {
+                    mRoutePhysicsEngine.hardStop("PAUSED");
+                    mRoutePhysicsFrame = mRoutePhysicsEngine.frame();
+                    mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
+                }
                 recordProvenance("MOTION", "paused");
                 checkpointRoute(true);
             }
@@ -620,8 +646,14 @@ public class ServiceGo extends Service {
             if (mRouteActive || mRoamActive) {
                 mMotionPaused = false;
                 mLastMotionElapsed = SystemClock.elapsedRealtime();
-                mSpeed = mRouteActive ? mRouteSpeedMps * mMotionMultiplier
-                        : mRoamSpeedMps * mMotionMultiplier;
+                if (mRouteActive) {
+                    mSpeed = 0.0;
+                    if (mRoutePhysicsEngine != null) {
+                        mRoutePhysicsEngine.reset(0.0);
+                    }
+                } else {
+                    mSpeed = mRoamSpeedMps * mMotionMultiplier;
+                }
                 recordProvenance("MOTION", "resumed");
                 checkpointRoute(true);
             }
@@ -631,8 +663,8 @@ public class ServiceGo extends Service {
         if (intent != null && ACTION_MOTION_SPEED.equals(intent.getAction())) {
             mMotionMultiplier = clamp(
                     intent.getDoubleExtra(EXTRA_MOTION_MULTIPLIER, 1.0), 0.25, 4.0);
-            if (!mMotionPaused) {
-                mSpeed = (mRouteActive ? mRouteSpeedMps : mRoamSpeedMps) * mMotionMultiplier;
+            if (!mMotionPaused && !mRouteActive) {
+                mSpeed = mRoamSpeedMps * mMotionMultiplier;
             }
             recordProvenance("MOTION", "multiplier=" + mMotionMultiplier + "x");
             checkpointRoute(true);
@@ -676,8 +708,14 @@ public class ServiceGo extends Service {
                 mCurLat = mRouteLats[0];
                 mCurLng = mRouteLngs[0];
                 mCurAlt = DEFAULT_ALT;
-                mSpeed = mRouteSpeedMps * mMotionMultiplier;
+                mSpeed = 0.0;
+                if (mRoutePhysicsEngine != null) {
+                    mRoutePhysicsEngine.reset(0.0);
+                    mRoutePhysicsFrame = mRoutePhysicsEngine.frame();
+                    mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
+                }
                 mLastMotionElapsed = SystemClock.elapsedRealtime();
+                activateSimulationBackend("ROUTE");
 
                 mProvenanceSource = "ROUTE";
                 recordProvenance("ROUTE", "started points=" + lats.length
@@ -704,6 +742,7 @@ public class ServiceGo extends Service {
             mMotionPaused = false;
             mMotionMultiplier = 1.0;
             mSpeed = mRoamSpeedMps * mMotionMultiplier;
+            activateSimulationBackend("ROAM");
             chooseNewRoamTarget();
             mLastMotionElapsed = SystemClock.elapsedRealtime();
             mProvenanceSource = "ROAM";
@@ -724,6 +763,7 @@ public class ServiceGo extends Service {
             mCurLat = intent.getDoubleExtra(MainActivity.LAT_MSG_ID, DEFAULT_LAT);
             mCurAlt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
             mProvenanceSource = "MANUAL";
+            activateSimulationBackend("FIXED");
             recordProvenance("MANUAL", "position selected");
             persistCurrentLocation(state);
         } else {
@@ -741,6 +781,7 @@ public class ServiceGo extends Service {
             mCurAlt = Double.longBitsToDouble(
                     state.getLong("alt_bits", Double.doubleToRawLongBits(DEFAULT_ALT)));
             mProvenanceSource = "RESTORED";
+            activateSimulationBackend("FIXED");
         }
 
         if (mJoyStick != null) {
@@ -854,8 +895,14 @@ public class ServiceGo extends Service {
 
             mRouteActive = true;
             mRoamActive = false;
-            mSpeed = mMotionPaused ? 0.0 : mRouteSpeedMps * mMotionMultiplier;
+            mSpeed = 0.0;
+            if (mRoutePhysicsEngine != null) {
+                mRoutePhysicsEngine.reset(0.0);
+                mRoutePhysicsFrame = mRoutePhysicsEngine.frame();
+                mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
+            }
             mLastMotionElapsed = SystemClock.elapsedRealtime();
+            activateSimulationBackend("ROUTE");
             mLastRouteCheckpointElapsed = mLastMotionElapsed;
             mProvenanceSource = "ROUTE";
 
@@ -907,6 +954,12 @@ public class ServiceGo extends Service {
         mLastMotionElapsed = 0L;
         mMotionPaused = false;
         mMotionMultiplier = 1.0;
+        if (mRoutePhysicsEngine != null) {
+            mRoutePhysicsEngine.hardStop("IDLE");
+            mRoutePhysicsFrame = mRoutePhysicsEngine.frame();
+            mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
+        }
+        activateSimulationBackend("FIXED");
     }
 
     @Override
@@ -1166,24 +1219,31 @@ public class ServiceGo extends Service {
     }
 
     private void refreshPublishedPolicy() {
+        syncSimulationBackend();
+        LabSimulationSample sample = currentSimulationSample();
+
         LabPolicyEngine engine = mPolicyEngine;
         LabPolicyEngine.LocationDecision decision;
 
         if (engine == null) {
             decision = new LabPolicyEngine.LocationDecision(
                     true,
-                    mCurLat,
-                    mCurLng,
-                    mCurAlt,
-                    mSpeed,
-                    mCurBea,
-                    0.8f,
+                    sample.latitude,
+                    sample.longitude,
+                    sample.altitude,
+                    sample.speedMps,
+                    sample.bearingDegrees,
+                    sample.accuracyMeters,
                     true,
                     "FALLBACK");
             mPolicySummary = "FALLBACK · location=EXACT";
         } else {
             decision = engine.decideLocation(
-                    mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea);
+                    sample.latitude,
+                    sample.longitude,
+                    sample.altitude,
+                    sample.speedMps,
+                    sample.bearingDegrees);
             mPolicySummary = engine.summary();
         }
 
@@ -1300,6 +1360,151 @@ public class ServiceGo extends Service {
         }
     }
 
+    private void activateSimulationBackend(String id) {
+        if ("ROUTE".equals(id)) {
+            if (mFixedBackend != null) mFixedBackend.deactivate();
+            if (mRoamBackend != null) mRoamBackend.deactivate();
+            if (mRouteBackend != null) mRouteBackend.activate(
+                    mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+            mActiveSimulationBackend = mRouteBackend;
+        } else if ("ROAM".equals(id)) {
+            if (mFixedBackend != null) mFixedBackend.deactivate();
+            if (mRouteBackend != null) mRouteBackend.deactivate();
+            if (mRoamBackend != null) mRoamBackend.activate(
+                    mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+            mActiveSimulationBackend = mRoamBackend;
+        } else {
+            if (mRouteBackend != null) mRouteBackend.deactivate();
+            if (mRoamBackend != null) mRoamBackend.deactivate();
+            if (mFixedBackend != null) mFixedBackend.activate(
+                    mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+            mActiveSimulationBackend = mFixedBackend;
+        }
+        syncSimulationBackend();
+    }
+
+    private void syncSimulationBackend() {
+        LabMutableSimulationBackend backend;
+        if (mRouteActive) {
+            backend = mRouteBackend;
+        } else if (mRoamActive) {
+            backend = mRoamBackend;
+        } else {
+            backend = mFixedBackend;
+        }
+
+        if (backend == null) return;
+        if (!backend.isActive()) {
+            backend.activate(mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+        } else {
+            backend.update(mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+        }
+        mActiveSimulationBackend = backend;
+        mSimulationBackendSummary = backend.id();
+    }
+
+    private LabSimulationSample currentSimulationSample() {
+        LabSimulationBackend backend = mActiveSimulationBackend;
+        LabSimulationSample sample = backend == null ? null : backend.snapshot();
+        if (sample != null) return sample;
+
+        return new LabSimulationSample(
+                mCurLat,
+                mCurLng,
+                mCurAlt,
+                mSpeed,
+                mCurBea,
+                0.8f,
+                "FALLBACK",
+                SystemClock.elapsedRealtime());
+    }
+
+    private LabRoutePhysicsEngine.Context buildRoutePhysicsContext(
+            double dtSeconds,
+            long elapsedRealtimeMs) {
+        double distanceToNext = distanceToNextRouteVertexMeters();
+        double turnAngle = upcomingRouteTurnAngleDeg();
+        double routeRemaining = Math.max(
+                0.0,
+                mRouteTotalDistance - getCurrentPassProgressMeters());
+
+        return new LabRoutePhysicsEngine.Context(
+                mRouteSpeedMps,
+                mMotionMultiplier,
+                dtSeconds,
+                distanceToNext,
+                turnAngle,
+                routeRemaining,
+                mRouteMode == ROUTE_MODE_ONCE,
+                mMotionPaused,
+                elapsedRealtimeMs);
+    }
+
+    private double distanceToNextRouteVertexMeters() {
+        if (!mRouteActive || mRouteLats == null || mRouteLngs == null
+                || mRouteIndex < 0 || mRouteIndex >= mRouteLats.length) {
+            return 0.0;
+        }
+
+        int next = mRouteIndex + mRouteDirection;
+        if (next < 0 || next >= mRouteLats.length) {
+            if (mRouteMode == ROUTE_MODE_LOOP) {
+                next = mRouteDirection > 0 ? 0 : mRouteLats.length - 1;
+            } else if (mRouteMode == ROUTE_MODE_PINGPONG) {
+                next = mRouteIndex - mRouteDirection;
+            } else {
+                return Math.max(0.0,
+                        distanceMeters(
+                                mCurLat,
+                                mCurLng,
+                                mRouteLats[mRouteIndex],
+                                mRouteLngs[mRouteIndex]));
+            }
+        }
+
+        return distanceMeters(
+                mCurLat,
+                mCurLng,
+                mRouteLats[next],
+                mRouteLngs[next]);
+    }
+
+    private double upcomingRouteTurnAngleDeg() {
+        if (!mRouteActive || mRouteLats == null || mRouteLats.length < 2) return 0.0;
+
+        int target = mRouteIndex + mRouteDirection;
+        if (target < 0 || target >= mRouteLats.length) {
+            return mRouteMode == ROUTE_MODE_PINGPONG ? 180.0 : 0.0;
+        }
+        return routeTurnAngleAtVertex(target, mRouteDirection);
+    }
+
+    private double routeTurnAngleAtVertex(int vertex, int direction) {
+        if (mRouteLats == null || mRouteLngs == null
+                || vertex < 0 || vertex >= mRouteLats.length) {
+            return 0.0;
+        }
+
+        int previous = vertex - direction;
+        int following = vertex + direction;
+
+        if (previous < 0 || previous >= mRouteLats.length) return 0.0;
+        if (following < 0 || following >= mRouteLats.length) {
+            return mRouteMode == ROUTE_MODE_PINGPONG ? 180.0 : 0.0;
+        }
+
+        float incoming = bearingDegrees(
+                mRouteLats[previous], mRouteLngs[previous],
+                mRouteLats[vertex], mRouteLngs[vertex]);
+        float outgoing = bearingDegrees(
+                mRouteLats[vertex], mRouteLngs[vertex],
+                mRouteLats[following], mRouteLngs[following]);
+
+        double delta = Math.abs(outgoing - incoming);
+        if (delta > 180.0) delta = 360.0 - delta;
+        return clamp(delta, 0.0, 180.0);
+    }
+
     private double getCurrentPassProgressMeters() {
         if (!mRouteActive || mRouteLats == null || mRouteCumulative == null
                 || mRouteLats.length < 2 || mRouteIndex < 0 || mRouteIndex >= mRouteLats.length) {
@@ -1343,11 +1548,24 @@ public class ServiceGo extends Service {
         dt = clamp(dt, 0.0, 0.25);
 
         if (mRouteActive) {
-            moveAlongRoute(mRouteSpeedMps * mMotionMultiplier * dt);
+            LabRoutePhysicsEngine physics = mRoutePhysicsEngine;
+            if (physics != null) {
+                LabRoutePhysicsEngine.Context context = buildRoutePhysicsContext(dt, now);
+                mRoutePhysicsFrame = physics.update(context);
+                mSpeed = mRoutePhysicsFrame.speedMps;
+                mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
+            } else {
+                mSpeed = mRouteSpeedMps * mMotionMultiplier;
+                mRoutePhysicsSummary = "FALLBACK · constant speed";
+            }
+
+            moveAlongRoute(mSpeed * dt);
             checkpointRoute(false);
         } else if (mRoamActive) {
             moveRandomRoam(mRoamSpeedMps * mMotionMultiplier * dt);
         }
+
+        syncSimulationBackend();
     }
 
     private void moveAlongRoute(double metersToMove) {
@@ -1358,7 +1576,6 @@ public class ServiceGo extends Service {
             return;
         }
 
-        mSpeed = mRouteSpeedMps * mMotionMultiplier;
         int guard = 0;
         while (metersToMove > 0.0001 && mRouteActive && guard++ < 20) {
             int next = mRouteIndex + mRouteDirection;
@@ -1372,7 +1589,13 @@ public class ServiceGo extends Service {
                 } else {
                     mRouteActive = false;
                     mSpeed = 0.0;
+                    if (mRoutePhysicsEngine != null) {
+                        mRoutePhysicsEngine.hardStop("FINISHED");
+                        mRoutePhysicsFrame = mRoutePhysicsEngine.frame();
+                        mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
+                    }
                     clearRouteCheckpoint();
+                    activateSimulationBackend("FIXED");
                     XLog.i("SERVICEGO: Lab route finished");
                     return;
                 }
@@ -1386,6 +1609,17 @@ public class ServiceGo extends Service {
                 mCurLat = targetLat;
                 mCurLng = targetLng;
                 mRouteIndex = next;
+                double turnAngle = routeTurnAngleAtVertex(mRouteIndex, mRouteDirection);
+                if (mRoutePhysicsEngine != null
+                        && mRoutePhysicsEngine.onVertexReached(
+                                turnAngle,
+                                mRouteActive,
+                                SystemClock.elapsedRealtime())) {
+                    mRoutePhysicsFrame = mRoutePhysicsEngine.frame();
+                    mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
+                    mSpeed = 0.0;
+                    break;
+                }
                 continue;
             }
 
@@ -1397,6 +1631,18 @@ public class ServiceGo extends Service {
                 mCurLng = targetLng;
                 mRouteIndex = next;
                 metersToMove -= remaining;
+
+                double turnAngle = routeTurnAngleAtVertex(mRouteIndex, mRouteDirection);
+                if (mRoutePhysicsEngine != null
+                        && mRoutePhysicsEngine.onVertexReached(
+                                turnAngle,
+                                mRouteActive,
+                                SystemClock.elapsedRealtime())) {
+                    mRoutePhysicsFrame = mRoutePhysicsEngine.frame();
+                    mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
+                    mSpeed = 0.0;
+                    metersToMove = 0.0;
+                }
             } else {
                 double fraction = metersToMove / remaining;
                 mCurLat += (targetLat - mCurLat) * fraction;
@@ -1820,6 +2066,29 @@ public class ServiceGo extends Service {
             return mRouteRecoverySummary;
         }
 
+        public String getSimulationBackendSummary() {
+            return mSimulationBackendSummary;
+        }
+
+        public String getRoutePhysicsSummary() {
+            return mRoutePhysicsSummary;
+        }
+
+        public double getRoutePhysicsSpeedMps() {
+            LabRoutePhysicsEngine.Frame f = mRoutePhysicsFrame;
+            return f == null ? mSpeed : f.speedMps;
+        }
+
+        public double getRoutePhysicsTargetSpeedMps() {
+            LabRoutePhysicsEngine.Frame f = mRoutePhysicsFrame;
+            return f == null ? mSpeed : f.targetSpeedMps;
+        }
+
+        public String getRoutePhysicsPhase() {
+            LabRoutePhysicsEngine.Frame f = mRoutePhysicsFrame;
+            return f == null ? "IDLE" : f.phase;
+        }
+
         public boolean isDeviceHeadingAvailable() { return mHeadingAvailable; }
         public float getDeviceHeadingDegrees() { return mDeviceHeadingDegrees; }
         public int getDeviceHeadingAccuracy() { return mDeviceHeadingAccuracy; }
@@ -2017,7 +2286,10 @@ public class ServiceGo extends Service {
         }
 
         public long getRouteEtaSeconds() {
-            double effective = mRouteSpeedMps * mMotionMultiplier;
+            double effective = Math.max(
+                    mSpeed,
+                    Math.min(mRouteSpeedMps * mMotionMultiplier,
+                            getRoutePhysicsTargetSpeedMps()));
             if (!mRouteActive || mMotionPaused || effective <= 0.01) return -1L;
             return Math.round(getRouteRemainingMeters() / effective);
         }
