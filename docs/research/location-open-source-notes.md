@@ -2,6 +2,8 @@
 
 Last updated: 2026-10-08
 
+**New follow-up (2026-10-08):** [WeChat location cache and Tencent SDK source investigation (round 2)](2026-10-08-wechat-location-compatibility-round2.md). Contains independent Consumer Matrix 5/5 test observations, Tencent SDK cache and POI code references, and a proposed read-only probe.
+
 ## Purpose
 
 This document records public open-source ideas that can improve GoGoGo as a legitimate Android location simulation, QA, diagnostics, and reliability tool.
