@@ -26,6 +26,7 @@ on:
       - feat/gogogo-simulation-lab21
       - feat/gogogo-replay-lab22
       - feat/gogogo-lifecycle-lab23
+      - feat/gogogo-tencent-probe-lab24
   # 仓库收到 pull_request 时触发
   pull_request:
     branches:
