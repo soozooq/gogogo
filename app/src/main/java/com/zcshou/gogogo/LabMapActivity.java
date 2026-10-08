@@ -85,6 +85,7 @@ public class LabMapActivity extends AppCompatActivity {
     private ProgressBar routeProgress;
     private EditText routeSpeedInput;
     private Spinner routeModeSpinner;
+    private Spinner routeProfileSpinner;
     private EditText roamRadiusInput;
     private EditText roamSpeedInput;
     private Button followButton;
@@ -336,6 +337,23 @@ public class LabMapActivity extends AppCompatActivity {
         content.addView(routeSpeedInput, GoGoUi.matchWrap());
 
         content.addView(GoGoUi.gap(this, 10));
+        content.addView(GoGoUi.muted(this, "运动预设"), GoGoUi.matchWrap());
+
+        int previousProfile = routeProfileSpinner == null
+                ? ServiceGo.MOTION_PROFILE_WALK
+                : routeProfileSpinner.getSelectedItemPosition();
+        routeProfileSpinner = new Spinner(this);
+        ArrayAdapter<String> profileAdapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_dropdown_item,
+                new String[]{"步行 WALK", "骑行 BIKE", "驾车 CAR"});
+        routeProfileSpinner.setAdapter(profileAdapter);
+        routeProfileSpinner.setSelection(Math.max(
+                ServiceGo.MOTION_PROFILE_WALK,
+                Math.min(ServiceGo.MOTION_PROFILE_CAR, previousProfile)));
+        content.addView(routeProfileSpinner, GoGoUi.matchWrap());
+
+        content.addView(GoGoUi.gap(this, 10));
         content.addView(GoGoUi.muted(this, "路线模式"), GoGoUi.matchWrap());
 
         int previousMode = routeModeSpinner == null
@@ -360,6 +378,14 @@ public class LabMapActivity extends AppCompatActivity {
                 GoGoUi.primaryButton(this, "开始路线", v -> startRoute()),
                 GoGoUi.weighted());
         content.addView(row1, GoGoUi.matchWrap());
+
+        content.addView(GoGoUi.gap(this, 8));
+        content.addView(
+                GoGoUi.secondaryButton(
+                        this,
+                        "⏱ 按 GPX 原始时间回放",
+                        v -> startTimedReplay()),
+                GoGoUi.matchWrap());
 
         LinearLayout row2 = GoGoUi.row(this);
         routeEditButton = GoGoUi.secondaryButton(
@@ -1247,10 +1273,14 @@ public class LabMapActivity extends AppCompatActivity {
             routeView.setText("路线：未导入 / 未编辑");
             return;
         }
+        long timelineMs = RouteFileParser.timelineDurationMillis(routePoints);
         routeView.setText(String.format(Locale.US,
-                "路线：%d 个点 · %s%s",
+                "路线：%d 个点 · %s%s%s",
                 routePoints.size(),
                 formatDistance(routeDistanceMeters()),
+                timelineMs > 0L
+                        ? " · 时间轴 " + formatDuration(Math.round(timelineMs / 1000.0))
+                        : " · 无时间轴",
                 routeEditMode ? " · 编辑中" : ""));
     }
 
@@ -1280,7 +1310,12 @@ public class LabMapActivity extends AppCompatActivity {
                 .setMessage("路点：" + routePoints.size()
                         + "\n总距离：" + formatDistance(distance)
                         + "\n当前设定速度：" + String.format(Locale.US, "%.2f m/s", speed)
+                        + "\n运动预设：" + motionProfileName(selectedMotionProfile())
                         + "\n预计单程时间：" + (eta < 0 ? "--" : formatDuration(eta))
+                        + "\nGPX 时间轴：" + (RouteFileParser.hasUsableTimeline(routePoints)
+                                ? formatDuration(Math.round(
+                                        RouteFileParser.timelineDurationMillis(routePoints) / 1000.0))
+                                : "无")
                         + "\n模式：" + routeModeName(routeModeSpinner.getSelectedItemPosition()))
                 .setPositiveButton("关闭", null)
                 .show();
@@ -1307,6 +1342,7 @@ public class LabMapActivity extends AppCompatActivity {
         double speed = clamp(parseNumber(routeSpeedInput, 1.4), 0.2, 60.0);
         int mode = routeModeSpinner.getSelectedItemPosition();
         mode = Math.max(ServiceGo.ROUTE_MODE_ONCE, Math.min(ServiceGo.ROUTE_MODE_PINGPONG, mode));
+        int motionProfile = selectedMotionProfile();
 
         double[] lats = new double[routePoints.size()];
         double[] lngs = new double[routePoints.size()];
@@ -1322,13 +1358,54 @@ public class LabMapActivity extends AppCompatActivity {
         intent.putExtra(ServiceGo.EXTRA_ROUTE_LNGS, lngs);
         intent.putExtra(ServiceGo.EXTRA_ROUTE_SPEED_MPS, speed);
         intent.putExtra(ServiceGo.EXTRA_ROUTE_MODE, mode);
+        intent.putExtra(ServiceGo.EXTRA_ROUTE_MOTION_PROFILE, motionProfile);
 
         if (startLocationService(intent)) {
             RouteFileParser.RoutePoint p = routePoints.get(0);
             LabStore.addHistory(this, p.longitude, p.latitude);
             Toast.makeText(this,
-                    String.format(Locale.US, "路线开始：%.1f m/s · %s",
-                            speed, routeModeName(mode)),
+                    String.format(Locale.US, "路线开始：%.1f m/s · %s · %s",
+                            speed, motionProfileName(motionProfile), routeModeName(mode)),
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void startTimedReplay() {
+        if (!RouteFileParser.hasUsableTimeline(routePoints)) {
+            Toast.makeText(
+                    this,
+                    "这条路线没有完整递增的 GPX <time> 时间轴，改用“开始路线”即可。",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        int count = routePoints.size();
+        double[] lats = new double[count];
+        double[] lngs = new double[count];
+        double[] alts = new double[count];
+        long[] times = new long[count];
+
+        for (int i = 0; i < count; i++) {
+            RouteFileParser.RoutePoint p = routePoints.get(i);
+            lats[i] = p.latitude;
+            lngs[i] = p.longitude;
+            alts[i] = p.altitude;
+            times[i] = p.timestampMillis;
+        }
+
+        Intent intent = new Intent(this, ServiceGo.class);
+        intent.setAction(ServiceGo.ACTION_REPLAY_START);
+        intent.putExtra(ServiceGo.EXTRA_ROUTE_LATS, lats);
+        intent.putExtra(ServiceGo.EXTRA_ROUTE_LNGS, lngs);
+        intent.putExtra(ServiceGo.EXTRA_REPLAY_ALTS, alts);
+        intent.putExtra(ServiceGo.EXTRA_REPLAY_TIMES_MS, times);
+
+        if (startLocationService(intent)) {
+            long durationMs = RouteFileParser.timelineDurationMillis(routePoints);
+            Toast.makeText(
+                    this,
+                    "GPX 时间回放开始 · "
+                            + formatDuration(Math.round(durationMs / 1000.0)),
                     Toast.LENGTH_SHORT).show();
         }
     }
@@ -1584,6 +1661,21 @@ public class LabMapActivity extends AppCompatActivity {
 
     private static double clamp(double value, double min, double max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private int selectedMotionProfile() {
+        if (routeProfileSpinner == null) return ServiceGo.MOTION_PROFILE_WALK;
+        return Math.max(
+                ServiceGo.MOTION_PROFILE_WALK,
+                Math.min(
+                        ServiceGo.MOTION_PROFILE_CAR,
+                        routeProfileSpinner.getSelectedItemPosition()));
+    }
+
+    private static String motionProfileName(int profile) {
+        if (profile == ServiceGo.MOTION_PROFILE_CAR) return "驾车 CAR";
+        if (profile == ServiceGo.MOTION_PROFILE_BIKE) return "骑行 BIKE";
+        return "步行 WALK";
     }
 
     private static String routeModeName(int mode) {
