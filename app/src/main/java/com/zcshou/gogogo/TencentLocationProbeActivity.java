@@ -36,14 +36,15 @@ import java.util.Locale;
  * Independent :consumer-process comparison of Tencent LBS against standard
  * Android and GMS APIs. Observes only our app's own callbacks.
  */
-public class TencentLocationProbeActivity extends AppCompatActivity
-        implements TencentLocationListener {
+public class TencentLocationProbeActivity extends AppCompatActivity {
     private static final int REQ_FINE = 2401;
     private static final int MAX_LOG_CHARS = 12000;
     private static final long SINGLE_TIMEOUT_MS = 20000L;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private TencentLocationManager manager;
+    private TencentLocationListener activeListener;
+    private final TencentProbeSessionState probeState = new TencentProbeSessionState();
     private TextView statusView;
     private TextView androidView;
     private TextView tencentView;
@@ -204,29 +205,50 @@ public class TencentLocationProbeActivity extends AppCompatActivity
                     : TencentLocationRequest.REQUEST_LEVEL_GEO);
             request.setAllowCache(allowCache.isChecked());
             request.setAllowGPS(true);
+            final boolean requestedPoi = poiLevel.isChecked();
             requestAtMillis = System.currentTimeMillis();
             requestLabel = (continuous ? "STREAM" : "SINGLE_FRESH")
-                    + " / " + (poiLevel.isChecked() ? "POI" : "GEO")
+                    + " / " + (requestedPoi ? "POI" : "GEO")
                     + " / cache=" + allowCache.isChecked();
+            final String thisLabel = requestLabel;
+            final long sessionId = probeState.begin();
+            activeListener = new TencentLocationListener() {
+                @Override
+                public void onLocationChanged(TencentLocation fix, int errorCode, String reason) {
+                    onTencentLocationChanged(sessionId, requestedPoi,
+                            thisLabel, fix, errorCode, reason);
+                }
+
+                @Override
+                public void onStatusUpdate(String name, int status, String description) {
+                    onTencentStatusUpdate(sessionId, name, status, description);
+                }
+            };
             waitingSingle = !continuous;
             recording = continuous;
-            appendLog("REQUEST " + requestLabel);
+            appendLog("REQUEST " + thisLabel + " session=" + sessionId);
             final int resultCode;
             if (continuous) {
                 request.setInterval(2000L);
-                resultCode = manager.requestLocationUpdates(request, this);
+                resultCode = manager.requestLocationUpdates(request, activeListener);
             } else {
                 resultCode = manager.requestSingleFreshLocation(request,
-                        this, Looper.getMainLooper());
+                        activeListener, Looper.getMainLooper());
             }
             appendLog("SDK_REQUEST_RETURN " + resultCode + " (not a location result)");
-            statusView.setText("请求已提交: " + requestLabel
+            if (resultCode != 0) {
+                stopTencent();
+                statusView.setText("腾讯 SDK 拒绝启动请求 · code=" + resultCode
+                        + "\n没有收到成功坐标；不会等待超时。");
+                return;
+            }
+            statusView.setText("请求已提交: " + thisLabel
                     + "\nSDK 返回码: " + resultCode
                     + "\n请以实际 onLocationChanged/error/reason 为准。");
-            if (!continuous) {
+            if (!continuous && waitingSingle) {
                 singleTimeout = () -> {
-                    if (waitingSingle && !destroyed) {
-                        waitingSingle = false;
+                    if (waitingSingle && !destroyed && probeState.accepts(sessionId)) {
+                        stopTencent();
                         appendLog("TIMEOUT: 20s 未收到 SDK 回调（不能视为定位成功）");
                         statusView.setText("腾讯单次定位超时 · TIMEOUT");
                     }
@@ -235,8 +257,7 @@ public class TencentLocationProbeActivity extends AppCompatActivity
             }
             refreshStandards();
         } catch (Throwable e) {
-            recording = false;
-            waitingSingle = false;
+            stopTencent();
             statusView.setText("SDK_INIT_OR_REQUEST_FAILED: "
                     + e.getClass().getSimpleName() + " · " + e.getMessage());
             appendLog("ERROR " + e.getClass().getSimpleName() + " " + e.getMessage());
@@ -244,29 +265,33 @@ public class TencentLocationProbeActivity extends AppCompatActivity
     }
 
     private void stopTencent() {
+        probeState.cancel();
         recording = false;
         waitingSingle = false;
         if (singleTimeout != null) {
             handler.removeCallbacks(singleTimeout);
             singleTimeout = null;
         }
-        if (manager != null) {
+        TencentLocationListener listener = activeListener;
+        activeListener = null;
+        if (manager != null && listener != null) {
             try {
-                manager.removeUpdates(this);
+                manager.removeUpdates(listener);
             } catch (Throwable t) {
                 appendLog("removeUpdates failed: " + t.getClass().getSimpleName());
             }
         }
     }
 
-    @Override
-    public void onLocationChanged(TencentLocation fix, int errorCode, String reason) {
-        if (destroyed) return;
+    private void onTencentLocationChanged(long sessionId, boolean requestedPoi,
+                                           String sessionLabel, TencentLocation fix,
+                                           int errorCode, String reason) {
+        if (destroyed || !probeState.accepts(sessionId)) return;
         runOnUiThread(() -> {
-            if (destroyed) return;
+            if (destroyed || !probeState.accepts(sessionId)) return;
             long now = System.currentTimeMillis();
             long duration = requestAtMillis <= 0 ? -1 : now - requestAtMillis;
-            appendLog("CALLBACK " + requestLabel + " error=" + errorCode
+            appendLog("CALLBACK " + sessionLabel + " error=" + errorCode
                     + " reason=" + String.valueOf(reason)
                     + " latency=" + duration + "ms");
             if (errorCode != TencentLocation.ERROR_OK) {
@@ -288,16 +313,17 @@ public class TencentLocationProbeActivity extends AppCompatActivity
                 if (!valid || zero) {
                     appendLog("SUSPECT_FIX: exclude from POI distance reference");
                 }
-                if (poiLevel.isChecked() && valid && !zero) {
+                if (requestedPoi && valid && !zero) {
                     appendPoi(fix, lat, lon);
                 }
                 statusView.setText(valid && !zero
-                        ? "腾讯 SDK 回调成功 · GCJ02\n" + requestLabel
+                        ? "腾讯 SDK 回调成功 · GCJ02\n" + sessionLabel
                         : "腾讯 SDK 回调成功但坐标可疑 · 请检查 ZERO_PAIR/INVALID");
             }
-            if (waitingSingle) {
-                waitingSingle = false;
-                if (singleTimeout != null) handler.removeCallbacks(singleTimeout);
+            if (waitingSingle && probeState.finish(sessionId)) {
+                // A single request must not accept extra callbacks. Release
+                // its listener even if the SDK unexpectedly sends more data.
+                stopTencent();
             }
         });
     }
@@ -329,12 +355,14 @@ public class TencentLocationProbeActivity extends AppCompatActivity
         }
     }
 
-    @Override
-    public void onStatusUpdate(String name, int status, String desc) {
-        if (destroyed) return;
+    private void onTencentStatusUpdate(long sessionId, String name, int status,
+                                       String desc) {
+        if (destroyed || !probeState.accepts(sessionId)) return;
         runOnUiThread(() -> {
-            if (!destroyed) appendLog("SDK_STATUS " + name + "=" + status
-                    + " " + String.valueOf(desc));
+            if (!destroyed && probeState.accepts(sessionId)) {
+                appendLog("SDK_STATUS " + name + "=" + status
+                        + " " + String.valueOf(desc));
+            }
         });
     }
 
