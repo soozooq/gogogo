@@ -531,7 +531,8 @@ public class LabMapActivity extends AppCompatActivity {
                 "Resource Broker",
                 "数据来源链",
                 "清空来源链",
-                "Sandbox / AVF"
+                "Sandbox / AVF",
+                "Tencent Location Probe (Lab 24)"
         };
 
         new AlertDialog.Builder(this)
@@ -570,6 +571,9 @@ public class LabMapActivity extends AppCompatActivity {
                             break;
                         case 10:
                             startActivity(new Intent(this, SandboxLabActivity.class));
+                            break;
+                        case 11:
+                            startActivity(new Intent(this, TencentLocationProbeActivity.class));
                             break;
                         default:
                             break;
