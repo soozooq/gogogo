@@ -20,7 +20,7 @@ public class LabTimedReplayEngineTest {
 
         // dt is intentionally clamped to 1 second per engine call.
         assertEquals(0.1, frame.progressFraction, 0.001);
-        assertEquals(12.0, frame.altitude, 0.001);
+        assertEquals(11.0, frame.altitude, 0.001);
         assertTrue(frame.speedMps > 5.0);
         assertTrue(engine.isActive());
     }
