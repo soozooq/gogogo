@@ -760,6 +760,12 @@ public class LabMapActivity extends AppCompatActivity {
                         eta < 0 ? "--" : formatDuration(eta),
                         paused ? "暂停" : "运行",
                         multiplier));
+                sb.append(String.format(Locale.US,
+                        "\n🏎 Physics %s · %.2f→%.2f m/s · backend=%s",
+                        binder.getRoutePhysicsPhase(),
+                        binder.getRoutePhysicsSpeedMps(),
+                        binder.getRoutePhysicsTargetSpeedMps(),
+                        binder.getSimulationBackendSummary()));
             } else if (roam) {
                 routeProgress.setProgress(0);
                 sb.append(String.format(Locale.US,
