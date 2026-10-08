@@ -726,6 +726,7 @@ public class LabMapActivity extends AppCompatActivity {
             boolean paused = binder.isMotionPaused();
             boolean route = binder.isRouteActive();
             boolean roam = binder.isRoamActive();
+            boolean replay = binder.isReplayActive();
             boolean recording = binder.isTrackRecording();
             int trackPoints = binder.getTrackPointCount();
 
@@ -774,7 +775,19 @@ public class LabMapActivity extends AppCompatActivity {
                     binder.getKinematicBearingSource(),
                     ledger));
 
-            if (route) {
+            if (replay) {
+                double progress = binder.getReplayProgressFraction();
+                long playheadMs = binder.getReplayPlayheadMs();
+                long durationMs = binder.getReplayDurationMs();
+                routeProgress.setProgress((int) Math.round(progress * 1000.0));
+                sb.append(String.format(Locale.US,
+                        "\n⏱ GPX Replay %.1f%% · %s / %s · %.2f× · backend=%s",
+                        progress * 100.0,
+                        formatDuration(Math.round(playheadMs / 1000.0)),
+                        formatDuration(Math.round(durationMs / 1000.0)),
+                        multiplier,
+                        binder.getSimulationBackendSummary()));
+            } else if (route) {
                 double progress = binder.getRouteProgressFraction();
                 double remain = binder.getRouteRemainingMeters();
                 long eta = binder.getRouteEtaSeconds();
@@ -787,7 +800,8 @@ public class LabMapActivity extends AppCompatActivity {
                         paused ? "暂停" : "运行",
                         multiplier));
                 sb.append(String.format(Locale.US,
-                        "\n🏎 Physics %s · %.2f→%.2f m/s · backend=%s",
+                        "\n🏎 Physics %s/%s · %.2f→%.2f m/s · backend=%s",
+                        binder.getRouteMotionProfileName(),
                         binder.getRoutePhysicsPhase(),
                         binder.getRoutePhysicsSpeedMps(),
                         binder.getRoutePhysicsTargetSpeedMps(),
@@ -978,9 +992,17 @@ public class LabMapActivity extends AppCompatActivity {
             routeEditMode = false;
             if (routeEditButton != null) routeEditButton.setText("✏️ 编辑路线：关");
             drawRoute();
+            long timelineMs = RouteFileParser.timelineDurationMillis(routePoints);
             routeView.setText("路线：" + (name == null ? "导入文件" : name)
-                    + " · " + routePoints.size() + " 个点");
-            Toast.makeText(this, "路线导入成功：" + routePoints.size() + " 个点", Toast.LENGTH_SHORT).show();
+                    + " · " + routePoints.size() + " 个点"
+                    + (timelineMs > 0L
+                            ? " · 时间轴 " + formatDuration(Math.round(timelineMs / 1000.0))
+                            : " · 无时间轴"));
+            Toast.makeText(
+                    this,
+                    "路线导入成功：" + routePoints.size() + " 个点"
+                            + (timelineMs > 0L ? " · 可按 GPX 时间回放" : ""),
+                    Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             Toast.makeText(this, "路线解析失败：" + e.getClass().getSimpleName(), Toast.LENGTH_LONG).show();
         }
