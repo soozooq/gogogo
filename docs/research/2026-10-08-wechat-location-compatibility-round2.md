@@ -173,3 +173,44 @@
 2. 先在**自有 App** 进行 GEO 与 POI 两种 request level、cache on/off、single/stream 的全量状态对照，记录定位原点和 POI 返回距离（米）。
 3. 加入 SDK 回调失败和空值测试，保证 UI 不把 0/0、旧值、未初始化的距离显示成新鲜定位。
 4. 再将观测到的错误类别与微信外部 UI 表现比较，保留“微信内部真实机制未知”的限定。
+
+
+## 8. 第四轮源码搜索：Shizuku 撤销授权导致目标 App 被强制停止（重要因果混杂项）
+
+**最重要的新发现（官方 Shizuku 源码）：**
+- 仓库：**RikkaApps/Shizuku**
+- 源码：[ShizukuService.java](https://github.com/RikkaApps/Shizuku/blob/b844bc491f1790c72328e1a8e5b2349f8978f0ea/server/src/main/java/rikka/shizuku/server/ShizukuService.java#L373-L418)
+- 在 `updateFlagsForUid` 调整已连接客户端授权状态时，撤权分支执行：
+  1. `record.allowed = false`
+  2. `ActivityManagerApis.forceStopPackageNoThrow(record.packageName, ...)`
+  3. `onPermissionRevoked(record.packageName)`
+  4. 其内进一步 `removeUserServicesForPackage(packageName)`。
+- Shizuku manager 的 [AuthorizationManager.kt](https://github.com/RikkaApps/Shizuku/blob/b844bc491f1790c72328e1a8e5b2349f8978f0ea/manager/src/main/java/moe/shizuku/manager/authorization/AuthorizationManager.kt) 使用 `Shizuku.updateFlagsForUid(uid, MASK_PERMISSION, 0)` 路径进行撤权（版本/权限路径可能有差异）。
+
+**重新解读本机实验：**
+此前观察：关掉影梭的 Shizuku 授权、Shizuku 服务仍运行，微信回复真实位置。这不构成“Shizuku 直接改变微信定位策略”的证明；**撤权动作本身可能使影梭进程被强制停止**，从而打断模拟服务或改变 test-provider 状态，并让微信重新获取真实位置。它是比“授予高权限改变微信定位”更直接的替代解释。应在本机确认 Shizuku 版本、撤权时 GoGoGo PID/进程/模拟 ServiceGo 状态，以及系统 Provider 留存情况。
+
+**注意**：Shizuku 撤权并非所有安装版本都必然走同一路径；`forceStopPackageNoThrow` 的调用发生在授权管理路径上，需区分“App 获得授权”与“撤销授权强制停止 App”的因果方向。不得把此机制当成微信已采用模拟位置的证据。
+
+**建议受控实验：**
+- 先在 GoGoGo 的日志记录模拟服务活跃状态、会话 ID、进程 PID、状态变更时间、Provider 读取时间；不采集真实地理坐标。
+- 独立对照：不执行模拟时的 Shizuku 授权开关 vs 模拟中撤权；记录进程是否重启/被系统强停，及 UserService 是否解绑。
+- 撤权后主动提供恢复/清理提示；如果 test provider 留存在 system_server 而前台服务死亡，应标记 `ORPHANED/CLEANUP_PENDING`，不能误报“彻底停止”。
+- 这类测试属于本 App 生命周期诊断，不修改第三方应用进程/行为。
+
+## 9. 第四轮距离研究：0,0 只是候选，已与另一套“SDK 原点”假设区分
+
+- 腾讯定位文档：[TencentPoi.getDistance()](https://github.com/tencentlocation/tencentlocation.github.io/blob/c2f1a8a5752af664b1689283d31789eb1ed66d98/doc/com/tencent/map/geolocation/TencentPoi.html#L236-L245)，其语义是 POI 到**定位中心点**的米数。
+- 若以福州附近约 `26.03°N, 119.20°E` 作为**非个人**示例点，球面测地线计算与 `(0,0)` 距离约 **12,899 km**，与截图显示的约 12,914 km 属于同一量级。但显示距离与坐标不精确，不能证明输入坐标是 `(0,0)`。
+- 从北京天安门附近 `39.9075°N, 116.3913°E` 到上述示例点仅约 **1,565 km**；如果 POI 实际在福建且距离显示 >12,000km，便不太可能使用北京作为距离计算起点。
+- 候选解释 A：SDK 位置无效/未初始化、某处把无效坐标当作 0/0。
+- 候选解释 B：SDK/服务端的距离计算起点与地图 UI 中心、发送卡片的选点中心不同。
+- 候选解释 C：旧值、新值、POI 返回来源或字段单位/时间状态混合。
+- **判断实验**：只在自有测试界面同时显示 Android fix / 腾讯定位 fix / 地图中心 / 腾讯 POI 坐标 / SDK `getDistance()` / 本地按 Haversine 计算的参考距离和各数据时间戳。若返回 `(0,0)` 或无效字段，须独立显示 `INVALID`，不得把猜测反馈成事实。
+
+## 10. 新的下一步优先级
+
+1. **P0：Shizuku 撤权是否 force-stop GoGoGo 的进程，先做不影响微信的自有 App 验证。** 若成立可解释以前的关键混淆现象。
+2. **P0：Tencent SDK 独立消费者探针，区分 SDK 定位成功/失败/缓存，并按 GEO/POI 分类。**
+3. **P1：POI 距离原点诊断，不再以地图 UI 的位置直接假定距离输入。**
+4. 暂停堆叠定位器、DNS 阻断、第三方进程注入等高干扰变量，保留设备可恢复性。
