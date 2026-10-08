@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Process;
 import android.os.SystemClock;
+import android.provider.Settings;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -23,12 +24,14 @@ public final class LabServiceLifecycleJournal {
     private static final String KEY_GENERATION = "service_generation";
     private static final String KEY_STARTED_WALL = "started_wall";
     private static final String KEY_STARTED_ELAPSED = "started_elapsed";
+    private static final String KEY_STARTED_BOOT_COUNT = "started_boot_count";
     private static final String KEY_STOPPED_WALL = "stopped_wall";
     private static final String KEY_SESSION_COUNT = "session_count";
     private static final String KEY_INTERRUPTION_COUNT = "interruption_count";
     private static final String KEY_LAST_INTERRUPTED_WALL = "last_interrupted_wall";
     private static final String STATE_ACTIVE = "ACTIVE";
     private static final String STATE_STOPPED = "STOPPED";
+    private static final long BOOT_EPOCH_TOLERANCE_MS = 5L * 60L * 1000L;
 
     // New on each process load, even when Android happens to reuse a PID.
     private static final String PROCESS_GENERATION = UUID.randomUUID().toString();
@@ -46,11 +49,14 @@ public final class LabServiceLifecycleJournal {
         SharedPreferences prefs = preferences(context);
         long nowElapsed = SystemClock.elapsedRealtime();
         long nowWall = System.currentTimeMillis();
+        long nowBootCount = readBootCount(context);
         boolean priorOpen = STATE_ACTIVE.equals(prefs.getString(KEY_STATE, ""));
         boolean priorProcess = PROCESS_GENERATION.equals(
                 prefs.getString(KEY_GENERATION, ""));
         long priorStart = prefs.getLong(KEY_STARTED_ELAPSED, -1L);
-        boolean sameBoot = priorStart >= 0L && priorStart <= nowElapsed;
+        boolean sameBoot = isSameBoot(
+                prefs.getLong(KEY_STARTED_BOOT_COUNT, -1L), nowBootCount,
+                prefs.getLong(KEY_STARTED_WALL, 0L), priorStart, nowWall, nowElapsed);
         SharedPreferences.Editor editor = prefs.edit();
 
         // A new process cannot close a previously open session; record only
@@ -66,6 +72,7 @@ public final class LabServiceLifecycleJournal {
                 .putInt(KEY_PID, Process.myPid())
                 .putLong(KEY_STARTED_WALL, nowWall)
                 .putLong(KEY_STARTED_ELAPSED, nowElapsed)
+                .putLong(KEY_STARTED_BOOT_COUNT, nowBootCount)
                 .putLong(KEY_SESSION_COUNT, prefs.getLong(KEY_SESSION_COUNT, 0L) + 1L)
                 .commit(); // A process may be force-stopped without onDestroy().
     }
@@ -104,6 +111,36 @@ public final class LabServiceLifecycleJournal {
         return Verdict.INTERRUPTED_OR_STALE;
     }
 
+    /**
+     * Elapsed time alone is not a boot identity: a later reboot can have a
+     * greater uptime than the old session. Prefer Android boot count; for
+     * older records or restricted OEMs, use a conservative boot-time estimate.
+     * If the wall clock was changed significantly, return uncertain instead
+     * of falsely labeling the previous session as interrupted.
+     */
+    public static boolean isSameBoot(long previousBootCount, long currentBootCount,
+                                     long previousWall, long previousElapsed,
+                                     long currentWall, long currentElapsed) {
+        if (previousElapsed < 0L || currentElapsed < previousElapsed) return false;
+        if (previousBootCount >= 0L && currentBootCount >= 0L) {
+            return previousBootCount == currentBootCount;
+        }
+        if (previousWall <= 0L || currentWall <= 0L) return false;
+        long previousBootEpoch = previousWall - previousElapsed;
+        long currentBootEpoch = currentWall - currentElapsed;
+        return Math.abs(previousBootEpoch - currentBootEpoch) <= BOOT_EPOCH_TOLERANCE_MS;
+    }
+
+    private static long readBootCount(Context context) {
+        try {
+            return Settings.Global.getInt(context.getContentResolver(),
+                    Settings.Global.BOOT_COUNT, -1);
+        } catch (RuntimeException ignored) {
+            // Some OEM builds restrict this setting. Fall back conservatively.
+            return -1L;
+        }
+    }
+
     public static String report(Context context, boolean serviceRunning) {
         SharedPreferences prefs = preferences(context);
         String state = prefs.getString(KEY_STATE, "");
@@ -111,8 +148,12 @@ public final class LabServiceLifecycleJournal {
         boolean sameProcess = PROCESS_GENERATION.equals(
                 prefs.getString(KEY_GENERATION, ""));
         long elapsed = SystemClock.elapsedRealtime();
+        long wall = System.currentTimeMillis();
+        long bootCount = readBootCount(context);
         long startedElapsed = prefs.getLong(KEY_STARTED_ELAPSED, -1L);
-        boolean sameBoot = startedElapsed >= 0L && startedElapsed <= elapsed;
+        boolean sameBoot = isSameBoot(
+                prefs.getLong(KEY_STARTED_BOOT_COUNT, -1L), bootCount,
+                prefs.getLong(KEY_STARTED_WALL, 0L), startedElapsed, wall, elapsed);
         Verdict verdict = classify(hasRecord, STATE_STOPPED.equals(state),
                 sameProcess, serviceRunning, sameBoot);
 
@@ -120,6 +161,7 @@ public final class LabServiceLifecycleJournal {
         text.append("当前主进程 PID: ").append(Process.myPid()).append('\n');
         text.append("ServiceGo 当前运行标记: ").append(serviceRunning ? "RUNNING" : "STOPPED").append('\n');
         text.append("模拟位置 AppOps: ").append(mockLocationAppOps(context)).append('\n');
+        text.append("开机身份来源: ").append(bootCount >= 0L ? "BOOT_COUNT" : "开机时间估算").append('\n');
         text.append("已记录模拟会话: ").append(prefs.getLong(KEY_SESSION_COUNT, 0L)).append('\n');
         text.append("最近一次服务启动: ")
                 .append(formatTime(prefs.getLong(KEY_STARTED_WALL, 0L))).append('\n');
