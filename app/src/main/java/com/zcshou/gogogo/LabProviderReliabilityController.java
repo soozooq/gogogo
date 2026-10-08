@@ -220,9 +220,15 @@ public final class LabProviderReliabilityController {
         ProviderState state = stateFor(provider);
         boolean ownedBefore = wasOwned(provider);
         String key = "provider_" + provider + "_";
-        // Persist an IN_PROGRESS marker first: a force-stop mid-sweep must not
-        // masquerade as a successful cleanup on the next app launch.
-        audit.edit().putString(key + "trigger", trigger)
+        // Carry a previous incomplete attempt forward before overwriting it.
+        // PENDING from an earlier process is evidence of a mid-cleanup interruption,
+        // but does not by itself prove that the provider is still registered.
+        String priorOutcome = audit.getString(key + "outcome", "NONE");
+        long priorStarted = audit.getLong(key + "started_at", 0L);
+        // Persist an IN_PROGRESS marker before touching system_server.
+        audit.edit().putString(key + "previous_outcome", priorOutcome)
+                .putLong(key + "previous_started_at", priorStarted)
+                .putString(key + "trigger", trigger)
                 .putBoolean(key + "owned_before", ownedBefore)
                 .putBoolean(key + "allowed_before", isMockOpAllowed())
                 .putLong(key + "started_at", System.currentTimeMillis())
@@ -300,6 +306,8 @@ public final class LabProviderReliabilityController {
                     .append(p.getString(key + "outcome", "UNKNOWN"))
                     .append(" / trigger=")
                     .append(p.getString(key + "trigger", "UNKNOWN"))
+                    .append(" / previous=")
+                    .append(p.getString(key + "previous_outcome", "NONE"))
                     .append(" / started=")
                     .append(formatTime(p.getLong(key + "started_at", 0L)))
                     .append(" / finished=")
