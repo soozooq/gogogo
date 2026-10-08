@@ -48,6 +48,7 @@ import com.zcshou.gogogo.LabScenarioEngine;
 import com.zcshou.gogogo.LabSimulationBackend;
 import com.zcshou.gogogo.LabSimulationSample;
 import com.zcshou.gogogo.LabMutableSimulationBackend;
+import com.zcshou.gogogo.LabTimedReplayEngine;
 import com.zcshou.gogogo.LabKinematicsEngine;
 import com.zcshou.gogogo.LabHeadingIntelligenceEngine;
 import com.zcshou.gogogo.LabAttitudeHeadingEngine;
@@ -71,6 +72,8 @@ public class ServiceGo extends Service {
     // GoGoGo Lab motion engine. Imported routes are capped at 5000 points to stay Binder-safe.
     public static final String ACTION_ROUTE_START = "com.soozooq.gogogo.action.ROUTE_START";
     public static final String ACTION_ROUTE_STOP = "com.soozooq.gogogo.action.ROUTE_STOP";
+    public static final String ACTION_REPLAY_START = "com.soozooq.gogogo.action.REPLAY_START";
+    public static final String ACTION_REPLAY_STOP = "com.soozooq.gogogo.action.REPLAY_STOP";
     public static final String ACTION_ROAM_START = "com.soozooq.gogogo.action.ROAM_START";
     public static final String ACTION_ROAM_STOP = "com.soozooq.gogogo.action.ROAM_STOP";
     public static final String ACTION_MOTION_PAUSE = "com.soozooq.gogogo.action.MOTION_PAUSE";
@@ -85,6 +88,12 @@ public class ServiceGo extends Service {
     public static final String EXTRA_ROUTE_LNGS = "ROUTE_LNGS";
     public static final String EXTRA_ROUTE_SPEED_MPS = "ROUTE_SPEED_MPS";
     public static final String EXTRA_ROUTE_MODE = "ROUTE_MODE";
+    public static final String EXTRA_ROUTE_MOTION_PROFILE = "ROUTE_MOTION_PROFILE";
+    public static final String EXTRA_REPLAY_ALTS = "REPLAY_ALTS";
+    public static final String EXTRA_REPLAY_TIMES_MS = "REPLAY_TIMES_MS";
+    public static final int MOTION_PROFILE_WALK = 0;
+    public static final int MOTION_PROFILE_BIKE = 1;
+    public static final int MOTION_PROFILE_CAR = 2;
     public static final int ROUTE_MODE_ONCE = 0;
     public static final int ROUTE_MODE_LOOP = 1;
     public static final int ROUTE_MODE_PINGPONG = 2;
@@ -101,6 +110,7 @@ public class ServiceGo extends Service {
     private int mRouteDirection = 1;
     private int mRouteMode = ROUTE_MODE_ONCE;
     private double mRouteSpeedMps = 1.4;
+    private int mRouteMotionProfile = MOTION_PROFILE_WALK;
     private boolean mRouteActive = false;
     private double[] mRouteCumulative;
     private double mRouteTotalDistance = 0.0;
@@ -122,6 +132,11 @@ public class ServiceGo extends Service {
     private LabMutableSimulationBackend mFixedBackend;
     private LabMutableSimulationBackend mRouteBackend;
     private LabMutableSimulationBackend mRoamBackend;
+    private LabMutableSimulationBackend mReplayBackend;
+    private LabTimedReplayEngine mReplayEngine;
+    private volatile LabTimedReplayEngine.Frame mReplayFrame;
+    private boolean mReplayActive = false;
+    private volatile String mReplaySummary = "IDLE";
     private volatile LabSimulationBackend mActiveSimulationBackend;
     private LabRoutePhysicsEngine mRoutePhysicsEngine;
     private volatile LabRoutePhysicsEngine.Frame mRoutePhysicsFrame;
@@ -274,7 +289,10 @@ public class ServiceGo extends Service {
         mFixedBackend = new LabMutableSimulationBackend("FIXED");
         mRouteBackend = new LabMutableSimulationBackend("ROUTE");
         mRoamBackend = new LabMutableSimulationBackend("ROAM");
+        mReplayBackend = new LabMutableSimulationBackend("REPLAY");
+        mReplayEngine = new LabTimedReplayEngine();
         mRoutePhysicsEngine = new LabRoutePhysicsEngine();
+        mRoutePhysicsEngine.setProfile(LabRoutePhysicsEngine.Profile.WALK);
         mFixedBackend.activate(
                 mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
         mActiveSimulationBackend = mFixedBackend;
@@ -628,7 +646,7 @@ public class ServiceGo extends Service {
         }
 
         if (intent != null && ACTION_MOTION_PAUSE.equals(intent.getAction())) {
-            if (mRouteActive || mRoamActive) {
+            if (mRouteActive || mRoamActive || mReplayActive) {
                 mMotionPaused = true;
                 mSpeed = 0.0;
                 if (mRoutePhysicsEngine != null && mRouteActive) {
@@ -643,7 +661,7 @@ public class ServiceGo extends Service {
         }
 
         if (intent != null && ACTION_MOTION_RESUME.equals(intent.getAction())) {
-            if (mRouteActive || mRoamActive) {
+            if (mRouteActive || mRoamActive || mReplayActive) {
                 mMotionPaused = false;
                 mLastMotionElapsed = SystemClock.elapsedRealtime();
                 if (mRouteActive) {
@@ -651,8 +669,11 @@ public class ServiceGo extends Service {
                     if (mRoutePhysicsEngine != null) {
                         mRoutePhysicsEngine.reset(0.0);
                     }
-                } else {
+                } else if (mRoamActive) {
                     mSpeed = mRoamSpeedMps * mMotionMultiplier;
+                } else if (mReplayActive) {
+                    LabTimedReplayEngine.Frame replay = mReplayFrame;
+                    mSpeed = replay == null ? 0.0 : replay.speedMps * mMotionMultiplier;
                 }
                 recordProvenance("MOTION", "resumed");
                 checkpointRoute(true);
@@ -663,12 +684,56 @@ public class ServiceGo extends Service {
         if (intent != null && ACTION_MOTION_SPEED.equals(intent.getAction())) {
             mMotionMultiplier = clamp(
                     intent.getDoubleExtra(EXTRA_MOTION_MULTIPLIER, 1.0), 0.25, 4.0);
-            if (!mMotionPaused && !mRouteActive) {
+            if (!mMotionPaused && mRoamActive) {
                 mSpeed = mRoamSpeedMps * mMotionMultiplier;
             }
             recordProvenance("MOTION", "multiplier=" + mMotionMultiplier + "x");
             checkpointRoute(true);
             return START_STICKY;
+        }
+
+        if (intent != null && ACTION_REPLAY_STOP.equals(intent.getAction())) {
+            stopTimedReplay(true);
+            mProvenanceSource = "IDLE";
+            return START_STICKY;
+        }
+
+        if (intent != null && ACTION_REPLAY_START.equals(intent.getAction())) {
+            double[] lats = intent.getDoubleArrayExtra(EXTRA_ROUTE_LATS);
+            double[] lngs = intent.getDoubleArrayExtra(EXTRA_ROUTE_LNGS);
+            double[] alts = intent.getDoubleArrayExtra(EXTRA_REPLAY_ALTS);
+            long[] times = intent.getLongArrayExtra(EXTRA_REPLAY_TIMES_MS);
+
+            try {
+                if (mReplayEngine == null) mReplayEngine = new LabTimedReplayEngine();
+                mReplayEngine.load(lats, lngs, alts, times);
+                clearRouteCheckpoint();
+                mRouteActive = false;
+                mRoamActive = false;
+                mReplayActive = true;
+                mMotionPaused = false;
+                mMotionMultiplier = 1.0;
+                mReplayFrame = mReplayEngine.current();
+                applyReplayFrame(mReplayFrame);
+                mLastMotionElapsed = SystemClock.elapsedRealtime();
+                mProvenanceSource = "REPLAY";
+                activateSimulationBackend("REPLAY");
+                mReplaySummary = mReplayFrame == null
+                        ? "REPLAY · READY"
+                        : mReplayFrame.summary();
+                recordProvenance(
+                        "REPLAY",
+                        "timestamped GPX started · duration="
+                                + mReplayEngine.durationMs() + "ms");
+                return START_STICKY;
+            } catch (Throwable t) {
+                stopTimedReplay(false);
+                recordProvenance(
+                        "REPLAY",
+                        "start failed: " + t.getClass().getSimpleName());
+                XLog.e("SERVICEGO: timestamped replay start failed: " + t.getMessage());
+                return START_STICKY;
+            }
         }
 
         if (intent != null && ACTION_ROUTE_STOP.equals(intent.getAction())) {
@@ -688,6 +753,7 @@ public class ServiceGo extends Service {
         }
 
         if (intent != null && ACTION_ROUTE_START.equals(intent.getAction())) {
+            stopTimedReplay(false);
             double[] lats = intent.getDoubleArrayExtra(EXTRA_ROUTE_LATS);
             double[] lngs = intent.getDoubleArrayExtra(EXTRA_ROUTE_LNGS);
             if (lats != null && lngs != null && lats.length > 1 && lats.length == lngs.length) {
@@ -701,6 +767,16 @@ public class ServiceGo extends Service {
                                 intent.getIntExtra(EXTRA_ROUTE_MODE, ROUTE_MODE_ONCE)));
                 mRouteSpeedMps = clamp(
                         intent.getDoubleExtra(EXTRA_ROUTE_SPEED_MPS, 1.4), 0.2, 60.0);
+                mRouteMotionProfile = Math.max(
+                        MOTION_PROFILE_WALK,
+                        Math.min(
+                                MOTION_PROFILE_CAR,
+                                intent.getIntExtra(
+                                        EXTRA_ROUTE_MOTION_PROFILE,
+                                        MOTION_PROFILE_WALK)));
+                if (mRoutePhysicsEngine != null) {
+                    mRoutePhysicsEngine.setProfile(routePhysicsProfile(mRouteMotionProfile));
+                }
                 mRouteActive = true;
                 mRoamActive = false;
                 mMotionPaused = false;
@@ -729,6 +805,7 @@ public class ServiceGo extends Service {
         }
 
         if (intent != null && ACTION_ROAM_START.equals(intent.getAction())) {
+            stopTimedReplay(false);
             clearRouteCheckpoint();
             mRoamCenterLat = intent.getDoubleExtra(EXTRA_ROAM_CENTER_LAT, mCurLat);
             mRoamCenterLng = intent.getDoubleExtra(EXTRA_ROAM_CENTER_LNG, mCurLng);
@@ -804,6 +881,7 @@ public class ServiceGo extends Service {
                 mRouteIndex,
                 mRouteDirection,
                 mRouteMode,
+                mRouteMotionProfile,
                 mRouteSpeedMps,
                 mMotionPaused,
                 mMotionMultiplier,
@@ -880,6 +958,9 @@ public class ServiceGo extends Service {
             mRouteMode = Math.max(
                     ROUTE_MODE_ONCE,
                     Math.min(ROUTE_MODE_PINGPONG, p.routeMode));
+            mRouteMotionProfile = Math.max(
+                    MOTION_PROFILE_WALK,
+                    Math.min(MOTION_PROFILE_CAR, p.motionProfile));
             mRouteSpeedMps = clamp(p.routeSpeedMps, 0.2, 60.0);
             mMotionPaused = p.paused;
             mMotionMultiplier = clamp(p.multiplier, 0.25, 4.0);
@@ -897,6 +978,7 @@ public class ServiceGo extends Service {
             mRoamActive = false;
             mSpeed = 0.0;
             if (mRoutePhysicsEngine != null) {
+                mRoutePhysicsEngine.setProfile(routePhysicsProfile(mRouteMotionProfile));
                 mRoutePhysicsEngine.reset(0.0);
                 mRoutePhysicsFrame = mRoutePhysicsEngine.frame();
                 mRoutePhysicsSummary = mRoutePhysicsFrame.summary();
@@ -946,6 +1028,14 @@ public class ServiceGo extends Service {
     private void stopLabMotion() {
         mRouteActive = false;
         mRoamActive = false;
+        mReplayActive = false;
+        if (mReplayEngine != null) {
+            mReplayEngine.stop();
+        }
+        if (mReplayBackend != null) {
+            mReplayBackend.deactivate();
+        }
+        mReplaySummary = "IDLE";
         mRouteLats = null;
         mRouteLngs = null;
         mRouteCumulative = null;
@@ -1361,8 +1451,16 @@ public class ServiceGo extends Service {
     }
 
     private void activateSimulationBackend(String id) {
-        if ("ROUTE".equals(id)) {
+        if ("REPLAY".equals(id)) {
             if (mFixedBackend != null) mFixedBackend.deactivate();
+            if (mRouteBackend != null) mRouteBackend.deactivate();
+            if (mRoamBackend != null) mRoamBackend.deactivate();
+            if (mReplayBackend != null) mReplayBackend.activate(
+                    mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+            mActiveSimulationBackend = mReplayBackend;
+        } else if ("ROUTE".equals(id)) {
+            if (mFixedBackend != null) mFixedBackend.deactivate();
+            if (mReplayBackend != null) mReplayBackend.deactivate();
             if (mRoamBackend != null) mRoamBackend.deactivate();
             if (mRouteBackend != null) mRouteBackend.activate(
                     mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
@@ -1370,12 +1468,14 @@ public class ServiceGo extends Service {
         } else if ("ROAM".equals(id)) {
             if (mFixedBackend != null) mFixedBackend.deactivate();
             if (mRouteBackend != null) mRouteBackend.deactivate();
+            if (mReplayBackend != null) mReplayBackend.deactivate();
             if (mRoamBackend != null) mRoamBackend.activate(
                     mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
             mActiveSimulationBackend = mRoamBackend;
         } else {
             if (mRouteBackend != null) mRouteBackend.deactivate();
             if (mRoamBackend != null) mRoamBackend.deactivate();
+            if (mReplayBackend != null) mReplayBackend.deactivate();
             if (mFixedBackend != null) mFixedBackend.activate(
                     mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
             mActiveSimulationBackend = mFixedBackend;
@@ -1385,7 +1485,9 @@ public class ServiceGo extends Service {
 
     private void syncSimulationBackend() {
         LabMutableSimulationBackend backend;
-        if (mRouteActive) {
+        if (mReplayActive) {
+            backend = mReplayBackend;
+        } else if (mRouteActive) {
             backend = mRouteBackend;
         } else if (mRoamActive) {
             backend = mRoamBackend;
@@ -1417,6 +1519,75 @@ public class ServiceGo extends Service {
                 0.8f,
                 "FALLBACK",
                 SystemClock.elapsedRealtime());
+    }
+
+    private LabRoutePhysicsEngine.Profile routePhysicsProfile(int profile) {
+        if (profile == MOTION_PROFILE_CAR) {
+            return LabRoutePhysicsEngine.Profile.CAR;
+        }
+        if (profile == MOTION_PROFILE_BIKE) {
+            return LabRoutePhysicsEngine.Profile.BIKE;
+        }
+        return LabRoutePhysicsEngine.Profile.WALK;
+    }
+
+    private String routeMotionProfileName() {
+        return routePhysicsProfile(mRouteMotionProfile).id;
+    }
+
+    private void advanceTimedReplay(double dtSeconds) {
+        LabTimedReplayEngine engine = mReplayEngine;
+        if (engine == null || !mReplayActive) return;
+
+        LabTimedReplayEngine.Frame frame =
+                engine.advance(dtSeconds, mMotionMultiplier);
+        mReplayFrame = frame;
+        applyReplayFrame(frame);
+
+        if (frame != null) {
+            mReplaySummary = frame.summary();
+        }
+
+        if (engine.isFinished()) {
+            mReplayActive = false;
+            mSpeed = 0.0;
+            if (mReplayBackend != null) mReplayBackend.deactivate();
+            mReplaySummary = "FINISHED";
+            recordProvenance("REPLAY", "timestamped GPX finished");
+            activateSimulationBackend("FIXED");
+        }
+    }
+
+    private void applyReplayFrame(LabTimedReplayEngine.Frame frame) {
+        if (frame == null) return;
+        mCurLat = frame.latitude;
+        mCurLng = frame.longitude;
+        mCurAlt = frame.altitude;
+        mSpeed = frame.speedMps;
+        mCurBea = frame.bearingDegrees;
+        if (mReplayBackend != null) {
+            if (!mReplayBackend.isActive()) {
+                mReplayBackend.activate(
+                        mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+            } else {
+                mReplayBackend.update(
+                        mCurLat, mCurLng, mCurAlt, mSpeed, mCurBea, 0.8f);
+            }
+        }
+    }
+
+    private void stopTimedReplay(boolean record) {
+        if (mReplayEngine != null) {
+            mReplayEngine.stop();
+        }
+        boolean wasActive = mReplayActive;
+        mReplayActive = false;
+        mReplayFrame = null;
+        mReplaySummary = "IDLE";
+        if (mReplayBackend != null) mReplayBackend.deactivate();
+        if (wasActive && record) {
+            recordProvenance("REPLAY", "timestamped GPX stopped");
+        }
     }
 
     private LabRoutePhysicsEngine.Context buildRoutePhysicsContext(
@@ -1541,7 +1712,7 @@ public class ServiceGo extends Service {
     }
 
     private void advanceLabMotion() {
-        if (!mRouteActive && !mRoamActive) return;
+        if (!mRouteActive && !mRoamActive && !mReplayActive) return;
         if (mMotionPaused) {
             mLastMotionElapsed = SystemClock.elapsedRealtime();
             mSpeed = 0.0;
@@ -1559,7 +1730,9 @@ public class ServiceGo extends Service {
         // Avoid a giant teleport after the process/thread was paused for a while.
         dt = clamp(dt, 0.0, 0.25);
 
-        if (mRouteActive) {
+        if (mReplayActive) {
+            advanceTimedReplay(dt);
+        } else if (mRouteActive) {
             LabRoutePhysicsEngine physics = mRoutePhysicsEngine;
             if (physics != null) {
                 LabRoutePhysicsEngine.Context context = buildRoutePhysicsContext(dt, now);
@@ -2084,6 +2257,33 @@ public class ServiceGo extends Service {
 
         public String getRoutePhysicsSummary() {
             return mRoutePhysicsSummary;
+        }
+
+        public String getRouteMotionProfileName() {
+            return routeMotionProfileName();
+        }
+
+        public boolean isReplayActive() {
+            return mReplayActive;
+        }
+
+        public String getReplaySummary() {
+            return mReplaySummary;
+        }
+
+        public double getReplayProgressFraction() {
+            LabTimedReplayEngine engine = mReplayEngine;
+            return engine == null ? 0.0 : engine.progressFraction();
+        }
+
+        public long getReplayPlayheadMs() {
+            LabTimedReplayEngine engine = mReplayEngine;
+            return engine == null ? 0L : engine.playheadMs();
+        }
+
+        public long getReplayDurationMs() {
+            LabTimedReplayEngine engine = mReplayEngine;
+            return engine == null ? 0L : engine.durationMs();
         }
 
         public double getRoutePhysicsSpeedMps() {
