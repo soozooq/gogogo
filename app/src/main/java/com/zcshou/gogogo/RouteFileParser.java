@@ -170,7 +170,7 @@ public final class RouteFileParser {
                         - points.get(0).timestampMillis);
     }
 
-    private static long parseTimestamp(String raw) {
+    static long parseTimestamp(String raw) {
         if (raw == null) return -1L;
         String clean = raw.trim();
         if (clean.isEmpty()) return -1L;
