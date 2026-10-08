@@ -2,9 +2,11 @@
 
 ## Purpose and scope
 
-This is a pre-release **known-issues and verification gate**, not an assertion that
-all Android OEMs or third-party apps accept GoGoGo's mock locations. Preserve
-Lab 24 as fallback; Lab 25 stays a draft until physical-device testing.
+This is a **post-integration preview acceptance record**, not an assertion that
+all Android OEMs or third-party apps accept GoGoGo's mock locations. Labs 1–25
+were merged into `main` through PR #5, commit `8115bdfc12de7aab517f7873e8f35954c8fae10c`.
+The original main is preserved at `backup/main-before-labs-20261009`.
+The code merge is complete; real-device verification and a stable release are not.
 
 ## Corrected in this review
 
@@ -39,8 +41,13 @@ Lab 24 as fallback; Lab 25 stays a draft until physical-device testing.
 
 ## Checks that still block release
 
-- [ ] Latest full Gradle Build Check and Debug APK runs pass for the final
-      source commit (not merely an earlier checkpoint).
+- [x] Full Gradle Build Check passed on integrated `main` commit `8115bdf`:
+      https://github.com/soozooq/gogogo/actions/runs/37855976504
+- [x] Debug APK build passed on the **same** `main` commit, artifact
+      `gogogo-unified-labs-preview` (about 21 MB, artifact is a ZIP):
+      https://github.com/soozooq/gogogo/actions/runs/37855976542
+- [ ] Physical-phone smoke test is not completed. Follow
+      [Chinese phone checklist](main-preview-phone-acceptance-20261009.md).
 - [ ] On-device normal start → GPS / NETWORK / FUSED observations → normal
       stop → clean consumer readings.
 - [ ] On-device force-stop / crash / Shizuku permission revoke → cold-start
@@ -87,7 +94,9 @@ Lab 24 as fallback; Lab 25 stays a draft until physical-device testing.
 
 ## Release decision
 
-Do not auto-merge or replace the working APK. The Lab 25 development branch
-is complete only when the final source CI and required device verification
-are recorded. An unresolved risk must stay listed rather than being called
-fixed without evidence.
+**Repository integration is complete:** PR #4 and PR #5 are merged into
+`main`; old Lab 23/24 draft PRs were closed as superseded, not deleted.
+**Field acceptance is pending**: do not call this a stable release, create a
+stable tag, or assume it can replace an existing working installation without
+checking its signing identity and the phone's current package ID. Unresolved
+issues must remain listed instead of being called fixed without evidence.
