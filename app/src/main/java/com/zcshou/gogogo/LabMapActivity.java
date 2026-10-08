@@ -63,8 +63,10 @@ public class LabMapActivity extends AppCompatActivity {
     private static final int REQ_PMTILES_FILE = 2302;
     private static final int REQ_EXPORT_GPX = 2303;
 
-    private static final double DEFAULT_LAT = 16.68914;
-    private static final double DEFAULT_LNG = 98.50895;
+    public static final String EXTRA_START_LATITUDE = "gogogo.map.startLatitude";
+    public static final String EXTRA_START_LONGITUDE = "gogogo.map.startLongitude";
+    private static final double DEFAULT_LAT = LabLocationPresets.defaultPreset().latitude;
+    private static final double DEFAULT_LNG = LabLocationPresets.defaultPreset().longitude;
     private static final String STYLE_DEMO = "https://demotiles.maplibre.org/style.json";
     private static final String STYLE_LIBERTY = "https://tiles.openfreemap.org/styles/liberty";
 
@@ -135,6 +137,17 @@ public class LabMapActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // The home form can center the map, but cannot start mock publishing.
+        Intent launch = getIntent();
+        if (launch != null && launch.hasExtra(EXTRA_START_LATITUDE)
+                && launch.hasExtra(EXTRA_START_LONGITUDE)) {
+            double lat = launch.getDoubleExtra(EXTRA_START_LATITUDE, DEFAULT_LAT);
+            double lng = launch.getDoubleExtra(EXTRA_START_LONGITUDE, DEFAULT_LNG);
+            if (Double.isFinite(lat) && Double.isFinite(lng)
+                    && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+                selectedPoint = new LatLng(lat, lng);
+            }
+        }
         MapLibre.getInstance(this);
         buildUi(savedInstanceState);
     }
@@ -176,7 +189,7 @@ public class LabMapActivity extends AppCompatActivity {
 
         statusView = GoGoUi.muted(
                 this,
-                "点地图选择位置 · 默认 98.50895, 16.68914");
+                "点地图选择位置 · 工具菜单可快捷跳转国家 / 城市");
         statusView.setPadding(GoGoUi.dp(this, 4), GoGoUi.dp(this, 6),
                 GoGoUi.dp(this, 4), GoGoUi.dp(this, 6));
         root.addView(statusView, GoGoUi.matchWrap());
@@ -279,7 +292,8 @@ public class LabMapActivity extends AppCompatActivity {
                 "OpenFreeMap Liberty",
                 "MapLibre Demo",
                 "导入 PMTiles",
-                "离线地图管理"
+                "离线地图管理",
+                "🌏 快捷跳转国家 / 城市"
         };
 
         new AlertDialog.Builder(this)
@@ -309,6 +323,9 @@ public class LabMapActivity extends AppCompatActivity {
                             break;
                         case 7:
                             showOfflineMaps();
+                            break;
+                        case 8:
+                            showLocationPresets();
                             break;
                         default:
                             break;
@@ -629,6 +646,23 @@ public class LabMapActivity extends AppCompatActivity {
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private void showLocationPresets() {
+        new AlertDialog.Builder(this)
+                .setTitle("地图跳转 · 国家 / 城市（WGS-84）")
+                .setItems(LabLocationPresets.labels(), (dialog, index) -> {
+                    LabLocationPresets.Preset p = LabLocationPresets.get(index);
+                    LatLng chosen = new LatLng(p.latitude, p.longitude);
+                    selectPoint(chosen, false);
+                    if (map != null) {
+                        map.animateCamera(CameraUpdateFactory.newLatLngZoom(chosen, 12.5));
+                    }
+                    Toast.makeText(this, "已选：" + p.name
+                            + " · 点击「模拟这里」才会启动", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("取消", null)
+                .show();
     }
 
     private void selectPoint(LatLng point, boolean moveCamera) {

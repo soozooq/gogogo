@@ -98,7 +98,8 @@ public class SimpleMockActivity extends AppCompatActivity {
         locationContent.addView(lngLabel, GoGoUi.matchWrap());
         longitudeInput = new EditText(this);
         longitudeInput.setHint("例如 98.50895");
-        longitudeInput.setText("98.50895");
+        longitudeInput.setText(Double.toString(
+                LabLocationPresets.defaultPreset().longitude));
         longitudeInput.setInputType(InputType.TYPE_CLASS_NUMBER
                 | InputType.TYPE_NUMBER_FLAG_DECIMAL
                 | InputType.TYPE_NUMBER_FLAG_SIGNED);
@@ -111,12 +112,22 @@ public class SimpleMockActivity extends AppCompatActivity {
         locationContent.addView(latLabel, GoGoUi.matchWrap());
         latitudeInput = new EditText(this);
         latitudeInput.setHint("例如 16.68914");
-        latitudeInput.setText("16.68914");
+        latitudeInput.setText(Double.toString(
+                LabLocationPresets.defaultPreset().latitude));
         latitudeInput.setInputType(InputType.TYPE_CLASS_NUMBER
                 | InputType.TYPE_NUMBER_FLAG_DECIMAL
                 | InputType.TYPE_NUMBER_FLAG_SIGNED);
         GoGoUi.styleInput(latitudeInput);
         locationContent.addView(latitudeInput, GoGoUi.matchWrap());
+
+        locationContent.addView(GoGoUi.gap(this, 10));
+        locationContent.addView(
+                GoGoUi.secondaryButton(this, "🌏 快捷选择国家 / 城市（17 个）",
+                        v -> showLocationPresets()),
+                GoGoUi.matchWrap());
+        locationContent.addView(GoGoUi.muted(this,
+                "所选坐标仅填入输入框，不会自动启动或改变正在运行的模拟定位。"),
+                GoGoUi.matchWrap());
 
         locationContent.addView(GoGoUi.gap(this, 14));
 
@@ -149,7 +160,7 @@ public class SimpleMockActivity extends AppCompatActivity {
 
         labContent.addView(
                 GoGoUi.primaryButton(this, "打开地图实验室  →",
-                        v -> startActivity(new Intent(this, LabMapActivity.class))),
+                        v -> openMapLab()),
                 GoGoUi.matchWrap());
 
         GoGoUi.addCard(root, labCard, 14);
@@ -190,6 +201,38 @@ public class SimpleMockActivity extends AppCompatActivity {
         root.addView(footer, GoGoUi.matchWrap());
 
         setContentView(scroll);
+    }
+
+    private void showLocationPresets() {
+        new AlertDialog.Builder(this)
+                .setTitle("选择国家 / 城市 · WGS-84 参考坐标")
+                .setItems(LabLocationPresets.labels(), (dialog, which) -> {
+                    LabLocationPresets.Preset preset = LabLocationPresets.get(which);
+                    longitudeInput.setText(Double.toString(preset.longitude));
+                    latitudeInput.setText(Double.toString(preset.latitude));
+                    Toast.makeText(this, "已填入：" + preset.name
+                            + "（未自动启动模拟）", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    private void openMapLab() {
+        Intent intent = new Intent(this, LabMapActivity.class);
+        // Carry a manually edited or preset coordinate to the map as a
+        // starting viewport only. Opening the map never starts the mock.
+        try {
+            double lng = Double.parseDouble(longitudeInput.getText().toString().trim());
+            double lat = Double.parseDouble(latitudeInput.getText().toString().trim());
+            if (Double.isFinite(lng) && Double.isFinite(lat)
+                    && lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90) {
+                intent.putExtra(LabMapActivity.EXTRA_START_LONGITUDE, lng);
+                intent.putExtra(LabMapActivity.EXTRA_START_LATITUDE, lat);
+            }
+        } catch (NumberFormatException ignored) {
+            // MapLibre falls back to Myawaddy when the home input is invalid.
+        }
+        startActivity(intent);
     }
 
     private void showToolsMenu() {
