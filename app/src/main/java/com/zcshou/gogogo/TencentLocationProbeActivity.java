@@ -45,6 +45,7 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
     private TencentLocationManager manager;
     private TencentLocationListener activeListener;
     private final TencentProbeSessionState probeState = new TencentProbeSessionState();
+    private final TencentProbeSessionState standardsState = new TencentProbeSessionState();
     private TextView statusView;
     private TextView androidView;
     private TextView tencentView;
@@ -367,6 +368,7 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
     }
 
     private void refreshStandards() {
+        final long snapshotId = standardsState.begin();
         // Keep the permission checks in this method so Android Lint can verify
         // both LocationManager and GMS calls (the helper alone is not recognized).
         boolean fineGranted = ActivityCompat.checkSelfPermission(this,
@@ -400,13 +402,13 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
             LocationServices.getFusedLocationProviderClient(this)
                     .getLastLocation()
                     .addOnSuccessListener(loc -> {
-                        if (!destroyed) {
+                        if (!destroyed && standardsState.accepts(snapshotId)) {
                             androidView.setText(out.toString() + "GMS Fused last: "
                                     + describeAndroid(loc));
                         }
                     })
                     .addOnFailureListener(e -> {
-                        if (!destroyed) {
+                        if (!destroyed && standardsState.accepts(snapshotId)) {
                             androidView.setText(out.toString() + "GMS Fused failed: "
                                     + e.getClass().getSimpleName());
                         }
@@ -451,6 +453,7 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         destroyed = true;
+        standardsState.cancel();
         stopTencent();
         handler.removeCallbacksAndMessages(null);
         super.onDestroy();
