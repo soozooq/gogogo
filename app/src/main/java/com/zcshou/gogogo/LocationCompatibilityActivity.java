@@ -95,7 +95,7 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title, GoGoUi.matchWrap());
         titleBlock.addView(
-                GoGoUi.muted(this, "Lab 15 · 标准位置链健康度"),
+                GoGoUi.muted(this, "Lab 20 · Provider Reliability + Recovery"),
                 GoGoUi.matchWrap());
         appBar.addView(titleBlock, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
@@ -178,8 +178,12 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
         if (netFresh) primaryHealthy++;
         if (gmsFresh || fusedFresh) primaryHealthy++;
 
+        int orphaned = b.getProviderOrphanedCount();
+
         String status;
-        if (!b.isPolicyPublishing()) {
+        if (orphaned > 0) {
+            status = "ORPHANED · " + orphaned + " 条 provider 等待回收";
+        } else if (!b.isPolicyPublishing()) {
             status = "PAUSED · Policy 当前停止发布位置";
         } else if (primaryHealthy >= 3) {
             status = "GOOD · GPS / NETWORK / FUSED 覆盖完整";
@@ -196,6 +200,8 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
                         + "NETWORK provider: %s · age %s · ok %d · fail %d\n"
                         + "Framework FUSED: %s · age %s · ok %d · fail %d\n"
                         + "GMS Fused mock: %s · age %s · dispatch %d\n\n"
+                        + "Provider lifecycle: %s\n"
+                        + "Route recovery: %s\n\n"
                         + "参考：GoGoGo tick ≈ 33 ms。age 长时间明显大于 500 ms 才值得重点排查。",
                 enabled(b.isGpsProviderEnabled()), age(gpsAge),
                 b.getGpsPublishCount(), b.getGpsPublishFailureCount(),
@@ -205,7 +211,9 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
                 b.getFusedProviderPublishCount(), b.getFusedProviderPublishFailureCount(),
                 b.isGmsFusedMockEnabled() ? "ENABLED" : "UNAVAILABLE",
                 age(gmsAge),
-                b.getGmsFusedDispatchCount()));
+                b.getGmsFusedDispatchCount(),
+                b.getProviderReliabilitySummary(),
+                b.getRouteRecoverySummary()));
 
         publishedView.setText(String.format(Locale.US,
                 "publish=%s\n"
@@ -225,9 +233,13 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
                 b.getPublishedBearingDegrees(),
                 b.getPolicySummary()));
 
-        if (primaryHealthy >= 3) {
+        if (orphaned > 0) {
             guidanceView.setText(
-                    "标准 Android 位置发布链目前完整。"
+                    "发现无法立即回收的 test provider。Lab 20 会在 mock AppOps 可用后重试清理；"
+                            + "如果开发者选项里取消过“模拟位置信息应用”，请重新选择 GoGoGo 后再观察。");
+        } else if (primaryHealthy >= 3) {
+            guidanceView.setText(
+                    "标准 Android 位置发布链目前完整。Provider Reclaimer 也没有发现孤儿状态。"
                             + "这代表 GoGoGo 已经把 GPS / NETWORK / FUSED 兼容面尽量铺满；"
                             + "如果微信仍然拿不到，问题就不再是某一条 provider 没有持续发布。");
         } else if (!gmsFresh && !fusedFresh) {
