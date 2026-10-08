@@ -242,7 +242,8 @@ public class ServiceGo extends Service {
     private LocationListener mPersistentListener;     // 保持 Provider 活跃订阅,见 onCreate 注释
     private FusedLocationProviderClient mFusedClient; // Google Play Services fused mock, null = GMS 不可用
     private boolean mFusedMockEnabled = false;
-    private boolean isStop = false;
+    // Read by the location HandlerThread and written during main-thread teardown.
+    private volatile boolean isStop = false;
     private PowerManager.WakeLock mWakeLock;
 
     // 手机朝向：直接从系统方向传感器读取，避免高德在 Mock 模式下不再更新自身罗盘。
@@ -257,6 +258,7 @@ public class ServiceGo extends Service {
     private static final String SERVICE_GO_NOTE_CHANNEL_ID = "SERVICE_GO_NOTE";
     private static final String SERVICE_GO_NOTE_CHANNEL_NAME = "SERVICE_GO_NOTE";
     private NoteActionReceiver mActReceiver;
+    private boolean mActReceiverRegistered = false;
     // 摇杆相关。测试版默认禁用 overlay，避免遮挡其它应用。
     private static final boolean ENABLE_JOYSTICK_OVERLAY = false;
     private JoyStick mJoyStick;
@@ -1062,12 +1064,22 @@ public class ServiceGo extends Service {
         }
         isStop = true;
         sRunning = false;
-        mLocHandler.removeMessages(HANDLER_MSG_ID);
-        mLocHandlerThread.quit();
+        // onCreate can fail before the HandlerThread is fully initialized.
+        if (mLocHandler != null) {
+            mLocHandler.removeMessages(HANDLER_MSG_ID);
+        }
+        if (mLocHandlerThread != null) {
+            mLocHandlerThread.quit();
+        }
 
         if (mJoyStick != null) {
-            if (mJoyStick != null) mJoyStick.destroy();
-            mJoyStick = null;
+            try {
+                mJoyStick.destroy();
+            } catch (RuntimeException e) {
+                XLog.e("SERVICEGO: joystick cleanup failed: " + e.getClass().getSimpleName());
+            } finally {
+                mJoyStick = null;
+            }
         }
 
         removeTestProviderNetwork();
@@ -1103,8 +1115,21 @@ public class ServiceGo extends Service {
             }
         }
 
-        unregisterReceiver(mActReceiver);
-        stopForeground(STOP_FOREGROUND_REMOVE);
+        // A partially initialized service may never have registered the receiver.
+        if (mActReceiverRegistered && mActReceiver != null) {
+            try {
+                unregisterReceiver(mActReceiver);
+            } catch (IllegalArgumentException ignored) {
+                // Already unregistered by the framework or an earlier cleanup.
+            } finally {
+                mActReceiverRegistered = false;
+            }
+        }
+        try {
+            stopForeground(STOP_FOREGROUND_REMOVE);
+        } catch (RuntimeException e) {
+            XLog.e("SERVICEGO: foreground cleanup failed: " + e.getClass().getSimpleName());
+        }
 
         if (mWakeLock != null && mWakeLock.isHeld()) {
             try {
@@ -1127,11 +1152,17 @@ public class ServiceGo extends Service {
         mHeadingFusionEngine = null;
         mAttitudeHeadingFrame = null;
         if (mAttitudeHeadingEngine != null) {
-            mAttitudeHeadingEngine.reset();
+            try {
+                mAttitudeHeadingEngine.reset();
+            } catch (RuntimeException ignored) {
+            }
         }
         mAttitudeHeadingEngine = null;
         if (mHeadingTraceRecorder != null) {
-            mHeadingTraceRecorder.clear();
+            try {
+                mHeadingTraceRecorder.clear();
+            } catch (RuntimeException ignored) {
+            }
         }
         mHeadingTraceRecorder = null;
 
@@ -1143,8 +1174,11 @@ public class ServiceGo extends Service {
             mPolicyEngine = null;
         }
 
-        LabServiceLifecycleJournal.onServiceDestroyed(this);
-        super.onDestroy();
+        try {
+            LabServiceLifecycleJournal.onServiceDestroyed(this);
+        } finally {
+            super.onDestroy();
+        }
     }
 
     private void initNotification() {
@@ -1158,6 +1192,7 @@ public class ServiceGo extends Service {
             //noinspection UnspecifiedRegisterReceiverFlag
             registerReceiver(mActReceiver, filter);
         }
+        mActReceiverRegistered = true;
 
         NotificationChannel mChannel = new NotificationChannel(SERVICE_GO_NOTE_CHANNEL_ID, SERVICE_GO_NOTE_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
