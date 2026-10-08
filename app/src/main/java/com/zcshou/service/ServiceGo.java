@@ -342,6 +342,11 @@ public class ServiceGo extends Service {
         // 覆盖走 Google Play Services 路径的应用(部分 WeChat/腾讯小程序场景)。
         // 设备没装 GMS 就 try/catch 静默跳过。
         initFusedMock();
+        // Observe permission changes without changing any AppOps value.
+        // The observer lives only as long as this ServiceGo instance.
+        if (mProviderReliability != null) {
+            mProviderReliability.startMonitoring();
+        }
     }
 
     private void initHeadingSensor() {
@@ -1175,6 +1180,9 @@ public class ServiceGo extends Service {
         }
 
         try {
+            if (mProviderReliability != null) {
+                mProviderReliability.stopMonitoring();
+            }
             LabServiceLifecycleJournal.onServiceDestroyed(this);
         } finally {
             super.onDestroy();
