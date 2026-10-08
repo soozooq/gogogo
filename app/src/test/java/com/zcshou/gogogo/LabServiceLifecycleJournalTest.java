@@ -3,6 +3,8 @@ package com.zcshou.gogogo;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /** Pure state-machine tests: no Android or Shizuku service needed. */
 public class LabServiceLifecycleJournalTest {
@@ -35,6 +37,51 @@ public class LabServiceLifecycleJournalTest {
     public void serviceMissingInSameProcessIsNotTreatedAsHealthy() {
         assertEquals(LabServiceLifecycleJournal.Verdict.INTERRUPTED_OR_STALE,
                 LabServiceLifecycleJournal.classify(true, false, true, false, true));
+    }
+
+    @Test
+    public void sameBootCountAndIncreasingUptimeIsSameBoot() {
+        assertTrue(LabServiceLifecycleJournal.isSameBoot(9, 9,
+                1_700_000_010_000L, 10_000L,
+                1_700_000_060_000L, 60_000L));
+    }
+
+    @Test
+    public void rebootWithLongerUptimeIsNotMistakenForSameBoot() {
+        assertFalse(LabServiceLifecycleJournal.isSameBoot(9, 10,
+                1_700_000_010_000L, 10_000L,
+                1_700_100_060_000L, 60_000L));
+    }
+
+    @Test
+    public void uptimeRollbackIsNotSameBootEvenIfCounterUnchanged() {
+        assertFalse(LabServiceLifecycleJournal.isSameBoot(9, 9,
+                1_700_000_060_000L, 60_000L,
+                1_700_100_010_000L, 10_000L));
+    }
+
+    @Test
+    public void legacyRecordFallsBackToBootEpoch() {
+        assertTrue(LabServiceLifecycleJournal.isSameBoot(-1, 9,
+                1_700_000_010_000L, 10_000L,
+                1_700_000_060_000L, 60_000L));
+        assertFalse(LabServiceLifecycleJournal.isSameBoot(-1, 9,
+                1_700_000_010_000L, 10_000L,
+                1_700_100_060_000L, 60_000L));
+    }
+
+    @Test
+    public void largeClockAdjustmentIsClassifiedAsUncertainInFallback() {
+        assertFalse(LabServiceLifecycleJournal.isSameBoot(-1, -1,
+                1_700_000_010_000L, 10_000L,
+                1_700_001_260_000L, 60_000L));
+    }
+
+    @Test
+    public void missingLegacyEpochRemainsUncertain() {
+        assertFalse(LabServiceLifecycleJournal.isSameBoot(-1, -1,
+                0L, 10_000L,
+                1_700_000_060_000L, 60_000L));
     }
 
     @Test
