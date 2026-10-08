@@ -191,10 +191,11 @@ public final class LabRoutePhysicsEngine {
                 targetSpeedMps,
                 lastTurnAngleDeg,
                 phase,
-                dwellUntilElapsedMs);
+                dwellUntilElapsedMs,
+                profile.id);
     }
 
-    private static double cornerSpeedLimit(double cruise, double turnAngleDeg) {
+    private double cornerSpeedLimit(double cruise, double turnAngleDeg) {
         if (cruise <= 0.0) return 0.0;
         double severity = clamp(turnAngleDeg / 180.0, 0.0, 1.0);
         double factor = 1.0 - profile.cornerPenalty * Math.pow(severity, 0.80);
@@ -255,25 +256,28 @@ public final class LabRoutePhysicsEngine {
         public final double turnAngleDeg;
         public final String phase;
         public final long dwellUntilElapsedMs;
+        public final String profileId;
 
         Frame(
                 double speedMps,
                 double targetSpeedMps,
                 double turnAngleDeg,
                 String phase,
-                long dwellUntilElapsedMs) {
+                long dwellUntilElapsedMs,
+                String profileId) {
             this.speedMps = speedMps;
             this.targetSpeedMps = targetSpeedMps;
             this.turnAngleDeg = turnAngleDeg;
             this.phase = phase;
             this.dwellUntilElapsedMs = dwellUntilElapsedMs;
+            this.profileId = profileId == null ? "BIKE" : profileId;
         }
 
         public String summary() {
             return String.format(
                     Locale.US,
                     "%s/%s · v=%.2f→%.2f m/s · turn=%.0f°",
-                    profile.id,
+                    profileId,
                     phase,
                     speedMps,
                     targetSpeedMps,
