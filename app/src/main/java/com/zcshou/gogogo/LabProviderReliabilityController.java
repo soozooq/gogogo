@@ -39,20 +39,20 @@ public final class LabProviderReliabilityController {
     private final Map<String, ProviderState> states = new LinkedHashMap<>();
     private AppOpsManager watchingAppOps;
     private boolean watchingAppOpsChanges;
-    private final AppOpsManager.OnOpChangedListener mockOpListener =
-            (operation, packageName) -> {
-                if (!AppOpsManager.OPSTR_MOCK_LOCATION.equals(operation)
-                        || (packageName != null
-                        && !context.getPackageName().equals(packageName))) {
-                    return;
-                }
-                onMockAppOpChanged();
-            };
+    private final AppOpsManager.OnOpChangedListener mockOpListener;
 
     public LabProviderReliabilityController(
             Context context,
             LocationManager locationManager) {
         this.context = context.getApplicationContext();
+        this.mockOpListener = (operation, packageName) -> {
+            if (!AppOpsManager.OPSTR_MOCK_LOCATION.equals(operation)
+                    || (packageName != null
+                    && !this.context.getPackageName().equals(packageName))) {
+                return;
+            }
+            onMockAppOpChanged();
+        };
         this.locationManager = locationManager;
         this.prefs = this.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         this.audit = this.context.getSharedPreferences(AUDIT_PREFS, Context.MODE_PRIVATE);
