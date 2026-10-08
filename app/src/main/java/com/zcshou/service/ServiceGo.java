@@ -1103,17 +1103,41 @@ public class ServiceGo extends Service {
     @Override
     public void onDestroy() {
         mFusedShutdownRequested = true;
-        if (mRouteActive) {
-            checkpointRoute(true);
-        }
         isStop = true;
         sRunning = false;
-        // onCreate can fail before the HandlerThread is fully initialized.
+        // A failed route checkpoint must never skip provider/GMS teardown.
+        if (mRouteActive) {
+            try {
+                checkpointRoute(true);
+            } catch (RuntimeException e) {
+                XLog.e("SERVICEGO: route checkpoint on exit failed: "
+                        + e.getClass().getSimpleName());
+            }
+        }
+        // Stop and briefly join the publisher before removing providers to
+        // reduce a publish-vs-remove race. Avoid an unbounded main-thread wait.
         if (mLocHandler != null) {
-            mLocHandler.removeMessages(HANDLER_MSG_ID);
+            try {
+                mLocHandler.removeMessages(HANDLER_MSG_ID);
+            } catch (RuntimeException ignored) {
+            }
         }
         if (mLocHandlerThread != null) {
-            mLocHandlerThread.quit();
+            try {
+                mLocHandlerThread.quit();
+                if (Thread.currentThread() != mLocHandlerThread) {
+                    mLocHandlerThread.join(350L);
+                }
+                if (mLocHandlerThread.isAlive()) {
+                    XLog.e("SERVICEGO: publisher thread still alive after teardown wait");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                XLog.e("SERVICEGO: publisher thread join interrupted");
+            } catch (RuntimeException e) {
+                XLog.e("SERVICEGO: publisher thread shutdown failed: "
+                        + e.getClass().getSimpleName());
+            }
         }
 
         if (mJoyStick != null) {
