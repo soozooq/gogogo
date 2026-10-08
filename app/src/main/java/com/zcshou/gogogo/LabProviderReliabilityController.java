@@ -7,6 +7,9 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Process;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -26,11 +29,25 @@ public final class LabProviderReliabilityController {
     }
 
     private static final String PREFS = "lab20_provider_reliability";
+    private static final String AUDIT_PREFS = "lab25_provider_cleanup_evidence";
+
 
     private final Context context;
     private final LocationManager locationManager;
     private final SharedPreferences prefs;
+    private final SharedPreferences audit;
     private final Map<String, ProviderState> states = new LinkedHashMap<>();
+    private AppOpsManager watchingAppOps;
+    private boolean watchingAppOpsChanges;
+    private final AppOpsManager.OnOpChangedListener mockOpListener =
+            (operation, packageName) -> {
+                if (!AppOpsManager.OPSTR_MOCK_LOCATION.equals(operation)
+                        || (packageName != null
+                        && !context.getPackageName().equals(packageName))) {
+                    return;
+                }
+                onMockAppOpChanged();
+            };
 
     public LabProviderReliabilityController(
             Context context,
@@ -38,6 +55,7 @@ public final class LabProviderReliabilityController {
         this.context = context.getApplicationContext();
         this.locationManager = locationManager;
         this.prefs = this.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        this.audit = this.context.getSharedPreferences(AUDIT_PREFS, Context.MODE_PRIVATE);
         states.put(LocationManager.GPS_PROVIDER, new ProviderState());
         states.put(LocationManager.NETWORK_PROVIDER, new ProviderState());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -51,7 +69,7 @@ public final class LabProviderReliabilityController {
      */
     public synchronized void sweepBeforeRegistration() {
         for (String provider : states.keySet()) {
-            cleanupProvider(provider);
+            cleanupProvider(provider, "COLD_START");
         }
     }
 
@@ -59,8 +77,59 @@ public final class LabProviderReliabilityController {
         if (!isMockOpAllowed()) return;
         for (Map.Entry<String, ProviderState> entry : states.entrySet()) {
             if (entry.getValue().state == State.ORPHANED) {
-                cleanupProvider(entry.getKey());
+                cleanupProvider(entry.getKey(), "DEFERRED_RETRY");
             }
+        }
+    }
+
+    /** Watches only this app's mock-location AppOp; does not modify permissions. */
+    public synchronized void startMonitoring() {
+        if (watchingAppOpsChanges) return;
+        try {
+            AppOpsManager manager = (AppOpsManager)
+                    context.getSystemService(Context.APP_OPS_SERVICE);
+            if (manager == null) {
+                audit.edit().putString("watcher", "UNAVAILABLE").apply();
+                return;
+            }
+            manager.startWatchingMode(AppOpsManager.OPSTR_MOCK_LOCATION,
+                    context.getPackageName(), mockOpListener);
+            watchingAppOps = manager;
+            watchingAppOpsChanges = true;
+            audit.edit().putString("watcher", "REGISTERED").apply();
+        } catch (RuntimeException e) {
+            audit.edit().putString("watcher", "FAILED_"
+                    + e.getClass().getSimpleName()).apply();
+        }
+    }
+
+    public synchronized void stopMonitoring() {
+        if (!watchingAppOpsChanges) return;
+        try {
+            watchingAppOps.stopWatchingMode(mockOpListener);
+        } catch (RuntimeException ignored) {
+        } finally {
+            watchingAppOpsChanges = false;
+            watchingAppOps = null;
+            audit.edit().putString("watcher", "STOPPED").apply();
+        }
+    }
+
+    private synchronized void onMockAppOpChanged() {
+        boolean allowed = isMockOpAllowed();
+        audit.edit().putLong("appops_changed_at", System.currentTimeMillis())
+                .putString("appops_last", allowed ? "ALLOWED" : "NOT_ALLOWED")
+                .commit();
+        boolean anyActive = false;
+        boolean anyOrphaned = false;
+        for (ProviderState state : states.values()) {
+            anyActive |= state.state == State.ACTIVE;
+            anyOrphaned |= state.state == State.ORPHANED;
+        }
+        // Never race an actively publishing service in an AppOps callback.
+        if (LabProviderEvidencePolicy.shouldRetryAfterAppOps(
+                allowed, anyActive, anyOrphaned)) {
+            retryDeferredCleanup();
         }
     }
 
@@ -147,33 +216,105 @@ public final class LabProviderReliabilityController {
         return stateFor(provider).state.name();
     }
 
-    private void cleanupProvider(String provider) {
+    private void cleanupProvider(String provider, String trigger) {
         ProviderState state = stateFor(provider);
+        boolean ownedBefore = wasOwned(provider);
+        String key = "provider_" + provider + "_";
+        // Persist an IN_PROGRESS marker first: a force-stop mid-sweep must not
+        // masquerade as a successful cleanup on the next app launch.
+        audit.edit().putString(key + "trigger", trigger)
+                .putBoolean(key + "owned_before", ownedBefore)
+                .putBoolean(key + "allowed_before", isMockOpAllowed())
+                .putLong(key + "started_at", System.currentTimeMillis())
+                .putString(key + "outcome",
+                        LabProviderEvidencePolicy.CleanupOutcome.PENDING.name())
+                .commit();
+
+        LabProviderEvidencePolicy.CleanupOutcome outcome =
+                LabProviderEvidencePolicy.CleanupOutcome.PENDING;
+        String disableWarning = "";
         try {
+            // Disabling is best-effort; even if it fails, still attempt removal.
             try {
                 locationManager.setTestProviderEnabled(provider, false);
             } catch (IllegalArgumentException ignored) {
-                // Not currently a test provider. removeTestProvider below is still attempted.
+                // Nothing registered under this test-provider name.
+            } catch (RuntimeException e) {
+                disableWarning = e.getClass().getSimpleName();
             }
-
             try {
                 locationManager.removeTestProvider(provider);
-            } catch (IllegalArgumentException ignored) {
-                // Expected when no test provider exists. This is effectively clean.
+                outcome = LabProviderEvidencePolicy.CleanupOutcome.REMOVE_RETURNED;
+            } catch (IllegalArgumentException absent) {
+                outcome = LabProviderEvidencePolicy.CleanupOutcome.ALREADY_ABSENT;
             }
 
-            state.state = State.CLEAN;
-            state.lastError = "";
-            setOwned(provider, false);
+            if (LabProviderEvidencePolicy.mayReportClean(outcome)) {
+                state.state = State.CLEAN;
+                state.lastError = "";
+                setOwned(provider, false);
+            }
         } catch (SecurityException e) {
+            outcome = LabProviderEvidencePolicy.CleanupOutcome.SECURITY_DENIED;
             state.cleanupFailures++;
-            state.state = wasOwned(provider) ? State.ORPHANED : State.DEGRADED;
+            state.state = ownedBefore ? State.ORPHANED : State.DEGRADED;
             state.lastError = shortError(e);
         } catch (Throwable t) {
+            outcome = LabProviderEvidencePolicy.CleanupOutcome.OTHER_FAILURE;
             state.cleanupFailures++;
             state.state = State.DEGRADED;
             state.lastError = shortError(t);
+        } finally {
+            // This is API-level evidence only; it cannot certify that Tencent,
+            // GMS or any third-party consumer discarded its cached location.
+            audit.edit().putString(key + "outcome", outcome.name())
+                    .putLong(key + "finished_at", System.currentTimeMillis())
+                    .putBoolean(key + "owned_after", wasOwned(provider))
+                    .putBoolean(key + "allowed_after", isMockOpAllowed())
+                    .putString(key + "disable_warning", disableWarning)
+                    .commit();
         }
+    }
+
+    /** Visible in Lab Diagnostics even after ServiceGo was force-stopped. */
+    public static String savedAuditSummary(Context context) {
+        SharedPreferences p = context.getApplicationContext().getSharedPreferences(
+                AUDIT_PREFS, Context.MODE_PRIVATE);
+        StringBuilder out = new StringBuilder();
+        out.append("监听状态: ").append(p.getString("watcher", "NOT_STARTED")).append('\n');
+        long opAt = p.getLong("appops_changed_at", 0L);
+        if (opAt > 0L) {
+            out.append("最近 AppOps 事件: ").append(p.getString("appops_last", "UNKNOWN"))
+                    .append(" @ ").append(formatTime(opAt)).append('\n');
+        }
+        for (String provider : new String[]{LocationManager.GPS_PROVIDER,
+                LocationManager.NETWORK_PROVIDER, LocationManager.FUSED_PROVIDER}) {
+            String key = "provider_" + provider + "_";
+            if (!p.contains(key + "outcome")) continue;
+            out.append(provider.toUpperCase(Locale.US))
+                    .append(": beforeOwned=")
+                    .append(p.getBoolean(key + "owned_before", false))
+                    .append(" / afterOwned=")
+                    .append(p.getBoolean(key + "owned_after", false))
+                    .append(" / outcome=")
+                    .append(p.getString(key + "outcome", "UNKNOWN"))
+                    .append(" / trigger=")
+                    .append(p.getString(key + "trigger", "UNKNOWN"))
+                    .append(" / started=")
+                    .append(formatTime(p.getLong(key + "started_at", 0L)))
+                    .append(" / finished=")
+                    .append(formatTime(p.getLong(key + "finished_at", 0L)))
+                    .append('\n');
+        }
+        out.append("注意: beforeOwned 为本应用上次记录，不是系统残留证据；")
+                .append("REMOVE_RETURNED 仅表明 API 返回，不证明其他应用已刷新位置。");
+        return out.toString();
+    }
+
+    private static String formatTime(long timestamp) {
+        if (timestamp <= 0L) return "UNKNOWN";
+        return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+                .format(new Date(timestamp));
     }
 
     private boolean wasOwned(String provider) {
@@ -181,7 +322,8 @@ public final class LabProviderReliabilityController {
     }
 
     private void setOwned(String provider, boolean owned) {
-        prefs.edit().putBoolean("owned_" + provider, owned).apply();
+        // Persist ownership before process termination so cold-start evidence is useful.
+        prefs.edit().putBoolean("owned_" + provider, owned).commit();
     }
 
     private boolean isMockOpAllowed() {
