@@ -673,7 +673,8 @@ public class ServiceGo extends Service {
                     mSpeed = mRoamSpeedMps * mMotionMultiplier;
                 } else if (mReplayActive) {
                     LabTimedReplayEngine.Frame replay = mReplayFrame;
-                    mSpeed = replay == null ? 0.0 : replay.speedMps * mMotionMultiplier;
+                    // Frame speed already reflects the replay playback multiplier.
+                    mSpeed = replay == null ? 0.0 : replay.speedMps;
                 }
                 recordProvenance("MOTION", "resumed");
                 checkpointRoute(true);
