@@ -613,6 +613,17 @@ public class ServiceGo extends Service {
         if (mFusedClient == null) return;
         LabProviderReliabilityController.recordGmsEvent(this,
                 "DISABLE_REQUESTED_" + reason);
+        // Lint can verify this local permission check. Permission may have
+        // been revoked between this check and the asynchronous GMS request.
+        boolean fine = checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        boolean coarse = checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED;
+        if (!fine && !coarse) {
+            LabProviderReliabilityController.recordGmsEvent(this,
+                    "DISABLE_BLOCKED_NO_LOCATION_PERMISSION_" + reason);
+            return;
+        }
         try {
             mFusedClient.setMockMode(false)
                     .addOnSuccessListener(unused -> {
@@ -623,6 +634,9 @@ public class ServiceGo extends Service {
                     .addOnFailureListener(e ->
                             LabProviderReliabilityController.recordGmsEvent(
                                     ServiceGo.this, "DISABLE_FAILED_" + e.getClass().getSimpleName()));
+        } catch (SecurityException e) {
+            LabProviderReliabilityController.recordGmsEvent(this,
+                    "DISABLE_DENIED_" + reason);
         } catch (RuntimeException e) {
             LabProviderReliabilityController.recordGmsEvent(this,
                     "DISABLE_EXCEPTION_" + e.getClass().getSimpleName());
