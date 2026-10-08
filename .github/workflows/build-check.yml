@@ -24,6 +24,7 @@ on:
       - feat/gogogo-survival-lab19
       - feat/gogogo-reliability-lab20
       - feat/gogogo-simulation-lab21
+      - feat/gogogo-replay-lab22
   # 仓库收到 pull_request 时触发
   pull_request:
     branches:
