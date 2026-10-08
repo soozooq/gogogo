@@ -270,3 +270,104 @@ Secondary:
 9. gamedirty/mock-location — compact triple-provider engine
 10. niegl/MockLocation — OEM compatibility clues only
 
+## Tencent / WeChat compatibility research
+
+### Didi DoKit — explicit Tencent Location SDK instrumentation
+
+Repository: didi/DoKit
+
+Relevant components:
+- GPSTencentClassTransformer.kt
+- TencentLocationListenerProxy.java
+- GpsMockProxyManager.kt
+
+Finding:
+- DoKit explicitly recognizes com.tencent.map.geolocation.TencentLocationManager.
+- It instruments requestSingleFreshLocation / requestLocationUpdates for apps under test.
+- TencentLocationListener is wrapped with a proxy.
+- During GPS mock testing, the proxy can receive a synthetic TencentLocation converted from the test Location.
+
+Interpretation:
+- Tencent SDK integration can require SDK-layer test instrumentation in addition to Android LocationManager mocking.
+- This is appropriate for developer-controlled/test apps.
+- It is not a no-root external mechanism for modifying an unmodified third-party app.
+
+### Tencent official WalkNavi Android demo — SDK-level GPS replay
+
+Repository: TencentLBS/TencentWalkNavi_Android
+
+Relevant components:
+- MockLocationSource.java
+- GPSReplayEngine.java
+- GPSReplayEngine.startMockTencentLocation()
+
+Finding:
+- Tencent's own navigation demo includes a mock location source and track replay engine.
+- The mock source registers a TencentLocationListener and feeds replayed location data into the navigation stack.
+
+Interpretation:
+- Tencent's ecosystem officially supports location replay for SDK testing/navigation demos.
+- This validates SDK-layer replay as a legitimate testing architecture for apps that integrate Tencent LBS.
+
+### Historical WeChat/Tencent Location SDK reverse-engineering clue
+
+Older public reverse-engineered sources contain:
+- com.tencent.map.geolocation.internal.TencentExtraKeys.MOCK_LOCATION_FILTER
+- enableMockLocationFilter(...)
+- references to MOCK_LOCATION_FILTER inside TencentLocation listener/update paths.
+
+Important caveat:
+- These sources are historical and reverse-engineered.
+- Do not assume current WeChat uses the same implementation or exact flags.
+- Treat this only as evidence that Tencent Location SDK generations have included mock-location filtering logic.
+
+### Modern public clue: TencentLocationRequest anti-mock option
+
+Public code using recent Tencent Location SDK APIs shows:
+- TencentLocationRequest.setEnableAntiMock(true)
+
+Interpretation:
+- At least some Tencent Location SDK generations expose an explicit anti-mock request option.
+- This further explains why standard Android mock-location success does not automatically imply every Tencent SDK consumer will accept the same fix.
+
+### Gandufu/gogogo — direct WeChat mini-program compatibility case study
+
+Repository: Gandufu/gogogo
+
+The repository documents a specific Android 12+ failure mode where ordinary apps received test-provider locations but WeChat mini-program location did not.
+
+Its documented fix combines:
+1. persistent LocationListener subscriptions for GPS + NETWORK
+2. LocationManager.FUSED_PROVIDER test provider on Android 12+
+3. GMS FusedLocationProviderClient.setMockMode(true) + setMockLocation(...)
+4. foreground-service location type on modern Android
+
+The repository also includes:
+- docs/location_test_guide.md
+- docs/wechat_location_test.js
+- MiniProgramTestActivity.java
+
+This is the most relevant no-root, standards-based WeChat compatibility reference found so far.
+
+Important:
+- It explicitly keeps Location.isMock() observable.
+- It states that apps actively rejecting mock locations are outside what non-root standard APIs can solve.
+- This aligns with GoGoGo's current safety and architecture boundary.
+
+### Practical conclusion
+
+For no-root GoGoGo compatibility work, separate three layers:
+
+1. Android platform channels:
+   - GPS test provider
+   - NETWORK test provider
+   - FUSED test provider where supported
+
+2. Google Play Services channel:
+   - FusedLocationProviderClient mock mode
+
+3. Tencent SDK behavior:
+   - observe and test acceptance
+   - for developer-owned apps, SDK-level test instrumentation/replay can be used
+   - do not attempt to modify or inject into third-party app processes
+
