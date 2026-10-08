@@ -13,6 +13,10 @@
 - Shows LocationManager GPS, NETWORK, framework fused and GMS FLP last-known location alongside SDK results. Android coordinates shown as WGS84; Tencent as GCJ-02. Their raw numeric values must **not** be compared directly at meter precision without coordinate conversion.
 - Labels `(0,0)` as `ZERO_PAIR_SUSPECT` instead of claiming invalid (it is physically a valid coordinate, but often a sentinel). Handles null, invalid coordinates, stale age, future time, missing location permissions.
 - Removes Tencent request callbacks on stop/destroy. No polling in background.
+- Request callbacks now carry immutable request-generation tokens and capture GEO/POI mode on launch; cancelled, timed-out, superseded or completed single-request callbacks are ignored, rather than being attributed to the next request.
+- Nonzero SDK registration returns are classified immediately as request rejection, not as valid location and not as an eventual timeout.
+- Android/GMS refresh callbacks are also generation-scoped, so a delayed GMS result cannot overwrite a newer snapshot.
+- Explicit local fine/coarse permission guards protect standard location calls and resolve Android Lint MissingPermission errors without disabling lint.
 - Runtime privacy opt-in dialog is shown before SDK request. Location data may be transmitted to Tencent as part of SDK operation.
 - Never changes the device's Mock Location setting, never hides isMock, never reads WeChat internal SDK state.
 
@@ -35,6 +39,7 @@ Android SDK / GMS may show Mock Location flags in diagnostics. These are not sup
 ## Testing
 
 - JUnit `TencentProbeMathTest`: zero-distance, Beijing/Fujian order-of-magnitude distance, zero pair detection, invalid coordinates, freshness flags.
+- JUnit `TencentProbeSessionStateTest`: active token, cancellation, one-shot completion and stale completion (4 cases). Lab 23 lifecycle regressions were also integrated into Lab 24.
 - Gradle `build` and `assembleDebug` via GitHub Actions on `feat/gogogo-tencent-probe-lab24`.
 - On-device Tencent SDK execution requires real valid Key and consent; CI success alone does not establish SDK compatibility with the phone or WeChat.
 
@@ -43,3 +48,7 @@ Sources:
 - https://central.sonatype.com/artifact/com.tencent.map.geolocation/TencentLocationSdk-openplatform/7.6.1.12
 - https://github.com/tencentlocation/TencentLocationDemo
 - docs/research/2026-10-08-wechat-location-compatibility-round2.md (separate research branch)
+
+## CI maintenance
+
+Lab 24 Build Check initially failed at `TencentLocationProbeActivity` with Android Lint `MissingPermission` for framework/GMS last-location reads. Local permission checking has now been made explicit; await the new full CI result before calling this resolved. The two push workflows now cancel superseded commits on the same branch instead of queueing every intermediate iteration.
