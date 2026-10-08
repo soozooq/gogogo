@@ -42,6 +42,7 @@ import com.google.android.gms.location.LocationServices;
 import com.zcshou.gogogo.MainActivity;
 import com.zcshou.gogogo.LabPolicyEngine;
 import com.zcshou.gogogo.LabProviderReliabilityController;
+import com.zcshou.gogogo.LabServiceLifecycleJournal;
 import com.zcshou.gogogo.LabRouteCheckpointStore;
 import com.zcshou.gogogo.LabRoutePhysicsEngine;
 import com.zcshou.gogogo.LabScenarioEngine;
@@ -271,6 +272,7 @@ public class ServiceGo extends Service {
     public void onCreate() {
         super.onCreate();
         sRunning = true;
+        LabServiceLifecycleJournal.onServiceCreated(this);
         recordProvenance("SERVICE", "ServiceGo created");
 
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
@@ -1141,6 +1143,7 @@ public class ServiceGo extends Service {
             mPolicyEngine = null;
         }
 
+        LabServiceLifecycleJournal.onServiceDestroyed(this);
         super.onDestroy();
     }
 
