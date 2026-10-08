@@ -300,12 +300,30 @@ public final class LabProviderReliabilityController {
         }
     }
 
+    /**
+     * GMS setMockMode returns an asynchronous Task. Persist request/result
+     * separately so an unobserved or failed reset is never reported as clean.
+     * No coordinates or remote SDK payloads are stored.
+     */
+    public static void recordGmsEvent(Context context, String event) {
+        context.getApplicationContext().getSharedPreferences(AUDIT_PREFS, Context.MODE_PRIVATE)
+                .edit()
+                .putString("gms_last_event", event)
+                .putLong("gms_last_at", System.currentTimeMillis())
+                .commit();
+    }
+
     /** Visible in Lab Diagnostics even after ServiceGo was force-stopped. */
     public static String savedAuditSummary(Context context) {
         SharedPreferences p = context.getApplicationContext().getSharedPreferences(
                 AUDIT_PREFS, Context.MODE_PRIVATE);
         StringBuilder out = new StringBuilder();
-        out.append("监听状态: ").append(p.getString("watcher", "NOT_STARTED")).append('\n');
+        out.append("监听状态（上次记录）: ").append(p.getString("watcher", "NOT_STARTED"))
+                .append("；进程退出后不代表仍在监听").append('\n');
+        out.append("GMS Mock 上次事件: ")
+                .append(p.getString("gms_last_event", "NOT_RECORDED"))
+                .append(" @ ").append(formatTime(p.getLong("gms_last_at", 0L)))
+                .append('\n');
         long opAt = p.getLong("appops_changed_at", 0L);
         if (opAt > 0L) {
             out.append("最近 AppOps 事件: ").append(p.getString("appops_last", "UNKNOWN"))
