@@ -23,6 +23,7 @@ on:
       - feat/gogogo-auto-lab18
       - feat/gogogo-survival-lab19
       - feat/gogogo-reliability-lab20
+      - feat/gogogo-simulation-lab21
   # 仓库收到 pull_request 时触发
   pull_request:
     branches:
