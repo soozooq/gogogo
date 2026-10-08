@@ -241,7 +241,8 @@ public class ServiceGo extends Service {
     private Handler mLocHandler;
     private LocationListener mPersistentListener;     // 保持 Provider 活跃订阅,见 onCreate 注释
     private FusedLocationProviderClient mFusedClient; // Google Play Services fused mock, null = GMS 不可用
-    private boolean mFusedMockEnabled = false;
+    private volatile boolean mFusedMockEnabled = false;
+    private volatile boolean mFusedShutdownRequested = false;
     // Read by the location HandlerThread and written during main-thread teardown.
     private volatile boolean isStop = false;
     private PowerManager.WakeLock mWakeLock;
@@ -576,18 +577,55 @@ public class ServiceGo extends Service {
 
     @SuppressLint("MissingPermission")
     private void initFusedMock() {
+        mFusedShutdownRequested = false;
         try {
             mFusedClient = LocationServices.getFusedLocationProviderClient(this);
+            LabProviderReliabilityController.recordGmsEvent(this, "ENABLE_REQUESTED");
             mFusedClient.setMockMode(true)
                     .addOnSuccessListener(unused -> {
+                        if (mFusedShutdownRequested || isStop) {
+                            // The async enable completed after the Service was stopped.
+                            // Request disable again to avoid leaving GMS mock mode enabled.
+                            LabProviderReliabilityController.recordGmsEvent(this,
+                                    "LATE_ENABLE_AFTER_STOP");
+                            requestGmsMockDisable("LATE_ENABLE");
+                            return;
+                        }
                         mFusedMockEnabled = true;
+                        LabProviderReliabilityController.recordGmsEvent(this, "ENABLE_SUCCEEDED");
                         XLog.i("SERVICEGO: FusedLocation setMockMode(true) OK");
                     })
-                    .addOnFailureListener(e -> XLog.e("SERVICEGO: FusedLocation setMockMode failed: " + e.getMessage()));
+                    .addOnFailureListener(e -> {
+                        LabProviderReliabilityController.recordGmsEvent(this,
+                                "ENABLE_FAILED_" + e.getClass().getSimpleName());
+                        XLog.e("SERVICEGO: FusedLocation setMockMode failed: " + e.getMessage());
+                    });
         } catch (Throwable t) {
-            // 设备没 GMS / play-services-location 不可用 → 退化到仅 LocationManager 注入
+            LabProviderReliabilityController.recordGmsEvent(this,
+                    "ENABLE_EXCEPTION_" + t.getClass().getSimpleName());
+            // GMS may be unavailable; framework providers still work.
             XLog.e("SERVICEGO: FusedLocation init failed (GMS not available?): " + t.getMessage());
             mFusedClient = null;
+        }
+    }
+
+    private void requestGmsMockDisable(String reason) {
+        if (mFusedClient == null) return;
+        LabProviderReliabilityController.recordGmsEvent(this,
+                "DISABLE_REQUESTED_" + reason);
+        try {
+            mFusedClient.setMockMode(false)
+                    .addOnSuccessListener(unused -> {
+                        mFusedMockEnabled = false;
+                        LabProviderReliabilityController.recordGmsEvent(
+                                ServiceGo.this, "DISABLE_SUCCEEDED_" + reason);
+                    })
+                    .addOnFailureListener(e ->
+                            LabProviderReliabilityController.recordGmsEvent(
+                                    ServiceGo.this, "DISABLE_FAILED_" + e.getClass().getSimpleName()));
+        } catch (RuntimeException e) {
+            LabProviderReliabilityController.recordGmsEvent(this,
+                    "DISABLE_EXCEPTION_" + e.getClass().getSimpleName());
         }
     }
 
@@ -1064,6 +1102,7 @@ public class ServiceGo extends Service {
 
     @Override
     public void onDestroy() {
+        mFusedShutdownRequested = true;
         if (mRouteActive) {
             checkpointRoute(true);
         }
@@ -1107,18 +1146,9 @@ public class ServiceGo extends Service {
             }
         }
 
-        if (mFusedClient != null && mFusedMockEnabled) {
-            try {
-                boolean fine = checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
-                        == android.content.pm.PackageManager.PERMISSION_GRANTED;
-                boolean coarse = checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
-                        == android.content.pm.PackageManager.PERMISSION_GRANTED;
-                if (fine || coarse) {
-                    mFusedClient.setMockMode(false);
-                }
-            } catch (Exception ignored) {
-            }
-        }
+        // Always request the GMS mock reset, even if enable is still pending.
+        // Neither a returned Task nor onDestroy() itself proves reset success.
+        requestGmsMockDisable("SERVICE_STOP");
 
         // A partially initialized service may never have registered the receiver.
         if (mActReceiverRegistered && mActReceiver != null) {
