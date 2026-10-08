@@ -36,6 +36,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.zcshou.gogogo.shizuku.ILabPrivilegedService;
 import com.zcshou.gogogo.shizuku.LabPrivilegedService;
+import com.zcshou.service.ServiceGo;
 
 import java.net.InetAddress;
 import java.text.SimpleDateFormat;
@@ -67,6 +68,7 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
     private TextView networkView;
     private TextView systemView;
     private TextView shizukuView;
+    private TextView serviceLifecycleView;
     private TextView privilegedView;
     private TextView brokerView;
     private LabPolicyEngine policyEngine;
@@ -178,6 +180,12 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         root.addView(sectionTitle("系统 / 实验能力"));
         systemView = body();
         root.addView(systemView, matchWrap());
+
+        root.addView(sectionTitle("模拟服务 / 进程生命周期（Lab 23）"));
+        serviceLifecycleView = body();
+        serviceLifecycleView.setTextIsSelectable(true);
+        root.addView(serviceLifecycleView, matchWrap());
+        root.addView(button("↻ 刷新服务取证", v -> refreshViews()), matchWrap());
 
         root.addView(sectionTitle("Shizuku 高级模式"));
         shizukuView = body();
@@ -378,6 +386,7 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         networkView.setText(rawNetwork);
         systemView.setText(buildSystemSnapshot());
         shizukuView.setText(buildShizukuSnapshot());
+        serviceLifecycleView.setText(LabServiceLifecycleJournal.report(this, ServiceGo.sRunning));
 
         if (policyEngine != null) {
             StringBuilder broker = new StringBuilder();
@@ -696,6 +705,9 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         sb.append("[系统]\n").append(buildSystemSnapshot()).append("\n\n");
         sb.append("[网络]\n").append(buildNetworkSnapshot()).append("\n\n");
         sb.append("[Shizuku]\n").append(buildShizukuSnapshot()).append("\n\n");
+        sb.append("[模拟服务生命周期]\n")
+                .append(LabServiceLifecycleJournal.report(this, ServiceGo.sRunning))
+                .append("\n\n");
         if (policyEngine != null) {
             sb.append("[Resource Broker]\n")
                     .append(policyEngine.summary())
