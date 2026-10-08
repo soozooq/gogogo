@@ -72,7 +72,9 @@ public final class LabRoutePhysicsEngine {
                 cornerLimit,
                 DEFAULT_BRAKE_MPS2);
 
-        if (context.distanceToNextVertexM
+        boolean cornerActuallyLimitsSpeed = cornerLimit < cruise - 0.05;
+        if (cornerActuallyLimitsSpeed
+                && context.distanceToNextVertexM
                 <= Math.max(2.0, cornerBrakeDistance + 1.0)) {
             targetSpeedMps = Math.min(targetSpeedMps, cornerLimit);
             phase = "CORNER_BRAKE";
