@@ -137,3 +137,39 @@
 - 测试日志应包含 SDK version、request level、是否允许缓存、是否一次性请求、error/reason、响应坐标系和有效时间戳。
 
 **更新后的 P0 建议**：先用受控腾讯 SDK Demo 做 GEO/NAME/POI 等请求级别对照，同时通过 Consumer Matrix 比较 fresh 与 cached；此后才决定是否继续 Shizuku 或 Wi-Fi 变量实验。
+
+
+## 7. 第三轮源码搜索：腾讯 POI 距离的真实语义、缓存 API 与非直观适配器
+
+### 7.1 SDK 旧版官方风格 Javadoc：getDistance 的单位和参考点
+- 仓库：**tencentlocation/tencentlocation.github.io**
+- [TencentPoi Javadoc](https://github.com/tencentlocation/tencentlocation.github.io/blob/master/doc/com/tencent/map/geolocation/TencentPoi.html)
+- 文档标明 `TencentPoi.getDistance()` 返回**当前 POI 与当前位置（定位中心点）的距离，单位米**。
+- [TencentLocationRequest Javadoc](https://github.com/tencentlocation/tencentlocation.github.io/blob/master/doc/com/tencent/map/geolocation/TencentLocationRequest.html) 描述 `REQUEST_LEVEL_GEO / NAME / ADMIN_AREA / POI`。
+- `TencentLocationDemo/DemoLevelActivity.java` 在 `REQUEST_LEVEL_POI` 模式下直接输出 `poi.getDistance()` 和 POI 坐标。
+- **含义**：一个 SDK 内部计算的 POI 距离完全可能与地图 Marker/地图中心的经纬度来自不同的状态；应明确区分“SDK POI 返回的距离”与“UI 自行计算的距离”。
+- **不应推断**：微信聊天位置发送 UI 必定使用 `TencentPoi.getDistance()`，或 12,900km 必定源自 (0,0)。该文档生成于 2015 年，需做版本检查。
+
+### 7.2 SDK 缓存不是单纯 UI 猜测
+- 同份 [TencentLocationRequest Javadoc](https://github.com/tencentlocation/tencentlocation.github.io/blob/master/doc/com/tencent/map/geolocation/TencentLocationRequest.html) 有 `setAllowCache(boolean)` 和 `isAllowCache()`。
+- 文档原意：**长时间连续定位可启用缓存，单次定位更建议不使用缓存**，以减少网络请求、节省流量。
+- 与已找到的微信 Android 8.0.65 小程序 `DefaultTencentLocationManager/useCache` 分支形成**两个独立层面的缓存线索**。仍无法直接证明聊天「发送位置」使用哪种缓存策略。
+- **探针要求**：以 SDK 支持的 API 显式设置允许/不允许缓存进行 A/B，分别记录 首次结果来源、位置时间、elapsed-age、请求耗时、错误码以及重新请求结果；前提是该 SDK 版本公开提供该参数。
+
+### 7.3 意料之外的代码来源：uni-app 腾讯定位实现
+- 仓库：**dcloudio/uni-app**
+- 源码：[uni-location-tencent/utssdk/app-android/index.uts](https://github.com/dcloudio/uni-app/blob/dev/src/uni_modules/uni-location-tencent/utssdk/app-android/index.uts)（分支若变更可改查代码搜索）。
+- 使用原生 `TencentLocationManager`；一次定位通过 `requestSingleFreshLocation()`；`geocode=true` 时选 `REQUEST_LEVEL_NAME`，否则选 `REQUEST_LEVEL_GEO`。
+- 其适配器明确限制 GCJ02 输出；这属于**适配器自身的限制**，不代表所有腾讯 SDK 版本都只允许 GCJ02。
+- **潜在实现弱点**：其 `onLocationChanged(location,error,reason)` 包装逻辑直接使用 `location.latitude/longitude`，没有先按 `error` 判成功，也没有对 `location` 做空值防护；这是对该仓库代码的静态观察，尚未实测。
+- **对我们最重要**：GoGoGo 的 Tencent Consumer Probe 必须将“回调到达”与“坐标有效”分开，error / reason / null / 坐标系 / source / age 都单独显示，失败不得以 0/0 冒充有效定位。
+
+### 7.4 较少人会从定位项目名称搜索到的腾讯 LBS 服务端流程
+- 仓库 **tencentyun/iot-link-android** 中的 `LocationUtil.java` 也调用 `requestSingleFreshLocation`，仅用来比较一次请求接口的调用方式。
+- **GitLqr/LQRWeChat** 与 **wildfirechat/android-chat** 的位置发送 UI 源码表明，在第三方聊天 App 中，腾讯 SDK 坐标、地图中心、逆地理解析/附近 POI 处理可完全独立；本机微信有相似表现但不能以此证明代码相同。
+
+### 7.5 下一轮检验顺序
+1. 确定可合法调用的腾讯 SDK 依赖、Key/权限和当前版本；无法初始化时输出 `SDK_UNAVAILABLE`。
+2. 先在**自有 App** 进行 GEO 与 POI 两种 request level、cache on/off、single/stream 的全量状态对照，记录定位原点和 POI 返回距离（米）。
+3. 加入 SDK 回调失败和空值测试，保证 UI 不把 0/0、旧值、未初始化的距离显示成新鲜定位。
+4. 再将观测到的错误类别与微信外部 UI 表现比较，保留“微信内部真实机制未知”的限定。
