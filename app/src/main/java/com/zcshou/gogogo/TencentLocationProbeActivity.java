@@ -339,7 +339,13 @@ public class TencentLocationProbeActivity extends AppCompatActivity
     }
 
     private void refreshStandards() {
-        if (!locationPermission()) {
+        // Keep the permission checks in this method so Android Lint can verify
+        // both LocationManager and GMS calls (the helper alone is not recognized).
+        boolean fineGranted = ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        boolean coarseGranted = ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        if (!fineGranted && !coarseGranted) {
             androidView.setText("PERMISSION_REQUIRED: 请先授予定位权限");
             return;
         }
