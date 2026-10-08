@@ -113,3 +113,27 @@
 - [ ] 明确 Shizuku 开关变化是否对 ServiceGo/Provider 有因果影响
 - [ ] 分辨微信 UI 的旧位置是缓存、定位失败回退还是其他路径
 - [ ] 对前述结果建立可重复的自动化测试
+
+
+## 6. 继续搜索：按“POI/聊天位置页/定位层级”反查的新发现
+
+### 腾讯定位 SDK 原生 Demo（命名没有微信、mock 关键词）
+- **tencentlocation/TencentLocationDemo**：[DemoLevelActivity.java](https://github.com/tencentlocation/TencentLocationDemo/blob/master/src/com/tencent/example/location/DemoLevelActivity.java)
+- **tencentlocation/TencentLocationDemoAs**：[DemoLevelActivity.java](https://github.com/tencentlocation/TencentLocationDemoAs/blob/master/app/src/main/java/com/tencent/example/location/DemoLevelActivity.java)
+- 与“地图能显示但地点距离奇怪”高度相关：示例显式区分 `TencentLocationRequest.REQUEST_LEVEL_GEO / NAME / ADMIN_AREA / POI`；当请求包含 POI 时读取 `TencentPoi.getDistance()`。
+- 这提醒我们：POI 的 distance 可能来自 SDK 返回值，不一定由地图 UI 自己根据绿色点临时计算。
+- **限制**：属于较早 SDK 示例；请求级别、坐标与 distance 的语义必须以实际 SDK 版本验证。
+
+### 开源聊天 UI 的坐标/POI 分离
+- **GitLqr/LQRWeChat**：[MyLocationActivity.java](https://github.com/GitLqr/LQRWeChat/blob/56d419d7e7c0709b509e7b3727b38123246d5602/app/src/main/java/com/lqr/wechat/ui/activity/MyLocationActivity.java)
+- **wildfirechat/android-chat**：[MyLocationPageFragment.java](https://github.com/wildfirechat/android-chat/blob/1ca2c0c7dde6d475e0a20d42690ac64b511ab07e/uikit/src/main/java/cn/wildfire/chat/kit/third/location/ui/fragment/MyLocationPageFragment.java)
+- 源码中可见 `TencentLocationListener` 的坐标用于初始 Marker 和移动地图；`OnMapCameraChangeListener` 在地图拖动后又按 `getMapCenter()` 触发附近 POI 逆地理查询。
+- 因而建议自研探针分别记录“定位回调坐标”“地图中心”“POI 查询输入坐标”“POI 返回中心与距离”，避免以地图渲染点等同于距离计算坐标。
+- **这两个是第三方聊天应用，不是微信本体**，只验证一种常见 UI 分层架构。
+
+### 微信/腾讯 SDK 版本及接口差异观察
+- 旧版公开源码可见 `TencentLocationManager.getLastKnownLocation`，`requestSingleFreshLocation` 等接口；新版/其他命名空间存在 `com.tencent.map.geolocation.sapp`。不应把不同版本的返回策略当作同一行为。
+- 小程序 `wx.getLocation` 的已知分析不覆盖聊天「发送位置」，必须继续独立求证。
+- 测试日志应包含 SDK version、request level、是否允许缓存、是否一次性请求、error/reason、响应坐标系和有效时间戳。
+
+**更新后的 P0 建议**：先用受控腾讯 SDK Demo 做 GEO/NAME/POI 等请求级别对照，同时通过 Consumer Matrix 比较 fresh 与 cached；此后才决定是否继续 Shizuku 或 Wi-Fi 变量实验。
