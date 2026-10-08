@@ -2,6 +2,7 @@ package com.zcshou.gogogo;
 
 import android.app.AppOpsManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Process;
@@ -24,8 +25,11 @@ public final class LabProviderReliabilityController {
         ORPHANED
     }
 
+    private static final String PREFS = "lab20_provider_reliability";
+
     private final Context context;
     private final LocationManager locationManager;
+    private final SharedPreferences prefs;
     private final Map<String, ProviderState> states = new LinkedHashMap<>();
 
     public LabProviderReliabilityController(
@@ -33,6 +37,7 @@ public final class LabProviderReliabilityController {
             LocationManager locationManager) {
         this.context = context.getApplicationContext();
         this.locationManager = locationManager;
+        this.prefs = this.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         states.put(LocationManager.GPS_PROVIDER, new ProviderState());
         states.put(LocationManager.NETWORK_PROVIDER, new ProviderState());
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -63,17 +68,20 @@ public final class LabProviderReliabilityController {
         ProviderState state = stateFor(provider);
         state.state = State.ACTIVE;
         state.lastError = "";
+        setOwned(provider, true);
     }
 
     public synchronized void markClean(String provider) {
         ProviderState state = stateFor(provider);
         state.state = State.CLEAN;
         state.lastError = "";
+        setOwned(provider, false);
     }
 
     public synchronized void markRegistrationFailure(String provider, Throwable error) {
         ProviderState state = stateFor(provider);
-        if (error instanceof SecurityException || !isMockOpAllowed()) {
+        if ((error instanceof SecurityException || !isMockOpAllowed())
+                && wasOwned(provider)) {
             state.state = State.ORPHANED;
         } else {
             state.state = State.DEGRADED;
@@ -84,7 +92,7 @@ public final class LabProviderReliabilityController {
     public synchronized void markPublishFailure(String provider, Throwable error) {
         ProviderState state = stateFor(provider);
         state.publishFailures++;
-        if (error instanceof SecurityException) {
+        if (error instanceof SecurityException && wasOwned(provider)) {
             state.state = State.ORPHANED;
         } else if (state.state != State.ORPHANED) {
             state.state = State.DEGRADED;
@@ -95,7 +103,8 @@ public final class LabProviderReliabilityController {
     public synchronized void markCleanupFailure(String provider, Throwable error) {
         ProviderState state = stateFor(provider);
         state.cleanupFailures++;
-        if (error instanceof SecurityException || !isMockOpAllowed()) {
+        if ((error instanceof SecurityException || !isMockOpAllowed())
+                && wasOwned(provider)) {
             state.state = State.ORPHANED;
         } else {
             state.state = State.DEGRADED;
@@ -155,15 +164,24 @@ public final class LabProviderReliabilityController {
 
             state.state = State.CLEAN;
             state.lastError = "";
+            setOwned(provider, false);
         } catch (SecurityException e) {
             state.cleanupFailures++;
-            state.state = State.ORPHANED;
+            state.state = wasOwned(provider) ? State.ORPHANED : State.DEGRADED;
             state.lastError = shortError(e);
         } catch (Throwable t) {
             state.cleanupFailures++;
             state.state = State.DEGRADED;
             state.lastError = shortError(t);
         }
+    }
+
+    private boolean wasOwned(String provider) {
+        return prefs.getBoolean("owned_" + provider, false);
+    }
+
+    private void setOwned(String provider, boolean owned) {
+        prefs.edit().putBoolean("owned_" + provider, owned).apply();
     }
 
     private boolean isMockOpAllowed() {
