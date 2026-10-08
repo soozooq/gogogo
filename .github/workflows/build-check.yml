@@ -8,7 +8,9 @@ on:
   # 仓库收到 Push 时触发
   push:
     branches:
+      - main
       - master
+      - integration/gogogo-labs-main-20261009
       - feat/gogogo-lab-phase12
       - feat/gogogo-lab-phase13
       - feat/gogogo-ui-refresh
@@ -31,6 +33,7 @@ on:
   # 仓库收到 pull_request 时触发
   pull_request:
     branches:
+      - main
       - master
 
 # 一个 workflow 执行一个或多个 job，这些 job 被组织在 jobs 字段下
