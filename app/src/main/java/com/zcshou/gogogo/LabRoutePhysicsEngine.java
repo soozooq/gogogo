@@ -9,17 +9,51 @@ import java.util.Locale;
  * sufficiently sharp vertices. It does not spoof sensors and does not hide mock state.
  */
 public final class LabRoutePhysicsEngine {
-    private static final double DEFAULT_ACCEL_MPS2 = 1.35;
-    private static final double DEFAULT_BRAKE_MPS2 = 2.10;
-    private static final double MIN_MOVING_SPEED_MPS = 0.22;
-    private static final double SHARP_TURN_DWELL_DEG = 105.0;
-    private static final long SHARP_TURN_DWELL_MS = 550L;
+    public enum Profile {
+        WALK("WALK", 0.75, 0.95, 0.12, 0.35, 150.0, 120L),
+        BIKE("BIKE", 1.35, 2.10, 0.22, 0.78, 105.0, 550L),
+        CAR("CAR", 2.80, 4.50, 0.50, 0.86, 90.0, 350L);
 
+        public final String id;
+        public final double accelerationMps2;
+        public final double brakingMps2;
+        public final double minMovingSpeedMps;
+        public final double cornerPenalty;
+        public final double sharpTurnDwellDeg;
+        public final long sharpTurnDwellMs;
+
+        Profile(
+                String id,
+                double accelerationMps2,
+                double brakingMps2,
+                double minMovingSpeedMps,
+                double cornerPenalty,
+                double sharpTurnDwellDeg,
+                long sharpTurnDwellMs) {
+            this.id = id;
+            this.accelerationMps2 = accelerationMps2;
+            this.brakingMps2 = brakingMps2;
+            this.minMovingSpeedMps = minMovingSpeedMps;
+            this.cornerPenalty = cornerPenalty;
+            this.sharpTurnDwellDeg = sharpTurnDwellDeg;
+            this.sharpTurnDwellMs = sharpTurnDwellMs;
+        }
+    }
+
+    private Profile profile = Profile.BIKE;
     private double currentSpeedMps = 0.0;
     private double targetSpeedMps = 0.0;
     private double lastTurnAngleDeg = 0.0;
     private long dwellUntilElapsedMs = 0L;
     private String phase = "IDLE";
+
+    public void setProfile(Profile profile) {
+        this.profile = profile == null ? Profile.BIKE : profile;
+    }
+
+    public Profile getProfile() {
+        return profile;
+    }
 
     public void reset(double initialSpeedMps) {
         currentSpeedMps = Math.max(0.0, initialSpeedMps);
@@ -70,7 +104,7 @@ public final class LabRoutePhysicsEngine {
         double cornerBrakeDistance = brakingDistance(
                 Math.max(currentSpeedMps, cruise),
                 cornerLimit,
-                DEFAULT_BRAKE_MPS2);
+                profile.brakingMps2);
 
         boolean cornerActuallyLimitsSpeed = cornerLimit < cruise - 0.05;
         if (cornerActuallyLimitsSpeed
@@ -85,7 +119,7 @@ public final class LabRoutePhysicsEngine {
         if (context.stopAtRouteEnd) {
             double safeEndSpeed = Math.sqrt(
                     Math.max(0.0,
-                            2.0 * DEFAULT_BRAKE_MPS2
+                            2.0 * profile.brakingMps2
                                     * Math.max(0.0, context.distanceToRouteEndM)));
 
             if (context.distanceToRouteEndM < 30.0
@@ -95,8 +129,8 @@ public final class LabRoutePhysicsEngine {
             }
 
             if (context.distanceToRouteEndM > 0.08
-                    && targetSpeedMps < MIN_MOVING_SPEED_MPS) {
-                targetSpeedMps = MIN_MOVING_SPEED_MPS;
+                    && targetSpeedMps < profile.minMovingSpeedMps) {
+                targetSpeedMps = profile.minMovingSpeedMps;
             }
         }
 
@@ -107,12 +141,12 @@ public final class LabRoutePhysicsEngine {
         if (currentSpeedMps < targetSpeedMps) {
             currentSpeedMps = Math.min(
                     targetSpeedMps,
-                    currentSpeedMps + DEFAULT_ACCEL_MPS2 * dt);
+                    currentSpeedMps + profile.accelerationMps2 * dt);
             if ("CRUISE".equals(phase)) phase = "ACCEL";
         } else if (currentSpeedMps > targetSpeedMps) {
             currentSpeedMps = Math.max(
                     targetSpeedMps,
-                    currentSpeedMps - DEFAULT_BRAKE_MPS2 * dt);
+                    currentSpeedMps - profile.brakingMps2 * dt);
         }
 
         if (Math.abs(currentSpeedMps - cruise) < 0.05
@@ -138,10 +172,10 @@ public final class LabRoutePhysicsEngine {
             return true;
         }
 
-        if (lastTurnAngleDeg >= SHARP_TURN_DWELL_DEG) {
+        if (lastTurnAngleDeg >= profile.sharpTurnDwellDeg) {
             dwellUntilElapsedMs = Math.max(
                     dwellUntilElapsedMs,
-                    elapsedRealtimeMs + SHARP_TURN_DWELL_MS);
+                    elapsedRealtimeMs + profile.sharpTurnDwellMs);
             currentSpeedMps = 0.0;
             targetSpeedMps = 0.0;
             phase = "DWELL";
@@ -163,9 +197,9 @@ public final class LabRoutePhysicsEngine {
     private static double cornerSpeedLimit(double cruise, double turnAngleDeg) {
         if (cruise <= 0.0) return 0.0;
         double severity = clamp(turnAngleDeg / 180.0, 0.0, 1.0);
-        double factor = 1.0 - 0.78 * Math.pow(severity, 0.80);
-        factor = clamp(factor, 0.22, 1.0);
-        return Math.min(cruise, Math.max(MIN_MOVING_SPEED_MPS, cruise * factor));
+        double factor = 1.0 - profile.cornerPenalty * Math.pow(severity, 0.80);
+        factor = clamp(factor, 0.18, 1.0);
+        return Math.min(cruise, Math.max(profile.minMovingSpeedMps, cruise * factor));
     }
 
     private static double brakingDistance(
@@ -238,7 +272,8 @@ public final class LabRoutePhysicsEngine {
         public String summary() {
             return String.format(
                     Locale.US,
-                    "%s · v=%.2f→%.2f m/s · turn=%.0f°",
+                    "%s/%s · v=%.2f→%.2f m/s · turn=%.0f°",
+                    profile.id,
                     phase,
                     speedMps,
                     targetSpeedMps,
