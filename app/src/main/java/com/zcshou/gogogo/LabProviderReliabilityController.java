@@ -75,6 +75,13 @@ public final class LabProviderReliabilityController {
 
     public synchronized void retryDeferredCleanup() {
         if (!isMockOpAllowed()) return;
+        // Never tear down a previously orphaned provider while any publisher
+        // in this service is still active, including failure-retry paths.
+        boolean anyActive = false;
+        for (ProviderState state : states.values()) {
+            anyActive |= state.state == State.ACTIVE;
+        }
+        if (anyActive) return;
         for (Map.Entry<String, ProviderState> entry : states.entrySet()) {
             if (entry.getValue().state == State.ORPHANED) {
                 cleanupProvider(entry.getKey(), "DEFERRED_RETRY");
@@ -138,6 +145,10 @@ public final class LabProviderReliabilityController {
         state.state = State.ACTIVE;
         state.lastError = "";
         setOwned(provider, true);
+    }
+
+    public synchronized void cleanupDuringService(String provider) {
+        cleanupProvider(provider, "SERVICE_CLEANUP");
     }
 
     public synchronized void markClean(String provider) {
@@ -219,7 +230,10 @@ public final class LabProviderReliabilityController {
     private void cleanupProvider(String provider, String trigger) {
         ProviderState state = stateFor(provider);
         boolean ownedBefore = wasOwned(provider);
-        String key = "provider_" + provider + "_";
+        // Preserve cold-start evidence separately: ServiceGo immediately
+        // follows its sweep with an additional cleanup before registration.
+        String key = ("COLD_START".equals(trigger) ? "startup_" : "provider_")
+                + provider + "_";
         // Carry a previous incomplete attempt forward before overwriting it.
         // PENDING from an earlier process is evidence of a mid-cleanup interruption,
         // but does not by itself prove that the provider is still registered.
@@ -299,9 +313,11 @@ public final class LabProviderReliabilityController {
         }
         for (String provider : new String[]{LocationManager.GPS_PROVIDER,
                 LocationManager.NETWORK_PROVIDER, LocationManager.FUSED_PROVIDER}) {
-            String key = "provider_" + provider + "_";
+            for (String prefix : new String[]{"startup_", "provider_"}) {
+            String key = prefix + provider + "_";
             if (!p.contains(key + "outcome")) continue;
             out.append(provider.toUpperCase(Locale.US))
+                    .append(" [").append(prefix.equals("startup_") ? "启动扫尾" : "服务清理").append("]")
                     .append(": beforeOwned=")
                     .append(p.getBoolean(key + "owned_before", false))
                     .append(" / beforeAllowed=")
@@ -327,6 +343,7 @@ public final class LabProviderReliabilityController {
                     .append(" / finished=")
                     .append(formatTime(p.getLong(key + "finished_at", 0L)))
                     .append('\n');
+            }
         }
         out.append("注意: beforeOwned 为本应用上次记录，不是系统残留证据；")
                 .append("REMOVE_RETURNED 仅表明 API 返回，不证明其他应用已刷新位置。");
