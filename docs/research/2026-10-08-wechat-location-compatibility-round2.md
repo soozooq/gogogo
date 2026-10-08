@@ -158,7 +158,7 @@
 
 ### 7.3 意料之外的代码来源：uni-app 腾讯定位实现
 - 仓库：**dcloudio/uni-app**
-- 源码：[uni-location-tencent/utssdk/app-android/index.uts](https://github.com/dcloudio/uni-app/blob/dev/src/uni_modules/uni-location-tencent/utssdk/app-android/index.uts)（分支若变更可改查代码搜索）。
+- 源码：[uni-location-tencent/utssdk/app-android/index.uts](https://github.com/dcloudio/uni-app/blob/fbb161d0118dda57d7205f4f6f427e3b40109500/src/uni_modules/uni-location-tencent/utssdk/app-android/index.uts)（分支若变更可改查代码搜索）。
 - 使用原生 `TencentLocationManager`；一次定位通过 `requestSingleFreshLocation()`；`geocode=true` 时选 `REQUEST_LEVEL_NAME`，否则选 `REQUEST_LEVEL_GEO`。
 - 其适配器明确限制 GCJ02 输出；这属于**适配器自身的限制**，不代表所有腾讯 SDK 版本都只允许 GCJ02。
 - **潜在实现弱点**：其 `onLocationChanged(location,error,reason)` 包装逻辑直接使用 `location.latitude/longitude`，没有先按 `error` 判成功，也没有对 `location` 做空值防护；这是对该仓库代码的静态观察，尚未实测。
