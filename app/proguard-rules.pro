@@ -36,3 +36,7 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+
+# Tencent Location SDK references an optional OPPO/ColorOS platform-only class.
+# It is absent from ordinary Android SDK jars. Keep all other R8 checks enabled.
+-dontwarn com.oplus.os.OplusBuild
