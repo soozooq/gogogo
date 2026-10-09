@@ -77,108 +77,84 @@ public class IsolatedCapsuleLabActivity extends AppCompatActivity {
     }
 
     private void buildUi() {
-        int pad = dp(14);
-
+        int pad = dp(18);
         ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        GoGoUi.applyScreenBackground(scroll);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(pad, pad, pad, pad);
+        root.setPadding(pad, pad, pad, dp(30));
         scroll.addView(root);
 
-        TextView title = new TextView(this);
-        title.setText("🧪 GoGoGo Isolated Capsule · Lab 10");
-        title.setTextSize(22);
-        title.setGravity(Gravity.CENTER);
-        root.addView(title, matchWrap());
+        GoGoUi.addLabHeader(root, "SYSTEMS  /  ISOLATION",
+                "隔离进程 Capsule",
+                "独立 UID · Binder Reference Monitor · Broker 资源请求",
+                v -> finish());
+        root.addView(GoGoUi.muted(this,
+                "Host UI → isolatedProcess Capsule → Binder Monitor → Resource Broker。"
+                        + "隔离进程不继承普通 App 权限，只能通过显式授权的 Binder 通道请求实验数据。"),
+                matchWrap());
 
-        TextView intro = body();
-        intro.setText(
-                "架构：Host UI → isolatedProcess Capsule → Binder Reference Monitor → Resource Broker。\n\n"
-                        + "Capsule 使用 Android isolatedProcess，拥有独立隔离 UID，"
-                        + "不会继承 GoGoGo Manifest 里的普通 App 权限。"
-                        + "需要实验资源时，只通过我们显式传进去的 Binder monitor 请求。");
-        root.addView(intro, matchWrap());
-
+        root.addView(sectionTitle("连接与进程状态"), matchWrap());
         statusView = body();
         root.addView(statusView, matchWrap());
+        root.addView(GoGoUi.gap(this, 9));
+        root.addView(GoGoUi.actionStack(this,
+                button("重新绑定 Capsule 与 Monitor", v -> rebindAll()),
+                button("检查 Capsule 身份", v -> showCapsuleIdentity()),
+                button("检查 Monitor 身份", v -> showMonitorIdentity())
+        ), matchWrap());
 
-        root.addView(buttonRow(
-                button("🔌 重新绑定 / 插线", v -> rebindAll()),
-                button("🧬 Capsule 身份", v -> showCapsuleIdentity()),
-                button("🛡 Monitor 身份", v -> showMonitorIdentity())
-        ));
+        root.addView(sectionTitle("权限与数据通道"), matchWrap());
+        root.addView(GoGoUi.actionStack(this,
+                button("尝试隔离进程直接资源读取", v -> runDirectProbe()),
+                button("通过 Broker 请求受控数据", v -> requestBrokerSnapshot())
+        ), matchWrap());
 
-        root.addView(buttonRow(
-                button("🚫 直接资源访问探针", v -> runDirectProbe()),
-                button("🧠 通过 Broker 请求资源", v -> requestBrokerSnapshot())
-        ));
-
-        root.addView(sectionTitle("Binder IPC Benchmark"));
-        root.addView(buttonRow(
-                button("⚡ 100 次", v -> runBenchmarks(100)),
-                button("⚡ 1000 次", v -> runBenchmarks(1000))
-        ));
+        root.addView(sectionTitle("Binder IPC 性能"), matchWrap());
+        root.addView(GoGoUi.muted(this,
+                "比较 Host ↔ Capsule 与 Capsule ↔ Monitor 的响应时间。"
+                        + "测试会执行指定次数的 IPC，不会启动模拟定位。"),
+                matchWrap());
+        root.addView(GoGoUi.gap(this, 9));
+        root.addView(GoGoUi.actionStack(this,
+                button("运行 100 次性能测试", v -> runBenchmarks(100)),
+                button("运行 1000 次性能测试", v -> runBenchmarks(1000))
+        ), matchWrap());
 
         summaryView = body();
-        summaryView.setText("还没有跑 Benchmark。");
+        summaryView.setText("尚未进行 IPC 性能测试。");
+        root.addView(GoGoUi.gap(this, 9));
         root.addView(summaryView, matchWrap());
 
-        TextView design = body();
-        design.setText(
-                "实验关注点：\n"
-                        + "• isolated UID 与普通 App UID 是否不同；\n"
-                        + "• Manifest 已授权的定位/网络权限，在 isolatedProcess 里是否仍为 DENIED；\n"
-                        + "• isolatedProcess 是否能直接写普通 app dataDir；\n"
-                        + "• Capsule → Monitor 的 Binder 调用里，Monitor 实际看到的 callingUid；\n"
-                        + "• Resource Broker 的 Published 数据是否能通过受控 Binder 正常送入 Capsule；\n"
-                        + "• Host↔Capsule 与 Capsule↔Monitor 的 RTT / P50 / P95。");
+        root.addView(sectionTitle("实验关注点"), matchWrap());
+        TextView design = GoGoUi.muted(this,
+                "• 隔离 UID 是否区别于普通 App UID\n"
+                        + "• Manifest 位置和网络权限在隔离进程内是否拒绝\n"
+                        + "• 是否能直接访问应用私有数据目录\n"
+                        + "• Binder 调用在 Monitor 端观察到的 callingUid\n"
+                        + "• Broker 的数据是否通过受控 IPC 正常送达\n"
+                        + "• 两段 Binder RTT 的 P50 / P95");
+        design.setTextIsSelectable(true);
         root.addView(design, matchWrap());
-
-        Button back = button("← 返回 Sandbox Lab", v -> finish());
-        root.addView(back, matchWrap());
 
         setContentView(scroll);
         refreshStatus();
     }
 
     private TextView sectionTitle(String text) {
-        TextView v = new TextView(this);
-        v.setText(text);
-        v.setTextSize(18);
-        v.setPadding(0, dp(14), 0, dp(4));
-        return v;
+        TextView view = GoGoUi.sectionTitle(this, text);
+        view.setPadding(0, dp(20), 0, dp(8));
+        return view;
     }
 
     private TextView body() {
-        TextView v = new TextView(this);
-        v.setTextSize(14);
-        v.setTextIsSelectable(true);
-        v.setPadding(dp(8), dp(8), dp(8), dp(8));
-        return v;
+        return GoGoUi.reportPanel(this);
     }
 
-    private Button button(String text, android.view.View.OnClickListener listener) {
-        Button b = new Button(this);
-        b.setText(text);
-        b.setAllCaps(false);
-        b.setOnClickListener(listener);
-        return b;
-    }
-
-    private android.widget.HorizontalScrollView buttonRow(Button... buttons) {
-        android.widget.HorizontalScrollView scroll = new android.widget.HorizontalScrollView(this);
-        scroll.setHorizontalScrollBarEnabled(false);
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        for (Button b : buttons) {
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT);
-            lp.setMargins(0, 0, dp(6), 0);
-            row.addView(b, lp);
-        }
-        scroll.addView(row);
-        return scroll;
+    private com.google.android.material.button.MaterialButton button(
+            String text, android.view.View.OnClickListener listener) {
+        return GoGoUi.secondaryButton(this, text, listener);
     }
 
     private LinearLayout.LayoutParams matchWrap() {

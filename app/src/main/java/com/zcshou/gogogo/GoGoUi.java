@@ -99,6 +99,55 @@ public final class GoGoUi {
         return tile;
     }
 
+    /**
+     * Consistent research-screen heading. Back always returns to the actual
+     * caller (Hub or Sandbox), rather than naming an assumed parent screen.
+     */
+    public static void addLabHeader(
+            LinearLayout parent, String section, String title,
+            String description, View.OnClickListener onBack) {
+        Context context = parent.getContext();
+        parent.addView(textButton(context, "← 返回", onBack), matchWrap());
+        parent.addView(gap(context, 4));
+        parent.addView(eyebrow(context, section), matchWrap());
+        parent.addView(gap(context, 8));
+        parent.addView(heroTitle(context, title), matchWrap());
+        parent.addView(subtitle(context, description), matchWrap());
+        parent.addView(gap(context, 16));
+    }
+
+    /**
+     * Selectable, softly bordered technical result. Unlike the home page,
+     * research reports remain expanded by default for copying/debugging.
+     */
+    public static TextView reportPanel(Context context) {
+        TextView panel = status(context, "读取中…");
+        panel.setTextSize(13);
+        panel.setLineSpacing(dp(context, 2), 1.12f);
+        panel.setPadding(dp(context, 14), dp(context, 12),
+                dp(context, 14), dp(context, 12));
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(color(context, R.color.gogogo_surface));
+        bg.setCornerRadius(dp(context, 14));
+        bg.setStroke(dp(context, 1), color(context, R.color.gogogo_border));
+        panel.setBackground(bg);
+        return panel;
+    }
+
+    /**
+     * Stacked actions replace horizontal-scrolling rows, keeping every
+     * operation discoverable on 320–360dp phones with larger font sizes.
+     */
+    public static LinearLayout actionStack(Context context, MaterialButton... buttons) {
+        LinearLayout stack = new LinearLayout(context);
+        stack.setOrientation(LinearLayout.VERTICAL);
+        for (int i = 0; i < buttons.length; i++) {
+            if (i > 0) stack.addView(gap(context, 6));
+            stack.addView(buttons[i], matchWrap());
+        }
+        return stack;
+    }
+
     public static TextView heroTitle(Context context, String text) {
         TextView view = new TextView(context);
         view.setText(text);
