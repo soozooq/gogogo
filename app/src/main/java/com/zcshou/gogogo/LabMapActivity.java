@@ -256,7 +256,8 @@ public class LabMapActivity extends AppCompatActivity {
                 GoGoUi.weighted());
 
         quickRow.addView(
-                GoGoUi.textButton(this, "实验", v -> showExperimentPanel()),
+                GoGoUi.textButton(this, "诊断", v ->
+                        startActivity(new Intent(this, LabHubActivity.class))),
                 GoGoUi.weighted());
 
         control.addView(quickRow, GoGoUi.matchWrap());
@@ -293,11 +294,13 @@ public class LabMapActivity extends AppCompatActivity {
                 "MapLibre Demo",
                 "导入 PMTiles",
                 "离线地图管理",
-                "🌏 快捷跳转国家 / 城市"
+                "🌏 快捷跳转国家 / 城市",
+                "查看位置来源链",
+                "清空位置来源链"
         };
 
         new AlertDialog.Builder(this)
-                .setTitle("地图工具")
+                .setTitle("地图与位置工具")
                 .setItems(items, (dialog, which) -> {
                     switch (which) {
                         case 0:
@@ -326,6 +329,12 @@ public class LabMapActivity extends AppCompatActivity {
                             break;
                         case 8:
                             showLocationPresets();
+                            break;
+                        case 9:
+                            showProvenanceTimeline();
+                            break;
+                        case 10:
+                            clearProvenanceTimeline();
                             break;
                         default:
                             break;
@@ -527,70 +536,6 @@ public class LabMapActivity extends AppCompatActivity {
                             break;
                         case 9:
                             sendTrackAction(ServiceGo.ACTION_RECORD_CLEAR);
-                            break;
-                        default:
-                            break;
-                    }
-                })
-                .setNegativeButton("关闭", null)
-                .show();
-    }
-
-    private void showExperimentPanel() {
-        final String[] items = new String[]{
-                "实验仪表盘",
-                "Heading Intelligence",
-                "Location Compatibility",
-                "Consumer Matrix",
-                "Survival Guard",
-                "Scenario / Replay",
-                "Motion Audit",
-                "Resource Broker",
-                "数据来源链",
-                "清空来源链",
-                "Sandbox / AVF",
-                "Tencent Location Probe (Lab 24)"
-        };
-
-        new AlertDialog.Builder(this)
-                .setTitle("实验工具")
-                .setItems(items, (dialog, which) -> {
-                    switch (which) {
-                        case 0:
-                            startActivity(new Intent(this, LabDiagnosticsActivity.class));
-                            break;
-                        case 1:
-                            startActivity(new Intent(this, HeadingLabActivity.class));
-                            break;
-                        case 2:
-                            startActivity(new Intent(this, LocationCompatibilityActivity.class));
-                            break;
-                        case 3:
-                            startActivity(new Intent(this, ConsumerLocationProbeActivity.class));
-                            break;
-                        case 4:
-                            startActivity(new Intent(this, CompatibilitySessionActivity.class));
-                            break;
-                        case 5:
-                            startActivity(new Intent(this, ScenarioLabActivity.class));
-                            break;
-                        case 6:
-                            startActivity(new Intent(this, MotionAuditActivity.class));
-                            break;
-                        case 7:
-                            startActivity(new Intent(this, PolicyLabActivity.class));
-                            break;
-                        case 8:
-                            showProvenanceTimeline();
-                            break;
-                        case 9:
-                            clearProvenanceTimeline();
-                            break;
-                        case 10:
-                            startActivity(new Intent(this, SandboxLabActivity.class));
-                            break;
-                        case 11:
-                            startActivity(new Intent(this, TencentLocationProbeActivity.class));
                             break;
                         default:
                             break;
