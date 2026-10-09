@@ -9,6 +9,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Space;
 import android.widget.TextView;
@@ -58,9 +59,20 @@ public final class GoGoUi {
         return view;
     }
 
-    /** Accessible single-tap navigation tile; never runs an action implicitly. */
+    /** Legacy-friendly navigation API with a consistent default research icon. */
     public static MaterialCardView navigationTile(
             Context context,
+            String title,
+            String description,
+            View.OnClickListener listener) {
+        return navigationTile(context, R.drawable.ic_gogogo_lab, title,
+                description, listener);
+    }
+
+    /** One shared vector icon language for navigation throughout the app. */
+    public static MaterialCardView navigationTile(
+            Context context,
+            int iconRes,
             String title,
             String description,
             View.OnClickListener listener) {
@@ -68,8 +80,26 @@ public final class GoGoUi {
         tile.setRadius(dp(context, 14));
         tile.setCardElevation(0f);
         LinearLayout row = row(context);
-        row.setPadding(dp(context, 14), dp(context, 12),
+        row.setPadding(dp(context, 13), dp(context, 12),
                 dp(context, 12), dp(context, 12));
+
+        ImageView icon = new ImageView(context);
+        icon.setImageResource(iconRes);
+        icon.setImageTintList(ColorStateList.valueOf(
+                color(context, R.color.gogogo_primary_dark)));
+        icon.setContentDescription(null);
+        icon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        icon.setBackgroundTintList(null);
+        GradientDrawable iconBg = new GradientDrawable();
+        iconBg.setColor(color(context, R.color.gogogo_primary_soft));
+        iconBg.setCornerRadius(dp(context, 12));
+        icon.setBackground(iconBg);
+        icon.setPadding(dp(context, 12), dp(context, 12),
+                dp(context, 12), dp(context, 12));
+        LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(
+                dp(context, 48), dp(context, 48));
+        iconLp.setMargins(0, 0, dp(context, 12), 0);
+        row.addView(icon, iconLp);
 
         LinearLayout labels = new LinearLayout(context);
         labels.setOrientation(LinearLayout.VERTICAL);
@@ -79,24 +109,37 @@ public final class GoGoUi {
         heading.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         heading.setTextColor(color(context, R.color.gogogo_text));
         labels.addView(heading, matchWrap());
-        TextView detail = muted(context, description);
-        labels.addView(detail, matchWrap());
+        labels.addView(muted(context, description), matchWrap());
         row.addView(labels, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
-        TextView arrow = new TextView(context);
-        arrow.setText("›");
-        arrow.setTextSize(25);
-        arrow.setTextColor(color(context, R.color.gogogo_primary));
-        arrow.setGravity(Gravity.CENTER);
-        arrow.setPadding(dp(context, 12), 0, dp(context, 4), 0);
-        row.addView(arrow);
+        ImageView arrow = new ImageView(context);
+        arrow.setImageResource(R.drawable.ic_gogogo_chevron);
+        arrow.setImageTintList(ColorStateList.valueOf(
+                color(context, R.color.gogogo_primary)));
+        arrow.setContentDescription(null);
+        arrow.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        LinearLayout.LayoutParams arrowLp =
+                new LinearLayout.LayoutParams(dp(context, 20), dp(context, 20));
+        arrowLp.setMargins(dp(context, 6), 0, 0, 0);
+        row.addView(arrow, arrowLp);
+
         tile.addView(row);
         tile.setClickable(true);
         tile.setFocusable(true);
         tile.setContentDescription(title + "，" + description);
         tile.setOnClickListener(listener);
         return tile;
+    }
+
+    public static MaterialButton backButton(
+            Context context, View.OnClickListener listener) {
+        MaterialButton button = textButton(context, "返回", listener);
+        button.setIcon(ContextCompat.getDrawable(context, R.drawable.ic_gogogo_back));
+        button.setIconTint(ColorStateList.valueOf(
+                color(context, R.color.gogogo_primary)));
+        button.setIconPadding(dp(context, 8));
+        return button;
     }
 
     /**
@@ -107,7 +150,7 @@ public final class GoGoUi {
             LinearLayout parent, String section, String title,
             String description, View.OnClickListener onBack) {
         Context context = parent.getContext();
-        parent.addView(textButton(context, "← 返回", onBack), matchWrap());
+        parent.addView(backButton(context, onBack), matchWrap());
         parent.addView(gap(context, 4));
         parent.addView(eyebrow(context, section), matchWrap());
         parent.addView(gap(context, 8));
@@ -223,7 +266,7 @@ public final class GoGoUi {
         MaterialButton button = baseButton(context, text, listener);
         button.setBackgroundTintList(ColorStateList.valueOf(
                 color(context, R.color.gogogo_primary)));
-        button.setTextColor(Color.WHITE);
+        button.setTextColor(color(context, R.color.gogogo_on_primary));
         button.setStrokeWidth(0);
         return button;
     }
@@ -280,6 +323,11 @@ public final class GoGoUi {
         button.setText(text);
         button.setAllCaps(false);
         button.setTextSize(14);
+        button.setAllCaps(false);
+        button.setSingleLine(false);
+        button.setMaxLines(3);
+        button.setMinWidth(0);
+        button.setGravity(Gravity.CENTER);
         button.setCornerRadius(dp(context, 14));
         button.setMinHeight(dp(context, 48));
         button.setInsetTop(dp(context, 2));
