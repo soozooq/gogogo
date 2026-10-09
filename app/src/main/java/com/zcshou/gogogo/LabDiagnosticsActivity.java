@@ -151,16 +151,20 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         int pad = dp(14);
 
         ScrollView scroll = new ScrollView(this);
+        GoGoUi.applyScreenBackground(scroll);
+        scroll.setFillViewport(true);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(pad, pad, pad, pad);
         scroll.addView(root);
 
-        TextView title = new TextView(this);
-        title.setText("📟 GoGoGo Lab · 实验仪表盘");
-        title.setTextSize(22);
-        title.setGravity(Gravity.CENTER);
-        root.addView(title, matchWrap());
+        root.addView(GoGoUi.textButton(this, "← 返回实验中心", v -> finish()),
+                matchWrap());
+        root.addView(GoGoUi.eyebrow(this, "DIAGNOSTICS  /  LAB 27"), matchWrap());
+        root.addView(GoGoUi.heroTitle(this, "实验仪表盘"), matchWrap());
+        root.addView(GoGoUi.subtitle(this,
+                "集中查看服务、权限和系统状态。展开数据仅用于诊断，不会修改位置。"),
+                matchWrap());
 
         root.addView(sectionTitle("传感器"));
         sensorView = body();
@@ -174,10 +178,7 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         brokerView = body();
         root.addView(brokerView, matchWrap());
 
-        Button broker = button("🧠 打开 Resource Broker", v ->
-                startActivity(new Intent(this, PolicyLabActivity.class)));
-        root.addView(broker, matchWrap());
-
+        // Resource Broker is opened from LabHub; keep this page read-only.
         root.addView(sectionTitle("系统 / 实验能力"));
         systemView = body();
         root.addView(systemView, matchWrap());
@@ -186,8 +187,7 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         serviceLifecycleView = body();
         serviceLifecycleView.setTextIsSelectable(true);
         root.addView(serviceLifecycleView, matchWrap());
-        root.addView(button("↻ 刷新服务取证", v -> refreshViews()), matchWrap());
-
+        // The single refresh action below also updates lifecycle evidence.
         root.addView(sectionTitle("Test Provider 清理取证（Lab 25）"));
         providerEvidenceView = body();
         providerEvidenceView.setTextIsSelectable(true);
@@ -220,10 +220,7 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
                 button("🧪 AVF / pKVM", v -> runPrivilegedProbe(5))
         ));
 
-        Button sandbox = button("📦 打开 Sandbox Lab / Work Profile 探测", v ->
-                startActivity(new Intent(this, SandboxLabActivity.class)));
-        root.addView(sandbox, matchWrap());
-
+        // Sandbox / Work Profile navigation belongs to LabHub.
         Button developer = button("🛠 打开开发者选项", v -> {
             try {
                 startActivity(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS));
@@ -241,34 +238,32 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         Button compareSnapshot = button("🔍 对比上次快照", v -> compareEnvironmentSnapshot());
         root.addView(compareSnapshot, matchWrap());
 
-        Button back = button("← 返回 GoGoGo Lab", v -> finish());
-        root.addView(back, matchWrap());
-
+        // Back navigation stays at the top, avoiding duplicate controls.
         setContentView(scroll);
     }
 
     private TextView sectionTitle(String text) {
-        TextView v = new TextView(this);
-        v.setText(text);
-        v.setTextSize(18);
-        v.setPadding(0, dp(14), 0, dp(4));
+        TextView v = GoGoUi.sectionTitle(this, text);
+        v.setPadding(0, dp(18), 0, dp(7));
         return v;
     }
 
     private TextView body() {
-        TextView v = new TextView(this);
-        v.setTextSize(14);
-        v.setTextIsSelectable(true);
-        v.setPadding(dp(8), dp(8), dp(8), dp(8));
+        TextView v = GoGoUi.status(this, "读取中…");
+        v.setTextSize(13);
+        v.setTextColor(GoGoUi.color(this, R.color.gogogo_text_muted));
+        v.setPadding(dp(13), dp(12), dp(13), dp(12));
+        android.graphics.drawable.GradientDrawable panel =
+                new android.graphics.drawable.GradientDrawable();
+        panel.setColor(GoGoUi.color(this, R.color.gogogo_surface));
+        panel.setCornerRadius(dp(12));
+        panel.setStroke(dp(1), GoGoUi.color(this, R.color.gogogo_border));
+        v.setBackground(panel);
         return v;
     }
 
     private Button button(String text, android.view.View.OnClickListener listener) {
-        Button b = new Button(this);
-        b.setText(text);
-        b.setAllCaps(false);
-        b.setOnClickListener(listener);
-        return b;
+        return GoGoUi.secondaryButton(this, text, listener);
     }
 
     private android.widget.HorizontalScrollView buttonRow(Button... buttons) {

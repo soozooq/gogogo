@@ -53,6 +53,7 @@ public class SimpleMockActivity extends AppCompatActivity {
     private TextView statusView;
     private TextView diagnosticView;
     private TextView publicIpView;
+    private LinearLayout diagnosticDetails;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +61,17 @@ public class SimpleMockActivity extends AppCompatActivity {
         buildUi();
         ensureLocationPermission();
         refreshDiagnostics();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Returning from Map or Lab Hub must not falsely display "not started".
+        if (statusView != null) {
+            statusView.setText(ServiceGo.sRunning
+                    ? "状态：模拟服务运行中 · 详情请到实验与诊断查看"
+                    : "状态：服务未运行");
+        }
     }
 
     private void buildUi() {
@@ -74,23 +86,26 @@ public class SimpleMockActivity extends AppCompatActivity {
         root.setPadding(pad, GoGoUi.dp(this, 22), pad, GoGoUi.dp(this, 28));
         scroll.addView(root);
 
+        root.addView(GoGoUi.eyebrow(this, "LOCATION  /  PREVIEW"),
+                GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 8));
         TextView title = GoGoUi.heroTitle(this, "GoGoGo");
         root.addView(title, GoGoUi.matchWrap());
 
         TextView subtitle = GoGoUi.subtitle(
                 this,
-                "位置实验、路线回放与环境诊断工作台");
+                "快速选点 · 清楚地启动与停止 · 深入实验时再展开工具");
         root.addView(subtitle, GoGoUi.matchWrap());
 
         // Primary location card
         com.google.android.material.card.MaterialCardView locationCard = GoGoUi.card(this);
         LinearLayout locationContent = GoGoUi.cardContent(this);
         locationCard.addView(locationContent);
-        locationContent.addView(GoGoUi.sectionTitle(this, "位置控制"), GoGoUi.matchWrap());
+        locationContent.addView(GoGoUi.sectionTitle(this, "坐标与模拟"), GoGoUi.matchWrap());
 
         TextView locationHint = GoGoUi.muted(
                 this,
-                "输入 WGS-84 坐标。常用操作只放在这里，低频系统入口已收进“更多工具”。");
+                "WGS-84 · 经度在前，纬度在后。默认缅甸妙瓦底。");
         locationContent.addView(locationHint, GoGoUi.matchWrap());
         locationContent.addView(GoGoUi.gap(this, 12));
 
@@ -147,29 +162,26 @@ public class SimpleMockActivity extends AppCompatActivity {
 
         GoGoUi.addCard(root, locationCard, 18);
 
-        // Lab entry card
-        com.google.android.material.card.MaterialCardView labCard = GoGoUi.card(this);
-        LinearLayout labContent = GoGoUi.cardContent(this);
-        labCard.addView(labContent);
-        labContent.addView(GoGoUi.sectionTitle(this, "实验中心"), GoGoUi.matchWrap());
-        labContent.addView(GoGoUi.muted(
-                this,
-                "地图、收藏、路线、回放、Motion Audit、Sandbox 等高级能力都从这里进入。"),
+        // Frequent navigation routes: map edits position, Lab Hub collects tests.
+        root.addView(GoGoUi.gap(this, 18));
+        root.addView(GoGoUi.sectionTitle(this, "常用入口"), GoGoUi.matchWrap());
+        root.addView(GoGoUi.navigationTile(this,
+                "地图选点与路线", "OpenFreeMap · 城市跳转 · 收藏与路线",
+                v -> openMapLab()), GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 9));
+        root.addView(GoGoUi.navigationTile(this,
+                "实验与诊断", "Consumer Matrix · Shizuku · Provider 与系统实验",
+                v -> startActivity(new Intent(this, LabHubActivity.class))),
                 GoGoUi.matchWrap());
-        labContent.addView(GoGoUi.gap(this, 12));
-
-        labContent.addView(
-                GoGoUi.primaryButton(this, "打开地图实验室  →",
-                        v -> openMapLab()),
-                GoGoUi.matchWrap());
-
-        GoGoUi.addCard(root, labCard, 14);
 
         // Diagnostics card
         com.google.android.material.card.MaterialCardView diagCard = GoGoUi.card(this);
         LinearLayout diagContent = GoGoUi.cardContent(this);
         diagCard.addView(diagContent);
-        diagContent.addView(GoGoUi.sectionTitle(this, "诊断与工具"), GoGoUi.matchWrap());
+        diagContent.addView(GoGoUi.sectionTitle(this, "状态与设置"), GoGoUi.matchWrap());
+        diagContent.addView(GoGoUi.muted(this,
+                "这里保留简短自检。完整环境与权限取证统一放在「实验与诊断」。"),
+                GoGoUi.matchWrap());
 
         LinearLayout diagRow = GoGoUi.row(this);
         diagRow.addView(
@@ -177,25 +189,39 @@ public class SimpleMockActivity extends AppCompatActivity {
                 GoGoUi.weighted());
         GoGoUi.addHorizontalGap(this, diagRow, 10);
         diagRow.addView(
-                GoGoUi.secondaryButton(this, "更多工具", v -> showToolsMenu()),
+                GoGoUi.secondaryButton(this, "系统设置", v -> showToolsMenu()),
                 GoGoUi.weighted());
         diagContent.addView(diagRow, GoGoUi.matchWrap());
 
+        diagnosticDetails = new LinearLayout(this);
+        diagnosticDetails.setOrientation(LinearLayout.VERTICAL);
+        diagnosticDetails.setVisibility(android.view.View.GONE);
         publicIpView = GoGoUi.muted(this, "公网出口：未检测");
         publicIpView.setTextIsSelectable(true);
         publicIpView.setPadding(0, GoGoUi.dp(this, 12), 0, 0);
-        diagContent.addView(publicIpView, GoGoUi.matchWrap());
+        diagnosticDetails.addView(publicIpView, GoGoUi.matchWrap());
 
         diagnosticView = GoGoUi.muted(this, "定位自检：等待刷新");
         diagnosticView.setTextIsSelectable(true);
         diagnosticView.setPadding(0, GoGoUi.dp(this, 10), 0, 0);
-        diagContent.addView(diagnosticView, GoGoUi.matchWrap());
+        diagnosticDetails.addView(diagnosticView, GoGoUi.matchWrap());
+
+        com.google.android.material.button.MaterialButton detailsButton =
+                GoGoUi.textButton(this, "展开详细自检 ↓", v -> {});
+        detailsButton.setOnClickListener(v -> {
+            boolean expand = diagnosticDetails.getVisibility() != android.view.View.VISIBLE;
+            diagnosticDetails.setVisibility(expand
+                    ? android.view.View.VISIBLE : android.view.View.GONE);
+            detailsButton.setText(expand ? "收起详细自检 ↑" : "展开详细自检 ↓");
+        });
+        diagContent.addView(detailsButton, GoGoUi.matchWrap());
+        diagContent.addView(diagnosticDetails, GoGoUi.matchWrap());
 
         GoGoUi.addCard(root, diagCard, 14);
 
         TextView footer = GoGoUi.muted(
                 this,
-                "GoGoGo Lab · 当前版本已禁用原项目悬浮摇杆，不需要悬浮窗权限。");
+                "GoGoGo · Preview · 仅在明确点击开始后启动模拟位置。");
         footer.setGravity(Gravity.CENTER);
         footer.setPadding(0, GoGoUi.dp(this, 18), 0, 0);
         root.addView(footer, GoGoUi.matchWrap());
