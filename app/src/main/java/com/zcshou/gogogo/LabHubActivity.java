@@ -32,7 +32,7 @@ public final class LabHubActivity extends AppCompatActivity {
         root.setPadding(pad, pad, pad, GoGoUi.dp(this, 28));
         scroll.addView(root);
 
-        root.addView(GoGoUi.textButton(this, "← 返回", v -> finish()),
+        root.addView(GoGoUi.backButton(this, v -> finish()),
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.eyebrow(this, "TOOLS  /  LAB CENTER"),
                 GoGoUi.matchWrap());
