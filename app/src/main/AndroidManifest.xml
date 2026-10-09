@@ -110,6 +110,11 @@
             android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
+            android:name=".LabQuickCheckActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
             android:name=".LabDiagnosticsActivity"
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
