@@ -1,9 +1,10 @@
-> **soozooq / GoGoGo 集成测试版说明（2026-10-09）**：本 Fork 已整合历史 Lab 1–26 的实验开发成果，开发代码已通过 GitHub Actions 自动构建，但**尚未完成所有目标手机、腾讯真实密钥与第三方定位消费者的实机验收**。此仓库当前 APK 属于 **Preview / 测试版**，并非官方上游稳定发行版。
+> **soozooq / GoGoGo 集成测试版说明（2026-10-09）**：本 Fork 已整合历史 Lab 1–29 的实验开发成果，开发代码已通过 GitHub Actions 自动构建，但**尚未完成所有目标手机、腾讯真实密钥与第三方定位消费者的实机验收**。此仓库当前 APK 属于 **Preview / 测试版**，并非官方上游稳定发行版。
 >
 > - 本 Fork 源码： https://github.com/soozooq/gogogo
-> - 已验证的 `main` 完整 CI： [Build Check](https://github.com/soozooq/gogogo/actions/runs/37855976504) · [Preview APK（在 Artifacts 中下载 ZIP 并解压）](https://github.com/soozooq/gogogo/actions/runs/37855976542)
+> - 最新 `main` 构建： [Build Check](https://github.com/soozooq/gogogo/actions/workflows/build-check.yml) · [Preview APK（在 Artifacts 中下载 ZIP 并解压）](https://github.com/soozooq/gogogo/actions/workflows/build-release.yml)
 > - 手机实测步骤： [安卓手机验收清单](docs/main-preview-phone-acceptance-20261009.md)
 > - Lab 26 快捷坐标 / 免 Key 地图： [实现和验收说明](docs/lab26-country-location-presets.md)
+> - Lab 27–29 界面优化： [功能入口去重](docs/lab27-ui-dedup-design-audit.md) · [旧研究页重排](docs/lab28-research-ui-second-pass.md) · [深浅色与响应式布局](docs/lab29-daynight-responsive-ui.md)
 > - Lab 25 发布阻断清单： [docs/lab25-release-readiness.md](docs/lab25-release-readiness.md)
 > - 后续自动构建： https://github.com/soozooq/gogogo/actions
 > - 备份旧 main： [backup/main-before-labs-20261009](https://github.com/soozooq/gogogo/tree/backup/main-before-labs-20261009)
