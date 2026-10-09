@@ -71,114 +71,87 @@ public class CrossProfileObservatoryActivity extends AppCompatActivity {
     }
 
     private void buildUi() {
-        int pad = dp(14);
-
+        int pad = dp(18);
         ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        GoGoUi.applyScreenBackground(scroll);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(pad, pad, pad, pad);
+        root.setPadding(pad, pad, pad, dp(30));
         scroll.addView(root);
 
-        TextView title = new TextView(this);
-        title.setText("🔭 GoGoGo Cross-profile Observatory · Lab 9");
-        title.setTextSize(21);
-        title.setGravity(Gravity.CENTER);
-        root.addView(title, matchWrap());
+        GoGoUi.addLabHeader(root, "SYSTEMS  /  PROFILES",
+                "跨资料观测",
+                "个人空间与 Work Profile 的可见性、权限和快照对比",
+                v -> finish());
+        root.addView(GoGoUi.muted(this,
+                "每个资料只读取本空间的数据；对比通过用户主动导出 / 导入 JSON 快照完成。"
+                        + " 不使用 shell/root 跨越资料隔离。导出的设备和网络信息可能敏感，请妥善保存。"),
+                matchWrap());
 
-        TextView intro = body();
-        intro.setText(
-                "目标：观察同一个 GoGoGo APK 在个人空间与 Work Profile 中的真实隔离差异。\n\n"
-                        + "每个 profile 只读取自己的环境。跨资料对比通过 JSON 快照完成；"
-                        + "不会使用 shell/root 越过资料边界读取另一个 profile 的私有数据。");
-        root.addView(intro, matchWrap());
-
-        root.addView(sectionTitle("当前 Profile 指纹"));
+        root.addView(sectionTitle("本资料环境指纹"), matchWrap());
         currentView = body();
         root.addView(currentView, matchWrap());
+        root.addView(GoGoUi.gap(this, 9));
+        root.addView(GoGoUi.actionStack(this,
+                button("刷新本资料状态", v -> refresh()),
+                button("导出当前快照", v -> exportCurrent()),
+                button("导入另一资料快照", v -> importSnapshot())
+        ), matchWrap());
 
-        root.addView(buttonRow(
-                button("↻ 刷新", v -> refresh()),
-                button("💾 导出当前快照", v -> exportCurrent()),
-                button("📂 导入另一资料快照", v -> importSnapshot())
-        ));
-
-        root.addView(sectionTitle("CrossProfileApps"));
+        root.addView(sectionTitle("跨资料访问许可"), matchWrap());
         crossProfileView = body();
         root.addView(crossProfileView, matchWrap());
+        root.addView(GoGoUi.gap(this, 9));
+        root.addView(GoGoUi.muted(this,
+                "以下权限操作由 Android 的正式跨资料机制处理；需要资格或用户同意时不会自动绕过。"),
+                matchWrap());
+        root.addView(GoGoUi.gap(this, 8));
+        root.addView(GoGoUi.actionStack(this,
+                button("Profile Owner 允许 GoGoGo 跨资料", v -> allowlistSelf()),
+                button("请求用户跨资料同意", v -> requestCrossProfileConsent()),
+                button("切换到另一资料", v -> switchToOtherProfile())
+        ), matchWrap());
 
-        root.addView(buttonRow(
-                button("✅ Profile Owner 允许 GoGoGo 跨资料", v -> allowlistSelf()),
-                button("🙋 请求用户跨资料同意", v -> requestCrossProfileConsent()),
-                button("🔀 切换到另一 Profile", v -> switchToOtherProfile())
-        ));
-
-        root.addView(sectionTitle("导入 / 差异矩阵"));
+        root.addView(sectionTitle("导入结果与差异对比"), matchWrap());
         importedView = body();
-        importedView.setText("尚未导入另一份 profile 快照。");
+        importedView.setText("尚未导入另一份 Profile 快照。");
         root.addView(importedView, matchWrap());
-
-        root.addView(buttonRow(
-                button("🔬 对比当前 vs 导入", v -> compareSnapshots()),
-                button("🧹 清除导入", v -> {
+        root.addView(GoGoUi.gap(this, 9));
+        root.addView(GoGoUi.actionStack(this,
+                GoGoUi.primaryButton(this, "对比当前与导入快照",
+                        v -> compareSnapshots()),
+                button("清除本页导入数据", v -> {
                     importedSnapshot = null;
                     importedView.setText("已清除导入快照。");
                 })
-        ));
+        ), matchWrap());
 
-        TextView tips = body();
-        tips.setText(
-                "推荐实验流程：\n"
-                        + "① 在个人空间导出 personal.json；\n"
-                        + "② 切到 Work Profile，导出 work.json；\n"
-                        + "③ 任意一边导入另一份并点“对比”；\n"
-                        + "④ 重点看 user serial、UID、dataDir、Profile Owner、Broker Policy、"
-                        + "网络接口/DNS、CrossProfileApps 可见性。");
+        root.addView(sectionTitle("推荐对照步骤"), matchWrap());
+        TextView tips = GoGoUi.muted(this,
+                "① 个人空间导出 personal.json\n"
+                        + "② Work Profile 导出 work.json\n"
+                        + "③ 任意一边导入另一份，再点击对比\n"
+                        + "④ 观察用户 serial、UID、dataDir、Profile Owner、"
+                        + "网络/DNS 和 CrossProfileApps 可见性");
+        tips.setTextIsSelectable(true);
         root.addView(tips, matchWrap());
-
-        Button back = button("← 返回 Sandbox Lab", v -> finish());
-        root.addView(back, matchWrap());
-
         setContentView(scroll);
     }
 
     private TextView sectionTitle(String text) {
-        TextView v = new TextView(this);
-        v.setText(text);
-        v.setTextSize(18);
-        v.setPadding(0, dp(14), 0, dp(4));
-        return v;
+        TextView view = GoGoUi.sectionTitle(this, text);
+        view.setPadding(0, dp(20), 0, dp(8));
+        return view;
     }
 
     private TextView body() {
-        TextView v = new TextView(this);
-        v.setTextSize(14);
-        v.setTextIsSelectable(true);
-        v.setPadding(dp(8), dp(8), dp(8), dp(8));
-        return v;
+        return GoGoUi.reportPanel(this);
     }
 
-    private Button button(String text, android.view.View.OnClickListener listener) {
-        Button b = new Button(this);
-        b.setText(text);
-        b.setAllCaps(false);
-        b.setOnClickListener(listener);
-        return b;
-    }
-
-    private android.widget.HorizontalScrollView buttonRow(Button... buttons) {
-        android.widget.HorizontalScrollView scroll = new android.widget.HorizontalScrollView(this);
-        scroll.setHorizontalScrollBarEnabled(false);
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        for (Button b : buttons) {
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT);
-            lp.setMargins(0, 0, dp(6), 0);
-            row.addView(b, lp);
-        }
-        scroll.addView(row);
-        return scroll;
+    private com.google.android.material.button.MaterialButton button(
+            String text, android.view.View.OnClickListener listener) {
+        return GoGoUi.secondaryButton(this, text, listener);
     }
 
     private LinearLayout.LayoutParams matchWrap() {
