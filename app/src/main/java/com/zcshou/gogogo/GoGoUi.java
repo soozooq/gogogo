@@ -240,6 +240,22 @@ public final class GoGoUi {
         return view;
     }
 
+    /** Semantic status colors: callers must not equate a request with success. */
+    public enum StatusTone { NEUTRAL, INFO, SUCCESS, WARNING, ERROR }
+
+    public static void setStatusTone(TextView view, StatusTone tone) {
+        int token;
+        switch (tone) {
+            case INFO: token = R.color.gogogo_info; break;
+            case SUCCESS: token = R.color.gogogo_success; break;
+            case WARNING: token = R.color.gogogo_warning; break;
+            case ERROR: token = R.color.gogogo_danger; break;
+            case NEUTRAL:
+            default: token = R.color.gogogo_text;
+        }
+        view.setTextColor(color(view.getContext(), token));
+    }
+
     public static MaterialCardView card(Context context) {
         MaterialCardView card = new MaterialCardView(context);
         card.setCardBackgroundColor(color(context, R.color.gogogo_surface));
