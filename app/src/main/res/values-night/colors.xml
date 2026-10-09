@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Lab 29: consistent dark tokens, retaining every light-theme resource name. -->
+    <color name="gogogo_bg">#0B1220</color>
+    <color name="gogogo_surface">#162233</color>
+    <color name="gogogo_surface_alt">#16342F</color>
+    <color name="gogogo_primary">#36D5C6</color>
+    <color name="gogogo_primary_dark">#5EEAD4</color>
+    <color name="gogogo_on_primary">#062322</color>
+    <color name="gogogo_primary_soft">#153D3A</color>
+    <color name="gogogo_accent">#5EEAD4</color>
+    <color name="gogogo_text">#F1F5F9</color>
+    <color name="gogogo_text_muted">#B8C7D9</color>
+    <color name="gogogo_border">#3A4B60</color>
+    <color name="gogogo_success">#4ADE80</color>
+    <color name="gogogo_warning">#FBBF24</color>
+    <color name="gogogo_danger">#F87171</color>
+    <color name="gogogo_info">#60A5FA</color>
+</resources>
