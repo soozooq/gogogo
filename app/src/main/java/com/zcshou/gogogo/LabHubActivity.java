@@ -42,6 +42,12 @@ public final class LabHubActivity extends AppCompatActivity {
                 "定位验证、运动分析和高级实验统一收在这里。选择工具不会自动启动模拟。"),
                 GoGoUi.matchWrap());
 
+        root.addView(GoGoUi.gap(this, 12));
+        root.addView(GoGoUi.navigationTile(this,
+                "一键基础快检",
+                "先看权限、模拟位置 AppOps 和服务标记；可复制隐私精简摘要",
+                v -> open(LabQuickCheckActivity.class)), GoGoUi.matchWrap());
+
         addGroup(root, "定位与兼容",
                 "先检查标准位置消费者，再决定是否使用更深入的探针。",
                 new Entry[]{
