@@ -1,7 +1,7 @@
 <resources>
 
     <!-- GoGoGo 2.4 UI base theme. MaterialComponents is required by MaterialButton/CardView. -->
-    <style name="AppTheme" parent="Theme.MaterialComponents.Light.DarkActionBar">
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
         <item name="colorPrimary">@color/gogogo_primary</item>
         <item name="colorPrimaryVariant">@color/gogogo_primary_dark</item>
         <item name="colorPrimaryDark">@color/gogogo_primary_dark</item>
@@ -11,14 +11,15 @@
         <item name="android:windowBackground">@color/gogogo_bg</item>
         <item name="android:navigationBarColor">@color/gogogo_surface</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightStatusBar">@bool/gogogo_system_bars_light</item>
+        <item name="android:windowLightNavigationBar">@bool/gogogo_system_bars_light</item>
         <item name="android:fontFamily">sans</item>
         <item name="android:textColorPrimary">@color/gogogo_text</item>
         <item name="android:textColorSecondary">@color/gogogo_text_muted</item>
     </style>
 
     <!-- Programmatic screens use their own app bar. Keep this explicitly MaterialComponents. -->
-    <style name="AppTheme.NoActionBar" parent="Theme.MaterialComponents.Light.NoActionBar">
+    <style name="AppTheme.NoActionBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/gogogo_primary</item>
         <item name="colorPrimaryVariant">@color/gogogo_primary_dark</item>
         <item name="colorPrimaryDark">@color/gogogo_primary_dark</item>
@@ -27,7 +28,8 @@
         <item name="android:windowBackground">@color/gogogo_bg</item>
         <item name="android:navigationBarColor">@color/gogogo_surface</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightStatusBar">@bool/gogogo_system_bars_light</item>
+        <item name="android:windowLightNavigationBar">@bool/gogogo_system_bars_light</item>
         <item name="android:fontFamily">sans</item>
         <item name="android:textColorPrimary">@color/gogogo_text</item>
         <item name="android:textColorSecondary">@color/gogogo_text_muted</item>
@@ -37,7 +39,7 @@
 
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.MaterialComponents.Light" />
 
-    <style name="RippleWhite" parent="Theme.MaterialComponents.Light.DarkActionBar">
+    <style name="RippleWhite" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
         <item name="android:colorControlHighlight">#C8C9CA</item>
         <item name="android:radius">14dp</item>
     </style>
@@ -49,6 +51,7 @@
 
     <style name="AppTheme.Button" parent="Widget.MaterialComponents.Button">
         <item name="backgroundTint">@color/gogogo_primary</item>
+        <item name="android:textColor">@color/gogogo_on_primary</item>
     </style>
 
 </resources>
