@@ -95,7 +95,7 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title, GoGoUi.matchWrap());
         titleBlock.addView(
-                GoGoUi.muted(this, "Lab 16 · 独立进程标准位置消费者"),
+                GoGoUi.muted(this, "Lab 16 + Lab 30 · 独立进程位置消费者 / 双年龄诊断"),
                 GoGoUi.matchWrap());
         appBar.addView(titleBlock, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
@@ -363,11 +363,13 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                         + "snapshot recent ≤30s: %d / %d\n"
                         + "available channels: %d / 5\n"
                         + "mock-marked samples: %d\n"
-                        + "max cross-channel separation: %.1f m\n"
-                        + "stale streams: %s\n"
-                        + "old snapshots: %s\n\n"
-                        + "实时兼容性只由 GPS / NETWORK / GMS updates 三条持续流决定；"
-                        + "lastLocation / currentLocation 是一次性快照，age 自然增长不会再把评分降级。",
+                        + "max all-channel separation (informational): %.1f m\n"
+                        + "max fresh-stream separation (graded): %.1f m\n"
+                        + "stale / unknown streams: %s\n"
+                        + "old / unknown snapshots: %s\n\n"
+                        + "Lab 30：回调年龄 = 收到位置后经过的时间；定位年龄 = fix 本身生成后经过的时间。"
+                        + "实时流两者均需 ≤1s；快照按 fix 年龄 ≤30s 判断近期。"
+                        + "UNKNOWN 不视为新鲜；旧快照不会降低实时流的一致性评分。",
                 matrix.grade,
                 matrix.freshStreams,
                 matrix.availableStreams,
@@ -376,6 +378,7 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                 matrix.availableChannels,
                 matrix.mockMarkedChannels,
                 matrix.maxSeparationMeters,
+                matrix.maxFreshStreamSeparationMeters,
                 matrix.staleStreams.isEmpty()
                         ? "none"
                         : android.text.TextUtils.join(", ", matrix.staleStreams),
@@ -455,9 +458,19 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
             error = "";
         }
 
-        long ageMs() {
-            if (receivedElapsedMs < 0L) return -1L;
-            return Math.max(0L, SystemClock.elapsedRealtime() - receivedElapsedMs);
+        long callbackAgeMs() {
+            return LabLocationAge.callbackAgeMs(
+                    SystemClock.elapsedRealtime(), receivedElapsedMs);
+        }
+
+        long fixAgeMs() {
+            if (location == null) return LabLocationAge.UNKNOWN;
+            return LabLocationAge.fixAgeMs(
+                    SystemClock.elapsedRealtimeNanos(), location.getElapsedRealtimeNanos());
+        }
+
+        private static String displayAge(long ageMs) {
+            return ageMs < 0L ? "UNKNOWN" : ageMs + " ms";
         }
 
         boolean isMock() {
@@ -475,7 +488,8 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                     location != null,
                     location == null ? 0.0 : location.getLatitude(),
                     location == null ? 0.0 : location.getLongitude(),
-                    ageMs(),
+                    fixAgeMs(),
+                    callbackAgeMs(),
                     isMock(),
                     stream);
         }
@@ -490,7 +504,8 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                     "%s [%s]\n"
                             + "  %.7f, %.7f\n"
                             + "  acc %.1f m · speed %.2f m/s · bearing %.1f°\n"
-                            + "  provider=%s · age=%d ms · count=%d · isMock=%s",
+                            + "  provider=%s · fixAge=%s · callbackAge=%s\n"
+                            + "  callbacks=%d · isMock=%s",
                     name,
                     stream ? "STREAM" : "SNAPSHOT",
                     location.getLongitude(),
@@ -499,7 +514,8 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                     location.hasSpeed() ? location.getSpeed() : 0f,
                     location.hasBearing() ? location.getBearing() : 0f,
                     location.getProvider(),
-                    ageMs(),
+                    displayAge(fixAgeMs()),
+                    displayAge(callbackAgeMs()),
                     count,
                     isMock() ? "YES" : "NO");
         }
