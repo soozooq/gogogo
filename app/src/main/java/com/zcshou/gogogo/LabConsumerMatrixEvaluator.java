@@ -19,18 +19,17 @@ public final class LabConsumerMatrixEvaluator {
         int availableSnapshots = 0;
         int freshSnapshots = 0;
         int mockMarked = 0;
-        double maxSeparation = 0.0;
-        // Old cached snapshots must not downgrade healthy live streams.
-        double maxFreshStreamSeparation = 0.0;
-
-        Sample reference = null;
-        Sample freshStreamReference = null;
+        // Compare every pair, not just every sample against the first channel.
+        // A first channel centered between two distant channels can hide disagreement.
+        List<Sample> availableSamples = new ArrayList<>();
+        List<Sample> freshStreamSamples = new ArrayList<>();
         List<String> staleStreams = new ArrayList<>();
         List<String> staleSnapshots = new ArrayList<>();
 
         for (Sample sample : samples) {
             if (sample == null || !sample.available) continue;
             available++;
+            availableSamples.add(sample);
 
             if (sample.stream) {
                 availableStreams++;
@@ -39,17 +38,7 @@ public final class LabConsumerMatrixEvaluator {
                 if (LabLocationAge.isRecent(sample.fixAgeMs, 1000L)
                         && LabLocationAge.isRecent(sample.callbackAgeMs, 1000L)) {
                     freshStreams++;
-                    if (freshStreamReference == null) {
-                        freshStreamReference = sample;
-                    } else {
-                        maxFreshStreamSeparation = Math.max(
-                                maxFreshStreamSeparation,
-                                distanceMeters(
-                                        freshStreamReference.latitude,
-                                        freshStreamReference.longitude,
-                                        sample.latitude,
-                                        sample.longitude));
-                    }
+                    freshStreamSamples.add(sample);
                 } else {
                     staleStreams.add(sample.name);
                 }
@@ -65,19 +54,11 @@ public final class LabConsumerMatrixEvaluator {
             }
 
             if (sample.mockMarked) mockMarked++;
-
-            if (reference == null) {
-                reference = sample;
-            } else {
-                maxSeparation = Math.max(
-                        maxSeparation,
-                        distanceMeters(
-                                reference.latitude,
-                                reference.longitude,
-                                sample.latitude,
-                                sample.longitude));
-            }
         }
+
+        // No cached snapshot participates in the live-stream grade.
+        double maxSeparation = maxPairwiseDistanceMeters(availableSamples);
+        double maxFreshStreamSeparation = maxPairwiseDistanceMeters(freshStreamSamples);
 
         String grade;
         if (availableStreams >= 3
@@ -103,6 +84,25 @@ public final class LabConsumerMatrixEvaluator {
                 maxFreshStreamSeparation,
                 staleStreams,
                 staleSnapshots);
+    }
+
+    private static double maxPairwiseDistanceMeters(List<Sample> samples) {
+        double maximum = 0.0;
+        for (int i = 0; i < samples.size(); i++) {
+            Sample first = samples.get(i);
+            for (int j = i + 1; j < samples.size(); j++) {
+                Sample second = samples.get(j);
+                double distance = distanceMeters(
+                        first.latitude, first.longitude,
+                        second.latitude, second.longitude);
+                // An invalid coordinate must not get a successful consistency grade.
+                if (Double.isNaN(distance) || Double.isInfinite(distance)) {
+                    return Double.POSITIVE_INFINITY;
+                }
+                maximum = Math.max(maximum, distance);
+            }
+        }
+        return maximum;
     }
 
     private static double distanceMeters(
