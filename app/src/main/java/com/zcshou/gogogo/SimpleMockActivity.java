@@ -63,6 +63,17 @@ public class SimpleMockActivity extends AppCompatActivity {
         refreshDiagnostics();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Returning from Map or Lab Hub must not falsely display "not started".
+        if (statusView != null) {
+            statusView.setText(ServiceGo.sRunning
+                    ? "状态：模拟服务运行中 · 详情请到实验与诊断查看"
+                    : "状态：服务未运行");
+        }
+    }
+
     private void buildUi() {
         int pad = GoGoUi.dp(this, 18);
 
