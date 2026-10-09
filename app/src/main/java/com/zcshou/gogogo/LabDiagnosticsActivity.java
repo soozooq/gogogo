@@ -158,7 +158,7 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         root.setPadding(pad, pad, pad, pad);
         scroll.addView(root);
 
-        root.addView(GoGoUi.textButton(this, "← 返回实验中心", v -> finish()),
+        root.addView(GoGoUi.backButton(this, v -> finish()),
                 matchWrap());
         root.addView(GoGoUi.eyebrow(this, "DIAGNOSTICS  /  LAB 27"), matchWrap());
         root.addView(GoGoUi.heroTitle(this, "实验仪表盘"), matchWrap());

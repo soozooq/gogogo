@@ -68,9 +68,11 @@ public class SimpleMockActivity extends AppCompatActivity {
         super.onResume();
         // Returning from Map or Lab Hub must not falsely display "not started".
         if (statusView != null) {
-            statusView.setText(ServiceGo.sRunning
-                    ? "状态：模拟服务运行中 · 详情请到实验与诊断查看"
-                    : "状态：服务未运行");
+            showHomeStatus(ServiceGo.sRunning
+                    ? "状态：模拟服务运行中 · 可到实验与诊断核实消费者结果"
+                    : "状态：服务未运行",
+                    ServiceGo.sRunning
+                            ? GoGoUi.StatusTone.INFO : GoGoUi.StatusTone.NEUTRAL);
         }
     }
 
@@ -146,15 +148,23 @@ public class SimpleMockActivity extends AppCompatActivity {
 
         locationContent.addView(GoGoUi.gap(this, 14));
 
-        LinearLayout actionRow = GoGoUi.row(this);
         com.google.android.material.button.MaterialButton startButton =
                 GoGoUi.primaryButton(this, "开始模拟", v -> startMock());
-        actionRow.addView(startButton, GoGoUi.weighted());
-        GoGoUi.addHorizontalGap(this, actionRow, 10);
         com.google.android.material.button.MaterialButton stopButton =
                 GoGoUi.dangerButton(this, "停止", v -> stopMock());
-        actionRow.addView(stopButton, GoGoUi.weighted());
-        locationContent.addView(actionRow, GoGoUi.matchWrap());
+        boolean compactActions = LabResponsiveUiPolicy.stackHomeActions(
+                getResources().getConfiguration().screenWidthDp,
+                getResources().getConfiguration().fontScale);
+        if (compactActions) {
+            locationContent.addView(GoGoUi.actionStack(
+                    this, startButton, stopButton), GoGoUi.matchWrap());
+        } else {
+            LinearLayout actionRow = GoGoUi.row(this);
+            actionRow.addView(startButton, GoGoUi.weighted());
+            GoGoUi.addHorizontalGap(this, actionRow, 10);
+            actionRow.addView(stopButton, GoGoUi.weighted());
+            locationContent.addView(actionRow, GoGoUi.matchWrap());
+        }
 
         statusView = GoGoUi.status(this, "● 未启动");
         statusView.setPadding(0, GoGoUi.dp(this, 12), 0, 0);
@@ -165,11 +175,11 @@ public class SimpleMockActivity extends AppCompatActivity {
         // Frequent navigation routes: map edits position, Lab Hub collects tests.
         root.addView(GoGoUi.gap(this, 18));
         root.addView(GoGoUi.sectionTitle(this, "常用入口"), GoGoUi.matchWrap());
-        root.addView(GoGoUi.navigationTile(this,
+        root.addView(GoGoUi.navigationTile(this, R.drawable.ic_gogogo_place,
                 "地图选点与路线", "OpenFreeMap · 城市跳转 · 收藏与路线",
                 v -> openMapLab()), GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 9));
-        root.addView(GoGoUi.navigationTile(this,
+        root.addView(GoGoUi.navigationTile(this, R.drawable.ic_gogogo_lab,
                 "实验与诊断", "Consumer Matrix · Shizuku · Provider 与系统实验",
                 v -> startActivity(new Intent(this, LabHubActivity.class))),
                 GoGoUi.matchWrap());
@@ -183,15 +193,20 @@ public class SimpleMockActivity extends AppCompatActivity {
                 "这里保留简短自检。完整环境与权限取证统一放在「实验与诊断」。"),
                 GoGoUi.matchWrap());
 
-        LinearLayout diagRow = GoGoUi.row(this);
-        diagRow.addView(
-                GoGoUi.secondaryButton(this, "刷新自检", v -> refreshDiagnostics()),
-                GoGoUi.weighted());
-        GoGoUi.addHorizontalGap(this, diagRow, 10);
-        diagRow.addView(
-                GoGoUi.secondaryButton(this, "系统设置", v -> showToolsMenu()),
-                GoGoUi.weighted());
-        diagContent.addView(diagRow, GoGoUi.matchWrap());
+        com.google.android.material.button.MaterialButton refreshButton =
+                GoGoUi.secondaryButton(this, "刷新自检", v -> refreshDiagnostics());
+        com.google.android.material.button.MaterialButton settingsButton =
+                GoGoUi.secondaryButton(this, "系统设置", v -> showToolsMenu());
+        if (compactActions) {
+            diagContent.addView(GoGoUi.actionStack(
+                    this, refreshButton, settingsButton), GoGoUi.matchWrap());
+        } else {
+            LinearLayout diagRow = GoGoUi.row(this);
+            diagRow.addView(refreshButton, GoGoUi.weighted());
+            GoGoUi.addHorizontalGap(this, diagRow, 10);
+            diagRow.addView(settingsButton, GoGoUi.weighted());
+            diagContent.addView(diagRow, GoGoUi.matchWrap());
+        }
 
         diagnosticDetails = new LinearLayout(this);
         diagnosticDetails.setOrientation(LinearLayout.VERTICAL);
@@ -356,6 +371,12 @@ public class SimpleMockActivity extends AppCompatActivity {
         }
     }
 
+    private void showHomeStatus(String message, GoGoUi.StatusTone tone) {
+        if (statusView == null) return;
+        statusView.setText(message);
+        GoGoUi.setStatusTone(statusView, tone);
+    }
+
     private void startMock() {
         ensureLocationPermission();
 
@@ -365,23 +386,23 @@ public class SimpleMockActivity extends AppCompatActivity {
             lng = Double.parseDouble(longitudeInput.getText().toString().trim());
             lat = Double.parseDouble(latitudeInput.getText().toString().trim());
         } catch (Exception e) {
-            statusView.setText("状态：坐标格式不正确");
+            showHomeStatus("状态：坐标格式不正确", GoGoUi.StatusTone.ERROR);
             return;
         }
 
         if (lng < -180.0 || lng > 180.0 || lat < -90.0 || lat > 90.0) {
-            statusView.setText("状态：坐标超出范围");
+            showHomeStatus("状态：坐标超出范围", GoGoUi.StatusTone.ERROR);
             return;
         }
 
         if (!GoUtils.isGpsOpened(this)) {
-            statusView.setText("状态：请先开启系统定位");
+            showHomeStatus("状态：请先开启系统定位", GoGoUi.StatusTone.WARNING);
             GoUtils.showEnableGpsDialog(this);
             return;
         }
 
         if (!isMockLocationAllowed()) {
-            statusView.setText("状态：请先把本应用设为模拟位置应用");
+            showHomeStatus("状态：请先把本应用设为模拟位置应用", GoGoUi.StatusTone.WARNING);
             Toast.makeText(this, "开发者选项 → 选择模拟位置信息应用 → 选择本测试版", Toast.LENGTH_LONG).show();
             safeOpen(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS), null);
             return;
@@ -407,13 +428,15 @@ public class SimpleMockActivity extends AppCompatActivity {
         } catch (Throwable ignored) {
         }
 
-        statusView.setText("状态：模拟中\n经度 " + lng + "\n纬度 " + lat + wifiWarning);
+        showHomeStatus("状态：已请求启动模拟服务\n经度 " + lng + "\n纬度 "
+                + lat + wifiWarning, wifiWarning.isEmpty()
+                ? GoGoUi.StatusTone.INFO : GoGoUi.StatusTone.WARNING);
         diagnosticView.postDelayed(this::refreshDiagnostics, 1200);
     }
 
     private void stopMock() {
         stopService(new Intent(this, ServiceGo.class));
-        statusView.setText("状态：已停止");
+        showHomeStatus("状态：已请求停止服务 · 状态稍后刷新", GoGoUi.StatusTone.INFO);
         diagnosticView.postDelayed(this::refreshDiagnostics, 500);
     }
 

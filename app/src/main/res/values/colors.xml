@@ -164,6 +164,7 @@
     <color name="gogogo_surface_alt">#F0FDFA</color>
     <color name="gogogo_primary">#0F766E</color>
     <color name="gogogo_primary_dark">#115E59</color>
+    <color name="gogogo_on_primary">#FFFFFFFF</color>
     <color name="gogogo_primary_soft">#CCFBF1</color>
     <color name="gogogo_accent">#14B8A6</color>
     <color name="gogogo_text">#0F172A</color>

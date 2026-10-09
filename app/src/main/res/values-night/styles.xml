@@ -1,0 +1,4 @@
+<resources>
+    <!-- Existing popup overlays were light-only. Match the night palette. -->
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.MaterialComponents.Dark" />
+</resources>

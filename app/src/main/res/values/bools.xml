@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 8.1+ navigation and status bars use dark icons on a light surface. -->
+    <bool name="gogogo_system_bars_light">true</bool>
+</resources>

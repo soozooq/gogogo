@@ -229,38 +229,41 @@ public class LabMapActivity extends AppCompatActivity {
 
         control.addView(GoGoUi.gap(this, 10));
 
-        LinearLayout primaryRow = GoGoUi.row(this);
-        primaryRow.addView(
-                GoGoUi.primaryButton(this, "模拟这里", v -> simulateSelected()),
-                GoGoUi.weighted());
-        GoGoUi.addHorizontalGap(this, primaryRow, 8);
-        primaryRow.addView(
-                GoGoUi.secondaryButton(this, "路线", v -> showRoutePanel()),
-                GoGoUi.weighted());
-        GoGoUi.addHorizontalGap(this, primaryRow, 8);
-        primaryRow.addView(
-                GoGoUi.secondaryButton(this, "漫游", v -> showRoamPanel()),
-                GoGoUi.weighted());
-        control.addView(primaryRow, GoGoUi.matchWrap());
+        // Keep the primary simulation action full width; two-column controls
+        // wrap labels on compact displays instead of squeezing four into one row.
+        control.addView(GoGoUi.primaryButton(this, "模拟这里",
+                v -> simulateSelected()), GoGoUi.matchWrap());
+        control.addView(GoGoUi.gap(this, 6));
 
-        LinearLayout quickRow = GoGoUi.row(this);
+        LinearLayout routeActions = GoGoUi.row(this);
+        routeActions.addView(
+                GoGoUi.secondaryButton(this, "路线设置", v -> showRoutePanel()),
+                GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, routeActions, 8);
+        routeActions.addView(
+                GoGoUi.secondaryButton(this, "漫游设置", v -> showRoamPanel()),
+                GoGoUi.weighted());
+        control.addView(routeActions, GoGoUi.matchWrap());
+
+        LinearLayout followRow = GoGoUi.row(this);
         followButton = GoGoUi.textButton(this, "跟随·开", v -> toggleFollow());
-        quickRow.addView(followButton, GoGoUi.weighted());
-
+        followRow.addView(followButton, GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, followRow, 8);
         headingFollowButton =
                 GoGoUi.textButton(this, "朝向·关", v -> toggleHeadingFollow());
-        quickRow.addView(headingFollowButton, GoGoUi.weighted());
+        followRow.addView(headingFollowButton, GoGoUi.weighted());
+        control.addView(followRow, GoGoUi.matchWrap());
 
-        quickRow.addView(
-                GoGoUi.textButton(this, "运动", v -> showMotionPanel()),
+        LinearLayout moreRow = GoGoUi.row(this);
+        moreRow.addView(
+                GoGoUi.textButton(this, "运动工具", v -> showMotionPanel()),
                 GoGoUi.weighted());
-
-        quickRow.addView(
-                GoGoUi.textButton(this, "诊断", v ->
+        GoGoUi.addHorizontalGap(this, moreRow, 8);
+        moreRow.addView(
+                GoGoUi.textButton(this, "实验与诊断", v ->
                         startActivity(new Intent(this, LabHubActivity.class))),
                 GoGoUi.weighted());
-
-        control.addView(quickRow, GoGoUi.matchWrap());
+        control.addView(moreRow, GoGoUi.matchWrap());
 
         root.addView(controlCard, GoGoUi.matchWrap());
         setContentView(root);
