@@ -145,6 +145,52 @@ public class LabConsumerMatrixEvaluatorTest {
         assertTrue(result.maxFreshStreamSeparationMeters < 10.0);
     }
 
+
+    @Test
+    public void symmetricFreshStreamDisagreementIsNotMaskedByFirstChannel() {
+        // Both endpoints are about 7.8 m from the middle; they are >15 m apart.
+        // A reference-only measurement previously reported CONSISTENT.
+        LabConsumerMatrixEvaluator.Sample middle =
+                new LabConsumerMatrixEvaluator.Sample(
+                        "middle", true, 35.0, 139.0, 10, 10, true, true);
+        LabConsumerMatrixEvaluator.Sample north =
+                new LabConsumerMatrixEvaluator.Sample(
+                        "north", true, 35.00007, 139.0, 10, 10, true, true);
+        LabConsumerMatrixEvaluator.Sample south =
+                new LabConsumerMatrixEvaluator.Sample(
+                        "south", true, 34.99993, 139.0, 10, 10, true, true);
+
+        LabConsumerMatrixEvaluator.Result firstMiddle =
+                LabConsumerMatrixEvaluator.evaluate(Arrays.asList(middle, north, south));
+        LabConsumerMatrixEvaluator.Result firstNorth =
+                LabConsumerMatrixEvaluator.evaluate(Arrays.asList(north, middle, south));
+        assertEquals("PARTIAL", firstMiddle.grade);
+        assertEquals("PARTIAL", firstNorth.grade);
+        assertTrue(firstMiddle.maxFreshStreamSeparationMeters > 10.0);
+        assertEquals(firstMiddle.maxFreshStreamSeparationMeters,
+                firstNorth.maxFreshStreamSeparationMeters, 0.001);
+        assertEquals(firstMiddle.maxFreshStreamSeparationMeters,
+                firstMiddle.maxSeparationMeters, 0.001);
+    }
+
+    @Test
+    public void allChannelSeparationAlsoUsesTruePairwiseMaximum() {
+        // The two old snapshots are on opposite sides of the fresh stream.
+        // They affect the information-only metric, never the live grade.
+        LabConsumerMatrixEvaluator.Result result =
+                LabConsumerMatrixEvaluator.evaluate(Arrays.asList(
+                        sample("gps", 20, 0, true),
+                        sample("network", 20, 0, true),
+                        sample("updates", 20, 0, true),
+                        new LabConsumerMatrixEvaluator.Sample(
+                                "cached north", true, 35.00007, 139.0, 60000, 0, true, false),
+                        new LabConsumerMatrixEvaluator.Sample(
+                                "cached south", true, 34.99993, 139.0, 60000, 0, true, false)));
+        assertEquals("CONSISTENT", result.grade);
+        assertTrue(result.maxSeparationMeters > 10.0);
+        assertEquals(0.0, result.maxFreshStreamSeparationMeters, 0.001);
+    }
+
     private static LabConsumerMatrixEvaluator.Sample sample(
             String name, long fixAge, long callbackAge, boolean stream) {
         return new LabConsumerMatrixEvaluator.Sample(
