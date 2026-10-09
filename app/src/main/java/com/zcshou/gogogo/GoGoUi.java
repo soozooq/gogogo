@@ -41,6 +41,64 @@ public final class GoGoUi {
         view.setBackgroundColor(color(view.getContext(), R.color.gogogo_bg));
     }
 
+    /** Compact context label shared by home and research navigation screens. */
+    public static TextView eyebrow(Context context, String text) {
+        TextView view = new TextView(context);
+        view.setText(text);
+        view.setTextSize(11);
+        view.setLetterSpacing(0.07f);
+        view.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        view.setTextColor(color(context, R.color.gogogo_primary_dark));
+        view.setPadding(dp(context, 12), dp(context, 7),
+                dp(context, 12), dp(context, 7));
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(color(context, R.color.gogogo_primary_soft));
+        bg.setCornerRadius(dp(context, 10));
+        view.setBackground(bg);
+        return view;
+    }
+
+    /** Accessible single-tap navigation tile; never runs an action implicitly. */
+    public static MaterialCardView navigationTile(
+            Context context,
+            String title,
+            String description,
+            View.OnClickListener listener) {
+        MaterialCardView tile = card(context);
+        tile.setRadius(dp(context, 14));
+        tile.setCardElevation(0f);
+        LinearLayout row = row(context);
+        row.setPadding(dp(context, 14), dp(context, 12),
+                dp(context, 12), dp(context, 12));
+
+        LinearLayout labels = new LinearLayout(context);
+        labels.setOrientation(LinearLayout.VERTICAL);
+        TextView heading = new TextView(context);
+        heading.setText(title);
+        heading.setTextSize(15);
+        heading.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        heading.setTextColor(color(context, R.color.gogogo_text));
+        labels.addView(heading, matchWrap());
+        TextView detail = muted(context, description);
+        labels.addView(detail, matchWrap());
+        row.addView(labels, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+        TextView arrow = new TextView(context);
+        arrow.setText("›");
+        arrow.setTextSize(25);
+        arrow.setTextColor(color(context, R.color.gogogo_primary));
+        arrow.setGravity(Gravity.CENTER);
+        arrow.setPadding(dp(context, 12), 0, dp(context, 4), 0);
+        row.addView(arrow);
+        tile.addView(row);
+        tile.setClickable(true);
+        tile.setFocusable(true);
+        tile.setContentDescription(title + "，" + description);
+        tile.setOnClickListener(listener);
+        return tile;
+    }
+
     public static TextView heroTitle(Context context, String text) {
         TextView view = new TextView(context);
         view.setText(text);
