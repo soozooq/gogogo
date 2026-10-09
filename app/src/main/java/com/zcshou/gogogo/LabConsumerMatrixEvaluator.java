@@ -20,8 +20,11 @@ public final class LabConsumerMatrixEvaluator {
         int freshSnapshots = 0;
         int mockMarked = 0;
         double maxSeparation = 0.0;
+        // Old cached snapshots must not downgrade healthy live streams.
+        double maxFreshStreamSeparation = 0.0;
 
         Sample reference = null;
+        Sample freshStreamReference = null;
         List<String> staleStreams = new ArrayList<>();
         List<String> staleSnapshots = new ArrayList<>();
 
@@ -31,17 +34,30 @@ public final class LabConsumerMatrixEvaluator {
 
             if (sample.stream) {
                 availableStreams++;
-                if (sample.ageMs >= 0L && sample.ageMs <= 1000L) {
+                // A newly delivered callback can contain a cached, old fix.
+                // Both ages must be recent to call a live stream "fresh".
+                if (LabLocationAge.isRecent(sample.fixAgeMs, 1000L)
+                        && LabLocationAge.isRecent(sample.callbackAgeMs, 1000L)) {
                     freshStreams++;
+                    if (freshStreamReference == null) {
+                        freshStreamReference = sample;
+                    } else {
+                        maxFreshStreamSeparation = Math.max(
+                                maxFreshStreamSeparation,
+                                distanceMeters(
+                                        freshStreamReference.latitude,
+                                        freshStreamReference.longitude,
+                                        sample.latitude,
+                                        sample.longitude));
+                    }
                 } else {
                     staleStreams.add(sample.name);
                 }
             } else {
                 availableSnapshots++;
-                // Snapshot APIs naturally age after the one-shot completes.
-                // Treat <=30s as reasonably recent diagnostics, but do not use
-                // snapshot freshness to downgrade the live-stream grade.
-                if (sample.ageMs >= 0L && sample.ageMs <= 30000L) {
+                // Snapshot fix age matters; a just-delivered old cache is not fresh.
+                // Snapshots are excluded from the live-stream consistency grade.
+                if (LabLocationAge.isRecent(sample.fixAgeMs, 30000L)) {
                     freshSnapshots++;
                 } else {
                     staleSnapshots.add(sample.name);
@@ -66,10 +82,10 @@ public final class LabConsumerMatrixEvaluator {
         String grade;
         if (availableStreams >= 3
                 && freshStreams >= 3
-                && maxSeparation <= 10.0) {
+                && maxFreshStreamSeparation <= 10.0) {
             grade = "CONSISTENT";
         } else if (freshStreams >= 2
-                && maxSeparation <= 50.0) {
+                && maxFreshStreamSeparation <= 50.0) {
             grade = "PARTIAL";
         } else {
             grade = "DEGRADED";
@@ -84,6 +100,7 @@ public final class LabConsumerMatrixEvaluator {
                 freshSnapshots,
                 mockMarked,
                 maxSeparation,
+                maxFreshStreamSeparation,
                 staleStreams,
                 staleSnapshots);
     }
@@ -110,7 +127,8 @@ public final class LabConsumerMatrixEvaluator {
         public final boolean available;
         public final double latitude;
         public final double longitude;
-        public final long ageMs;
+        public final long fixAgeMs;
+        public final long callbackAgeMs;
         public final boolean mockMarked;
         public final boolean stream;
 
@@ -119,14 +137,16 @@ public final class LabConsumerMatrixEvaluator {
                 boolean available,
                 double latitude,
                 double longitude,
-                long ageMs,
+                long fixAgeMs,
+                long callbackAgeMs,
                 boolean mockMarked,
                 boolean stream) {
             this.name = name == null ? "unknown" : name;
             this.available = available;
             this.latitude = latitude;
             this.longitude = longitude;
-            this.ageMs = ageMs;
+            this.fixAgeMs = fixAgeMs;
+            this.callbackAgeMs = callbackAgeMs;
             this.mockMarked = mockMarked;
             this.stream = stream;
         }
@@ -141,6 +161,7 @@ public final class LabConsumerMatrixEvaluator {
         public final int freshSnapshots;
         public final int mockMarkedChannels;
         public final double maxSeparationMeters;
+        public final double maxFreshStreamSeparationMeters;
         public final List<String> staleStreams;
         public final List<String> staleSnapshots;
 
@@ -153,6 +174,7 @@ public final class LabConsumerMatrixEvaluator {
                 int freshSnapshots,
                 int mockMarkedChannels,
                 double maxSeparationMeters,
+                double maxFreshStreamSeparationMeters,
                 List<String> staleStreams,
                 List<String> staleSnapshots) {
             this.grade = grade;
@@ -163,6 +185,7 @@ public final class LabConsumerMatrixEvaluator {
             this.freshSnapshots = freshSnapshots;
             this.mockMarkedChannels = mockMarkedChannels;
             this.maxSeparationMeters = maxSeparationMeters;
+            this.maxFreshStreamSeparationMeters = maxFreshStreamSeparationMeters;
             this.staleStreams = Collections.unmodifiableList(new ArrayList<>(staleStreams));
             this.staleSnapshots = Collections.unmodifiableList(new ArrayList<>(staleSnapshots));
         }
