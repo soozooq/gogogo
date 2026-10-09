@@ -1,7 +1,12 @@
-name: Build No-Map APK
+name: Build Preview APK
 
 on:
   workflow_dispatch:
+  # Build installable debug previews before merging UI/diagnostic labs.
+  # This workflow uses read-only permissions and dummy public test keys.
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
