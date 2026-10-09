@@ -89,6 +89,36 @@ GoGoGo **已实现/已开始研究**：GPS / NETWORK / framework FUSED、可用�
 
 检索来源均为公开项目文档及仓库页面；未做第三方 App 内部运行行为验证。
 
+
+## 第四轮（新增 7 个，累计 25 个）— 外接 GNSS、跨厂商服务、异步验证与无头控制
+
+本轮从 **车载 GPS、SDK 兼容库、脚本自动化、App 状态管理、系统 Binder、地理围栏消费者** 找源码，而不靠 `mock gps` 标题搜索。每条已经确认项目仓库存在，并尽可能追溯到真实源码；下面只代表**静态代码观察**，不代表构建/目标手机/第三方应用验证。
+
+| 候选仓库 / 已核验文件 | 隐藏价值 | 对照 GoGoGo 及处理建议 | 优先级 |
+|---|---|---|---|
+| [Explore-In-HMS/common-mobile-services](https://github.com/Explore-In-HMS/common-mobile-services) · [GoogleLocationClientImpl](https://github.com/Explore-In-HMS/common-mobile-services/blob/master/location/src/main/java/com/hms/lib/commonmobileservices/location/factory/GoogleLocationClientImpl.kt) / [HuaweiLocationClientImpl](https://github.com/Explore-In-HMS/common-mobile-services/blob/master/location/src/main/java/com/hms/lib/commonmobileservices/location/factory/HuaweiLocationClientImpl.kt) | **通用移动服务库实际藏有两套异步定位实现**，都实现 `setMockMode`, `setMockLocation`, `getLastKnownLocation`, `requestLocationUpdates`；有一致的 Work 结果处理。 | **A**。对照现有 GMS Fused 诊断模型，先做 Google/HMS 是否安装、权限与失败原因的只读能力矩阵；用户设备不具备 HMS 时不引入华为 SDK。库以旧版 API 为主，代码仅供架构对照而非直接拷贝。 | A |
+| [AuroraNest/Modify_Positioning](https://github.com/AuroraNest/Modify_Positioning) · [CompositeLocationInjectorTest](https://github.com/AuroraNest/Modify_Positioning/blob/codex/initial-app/app/src/test/java/com/aurora/modifypositioning/CompositeLocationInjectorTest.kt) / [LocationSimulationEngine](https://github.com/AuroraNest/Modify_Positioning/blob/codex/initial-app/app/src/main/java/com/aurora/modifypositioning/simulation/LocationSimulationEngine.kt) | **最值得看的不是定位注入，而是单测**：异步 enable 尚未成功时不能上报成功、inject 失败不能复用旧成功、并发请求保留最新 sample、停止后晚到 callback 不可覆写最终状态、一个注入器失败不妨碍其他健康通道。 | **A**。与 Lab 25 GMS async journal 做逐测试对照，在现有代码增加类似回归用例之前先查缺口；已有模块不另写一套。README 的微信兼容性描述不作为实测证据。 | A |
+| [freshollie/UsbGps4Droid](https://github.com/freshollie/UsbGps4Droid) · [NmeaParser](https://github.com/freshollie/UsbGps4Droid/blob/master/app/src/main/java/org/broeuschmeul/android/gps/nmea/util/NmeaParser.java) | 外接 USB GPS 的 NMEA 解析/Provider 适配，原始 NMEA fix 生成 Android Location，并显式报告 Provider 启停和数据有效性。 | **B**。参考 **外部来源→解析有效性→系统 Provider→Consumer** 分层与日志，不为不使用 USB 的用户引入 USB 驱动；项目 README 自述实测平台较老（Android 5/6），不能推断 Android 13 正常运行。 | B |
+| [BuriXon-code/MockGPS](https://github.com/BuriXon-code/MockGPS) · [MockGpsReceiver](https://github.com/BuriXon-code/MockGPS/blob/master/app/src/main/java/dev/burixon/mockgps/MockGpsReceiver.kt) / [AndroidManifest](https://github.com/BuriXon-code/MockGPS/blob/master/app/src/main/AndroidManifest.xml) | 通过 Android Broadcast / Termux / ADB 给模拟服务发 on/off/set/drift 命令，UI 可不打开，适合作为测试工程的**外部自动化控制思想**。 | **B（架构）+ 风险提示**。当前源码的 receiver 与 service 均 `android:exported="true"`，广播入口主要靠用户是否在偏好中启用控制判断；不宜原样移入 GoGoGo。若未来建设自动化接口，必须明确用户 opt-in、保护调用者授权、输入校验并防止任意第三方应用操作位置或持续开启服务。GoGoGo 本次不新增外部 IPC。 | B |
+| [AlexMelanFromRingo/mirage](https://github.com/AlexMelanFromRingo/mirage) · [MockLocationEngine](https://github.com/AlexMelanFromRingo/mirage/blob/main/app/src/main/java/com/melan/mirage/core/MockLocationEngine.kt) / [MockLocationService](https://github.com/AlexMelanFromRingo/mirage/blob/main/app/src/main/java/com/melan/mirage/service/MockLocationService.kt) | 每次发布前确定统一的 wall-clock 与 elapsed-clock，在 GPS/NETWORK/FUSED 间保持同一时间快照；对每个 Provider 单独观察成功失败，取消 mock app 后在循环中发现错误并停止。 | **B**。GoGoGo 已有部分按 Provider 记录状态，但值得对照**同一 sample 的时间戳/来源一致性**以及服务/UI 的 truthfulness；原仓库存在把某些本地成功简化为“可用”的风险，不直接把其状态视为外部消费者已接收。 | B |
+| [AndroidGoLab/binder](https://github.com/AndroidGoLab/binder) · [examples/gps_location/main.go](https://github.com/AndroidGoLab/binder/blob/main/examples/gps_location/main.go) | 一个看起来与定位无关的 **Go/Binder IPC** 工具仓库，实际上有通过 `ILocationManager` 注册 `ILocationListener`，请求并打印 GPS fix，最终注销监听的示例。 | **B/C**。可用作 AOSP 服务层独立观察方案的概念参考；Shell/ADB 身份、SELinux、Binder 权限、Android 版本兼容不能当成普通 APK 默认权限。暂不移入 Java APK。 | B/C |
+| [Preston-Landers/QuietPlaces](https://github.com/Preston-Landers/QuietPlaces) · [GeofenceRequester](https://github.com/Preston-Landers/QuietPlaces/blob/master/QuietPlaces/src/main/java/edu/utexas/quietplaces/GeofenceRequester.java) | 地理静音/地理围栏消费者，代码证明 geofence 添加请求存在独立的连接、回调与状态路径；项目还引用独立 Mock 测试应用。 | **C（历史例证）**。说明地图蓝点改变 ≠ geofence 事件必然到达；其 `LocationClient` / 旧 Play Services API 已严重过时，只学习“消费结果分别验收”的设计，不移植代码。 | C |
+
+### 第四轮源码级重点结论
+
+1. **先补异步竞态单测**：重点对照 `CompositeLocationInjectorTest` 的五种情况：请求未完成、不成功、后到旧回调、停机时回调、双通道局部失败。我们的 `LabProviderReliabilityController` 和 Lab 25 GMS 日志不等于已覆盖这些全部竞态；先列测试断言，再改代码。
+2. **明确禁止无权限外控**：BuriXon 的 Broadcast 自动化对“未来让测试人员一键执行回归步骤”很有启发，但其 exported 组件是敏感设计点。除非有合理的鉴权/显式授权及撤销机制，否则只研究自动化接口，不开发对任意应用开放的定位控制广播。
+3. **统一每轮样本/时间戳**：不同 Provider 应能追溯到同一 session/tick/sampleId，统计其实际提交、API 回调和 Android/GMS 消费读数。模拟数据的产生者和读取者必须分开统计。
+4. **无设备时别冒称兼容**：旧外置 GNSS、华为 HMS、Binder Shell、地理围栏都是环境依赖。只有实机具备相关组件且得到明确授权才能做对应验证；不因此宣称微信/腾讯 SDK 已通过。
+5. **持续去重**：本文此前 18 个候选包括两款 GNSS 观察工具和 HMS/microG 理论资料。本轮追加的是**具体实现源代码/测试文件**，它们与此前条目相关但不是同一仓库；落地时按“功能缺口”合并结论，不为了凑数重复开发。
+
+### 第五轮检索方向（仅种子，尚未执行）
+
+- `appops mock slot changes receiver`, `LOCATION_PROVIDER cleanup after app crash`, `FusedLocationProviderClient late callback stale request tests`
+- `external nmea location source provider implementation`, `GNSS fix timestamp monotonic mixed provider test`
+- `android geofence receive mock location null cached provider`, `TencentLocationRequest cache expiration reason code`
+- 尤其找普通项目下的 `MockLocationEngine`, `LocationBackendService`, `LocationAvailability`, `GnssMeasurementsEvent.Callback`, `Work<Unit>`，而不是继续搜 GUI 产品名。
+
 ## 后续验收的硬边界
 
 - 不通过伪造测试、隐藏 `Location.isMock()` 或更改第三方 App 的私有进程来制造“兼容成功”假象。
