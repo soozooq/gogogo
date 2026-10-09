@@ -8,6 +8,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.view.ViewGroup;
@@ -57,6 +58,29 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
     private LocationListener networkListener;
     private LocationCallback gmsCallback;
     private CancellationTokenSource currentToken;
+
+    // Without periodic re-evaluation a dead stream could stay labelled "fresh"
+    // forever: no new callback means no render() call.
+    private final Handler ageRefreshHandler = new Handler(Looper.getMainLooper());
+    private final Runnable ageRefresh = new Runnable() {
+        @Override
+        public void run() {
+            render(); // Read-only recomputation. Never requests/injects location.
+            ageRefreshHandler.postDelayed(this, 1000L);
+        }
+    };
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        ageRefreshHandler.postDelayed(ageRefresh, 1000L);
+    }
+
+    @Override
+    protected void onStop() {
+        ageRefreshHandler.removeCallbacks(ageRefresh);
+        super.onStop();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
