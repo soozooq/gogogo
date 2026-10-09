@@ -38,95 +38,82 @@ public class SandboxLabActivity extends AppCompatActivity {
     }
 
     private void buildUi() {
-        int pad = dp(14);
-
+        int pad = dp(18);
         ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        GoGoUi.applyScreenBackground(scroll);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(pad, pad, pad, pad);
+        root.setPadding(pad, pad, pad, dp(30));
         scroll.addView(root);
 
-        TextView title = new TextView(this);
-        title.setText("📦 GoGoGo Sandbox Lab 11");
-        title.setTextSize(22);
-        title.setGravity(Gravity.CENTER);
-        root.addView(title, matchWrap());
+        GoGoUi.addLabHeader(root, "SYSTEMS  /  SANDBOX",
+                "沙箱与工作资料",
+                "Android 官方隔离能力 · Work Profile · AVF",
+                v -> finish());
 
-        TextView note = new TextView(this);
-        note.setText("这里走 Android 官方 Work Profile / DPC 机制。"
-                + "GoGoGo 只负责发起系统 provisioning；真正创建工作资料前，"
-                + "Android 会显示自己的确认页面，必须由你手动确认。");
-        note.setTextSize(14);
-        note.setPadding(0, dp(8), 0, dp(10));
-        root.addView(note, matchWrap());
+        root.addView(GoGoUi.muted(this,
+                "本页面只使用系统正式支持的 Work Profile / DPC 机制。"
+                + "创建工作资料会由 Android 另行弹出确认页面，"
+                + "这里不会自动创建设备资料，也不会绕过系统限制。"),
+                matchWrap());
 
-        root.addView(sectionTitle("Work Profile 能力"));
+        root.addView(sectionTitle("设备能力"), matchWrap());
         capabilityView = body();
         root.addView(capabilityView, matchWrap());
 
-        root.addView(sectionTitle("当前用户 / 资料"));
+        root.addView(sectionTitle("当前用户与资料"), matchWrap());
         profilesView = body();
         root.addView(profilesView, matchWrap());
 
-        Button provision = button("🧪 创建实验 Work Profile（系统会再次确认）",
-                v -> confirmProvisionManagedProfile());
-        root.addView(provision, matchWrap());
+        root.addView(sectionTitle("检测与系统设置"), matchWrap());
+        root.addView(GoGoUi.actionStack(this,
+                button("刷新设备能力", v -> refreshSandboxState()),
+                button("打开系统用户设置", v -> openUserSettings()),
+                button("打开账户与工作资料设置", v -> openAccountSettings())
+        ), matchWrap());
 
-        Button refresh = button("↻ 重新探测", v -> refreshSandboxState());
-        root.addView(refresh, matchWrap());
+        root.addView(sectionTitle("管理工作资料（需确认）"), matchWrap());
+        root.addView(GoGoUi.muted(this,
+                "仅在理解系统隔离与资料迁移影响时使用，创建前有二次确认。"),
+                matchWrap());
+        root.addView(GoGoUi.gap(this, 8));
+        root.addView(GoGoUi.actionStack(this,
+                GoGoUi.dangerButton(this, "创建实验 Work Profile…",
+                        v -> confirmProvisionManagedProfile())
+        ), matchWrap());
 
-        Button userSettings = button("👥 打开系统用户 / 多用户设置", v -> openUserSettings());
-        root.addView(userSettings, matchWrap());
-
-        Button accounts = button("💼 打开账号 / 工作资料相关设置", v -> openAccountSettings());
-        root.addView(accounts, matchWrap());
-
-        Button scenario = button("🎛 Deterministic Scenario / Replay", v ->
-                startActivity(new Intent(this, ScenarioLabActivity.class)));
-        root.addView(scenario, matchWrap());
-
-        Button capsule = button("🧪 Isolated Process Capsule", v ->
-                startActivity(new Intent(this, IsolatedCapsuleLabActivity.class)));
-        root.addView(capsule, matchWrap());
-
-        Button observatory = button("🔭 Cross-profile Observatory", v ->
-                startActivity(new Intent(this, CrossProfileObservatoryActivity.class)));
-        root.addView(observatory, matchWrap());
-
-        Button avf = button("🧪 AVF / pKVM 说明", v -> showAvfPlan());
-        root.addView(avf, matchWrap());
-
-        Button plan = button("🧬 查看 Sandbox 下一阶段", v -> showNextStage());
-        root.addView(plan, matchWrap());
-
-        Button back = button("← 返回实验仪表盘", v -> finish());
-        root.addView(back, matchWrap());
-
+        root.addView(sectionTitle("关联隔离实验"), matchWrap());
+        root.addView(GoGoUi.navigationTile(this,
+                "跨资料观测", "比较个人资料与工作资料的环境快照",
+                v -> startActivity(new Intent(this, CrossProfileObservatoryActivity.class))),
+                matchWrap());
+        root.addView(GoGoUi.gap(this, 8));
+        root.addView(GoGoUi.navigationTile(this,
+                "隔离进程 Capsule", "UID 隔离、Binder 调用与 Resource Broker",
+                v -> startActivity(new Intent(this, IsolatedCapsuleLabActivity.class))),
+                matchWrap());
+        root.addView(GoGoUi.gap(this, 8));
+        root.addView(GoGoUi.actionStack(this,
+                button("AVF / pKVM 说明", v -> showAvfPlan()),
+                button("查看下一阶段计划", v -> showNextStage())
+        ), matchWrap());
         setContentView(scroll);
     }
 
     private TextView sectionTitle(String text) {
-        TextView v = new TextView(this);
-        v.setText(text);
-        v.setTextSize(18);
-        v.setPadding(0, dp(14), 0, dp(4));
-        return v;
+        TextView view = GoGoUi.sectionTitle(this, text);
+        view.setPadding(0, dp(20), 0, dp(8));
+        return view;
     }
 
     private TextView body() {
-        TextView v = new TextView(this);
-        v.setTextSize(14);
-        v.setTextIsSelectable(true);
-        v.setPadding(dp(8), dp(8), dp(8), dp(8));
-        return v;
+        return GoGoUi.reportPanel(this);
     }
 
-    private Button button(String text, android.view.View.OnClickListener listener) {
-        Button b = new Button(this);
-        b.setText(text);
-        b.setAllCaps(false);
-        b.setOnClickListener(listener);
-        return b;
+    private com.google.android.material.button.MaterialButton button(
+            String text, android.view.View.OnClickListener listener) {
+        return GoGoUi.secondaryButton(this, text, listener);
     }
 
     private LinearLayout.LayoutParams matchWrap() {
