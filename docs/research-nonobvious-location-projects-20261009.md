@@ -119,6 +119,42 @@ GoGoGo **已实现/已开始研究**：GPS / NETWORK / framework FUSED、可用�
 - `android geofence receive mock location null cached provider`, `TencentLocationRequest cache expiration reason code`
 - 尤其找普通项目下的 `MockLocationEngine`, `LocationBackendService`, `LocationAvailability`, `GnssMeasurementsEvent.Callback`, `Work<Unit>`，而不是继续搜 GUI 产品名。
 
+
+## 第五轮（新增 7 个，累计 32 个）— 缓存来源、数据年龄、跨应用消费者、复现测试
+
+本轮重点从**聊天、加油站油价、5G 信号监测、独立 Fused SDK、GPS 测试编排、路线运行竞态、定位 SDK 版本记录**寻找非典型位置逻辑。以下为项目/源码静态审阅结果，**并非**对微信内部缓存、SDK 行为或目标手机的验证。
+
+| 项目与已核验材料 | 与定位研究的非典型联系 | 对 GoGoGo 的具体价值/限制 | 优先级 |
+|---|---|---|---|
+| [areebahmeddd/airhop](https://github.com/areebahmeddd/airhop) · [place-names-store.ts](https://github.com/areebahmeddd/airhop/blob/main/src/store/place-names-store.ts) | 聊天应用把人类可读的地名作为 **独立于精确坐标的 geohash→名称缓存**；缓存 key 是语言标签 + geohash；同一 key 并发请求去重；清除缓存通过 generation 阻止迟到请求回写。 | **A**：借鉴“地图坐标/地名/缓存/语言/异步请求代次”分层，用作我们对比第三方 UI 的黑盒实验设计。并不意味着微信内部使用同样的缓存策略。 |
+| [AlexandreZanata/brazil-fuel-prices-app](https://github.com/AlexandreZanata/brazil-fuel-prices-app) · [ReverseGeocodeRepositoryImpl.kt](https://github.com/AlexandreZanata/brazil-fuel-prices-app/blob/main/data/src/main/kotlin/com/anpfuel/data/repository/ReverseGeocodeRepositoryImpl.kt) · [相关单测](https://github.com/AlexandreZanata/brazil-fuel-prices-app/blob/main/data/src/test/kotlin/com/anpfuel/data/repository/ReverseGeocodeRepositoryImplTest.kt) | 油价 App 的位置解析把**坐标缓存命中、限速、网络出错、解析不合法、城市不在目录**分开；双检锁/Mutex 防并发重复请求；MockWebServer 单测断言缓存命中时不联网。 | **A**：给 GoGoGo 的地图显示/POI/城市名增加独立“缓存命中 vs 请求中 vs API 成功 vs 解析失败”的诊断设计建议；这不等于微信已如此实现。注意第三方公开 Nominatim 的限额、用户隐私、服务条款；目前不添加网络请求。 |
+| [kkaasan/5GBC_phone_monitor](https://github.com/kkaasan/5GBC_phone_monitor) · [MonitoringService.kt](https://github.com/kkaasan/5GBC_phone_monitor/blob/main/android_app/app/src/main/java/ee/levira/cbmonitor/MonitoringService.kt) | 5G 广播信号监测器同时追踪 GPS/基站；`getLocation()` 用 `SystemClock.elapsedRealtimeNanos() - location.elapsedRealtimeNanos` 算实际样本年龄，以 30s 为近期界限，超期请求 fresh，失败再回退最后已知值。 | **A（直接命中现有诊断缺口）**：区别 sample 本身的年龄和本机收到它后经过的时间。应参考其理念，不照搬同步等待或旧 SDK 代码。不要把系统位置缓存误写成最新 sample。 |
+| [ecgreb/LOST](https://github.com/ecgreb/LOST) · [README](https://github.com/ecgreb/LOST/blob/master/README.md) | 名称不显眼：早期用 Android API 提供类似 Google Play Services 的 FusedLocation API 替身，包含 mock mode、单点 mock、GPX mock trace、Location Settings API 结果。 | **B（历史对照，不移植）**：用来厘清“APP 级 Fused SDK 仿真”与“系统级 AOSP/GMS Provider 改变”的区别；不能把 LOST 内部 mock 视为向真实 Google Play Services 或所有第三方 App 注入。部分接口已过时。 |
+| [0xfnzero/gps-locator](https://github.com/0xfnzero/gps-locator) · [desktop-cli/suite.mjs](https://github.com/0xfnzero/gps-locator/blob/main/desktop-cli/suite.mjs) · [junit-report.mjs](https://github.com/0xfnzero/gps-locator/blob/main/desktop-cli/junit-report.mjs) · [相关单测](https://github.com/0xfnzero/gps-locator/blob/main/desktop-cli/test/junit-report.test.mjs) | 定位 App 实际自带 **测试场景套件**，支持 step ID 去重、场景 SHA256、每个设备结果、JUnit XML、成功失败记录；比单个坐标点的人工复测更易追踪回归。 | **B**：可借鉴保存“实验步骤/设备条件/请求结果/时间戳/可复现证据”的报告格式；它的 CLI 需要电脑/ADB，不能直接视为用户只有手机时的操作方案。 |
+| [vincenzobpt/gps-mock-location](https://github.com/vincenzobpt/gps-mock-location) · [README](https://github.com/vincenzobpt/gps-mock-location/blob/main/README.md) | 看似普通 GPS 模拟器，其文档描述的 run epoch/单锁交通控制、暂停/seek/停止期间避免延迟 tick 发布是与异步可靠性紧密相关的工程问题。 | **B（仅文档级确认）**：待定位具体代码与 JVM 单测后再对照 GoGoGo 路线引擎的 stop/pause/seek 竞态；不以项目自述作为已运行测试结果。 |
+| [hypertrack/sdk-android](https://github.com/hypertrack/sdk-android) · [CHANGELOG.md](https://github.com/hypertrack/sdk-android/blob/master/CHANGELOG.md) | 商用定位 SDK 的更新历史提到 `Mocked`、`SignalLost` 与地理围栏错误状态不一致的修复，提示**消费者错误状态也可能有延迟/不一致**。 | **C（版本记录，不是源码审计）**：帮助设计错误分类的术语；不用于第三方反检测绕过，也不推断具体 SDK 内部行为。 |
+
+### 与现有 GoGoGo Lab 16 直接对照：发现“两个年龄被混为一谈”的潜在诊断错误
+
+真实源码：
+- [ConsumerLocationProbeActivity.java](../app/src/main/java/com/zcshou/gogogo/ConsumerLocationProbeActivity.java)：`Channel.update(Location value)` 保存 `receivedElapsedMs = SystemClock.elapsedRealtime()`；`Channel.ageMs()` 用当前 elapsed 减此接收时刻，并将其传给 `asSample()`。
+- [LabConsumerMatrixEvaluator.java](../app/src/main/java/com/zcshou/gogogo/LabConsumerMatrixEvaluator.java)：针对 stream `ageMs <= 1000` 判新鲜、snapshot `ageMs <= 30000` 判近期。原字段并不包含 `Location.getElapsedRealtimeNanos()` 的实际 fix 年龄。
+
+**因此：如果 Android/GMS 现在回传的是一条很久以前生成的 cached fix，`Channel.ageMs()` 会从此刻重新算 0，而不是反映实际定位结果从生成起已经过了多久。** 特别是一发起 one-shot 就返回缓存结果时，报告可能把“刚收到数据”写成“新鲜定位结果”，属于潜在**观测误判**，并非证明模拟发布失败或微信内部定位失败。
+
+建议改进（**本轮未修改源码**）：
+1. **双年龄**：`callbackAgeMs = nowElapsed - receivedElapsedMs` 和 `fixAgeMs = (SystemClock.elapsedRealtimeNanos() - loc.getElapsedRealtimeNanos()) / 1_000_000`；两个都标注年龄来源与时间单位。
+2. **防异常**：如果 fix 时间戳 0 / future / API 不可用，则标 UNKNOWN/INVALID，不要 clamp 到 0 后宣称 fresh；跨 reboot/非同一时钟基线也要谨慎。
+3. **结果语义**：回调刚到不等于 fix 刚生成；判“定位数据真实新鲜度”时用 `fixAgeMs`，服务是否活跃另用 `callbackAgeMs`/事件计数，避免混用。
+4. **四组单测种子**：新到新 fix；新到旧 fix（模拟 LastKnown）；重复上报相同 fix；时间戳未来/缺失。Snapshot 超过阈值以后不应错误影响直播状态；保留已存在的 stream-vs-snapshot 差异。
+5. **UI 证据链**：在设备自己的可控实验下独立记录 Android/GMS 返回的数据年龄、腾讯独立 SDK 的 fresh/缓存结果、地图坐标/城市名称/POI/距离标签各自更新时间。仅用可见第三方 UI 做黑盒观察，不猜测私有实现。
+
+### 本轮去重与后续行动
+
+- Lab 24 已有独立腾讯 GEO/POI + Fresh/缓存请求，Lab 16 已有五通道 Consumer Matrix，Lab 25 已有 Provider/GMS 生命周期日志。这轮**不是提议重新开发这些功能**，而是指出报告时间语义和消费者 UI 分层可能存在缺口。
+- 优先级：**先做 Consumer Matrix 双年龄与纯单测 → 完成自己设备的 Android/GMS/腾讯 SDK 分层实验 → 再比较城市/POI/距离标签的可见变化**。无实机数据前，不得宣称修复微信。
+- 本提交是研究文档追加，未更改模拟服务、版本号、CI 流程、APK 或任何现有功能。
+
 ## 后续验收的硬边界
 
 - 不通过伪造测试、隐藏 `Location.isMock()` 或更改第三方 App 的私有进程来制造“兼容成功”假象。
