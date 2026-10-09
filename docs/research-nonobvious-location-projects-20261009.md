@@ -1,6 +1,6 @@
 # GoGoGo · 非典型命名开源项目追踪库（第 1–2 轮）
 
-- 记录日期：2026-10-09
+- 记录日期：2026-10-09（已追加第三轮）
 - 项目仓库：https://github.com/soozooq/gogogo
 - 基线：`main` 的 Lab 29（`2.4.0-lab29`）及 Lab 20–25 的生命周期/模拟源可靠性、Lab 24 的腾讯 SDK 客户端探针。
 - 性质：研究线索库，不是已完成的修复、第三方应用兼容性保证或实机测试报告；研究项目页面/技术文档并不等于审过每一个源码文件。
@@ -68,6 +68,26 @@ GoGoGo **已实现/已开始研究**：GPS / NETWORK / framework FUSED、可用�
 - 不显眼的应用领域：GNSS/NMEA USB、照片地理标签、车载导航 QA、VPN exit location、AppOps 权限管理、Shizuku 运行管理、相机地理位置取证、模拟器测试编排、地理围栏测试。
 - 中文与英文混搜：`定位回调 缓存 新鲜度`, `模拟位置 开发者选项 残留`, `腾讯定位SDK 单次 fresh`, `GNSS dumpsys shizuku`。
 - 每一轮追踪：项目链接 → 明确源码文件/文档 → 当前 GoGoGo 对照 → 不兼容风险 → 可重复的只读试验 → 是否真正需要开发。
+
+
+## 第三轮（额外 3 个，合计 18 个）
+
+这轮的重点是 **不同安卓定位服务的分岔** 与 **客观日志格式**，不要把它误读成微信可以直接兼容。
+
+| 候选及证据 | 不明显的价值 | GoGoGo 对照结论 |
+|---|---|---|
+| [warren-bank/Android-Mock-Location](https://github.com/warren-bank/Android-Mock-Location) · [service 分支 README](https://github.com/warren-bank/Android-Mock-Location/blob/service/README.md) | 多种构建 flavor 分别覆盖 AOSP GPS/NETWORK/FUSED、Google Play Services FLP、**华为 HMS Location Kit**，并存在 **microG/UnifiedNlp backend** 变体。这比单纯“提供 GPS 坐标”的仓库更值得看。 | **A**（跨生态研究）：当前 GoGoGo 有 Android 与 GMS 路径；HMS/microG 仅是后续架构候选，需检查设备上是否实际安装相应服务、SDK 条款、授权和 Android 13 兼容性；不能把该项目 README 作为真机兼容证明。 |
+| [microg/android_external_UnifiedNlpApi](https://github.com/microg/android_external_UnifiedNlpApi) | 名字像普通 Android 外部 API 依赖，实际上包含 `LocationBackendService` 和 `GeocoderBackendService` 示例。它的 `update()/report()/onOpen()/onClose()` 描述了替代网络定位后端的请求与报告机制。 | **B**：了解非 GMS 手机上的网络定位路径和回调生命周期；不为不具备 UnifiedNlp 的手机盲目增加服务。 |
+| [barbeau/gpstest](https://github.com/barbeau/gpstest) · [LOGGING.md](https://github.com/barbeau/gpstest/blob/master/LOGGING.md) | 公认的 GNSS 诊断软件，但隐藏价值是**可对照的日志格式**：CSV Fix 行包含 Provider、精度、`elapsedRealtimeNanos`、Android 12+ 的 `MockLocation` 字段；同时可导出原始 GNSS、NMEA、Status 和方向数据。 | **A**（验证工具）：给 GoGoGo Consumer Matrix 设计更严谨的时间戳/Provider/Mock 来源对照表；只保存必要字段，敏感坐标必须经用户确认再导出。 |
+
+### 本轮最值得考虑的新方向
+
+- **多服务提供商矩阵**：`AOSP Provider` / `Google FLP` / `Huawei HMS` / `microG UnifiedNlp` 是不同接口/部署条件，不应简单互相替代。GoGoGo 当前验证重点仍是 Android 13 的 AOSP + 可用 GMS 路径；HMS 和 microG 暂列候选，不投入实现。
+- **客观定位证据格式**：使用 `source, provider, request_type, request_wall_time, callback_elapsedRealtimeNanos, result_age_ms, mock_flag, availability, sdk_error` 之类字段来区分新的回调、缓存、系统服务返回和应用 UI 变化。字段名仅为设计建议，不宣称已实现。
+- **先验证产品可用性，再扩大适配**：不为了项目数量把 GMS/HMS/microG 三套 SDK 全塞进 APK；先验证实际手机环境，再决定是否需要可选模块。
+- **警惕旧工程**：UnifiedNlp 示例和一些安卓插件长期未更新；API 概念可以研究，代码/依赖必须单独做版本、license 和安全审计。
+
+检索来源均为公开项目文档及仓库页面；未做第三方 App 内部运行行为验证。
 
 ## 后续验收的硬边界
 
