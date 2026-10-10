@@ -86,6 +86,14 @@ public final class LabHubActivity extends AppCompatActivity {
         root.addView(GoGoUi.navigationTile(this, "Consumer Matrix",
                 "对照 Android / GMS 的定位回调与新鲜度；不自动启动模拟",
                 v -> open(ConsumerLocationProbeActivity.class)), GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 8));
+        root.addView(GoGoUi.navigationTile(this, "被动快照（无定位请求）",
+                "只读 GPS / NETWORK / GMS 缓存，不触发新鲜定位或持续订阅",
+                v -> {
+                    Intent intent = new Intent(this, ConsumerLocationProbeActivity.class);
+                    intent.putExtra(ConsumerLocationProbeActivity.EXTRA_PASSIVE_MODE, true);
+                    startActivity(intent);
+                }), GoGoUi.matchWrap());
 
         root.addView(GoGoUi.gap(this, 20));
         root.addView(GoGoUi.sectionTitle(this, "按需展开其他工具"),
