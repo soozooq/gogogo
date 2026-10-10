@@ -320,7 +320,9 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
 
             TextView count = GoGoUi.muted(LabPlacePickerActivity.this,
                     entry.count + (favoritesOnly ? " 个收藏" : " 个城市"));
-            row.addView(count, GoGoUi.matchWrap());
+            row.addView(count, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            GoGoUi.addHorizontalGap(LabPlacePickerActivity.this, row, 8);
 
             MaterialButton toggle = GoGoUi.secondaryButton(LabPlacePickerActivity.this,
                     entry.expanded ? "−" : "+", v -> toggleCountry(entry.country));
