@@ -417,7 +417,7 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
             }
 
             holder.title.setText(LabPlaceCountries.flagOf(entry.country) + "  " + entry.country);
-            holder.count.setText(entry.count + (favoritesOnly ? "藏" : "城"));
+            holder.count.setText(entry.count + " 个");
             holder.toggle.setText(entry.expanded ? "−" : "+");
             holder.toggle.setContentDescription((entry.expanded ? "收起" : "展开")
                     + entry.country + "的" + entry.count + "个地点");
