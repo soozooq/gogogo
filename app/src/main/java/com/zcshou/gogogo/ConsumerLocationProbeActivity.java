@@ -8,6 +8,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
@@ -29,6 +30,8 @@ import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.CancellationTokenSource;
 
 import java.util.Locale;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 
 /**
  * Lab 16 independent-process consumer probe.
@@ -38,6 +41,15 @@ import java.util.Locale;
  */
 public class ConsumerLocationProbeActivity extends AppCompatActivity {
     private static final int REQ_LOCATION = 8601;
+    public static final String EXTRA_PASSIVE_MODE = "com.zcshou.gogogo.PASSIVE_MODE";
+
+    private boolean passiveMode;
+    private TextView passiveHistoryView;
+    private final StringBuilder passiveHistory = new StringBuilder();
+    private int passiveShotNumber = 0;
+    private int passiveHistoryEpoch = 0;
+    private final Channel passiveGps = new Channel("GPS lastKnownLocation", false);
+    private final Channel passiveNetwork = new Channel("NETWORK lastKnownLocation", false);
 
     private TextView statusView;
     private TextView frameworkView;
@@ -85,6 +97,8 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Intent intent = getIntent();
+        passiveMode = intent != null && intent.getBooleanExtra(EXTRA_PASSIVE_MODE, false);
         buildUi();
 
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
@@ -114,12 +128,15 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
 
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
-        TextView title = GoGoUi.sectionTitle(this, "Consumer Compatibility Matrix");
+        TextView title = GoGoUi.sectionTitle(this, passiveMode
+                ? "被动快照 · 无主动定位请求" : "Consumer Compatibility Matrix");
         title.setTextSize(20);
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title, GoGoUi.matchWrap());
         titleBlock.addView(
-                GoGoUi.muted(this, "Lab 16 + Lab 30 · 独立进程位置消费者 / 双年龄诊断"),
+                GoGoUi.muted(this, passiveMode
+                        ? "只读系统与 GMS 缓存 · 不启动监听或新鲜定位"
+                        : "Lab 16 + Lab 30 · 独立进程位置消费者 / 双年龄诊断"),
                 GoGoUi.matchWrap());
         appBar.addView(titleBlock, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
@@ -129,13 +146,22 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
         LinearLayout statusContent = GoGoUi.cardContent(this);
         statusCard.addView(statusContent);
         statusContent.addView(GoGoUi.sectionTitle(this, "消费者状态"), GoGoUi.matchWrap());
-        statusView = GoGoUi.status(this, "正在启动消费者探针…");
+        statusView = GoGoUi.status(this, passiveMode
+                ? "被动模式：本页不主动获取新位置；缓存可能被其他应用更新"
+                : "正在启动消费者探针…");
         statusContent.addView(statusView, GoGoUi.matchWrap());
         statusContent.addView(GoGoUi.gap(this, 10));
 
         LinearLayout actions = GoGoUi.row(this);
         actions.addView(
-                GoGoUi.secondaryButton(this, "刷新 One-shot", v -> requestOneShots()),
+                GoGoUi.secondaryButton(this, passiveMode ? "再拍一张快照" : "刷新 One-shot",
+                        v -> {
+                            if (passiveMode) {
+                                takePassiveSnapshot();
+                            } else {
+                                requestOneShots();
+                            }
+                        }),
                 GoGoUi.weighted());
         GoGoUi.addHorizontalGap(this, actions, 8);
         actions.addView(
@@ -166,6 +192,18 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
         gmsContent.addView(gmsView, GoGoUi.matchWrap());
         GoGoUi.addCard(root, gmsCard, 12);
 
+        if (passiveMode) {
+            com.google.android.material.card.MaterialCardView historyCard = GoGoUi.card(this);
+            LinearLayout historyContent = GoGoUi.cardContent(this);
+            historyCard.addView(historyContent);
+            historyContent.addView(GoGoUi.sectionTitle(this, "快照历史（仅本页面）"),
+                    GoGoUi.matchWrap());
+            passiveHistoryView = GoGoUi.muted(this, "尚未读取");
+            passiveHistoryView.setTextIsSelectable(true);
+            historyContent.addView(passiveHistoryView, GoGoUi.matchWrap());
+            GoGoUi.addCard(root, historyCard, 12);
+        }
+
         com.google.android.material.card.MaterialCardView compareCard = GoGoUi.card(this);
         LinearLayout compareContent = GoGoUi.cardContent(this);
         compareCard.addView(compareContent);
@@ -185,9 +223,13 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                 GoGoUi.matchWrap());
         noteView = GoGoUi.muted(
                 this,
-                "本页运行在独立 :consumer 进程，只通过公开 LocationManager / "
-                        + "FusedLocationProviderClient API 取位置。系统返回的 isMock 标记仅用于诊断，"
-                        + "GoGoGo 不会尝试隐藏或修改该标记，也不会注入其他 App 进程。");
+                passiveMode
+                        ? "仅查询 getLastKnownLocation / getLastLocation 缓存；"
+                            + "不注册持续监听、不调用 getCurrentLocation。"
+                            + "外部系统或应用仍可能更新缓存；无定位图标不等于缓存未变化。"
+                        : "本页运行在独立 :consumer 进程，只通过公开 LocationManager / "
+                            + "FusedLocationProviderClient API 取位置。系统返回的 isMock 标记仅用于诊断，"
+                            + "GoGoGo 不会尝试隐藏或修改该标记，也不会注入其他 App 进程。");
         noteContent.addView(noteView, GoGoUi.matchWrap());
         GoGoUi.addCard(root, noteCard, 12);
 
@@ -199,7 +241,11 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                 == PackageManager.PERMISSION_GRANTED
                 || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
-            startConsumers();
+            if (passiveMode) {
+                takePassiveSnapshot();
+            } else {
+                startConsumers();
+            }
             return;
         }
 
@@ -219,8 +265,107 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
             int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQ_LOCATION) {
-            ensurePermissionAndStart();
+            boolean granted = false;
+            for (int result : grantResults) {
+                if (result == PackageManager.PERMISSION_GRANTED) granted = true;
+            }
+            if (granted) {
+                ensurePermissionAndStart();
+            } else if (passiveMode) {
+                statusView.setText("缺少定位权限；被动缓存读取未执行");
+            } else {
+                ensurePermissionAndStart();
+            }
         }
+    }
+
+    /**
+     * One passive shot reads only existing cache entries. This must not route
+     * through startConsumers(), which subscribes to live streams.
+     */
+    @SuppressLint("MissingPermission")
+    private void takePassiveSnapshot() {
+        if (!passiveMode) return;
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ensurePermissionAndStart();
+            return;
+        }
+
+        final int shot = ++passiveShotNumber;
+        final int epoch = passiveHistoryEpoch;
+        passiveGps.clear();
+        passiveNetwork.clear();
+        gmsLast.clear();
+        statusView.setText("被动快照 #" + shot
+                + " · 仅查已有缓存；不注册定位监听");
+
+        readPassiveFramework(shot, epoch, LocationManager.GPS_PROVIDER, passiveGps);
+        readPassiveFramework(shot, epoch, LocationManager.NETWORK_PROVIDER, passiveNetwork);
+
+        if (fusedClient == null) {
+            recordPassiveResult(shot, epoch, gmsLast, null, "CLIENT_UNAVAILABLE");
+            return;
+        }
+        try {
+            fusedClient.getLastLocation()
+                    .addOnSuccessListener(location ->
+                            recordPassiveResult(shot, epoch, gmsLast, location,
+                                    location == null ? "NULL" : ""))
+                    .addOnFailureListener(error ->
+                            recordPassiveResult(shot, epoch, gmsLast, null,
+                                    error.getClass().getSimpleName()));
+        } catch (Throwable error) {
+            recordPassiveResult(shot, epoch, gmsLast, null,
+                    error.getClass().getSimpleName());
+        }
+        render();
+    }
+
+    @SuppressLint("MissingPermission")
+    private void readPassiveFramework(int shot, int epoch,
+                                      String provider, Channel channel) {
+        try {
+            if (locationManager == null) {
+                recordPassiveResult(shot, epoch, channel, null, "MANAGER_UNAVAILABLE");
+                return;
+            }
+            Location location = locationManager.getLastKnownLocation(provider);
+            recordPassiveResult(shot, epoch, channel, location,
+                    location == null ? "NULL" : "");
+        } catch (Throwable error) {
+            recordPassiveResult(shot, epoch, channel, null,
+                    error.getClass().getSimpleName());
+        }
+    }
+
+    private void recordPassiveResult(int shot, int epoch, Channel channel,
+                                     Location location, String error) {
+        // Clear Results invalidates outstanding asynchronous completions.
+        if (epoch != passiveHistoryEpoch || !passiveMode) return;
+
+        final long completedElapsed = SystemClock.elapsedRealtime();
+        Channel sample = new Channel(channel.name, false);
+        if (location != null) sample.update(location);
+        else sample.error = error;
+        sample.completedElapsedMs = completedElapsed;
+
+        if (shot == passiveShotNumber) {
+            if (location != null) channel.update(location);
+            else channel.error = error;
+            channel.completedElapsedMs = completedElapsed;
+        }
+
+        String completedClock = new SimpleDateFormat(
+                "HH:mm:ss.SSS", Locale.getDefault()).format(new Date());
+        passiveHistory.append("#").append(shot).append(" · ")
+                .append(completedClock).append(" · completionElapsed=")
+                .append(completedElapsed).append(" ms\n")
+                .append(sample.render()).append("\n\n");
+        if (passiveHistoryView != null) passiveHistoryView.setText(passiveHistory);
+        render();
     }
 
     @SuppressLint("MissingPermission")
@@ -353,6 +498,15 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
     }
 
     private void clearChannels() {
+        if (passiveMode) {
+            ++passiveHistoryEpoch;
+            passiveShotNumber = 0;
+            passiveGps.clear();
+            passiveNetwork.clear();
+            passiveHistory.setLength(0);
+            if (passiveHistoryView != null) passiveHistoryView.setText("历史已清空");
+            statusView.setText("被动历史已清空 · 可再次拍摄快照");
+        }
         gps.clear();
         network.clear();
         gmsLast.clear();
@@ -362,6 +516,14 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
     }
 
     private void render() {
+        if (passiveMode) {
+            frameworkView.setText(passiveGps.render() + "\n\n"
+                    + passiveNetwork.render());
+            gmsView.setText(gmsLast.render());
+            comparisonView.setText("被动模式：仅显示缓存，不评估实时流或新鲜定位。"
+                    + "样本 fixAge 随时间增长，不保证其他进程不会更新缓存。");
+            return;
+        }
         frameworkView.setText(
                 gps.render() + "\n\n" + network.render());
 
@@ -459,6 +621,7 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
         final boolean stream;
         Location location;
         long receivedElapsedMs = -1L;
+        long completedElapsedMs = -1L;
         long count = 0L;
         String error = "";
 
@@ -478,6 +641,7 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
         void clear() {
             location = null;
             receivedElapsedMs = -1L;
+            completedElapsedMs = -1L;
             count = 0L;
             error = "";
         }
@@ -521,10 +685,12 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
         String render() {
             if (location == null) {
                 return name + ": NO SAMPLE"
-                        + (error.isEmpty() ? "" : " · " + error);
+                        + (error.isEmpty() ? "" : " · " + error)
+                        + (completedElapsedMs < 0L ? ""
+                            : " · completedElapsed=" + completedElapsedMs + " ms");
             }
 
-            return String.format(Locale.US,
+            String content = String.format(Locale.US,
                     "%s [%s]\n"
                             + "  %.7f, %.7f\n"
                             + "  acc %.1f m · speed %.2f m/s · bearing %.1f°\n"
@@ -542,6 +708,8 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                     displayAge(callbackAgeMs()),
                     count,
                     isMock() ? "YES" : "NO");
+            return content + (completedElapsedMs < 0L ? ""
+                    : "\n  completedElapsed=" + completedElapsedMs + " ms");
         }
     }
 }
