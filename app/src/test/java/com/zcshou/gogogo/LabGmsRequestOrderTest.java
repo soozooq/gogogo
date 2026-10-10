@@ -123,6 +123,27 @@ public class LabGmsRequestOrderTest {
         assertFalse(LabRecoveryTriage.render(snapshot).contains("次旧服务补发"));
     }
 
+    @Test public void normalStopMayDisableOnlyWhileOwningCurrentRequest() {
+        long activeServiceRequest = 501L;
+        assertTrue(LabGmsRequestOrder.mayRetryLateEnable(
+                activeServiceRequest, activeServiceRequest));
+    }
+
+    @Test public void olderServiceNormalStopMustNotOverrideNewServiceBarrier() {
+        long oldEnable = 700L;
+        long newServiceBarrier = LabGmsRequestOrder.next(oldEnable);
+        assertFalse(LabGmsRequestOrder.mayRetryLateEnable(
+                oldEnable, newServiceBarrier));
+    }
+
+    @Test public void olderServiceNormalStopMustNotOverrideNewEnableRequest() {
+        long oldEnable = 700L;
+        long barrier = LabGmsRequestOrder.next(oldEnable);
+        long newEnable = LabGmsRequestOrder.next(barrier);
+        assertFalse(LabGmsRequestOrder.mayRetryLateEnable(
+                oldEnable, newEnable));
+    }
+
     @Test public void overflowResetsRequestCounter() {
         assertEquals(1L, LabGmsRequestOrder.next(Long.MAX_VALUE));
     }
