@@ -305,12 +305,48 @@ public final class LabProviderReliabilityController {
      * separately so an unobserved or failed reset is never reported as clean.
      * No coordinates or remote SDK payloads are stored.
      */
+    /**
+     * Compatibility entry point for events without an asynchronous Task.
+     * Advances the sequence so an older Task cannot overwrite this evidence.
+     */
     public static void recordGmsEvent(Context context, String event) {
-        context.getApplicationContext().getSharedPreferences(AUDIT_PREFS, Context.MODE_PRIVATE)
-                .edit()
+        beginGmsRequest(context, event);
+    }
+
+    /** Persist request creation BEFORE issuing an asynchronous GMS Task. */
+    public static synchronized long beginGmsRequest(Context context, String event) {
+        SharedPreferences p = context.getApplicationContext()
+                .getSharedPreferences(AUDIT_PREFS, Context.MODE_PRIVATE);
+        long requestId = LabGmsRequestOrder.next(p.getLong("gms_request_seq", 0L));
+        p.edit()
+                .putLong("gms_request_seq", requestId)
                 .putString("gms_last_event", event)
                 .putLong("gms_last_at", System.currentTimeMillis())
                 .commit();
+        return requestId;
+    }
+
+    /**
+     * Accept only a result for the most recently initiated request. A late
+     * callback may be diagnostically interesting, but must not replace the
+     * status of a newer request (including one from another ServiceGo instance).
+     */
+    public static synchronized boolean finishGmsRequest(
+            Context context, long requestId, String event) {
+        SharedPreferences p = context.getApplicationContext()
+                .getSharedPreferences(AUDIT_PREFS, Context.MODE_PRIVATE);
+        if (!LabGmsRequestOrder.isCurrent(requestId,
+                p.getLong("gms_request_seq", 0L))) {
+            p.edit().putLong("gms_late_callback_count",
+                            p.getLong("gms_late_callback_count", 0L) + 1L)
+                    .putLong("gms_late_callback_at", System.currentTimeMillis())
+                    .commit();
+            return false;
+        }
+        p.edit().putString("gms_last_event", event)
+                .putLong("gms_last_at", System.currentTimeMillis())
+                .commit();
+        return true;
     }
 
     /** Visible in Lab Diagnostics even after ServiceGo was force-stopped. */
@@ -324,6 +360,9 @@ public final class LabProviderReliabilityController {
                 .append(p.getString("gms_last_event", "NOT_RECORDED"))
                 .append(" @ ").append(formatTime(p.getLong("gms_last_at", 0L)))
                 .append('\n');
+        out.append("GMS 已忽略的过期异步回调次数: ")
+                .append(p.getLong("gms_late_callback_count", 0L))
+                .append("（只影响审计记录，不代表 GMS 已修复）").append('\n');
         long opAt = p.getLong("appops_changed_at", 0L);
         if (opAt > 0L) {
             out.append("最近 AppOps 事件: ").append(p.getString("appops_last", "UNKNOWN"))
