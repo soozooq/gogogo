@@ -29,6 +29,8 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.zcshou.service.ServiceGo;
@@ -124,6 +126,32 @@ public class LabMapActivity extends AppCompatActivity {
     private long[] pendingExportTimes;
 
     private final Handler uiHandler = new Handler(Looper.getMainLooper());
+
+    private final ActivityResultLauncher<Intent> placePicker =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        if (result.getResultCode() != Activity.RESULT_OK
+                                || result.getData() == null) return;
+                        Intent data = result.getData();
+                        if (!data.hasExtra(LabPlacePickerActivity.EXTRA_LONGITUDE)
+                                || !data.hasExtra(LabPlacePickerActivity.EXTRA_LATITUDE)) return;
+                        try {
+                            LabHomeCoordinates.Point selected = LabHomeCoordinates.parse(
+                                    Double.toString(data.getDoubleExtra(
+                                            LabPlacePickerActivity.EXTRA_LONGITUDE, Double.NaN)),
+                                    Double.toString(data.getDoubleExtra(
+                                            LabPlacePickerActivity.EXTRA_LATITUDE, Double.NaN)));
+                            LatLng point = new LatLng(selected.latitude, selected.longitude);
+                            selectPoint(point, false);
+                            if (map != null) {
+                                map.animateCamera(CameraUpdateFactory.newLatLngZoom(point, 12.5));
+                            }
+                            Toast.makeText(this, "已选择地点 · 点击「模拟这里」才会启动",
+                                    Toast.LENGTH_SHORT).show();
+                        } catch (IllegalArgumentException invalid) {
+                            Toast.makeText(this, "地点坐标无效，未切换", Toast.LENGTH_SHORT).show();
+                        }
+                    });
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
@@ -370,7 +398,7 @@ public class LabMapActivity extends AppCompatActivity {
                 "MapLibre Demo",
                 "导入 PMTiles",
                 "离线地图管理",
-                "🌏 快捷跳转国家 / 城市",
+                "🌏 搜索国家 / 城市 · 收藏",
                 "查看位置来源链",
                 "清空位置来源链"
         };
@@ -670,20 +698,7 @@ public class LabMapActivity extends AppCompatActivity {
     }
 
     private void showLocationPresets() {
-        new AlertDialog.Builder(this)
-                .setTitle("地图跳转 · 国家 / 城市（WGS-84）")
-                .setItems(LabLocationPresets.labels(), (dialog, index) -> {
-                    LabLocationPresets.Preset p = LabLocationPresets.get(index);
-                    LatLng chosen = new LatLng(p.latitude, p.longitude);
-                    selectPoint(chosen, false);
-                    if (map != null) {
-                        map.animateCamera(CameraUpdateFactory.newLatLngZoom(chosen, 12.5));
-                    }
-                    Toast.makeText(this, "已选：" + p.name
-                            + " · 点击「模拟这里」才会启动", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("取消", null)
-                .show();
+        placePicker.launch(new Intent(this, LabPlacePickerActivity.class));
     }
 
     private void selectPoint(LatLng point, boolean moveCamera) {
