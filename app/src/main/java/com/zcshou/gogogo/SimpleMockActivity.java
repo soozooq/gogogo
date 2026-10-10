@@ -54,13 +54,28 @@ public class SimpleMockActivity extends AppCompatActivity {
     private TextView diagnosticView;
     private TextView publicIpView;
     private LinearLayout diagnosticDetails;
+    private LinearLayout homeToolsPanel;
+    private com.google.android.material.button.MaterialButton homeToolsToggle;
+    private boolean homeToolsExpanded = false;
+    private boolean diagnosticsLoaded = false;
+    private static final String HOME_TOOLS_EXPANDED = "gogogo.home.tools.expanded";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        homeToolsExpanded = savedInstanceState != null
+                && savedInstanceState.getBoolean(HOME_TOOLS_EXPANDED, false);
         buildUi();
         ensureLocationPermission();
-        refreshDiagnostics();
+        // Detailed diagnostics can involve asynchronous GMS and radio reads.
+        // Never run them just because the app was launched.
+        if (homeToolsExpanded) refreshDiagnostics();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putBoolean(HOME_TOOLS_EXPANDED, homeToolsExpanded);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -184,7 +199,20 @@ public class SimpleMockActivity extends AppCompatActivity {
                 v -> startActivity(new Intent(this, LabHubActivity.class))),
                 GoGoUi.matchWrap());
 
-        // Diagnostics card
+        // One optional disclosure replaces a second always-visible home card.
+        // Everything below remains available but costs no diagnostic reads
+        // until the user intentionally opens it.
+        root.addView(GoGoUi.gap(this, 16));
+        homeToolsToggle = GoGoUi.secondaryButton(this, "", v -> setHomeToolsExpanded(
+                !homeToolsExpanded));
+        root.addView(homeToolsToggle, GoGoUi.matchWrap());
+        homeToolsPanel = new LinearLayout(this);
+        homeToolsPanel.setOrientation(LinearLayout.VERTICAL);
+        homeToolsPanel.addView(GoGoUi.gap(this, 8));
+        root.addView(homeToolsPanel, GoGoUi.matchWrap());
+
+        // Existing system tools and rich diagnostics are preserved inside
+        // the optional disclosure, not duplicated in another Activity.
         com.google.android.material.card.MaterialCardView diagCard = GoGoUi.card(this);
         LinearLayout diagContent = GoGoUi.cardContent(this);
         diagCard.addView(diagContent);
@@ -232,7 +260,8 @@ public class SimpleMockActivity extends AppCompatActivity {
         diagContent.addView(detailsButton, GoGoUi.matchWrap());
         diagContent.addView(diagnosticDetails, GoGoUi.matchWrap());
 
-        GoGoUi.addCard(root, diagCard, 14);
+        GoGoUi.addCard(homeToolsPanel, diagCard, 14);
+        updateHomeToolsDisclosure();
 
         TextView footer = GoGoUi.muted(
                 this,
@@ -242,6 +271,34 @@ public class SimpleMockActivity extends AppCompatActivity {
         root.addView(footer, GoGoUi.matchWrap());
 
         setContentView(scroll);
+    }
+
+    private void setHomeToolsExpanded(boolean expanded) {
+        homeToolsExpanded = expanded;
+        updateHomeToolsDisclosure();
+        if (expanded && !diagnosticsLoaded) {
+            refreshDiagnostics();
+        }
+    }
+
+    private void updateHomeToolsDisclosure() {
+        if (homeToolsPanel == null || homeToolsToggle == null) return;
+        homeToolsPanel.setVisibility(homeToolsExpanded
+                ? android.view.View.VISIBLE : android.view.View.GONE);
+        homeToolsToggle.setText(homeToolsExpanded
+                ? "▴ 收起设备设置与自检" : "▾ 展开设备设置与自检");
+        homeToolsToggle.setContentDescription(homeToolsExpanded
+                ? "设备设置与自检，已展开，点击收起"
+                : "设备设置与自检，已收起，点击展开");
+    }
+
+    private void scheduleOptionalDiagnostics(long delayMs) {
+        if (!homeToolsExpanded || diagnosticView == null) return;
+        diagnosticView.postDelayed(() -> {
+            if (homeToolsExpanded && !isFinishing() && !isDestroyed()) {
+                refreshDiagnostics();
+            }
+        }, delayMs);
     }
 
     private void showLocationPresets() {
@@ -263,14 +320,12 @@ public class SimpleMockActivity extends AppCompatActivity {
         // Carry a manually edited or preset coordinate to the map as a
         // starting viewport only. Opening the map never starts the mock.
         try {
-            double lng = Double.parseDouble(longitudeInput.getText().toString().trim());
-            double lat = Double.parseDouble(latitudeInput.getText().toString().trim());
-            if (Double.isFinite(lng) && Double.isFinite(lat)
-                    && lng >= -180 && lng <= 180 && lat >= -90 && lat <= 90) {
-                intent.putExtra(LabMapActivity.EXTRA_START_LONGITUDE, lng);
-                intent.putExtra(LabMapActivity.EXTRA_START_LATITUDE, lat);
-            }
-        } catch (NumberFormatException ignored) {
+            LabHomeCoordinates.Point point = LabHomeCoordinates.parse(
+                    longitudeInput.getText().toString(),
+                    latitudeInput.getText().toString());
+            intent.putExtra(LabMapActivity.EXTRA_START_LONGITUDE, point.longitude);
+            intent.putExtra(LabMapActivity.EXTRA_START_LATITUDE, point.latitude);
+        } catch (IllegalArgumentException ignored) {
             // MapLibre falls back to Myawaddy when the home input is invalid.
         }
         startActivity(intent);
@@ -383,15 +438,13 @@ public class SimpleMockActivity extends AppCompatActivity {
         final double lng;
         final double lat;
         try {
-            lng = Double.parseDouble(longitudeInput.getText().toString().trim());
-            lat = Double.parseDouble(latitudeInput.getText().toString().trim());
-        } catch (Exception e) {
-            showHomeStatus("状态：坐标格式不正确", GoGoUi.StatusTone.ERROR);
-            return;
-        }
-
-        if (lng < -180.0 || lng > 180.0 || lat < -90.0 || lat > 90.0) {
-            showHomeStatus("状态：坐标超出范围", GoGoUi.StatusTone.ERROR);
+            LabHomeCoordinates.Point point = LabHomeCoordinates.parse(
+                    longitudeInput.getText().toString(),
+                    latitudeInput.getText().toString());
+            lng = point.longitude;
+            lat = point.latitude;
+        } catch (IllegalArgumentException invalid) {
+            showHomeStatus("状态：" + invalid.getMessage(), GoGoUi.StatusTone.ERROR);
             return;
         }
 
@@ -431,13 +484,13 @@ public class SimpleMockActivity extends AppCompatActivity {
         showHomeStatus("状态：已请求启动模拟服务\n经度 " + lng + "\n纬度 "
                 + lat + wifiWarning, wifiWarning.isEmpty()
                 ? GoGoUi.StatusTone.INFO : GoGoUi.StatusTone.WARNING);
-        diagnosticView.postDelayed(this::refreshDiagnostics, 1200);
+        scheduleOptionalDiagnostics(1200);
     }
 
     private void stopMock() {
         stopService(new Intent(this, ServiceGo.class));
         showHomeStatus("状态：已请求停止服务 · 状态稍后刷新", GoGoUi.StatusTone.INFO);
-        diagnosticView.postDelayed(this::refreshDiagnostics, 500);
+        scheduleOptionalDiagnostics(500);
     }
 
     private void openScanningSettings() {
@@ -489,7 +542,8 @@ public class SimpleMockActivity extends AppCompatActivity {
     }
 
     private void refreshDiagnostics() {
-        if (diagnosticView == null) return;
+        if (diagnosticView == null || !homeToolsExpanded) return;
+        diagnosticsLoaded = true;
 
         StringBuilder sb = new StringBuilder();
         LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
