@@ -1,17 +1,12 @@
 package com.zcshou.gogogo;
 
-import android.Manifest;
-import android.app.AppOpsManager;
+import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.location.LocationManager;
-import android.os.Build;
+import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.Process;
-import android.provider.Settings;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -19,17 +14,17 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.zcshou.service.ServiceGo;
-
-import rikka.shizuku.Shizuku;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * One-tap, read-only readiness overview. Opening this activity must not start
  * or stop simulation, probe third-party apps, or request Shizuku authorization.
  */
 public final class LabQuickCheckActivity extends AppCompatActivity {
+    private static final String COMBINED_PREFS = "lab33_combined_diagnostic_baseline";
     private TextView reportView;
-    private String safeSummary = "";
 
     @Override
     protected void onCreate(Bundle state) {
@@ -72,8 +67,14 @@ public final class LabQuickCheckActivity extends AppCompatActivity {
         root.addView(GoGoUi.primaryButton(this, "↻ 重新检测", v -> refreshSummary()),
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 8));
-        root.addView(GoGoUi.secondaryButton(this, "复制隐私精简摘要", v -> copySummary()),
-                GoGoUi.matchWrap());
+        root.addView(GoGoUi.secondaryButton(this, "查看 / 复制综合排障报告",
+                v -> showCombinedReport()), GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 8));
+        root.addView(GoGoUi.secondaryButton(this, "保存本次排障基准",
+                v -> saveCombinedBaseline()), GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 8));
+        root.addView(GoGoUi.secondaryButton(this, "与上次基准对比",
+                v -> compareCombinedBaseline()), GoGoUi.matchWrap());
 
         root.addView(GoGoUi.gap(this, 18));
         root.addView(GoGoUi.sectionTitle(this, "需要进一步排查？"),
@@ -91,7 +92,8 @@ public final class LabQuickCheckActivity extends AppCompatActivity {
                 v -> open(ConsumerLocationProbeActivity.class)), GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 16));
         root.addView(GoGoUi.muted(this,
-                "复制前可先检查摘要。复制内容会暂存到系统剪贴板；快检不包含私人位置与网络标识。"),
+                "Lab 33：综合报告合并基础授权与异常退出历史。"
+                + "查看、保存和复制都由你手动触发；不包含坐标、IP、SSID 或原始系统日志。"),
                 GoGoUi.matchWrap());
         setContentView(scroll);
     }
@@ -100,81 +102,83 @@ public final class LabQuickCheckActivity extends AppCompatActivity {
         startActivity(new Intent(this, activity));
     }
 
-    private LabQuickCheckReport.Signal permission(String permission) {
-        try {
-            return checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED
-                    ? LabQuickCheckReport.Signal.YES
-                    : LabQuickCheckReport.Signal.NO;
-        } catch (RuntimeException ignored) {
-            return LabQuickCheckReport.Signal.UNKNOWN;
-        }
-    }
-
-    private LabQuickCheckReport.Signal locationEnabled() {
-        try {
-            LocationManager manager =
-                    (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            if (manager == null) return LabQuickCheckReport.Signal.UNKNOWN;
-            boolean enabled;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                enabled = manager.isLocationEnabled();
-            } else {
-                enabled = Settings.Secure.getInt(getContentResolver(),
-                        Settings.Secure.LOCATION_MODE, Settings.Secure.LOCATION_MODE_OFF)
-                        != Settings.Secure.LOCATION_MODE_OFF;
-            }
-            return enabled ? LabQuickCheckReport.Signal.YES : LabQuickCheckReport.Signal.NO;
-        } catch (RuntimeException ignored) {
-            return LabQuickCheckReport.Signal.UNKNOWN;
-        }
-    }
-
-    private LabQuickCheckReport.Signal mockAllowed() {
-        try {
-            AppOpsManager appOps =
-                    (AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
-            if (appOps == null) return LabQuickCheckReport.Signal.UNKNOWN;
-            int mode = appOps.checkOpNoThrow(
-                    AppOpsManager.OPSTR_MOCK_LOCATION, Process.myUid(), getPackageName());
-            if (mode == AppOpsManager.MODE_ALLOWED) return LabQuickCheckReport.Signal.YES;
-            if (mode == AppOpsManager.MODE_IGNORED || mode == AppOpsManager.MODE_ERRORED) {
-                return LabQuickCheckReport.Signal.NO;
-            }
-            return LabQuickCheckReport.Signal.UNKNOWN;
-        } catch (RuntimeException ignored) {
-            return LabQuickCheckReport.Signal.UNKNOWN;
-        }
-    }
-
-    private LabQuickCheckReport.Signal shizukuBinder() {
-        try {
-            return Shizuku.pingBinder()
-                    ? LabQuickCheckReport.Signal.YES
-                    : LabQuickCheckReport.Signal.NO;
-        } catch (Throwable ignored) {
-            return LabQuickCheckReport.Signal.UNKNOWN;
-        }
-    }
-
     private void refreshSummary() {
-        LabQuickCheckReport.Snapshot snapshot = new LabQuickCheckReport.Snapshot(
-                Build.VERSION.SDK_INT, locationEnabled(),
-                permission(Manifest.permission.ACCESS_FINE_LOCATION),
-                permission(Manifest.permission.ACCESS_COARSE_LOCATION),
-                mockAllowed(), shizukuBinder(), ServiceGo.sRunning);
-        safeSummary = LabQuickCheckReport.render(snapshot);
-        reportView.setText(safeSummary);
+        reportView.setText(LabQuickCheckReport.render(LabQuickCheckReader.read(this)));
     }
 
-    private void copySummary() {
-        if (safeSummary.isEmpty()) refreshSummary();
+    private String currentCombinedReport() {
+        // Snapshot is read at action time; no stale text from previous onResume.
+        return Lab33DiagnosticBundle.render(
+                LabQuickCheckReader.read(this),
+                LabRecoveryEvidenceReader.read(this));
+    }
+
+    private SharedPreferences baselinePrefs() {
+        return getSharedPreferences(COMBINED_PREFS, MODE_PRIVATE);
+    }
+
+    private void showCombinedReport() {
+        String report = currentCombinedReport();
+        TextView text = GoGoUi.reportPanel(this);
+        text.setTextIsSelectable(true);
+        text.setText(report);
+        ScrollView scroll = new ScrollView(this);
+        scroll.setFillViewport(true);
+        scroll.addView(text);
+        new AlertDialog.Builder(this)
+                .setTitle("Lab 33 · 综合排障摘要")
+                .setView(scroll)
+                .setPositiveButton("关闭", null)
+                .setNeutralButton("复制报告", (dialog, which) -> copyReport(report))
+                .show();
+    }
+
+    private void saveCombinedBaseline() {
+        String report = currentCombinedReport();
+        if (!baselinePrefs().edit()
+                .putString("baseline", report)
+                .putLong("baseline_at", System.currentTimeMillis())
+                .commit()) {
+            Toast.makeText(this, "保存基准失败", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Toast.makeText(this, "基准报告已保存在本应用内", Toast.LENGTH_SHORT).show();
+    }
+
+    private void compareCombinedBaseline() {
+        SharedPreferences prefs = baselinePrefs();
+        String baseline = prefs.getString("baseline", null);
+        if (baseline == null) {
+            Toast.makeText(this, "先点击「保存本次排障基准」", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String now = currentCombinedReport();
+        long savedAt = prefs.getLong("baseline_at", 0L);
+        String date = savedAt > 0L
+                ? new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                .format(new Date(savedAt)) : "未知";
+        String diff = "基准保存时间：" + date + "\n\n"
+                + Lab33DiagnosticBundle.compare(baseline, now);
+        TextView text = GoGoUi.reportPanel(this);
+        text.setTextIsSelectable(true);
+        text.setText(diff);
+        ScrollView scroll = new ScrollView(this);
+        scroll.addView(text);
+        new AlertDialog.Builder(this)
+                .setTitle("Lab 33 · 前后变化")
+                .setView(scroll)
+                .setPositiveButton("关闭", null)
+                .show();
+    }
+
+    private void copyReport(String report) {
         ClipboardManager clipboard =
                 (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
         if (clipboard == null) {
             Toast.makeText(this, "剪贴板不可用", Toast.LENGTH_SHORT).show();
             return;
         }
-        clipboard.setPrimaryClip(ClipData.newPlainText("GoGoGo 基础快检", safeSummary));
-        Toast.makeText(this, "已复制隐私精简摘要", Toast.LENGTH_SHORT).show();
+        clipboard.setPrimaryClip(ClipData.newPlainText("GoGoGo Lab 33 排障报告", report));
+        Toast.makeText(this, "已复制隐私精简综合报告", Toast.LENGTH_SHORT).show();
     }
 }
