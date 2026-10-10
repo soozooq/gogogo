@@ -404,9 +404,11 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
     private void jumpToLetter(String letter) {
         Integer headerPosition = letterAnchors.get(letter);
         if (headerPosition == null || resultsList == null) return;
+        // Even tapping the same letter again must jump back after the user
+        // manually scrolls away from that letter's country section.
+        resultsList.setSelectionFromTop(headerPosition, 0);
         if (letter.equals(selectedRailLetter)) return;
         selectedRailLetter = letter;
-        resultsList.setSelectionFromTop(headerPosition, 0);
         alphabetScroll.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         resultsLabel.setText("已跳至 " + letter + " · 选择国家后可展开城市");
         renderSelectedRailLetter();
