@@ -94,6 +94,11 @@ public class SimpleMockActivity extends AppCompatActivity {
                                             ? "已从地图填入坐标 · 当前运行的模拟未改变；点击「开始模拟」才会应用"
                                             : "已从地图填入坐标 · 尚未启动模拟",
                                     GoGoUi.StatusTone.INFO);
+                            Toast.makeText(this,
+                                    ServiceGo.sRunning
+                                            ? "地图坐标已填入首页；当前运行的模拟未修改"
+                                            : "地图坐标已填入首页；未自动启动模拟",
+                                    Toast.LENGTH_SHORT).show();
                         } catch (IllegalArgumentException invalid) {
                             showHomeStatus("地图返回的坐标无效，已忽略",
                                     GoGoUi.StatusTone.WARNING);
