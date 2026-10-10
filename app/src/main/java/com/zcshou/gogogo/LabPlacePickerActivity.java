@@ -328,9 +328,8 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
     // inside every ListView.getView() causes repeated disk-backed parses.
     private boolean isFavoriteInSnapshot(PlaceOption option) {
         for (LabStore.SavedPoint saved : favoriteSnapshot) {
-            if (Double.isFinite(saved.longitude) && Double.isFinite(saved.latitude)
-                    && Math.abs(saved.longitude - option.longitude) < 0.000001
-                    && Math.abs(saved.latitude - option.latitude) < 0.000001) {
+            if (LabPlaceCoordinateMatch.same(saved.longitude, saved.latitude,
+                    option.longitude, option.latitude)) {
                 return true;
             }
         }
