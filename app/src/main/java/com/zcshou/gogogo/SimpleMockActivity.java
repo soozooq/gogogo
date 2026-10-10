@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.app.AppOpsManager;
 import android.app.AlertDialog;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -511,7 +512,15 @@ public class SimpleMockActivity extends AppCompatActivity {
     }
 
     private void startMock() {
-        ensureLocationPermission();
+        // Permission request is asynchronous: do not immediately launch a
+        // foreground location service while permission is still denied.
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            ensureLocationPermission();
+            showHomeStatus("请先授予精确定位权限，授权后再点击「开始模拟」",
+                    GoGoUi.StatusTone.WARNING);
+            return;
+        }
 
         final double lng;
         final double lat;
@@ -545,10 +554,12 @@ public class SimpleMockActivity extends AppCompatActivity {
         intent.putExtra(MainActivity.ALT_MSG_ID, 55.0);
 
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(intent);
-            } else {
-                startService(intent);
+            ComponentName accepted = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    ? startForegroundService(intent) : startService(intent);
+            if (accepted == null) {
+                showHomeStatus("系统未确认启动请求，请检查后台服务限制",
+                        GoGoUi.StatusTone.WARNING);
+                return;
             }
         } catch (RuntimeException rejected) {
             pendingServiceRequest = LabHomeServiceStatus.Request.NONE;
