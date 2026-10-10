@@ -3,6 +3,8 @@ package com.zcshou.gogogo;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Locale;
 
@@ -147,6 +149,25 @@ public final class LabPlaceAlphabet {
         String pinyin = COUNTRY_PINYIN.get(country);
         // Unclassified custom favorites always sort after known countries.
         return pinyin == null ? "~" + safe(country) : pinyin;
+    }
+
+    /**
+     * Convert country headers into ListView adapter positions. The number of
+     * visible city rows is zero for collapsed groups; this protects alphabet
+     * jumps against variable amounts of expanded content.
+     */
+    public static Map<String, Integer> headerAnchors(
+            List<String> sortedCountries, Map<String, Integer> visibleCityCounts) {
+        Map<String, Integer> positions = new LinkedHashMap<>();
+        int row = 0;
+        for (String country : sortedCountries) {
+            String letter = initialOf(country);
+            if (!positions.containsKey(letter)) positions.put(letter, row);
+            Integer visible = visibleCityCounts.get(country);
+            int count = visible == null ? 0 : Math.max(0, visible);
+            row += 1 + count;
+        }
+        return positions;
     }
 
     private static String safe(String value) {
