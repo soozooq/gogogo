@@ -601,7 +601,7 @@ public class ServiceGo extends Service {
                                     this, enableRequestId, "LATE_ENABLE_AFTER_STOP");
                             // Do not let an obsolete ServiceGo issue a disable
                             // for a newly started service's GMS mock session.
-                            requestGmsMockDisable("LATE_ENABLE", true);
+                            requestGmsMockDisable("LATE_ENABLE");
                             return;
                         }
                         if (LabProviderReliabilityController.finishGmsRequest(
@@ -631,23 +631,15 @@ public class ServiceGo extends Service {
     }
 
     private void requestGmsMockDisable(String reason) {
-        requestGmsMockDisable(reason, false);
-    }
-
-    private void requestGmsMockDisable(String reason, boolean onlyIfStillOwner) {
         if (mFusedClient == null) return;
-        long disableRequestId;
-        if (onlyIfStillOwner) {
-            disableRequestId = LabProviderReliabilityController.beginGmsDisableIfCurrent(
-                    this, mLastGmsRequestId, "DISABLE_REQUESTED_" + reason);
-            if (disableRequestId <= 0L) {
-                // A newer ServiceGo request has taken ownership; silently
-                // suppress this stale instance's extra best-effort cleanup.
-                return;
-            }
-        } else {
-            disableRequestId = LabProviderReliabilityController.beginGmsRequest(
-                    this, "DISABLE_REQUESTED_" + reason);
+        // No unchecked fallback: both ordinary SERVICE_STOP and late-enable
+        // compensation must respect newer ServiceGo sessions.
+        long disableRequestId = LabProviderReliabilityController.beginGmsDisableIfCurrent(
+                this, mLastGmsRequestId, "DISABLE_REQUESTED_" + reason);
+        if (disableRequestId <= 0L) {
+            // A newer ServiceGo owns the audit slot. This instance cannot
+            // submit another mock-disable request.
+            return;
         }
         mLastGmsRequestId = disableRequestId;
         final long callbackRequestId = disableRequestId;
@@ -1240,7 +1232,7 @@ public class ServiceGo extends Service {
         // A newer ServiceGo may already own the GMS audit generation.
         // Normal stop must obey the same ownership gate as late-enable retry.
         if (LabServiceTeardownSequence.run(
-                () -> requestGmsMockDisable("SERVICE_STOP", true)) > 0) {
+                () -> requestGmsMockDisable("SERVICE_STOP")) > 0) {
             XLog.e("SERVICEGO: shutdown GMS request threw RuntimeException");
         }
 
