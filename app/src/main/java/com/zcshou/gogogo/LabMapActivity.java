@@ -292,6 +292,9 @@ public class LabMapActivity extends AppCompatActivity {
         routeView = GoGoUi.muted(this, "路线：未导入");
         routeView.setPadding(0, GoGoUi.dp(this, 4), 0, 0);
         control.addView(routeView, GoGoUi.matchWrap());
+        // An imported route may have survived a configuration change in
+        // the ViewModel even though the MapView itself has been recreated.
+        updateRouteView();
 
         control.addView(GoGoUi.gap(this, 10));
 
@@ -315,11 +318,14 @@ public class LabMapActivity extends AppCompatActivity {
         control.addView(routeActions, GoGoUi.matchWrap());
 
         LinearLayout followRow = GoGoUi.row(this);
-        followButton = GoGoUi.textButton(this, "跟随·开", v -> toggleFollow());
+        followButton = GoGoUi.textButton(this,
+                followMock ? "跟随·开" : "跟随·关", v -> toggleFollow());
         followRow.addView(followButton, GoGoUi.weighted());
         GoGoUi.addHorizontalGap(this, followRow, 8);
         headingFollowButton =
-                GoGoUi.textButton(this, "朝向·关", v -> toggleHeadingFollow());
+                GoGoUi.textButton(this,
+                        followHeading ? "朝向·开" : "朝向·关",
+                        v -> toggleHeadingFollow());
         followRow.addView(headingFollowButton, GoGoUi.weighted());
         control.addView(followRow, GoGoUi.matchWrap());
 
