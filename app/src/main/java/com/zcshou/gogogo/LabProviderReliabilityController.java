@@ -313,6 +313,16 @@ public final class LabProviderReliabilityController {
         beginGmsRequest(context, event);
     }
 
+    /**
+     * Create an audit generation barrier as soon as a new ServiceGo is born.
+     * Older ServiceGo Task callbacks and late-enable retries must not act as
+     * the latest request during this service's slower provider initialization.
+     * Does NOT call Google Play Services or change mock mode.
+     */
+    public static void markGmsServiceSessionStarted(Context context) {
+        beginGmsRequest(context, "SERVICE_STARTED_GMS_NOT_YET_ATTEMPTED");
+    }
+
     /** Persist request creation BEFORE issuing an asynchronous GMS Task. */
     public static synchronized long beginGmsRequest(Context context, String event) {
         SharedPreferences p = context.getApplicationContext()
