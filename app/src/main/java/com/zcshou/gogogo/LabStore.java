@@ -71,6 +71,33 @@ public final class LabStore {
         save(context, KEY_HISTORY, items);
     }
 
+    public static boolean isFavorite(Context context, double longitude, double latitude) {
+        for (SavedPoint saved : getFavorites(context)) {
+            if (sameCoordinate(saved, longitude, latitude)) return true;
+        }
+        return false;
+    }
+
+    public static boolean removeFavorite(Context context, double longitude, double latitude) {
+        List<SavedPoint> items = new ArrayList<>(getFavorites(context));
+        boolean changed = false;
+        for (int i = items.size() - 1; i >= 0; i--) {
+            if (sameCoordinate(items.get(i), longitude, latitude)) {
+                items.remove(i);
+                changed = true;
+            }
+        }
+        if (changed) save(context, KEY_FAVORITES, items);
+        return changed;
+    }
+
+    private static boolean sameCoordinate(SavedPoint point, double longitude, double latitude) {
+        return Double.isFinite(longitude) && Double.isFinite(latitude)
+                && Double.isFinite(point.longitude) && Double.isFinite(point.latitude)
+                && Math.abs(point.longitude - longitude) < 0.000001
+                && Math.abs(point.latitude - latitude) < 0.000001;
+    }
+
     public static List<SavedPoint> getFavorites(Context context) {
         return load(context, KEY_FAVORITES);
     }

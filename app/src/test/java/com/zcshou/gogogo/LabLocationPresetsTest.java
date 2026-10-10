@@ -16,7 +16,7 @@ public class LabLocationPresetsTest {
     }
 
     @Test public void allPresetsAreValidWgs84AndNamesUnique() {
-        assertTrue(LabLocationPresets.size() >= 12);
+        assertTrue(LabLocationPresets.size() >= 150);
         Set<String> names = new HashSet<>();
         Set<String> coordinates = new HashSet<>();
         for (int i = 0; i < LabLocationPresets.size(); i++) {
@@ -30,6 +30,18 @@ public class LabLocationPresetsTest {
                     coordinates.add(p.longitude + "," + p.latitude));
             assertEquals(p.name, LabLocationPresets.labels()[i]);
         }
+    }
+
+    @Test public void spansMoreThanOneHundredCountriesWithStableOriginalList() {
+        Set<String> countries = new HashSet<>();
+        for (int i = 0; i < LabLocationPresets.size(); i++) {
+            String[] components = LabLocationPresets.get(i).name.split(" · ");
+            assertTrue("Missing country label at " + i, components.length >= 2);
+            countries.add(components[0]);
+        }
+        assertTrue("Country coverage unexpectedly reduced", countries.size() >= 100);
+        assertEquals("巴西 · 里约热内卢", LabLocationPresets.get(16).name);
+        assertEquals("中国 · 上海", LabLocationPresets.get(17).name);
     }
 
     @Test public void includesBothEastAndWestAndSouthernHemisphere() {

@@ -109,6 +109,30 @@ public class SimpleMockActivity extends AppCompatActivity {
                         }
                     });
 
+    private final ActivityResultLauncher<Intent> placePicker =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        if (result.getResultCode() != Activity.RESULT_OK
+                                || result.getData() == null) return;
+                        Intent data = result.getData();
+                        if (!data.hasExtra(LabPlacePickerActivity.EXTRA_LONGITUDE)
+                                || !data.hasExtra(LabPlacePickerActivity.EXTRA_LATITUDE)) return;
+                        try {
+                            LabHomeCoordinates.Point selected = LabHomeCoordinates.parse(
+                                    Double.toString(data.getDoubleExtra(
+                                            LabPlacePickerActivity.EXTRA_LONGITUDE, Double.NaN)),
+                                    Double.toString(data.getDoubleExtra(
+                                            LabPlacePickerActivity.EXTRA_LATITUDE, Double.NaN)));
+                            longitudeInput.setText(Double.toString(selected.longitude));
+                            latitudeInput.setText(Double.toString(selected.latitude));
+                            String place = data.getStringExtra(LabPlacePickerActivity.EXTRA_LABEL);
+                            Toast.makeText(this, "已填入：" + (place == null ? "所选地点" : place)
+                                    + " · 未自动模拟", Toast.LENGTH_SHORT).show();
+                        } catch (IllegalArgumentException ignored) {
+                            showHomeStatus("地点坐标无效，已忽略", GoGoUi.StatusTone.WARNING);
+                        }
+                    });
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -238,7 +262,8 @@ public class SimpleMockActivity extends AppCompatActivity {
 
         locationContent.addView(GoGoUi.gap(this, 10));
         locationContent.addView(
-                GoGoUi.secondaryButton(this, "🌏 快捷选择国家 / 城市（17 个）",
+                GoGoUi.secondaryButton(this,
+                        "🌏 搜索国家 / 城市 · 收藏（" + LabLocationPresets.size() + " 个地点）",
                         v -> showLocationPresets()),
                 GoGoUi.matchWrap());
         locationContent.addView(GoGoUi.muted(this,
@@ -386,17 +411,7 @@ public class SimpleMockActivity extends AppCompatActivity {
     }
 
     private void showLocationPresets() {
-        new AlertDialog.Builder(this)
-                .setTitle("选择国家 / 城市 · WGS-84 参考坐标")
-                .setItems(LabLocationPresets.labels(), (dialog, which) -> {
-                    LabLocationPresets.Preset preset = LabLocationPresets.get(which);
-                    longitudeInput.setText(Double.toString(preset.longitude));
-                    latitudeInput.setText(Double.toString(preset.latitude));
-                    Toast.makeText(this, "已填入：" + preset.name
-                            + "（未自动启动模拟）", Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("取消", null)
-                .show();
+        placePicker.launch(new Intent(this, LabPlacePickerActivity.class));
     }
 
     private void openMapLab() {
