@@ -52,6 +52,7 @@ public final class LabRecoveryTriage {
         public final Gms gms;
         public final LabEvidenceTimeWindow.Relation gmsWindow;
         public final long ignoredGmsCallbacks;
+        public final long suppressedLateRetries;
 
         public Snapshot(Lifecycle lifecycle, boolean localServiceFlag,
                         List<ProviderRow> providers, String lastGmsEvent) {
@@ -68,6 +69,14 @@ public final class LabRecoveryTriage {
         public Snapshot(Lifecycle lifecycle, boolean localServiceFlag,
                         List<ProviderRow> providers, String lastGmsEvent,
                         LabEvidenceTimeWindow.Relation gmsWindow, long ignoredGmsCallbacks) {
+            this(lifecycle, localServiceFlag, providers, lastGmsEvent,
+                    gmsWindow, ignoredGmsCallbacks, 0L);
+        }
+
+        public Snapshot(Lifecycle lifecycle, boolean localServiceFlag,
+                        List<ProviderRow> providers, String lastGmsEvent,
+                        LabEvidenceTimeWindow.Relation gmsWindow, long ignoredGmsCallbacks,
+                        long suppressedLateRetries) {
             this.lifecycle = lifecycle == null ? Lifecycle.REBOOT_UNCERTAIN : lifecycle;
             this.localServiceFlag = localServiceFlag;
             this.providers = Collections.unmodifiableList(new ArrayList<>(
@@ -76,6 +85,7 @@ public final class LabRecoveryTriage {
             this.gmsWindow = gmsWindow == null
                     ? LabEvidenceTimeWindow.Relation.UNKNOWN : gmsWindow;
             this.ignoredGmsCallbacks = Math.max(0L, ignoredGmsCallbacks);
+            this.suppressedLateRetries = Math.max(0L, suppressedLateRetries);
         }
     }
 
@@ -182,6 +192,10 @@ public final class LabRecoveryTriage {
         if (snapshot.ignoredGmsCallbacks > 0L) {
             result.append("\n已忽略 ").append(snapshot.ignoredGmsCallbacks)
                     .append(" 次过期 GMS 异步回调（审计顺序保护，不能证明系统状态）");
+        }
+        if (snapshot.suppressedLateRetries > 0L) {
+            result.append("\n已阻止 ").append(snapshot.suppressedLateRetries)
+                    .append(" 次旧服务补发 GMS 关闭（仅防止过期请求重新夺取审计顺序）");
         }
         result.append("\n\n");
 

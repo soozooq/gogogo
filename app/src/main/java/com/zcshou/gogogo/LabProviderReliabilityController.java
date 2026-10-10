@@ -313,6 +313,16 @@ public final class LabProviderReliabilityController {
         beginGmsRequest(context, event);
     }
 
+    /**
+     * Create an audit generation barrier as soon as a new ServiceGo is born.
+     * Older ServiceGo Task callbacks and late-enable retries must not act as
+     * the latest request during this service's slower provider initialization.
+     * Does NOT call Google Play Services or change mock mode.
+     */
+    public static void markGmsServiceSessionStarted(Context context) {
+        beginGmsRequest(context, "SERVICE_STARTED_GMS_NOT_YET_ATTEMPTED");
+    }
+
     /** Persist request creation BEFORE issuing an asynchronous GMS Task. */
     public static synchronized long beginGmsRequest(Context context, String event) {
         SharedPreferences p = context.getApplicationContext()
@@ -324,6 +334,26 @@ public final class LabProviderReliabilityController {
                 .putLong("gms_last_at", System.currentTimeMillis())
                 .commit();
         return requestId;
+    }
+
+    /**
+     * Atomically checks that a stopped ServiceGo still owns the latest GMS
+     * request before allowing its late-enable cleanup retry to be initiated.
+     * The check and the new audit request token are serialized within this
+     * process. This cannot serialize Play Services' asynchronous execution.
+     */
+    public static synchronized long beginGmsLateDisableIfCurrent(
+            Context context, long ownerRequestId, String event) {
+        SharedPreferences p = context.getApplicationContext()
+                .getSharedPreferences(AUDIT_PREFS, Context.MODE_PRIVATE);
+        if (!LabGmsRequestOrder.mayRetryLateEnable(ownerRequestId,
+                p.getLong("gms_request_seq", 0L))) {
+            p.edit().putLong("gms_suppressed_late_retry_count",
+                            p.getLong("gms_suppressed_late_retry_count", 0L) + 1L)
+                    .commit();
+            return 0L;
+        }
+        return beginGmsRequest(context, event);
     }
 
     /**
@@ -363,6 +393,9 @@ public final class LabProviderReliabilityController {
         out.append("GMS 已忽略的过期异步回调次数: ")
                 .append(p.getLong("gms_late_callback_count", 0L))
                 .append("（只影响审计记录，不代表 GMS 已修复）").append('\n');
+        out.append("GMS 已阻止的过期服务补发关闭次数: ")
+                .append(p.getLong("gms_suppressed_late_retry_count", 0L))
+                .append("（保护新服务请求顺序，非实际 GMS 状态证明）").append('\n');
         long opAt = p.getLong("appops_changed_at", 0L);
         if (opAt > 0L) {
             out.append("最近 AppOps 事件: ").append(p.getString("appops_last", "UNKNOWN"))

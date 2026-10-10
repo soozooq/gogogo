@@ -56,6 +56,7 @@ public final class LabRecoveryEvidenceReader {
                 prefs.getString("gms_last_event", null),
                 LabEvidenceTimeWindow.classify(lastStartWall,
                         prefs.getLong("gms_last_at", 0L), nowWall),
-                prefs.getLong("gms_late_callback_count", 0L));
+                prefs.getLong("gms_late_callback_count", 0L),
+                prefs.getLong("gms_suppressed_late_retry_count", 0L));
     }
 }
