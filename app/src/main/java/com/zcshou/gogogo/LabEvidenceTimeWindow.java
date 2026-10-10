@@ -7,7 +7,6 @@ package com.zcshou.gogogo;
  */
 public final class LabEvidenceTimeWindow {
     public enum Relation { AFTER_START, BEFORE_START, UNKNOWN }
-    private static final long FUTURE_TOLERANCE_MS = 60_000L;
 
     private LabEvidenceTimeWindow() {}
 
