@@ -66,6 +66,10 @@ public class SimpleMockActivity extends AppCompatActivity {
     private boolean homeToolsExpanded = false;
     private boolean diagnosticsLoaded = false;
     private static final String HOME_TOOLS_EXPANDED = "gogogo.home.tools.expanded";
+    private static final String HOME_LONGITUDE_TEXT = "gogogo.home.longitude_text";
+    private static final String HOME_LATITUDE_TEXT = "gogogo.home.latitude_text";
+    private static final String HOME_PENDING_REQUEST = "gogogo.home.pending_request";
+    private static final String HOME_REQUEST_ELAPSED = "gogogo.home.request_elapsed";
     private static final long SERVICE_OBSERVE_WINDOW_MS = 2200L;
     private final Handler serviceStatusHandler = new Handler(Looper.getMainLooper());
     private final Runnable serviceStatusRefresh = this::updateServiceStatus;
@@ -110,7 +114,28 @@ public class SimpleMockActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         homeToolsExpanded = savedInstanceState != null
                 && savedInstanceState.getBoolean(HOME_TOOLS_EXPANDED, false);
+        // The input views are created programmatically without stable IDs,
+        // so automatic Android view-state restoration cannot preserve edits.
+        if (savedInstanceState != null) {
+            String requestName = savedInstanceState.getString(
+                    HOME_PENDING_REQUEST, LabHomeServiceStatus.Request.NONE.name());
+            try {
+                pendingServiceRequest = LabHomeServiceStatus.Request.valueOf(requestName);
+            } catch (IllegalArgumentException invalid) {
+                pendingServiceRequest = LabHomeServiceStatus.Request.NONE;
+            }
+            serviceRequestElapsed = savedInstanceState.getLong(
+                    HOME_REQUEST_ELAPSED, -1L);
+        }
         buildUi();
+        if (savedInstanceState != null) {
+            if (savedInstanceState.containsKey(HOME_LONGITUDE_TEXT)) {
+                longitudeInput.setText(savedInstanceState.getString(HOME_LONGITUDE_TEXT, ""));
+            }
+            if (savedInstanceState.containsKey(HOME_LATITUDE_TEXT)) {
+                latitudeInput.setText(savedInstanceState.getString(HOME_LATITUDE_TEXT, ""));
+            }
+        }
         ensureLocationPermission();
         // Detailed diagnostics can involve asynchronous GMS and radio reads.
         // Never run them just because the app was launched.
@@ -120,6 +145,16 @@ public class SimpleMockActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putBoolean(HOME_TOOLS_EXPANDED, homeToolsExpanded);
+        // Preserve raw text, even if currently incomplete or invalid: the user
+        // may be partway through editing and should not lose their work.
+        if (longitudeInput != null) {
+            outState.putString(HOME_LONGITUDE_TEXT, longitudeInput.getText().toString());
+        }
+        if (latitudeInput != null) {
+            outState.putString(HOME_LATITUDE_TEXT, latitudeInput.getText().toString());
+        }
+        outState.putString(HOME_PENDING_REQUEST, pendingServiceRequest.name());
+        outState.putLong(HOME_REQUEST_ELAPSED, serviceRequestElapsed);
         super.onSaveInstanceState(outState);
     }
 
