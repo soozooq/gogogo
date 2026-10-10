@@ -51,16 +51,23 @@ public final class LabRecoveryTriage {
         public final List<ProviderRow> providers;
         public final Gms gms;
         public final LabEvidenceTimeWindow.Relation gmsWindow;
+        public final long ignoredGmsCallbacks;
 
         public Snapshot(Lifecycle lifecycle, boolean localServiceFlag,
                         List<ProviderRow> providers, String lastGmsEvent) {
             this(lifecycle, localServiceFlag, providers, lastGmsEvent,
-                    LabEvidenceTimeWindow.Relation.UNKNOWN);
+                    LabEvidenceTimeWindow.Relation.UNKNOWN, 0L);
         }
 
         public Snapshot(Lifecycle lifecycle, boolean localServiceFlag,
                         List<ProviderRow> providers, String lastGmsEvent,
                         LabEvidenceTimeWindow.Relation gmsWindow) {
+            this(lifecycle, localServiceFlag, providers, lastGmsEvent, gmsWindow, 0L);
+        }
+
+        public Snapshot(Lifecycle lifecycle, boolean localServiceFlag,
+                        List<ProviderRow> providers, String lastGmsEvent,
+                        LabEvidenceTimeWindow.Relation gmsWindow, long ignoredGmsCallbacks) {
             this.lifecycle = lifecycle == null ? Lifecycle.REBOOT_UNCERTAIN : lifecycle;
             this.localServiceFlag = localServiceFlag;
             this.providers = Collections.unmodifiableList(new ArrayList<>(
@@ -68,6 +75,7 @@ public final class LabRecoveryTriage {
             this.gms = gms(lastGmsEvent);
             this.gmsWindow = gmsWindow == null
                     ? LabEvidenceTimeWindow.Relation.UNKNOWN : gmsWindow;
+            this.ignoredGmsCallbacks = Math.max(0L, ignoredGmsCallbacks);
         }
     }
 
@@ -170,6 +178,10 @@ public final class LabRecoveryTriage {
         if (snapshot.gms != Gms.NOT_RECORDED) {
             result.append(" [").append(LabEvidenceTimeWindow.label(snapshot.gmsWindow))
                     .append("]");
+        }
+        if (snapshot.ignoredGmsCallbacks > 0L) {
+            result.append("\n已忽略 ").append(snapshot.ignoredGmsCallbacks)
+                    .append(" 次过期 GMS 异步回调（审计顺序保护，不能证明系统状态）");
         }
         result.append("\n\n");
 

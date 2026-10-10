@@ -578,31 +578,42 @@ public class ServiceGo extends Service {
     @SuppressLint("MissingPermission")
     private void initFusedMock() {
         mFusedShutdownRequested = false;
+        long pendingRequestId = 0L;
         try {
             mFusedClient = LocationServices.getFusedLocationProviderClient(this);
-            LabProviderReliabilityController.recordGmsEvent(this, "ENABLE_REQUESTED");
+            pendingRequestId = LabProviderReliabilityController.beginGmsRequest(
+                    this, "ENABLE_REQUESTED");
+            final long enableRequestId = pendingRequestId;
             mFusedClient.setMockMode(true)
                     .addOnSuccessListener(unused -> {
                         if (mFusedShutdownRequested || isStop) {
-                            // The async enable completed after the Service was stopped.
-                            // Request disable again to avoid leaving GMS mock mode enabled.
-                            LabProviderReliabilityController.recordGmsEvent(this,
-                                    "LATE_ENABLE_AFTER_STOP");
+                            // A late enable may still require GMS cleanup. It
+                            // must NOT overwrite a newer Task's audit state.
+                            LabProviderReliabilityController.finishGmsRequest(
+                                    this, enableRequestId, "LATE_ENABLE_AFTER_STOP");
                             requestGmsMockDisable("LATE_ENABLE");
                             return;
                         }
-                        mFusedMockEnabled = true;
-                        LabProviderReliabilityController.recordGmsEvent(this, "ENABLE_SUCCEEDED");
-                        XLog.i("SERVICEGO: FusedLocation setMockMode(true) OK");
+                        if (LabProviderReliabilityController.finishGmsRequest(
+                                this, enableRequestId, "ENABLE_SUCCEEDED")) {
+                            mFusedMockEnabled = true;
+                        }
+                        XLog.i("SERVICEGO: FusedLocation setMockMode(true) callback");
                     })
                     .addOnFailureListener(e -> {
-                        LabProviderReliabilityController.recordGmsEvent(this,
+                        LabProviderReliabilityController.finishGmsRequest(
+                                this, enableRequestId,
                                 "ENABLE_FAILED_" + e.getClass().getSimpleName());
                         XLog.e("SERVICEGO: FusedLocation setMockMode failed: " + e.getMessage());
                     });
         } catch (Throwable t) {
-            LabProviderReliabilityController.recordGmsEvent(this,
-                    "ENABLE_EXCEPTION_" + t.getClass().getSimpleName());
+            String event = "ENABLE_EXCEPTION_" + t.getClass().getSimpleName();
+            if (pendingRequestId != 0L) {
+                LabProviderReliabilityController.finishGmsRequest(
+                        this, pendingRequestId, event);
+            } else {
+                LabProviderReliabilityController.recordGmsEvent(this, event);
+            }
             // GMS may be unavailable; framework providers still work.
             XLog.e("SERVICEGO: FusedLocation init failed (GMS not available?): " + t.getMessage());
             mFusedClient = null;
@@ -611,34 +622,38 @@ public class ServiceGo extends Service {
 
     private void requestGmsMockDisable(String reason) {
         if (mFusedClient == null) return;
-        LabProviderReliabilityController.recordGmsEvent(this,
-                "DISABLE_REQUESTED_" + reason);
-        // Lint can verify this local permission check. Permission may have
-        // been revoked between this check and the asynchronous GMS request.
+        final long disableRequestId = LabProviderReliabilityController.beginGmsRequest(
+                this, "DISABLE_REQUESTED_" + reason);
+        // The permission may be revoked while a Task is in flight.
         boolean fine = checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
                 == android.content.pm.PackageManager.PERMISSION_GRANTED;
         boolean coarse = checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
                 == android.content.pm.PackageManager.PERMISSION_GRANTED;
         if (!fine && !coarse) {
-            LabProviderReliabilityController.recordGmsEvent(this,
+            LabProviderReliabilityController.finishGmsRequest(
+                    this, disableRequestId,
                     "DISABLE_BLOCKED_NO_LOCATION_PERMISSION_" + reason);
             return;
         }
         try {
             mFusedClient.setMockMode(false)
                     .addOnSuccessListener(unused -> {
-                        mFusedMockEnabled = false;
-                        LabProviderReliabilityController.recordGmsEvent(
-                                ServiceGo.this, "DISABLE_SUCCEEDED_" + reason);
+                        if (LabProviderReliabilityController.finishGmsRequest(
+                                ServiceGo.this, disableRequestId,
+                                "DISABLE_SUCCEEDED_" + reason)) {
+                            mFusedMockEnabled = false;
+                        }
                     })
                     .addOnFailureListener(e ->
-                            LabProviderReliabilityController.recordGmsEvent(
-                                    ServiceGo.this, "DISABLE_FAILED_" + e.getClass().getSimpleName()));
+                            LabProviderReliabilityController.finishGmsRequest(
+                                    ServiceGo.this, disableRequestId,
+                                    "DISABLE_FAILED_" + e.getClass().getSimpleName()));
         } catch (SecurityException e) {
-            LabProviderReliabilityController.recordGmsEvent(this,
-                    "DISABLE_DENIED_" + reason);
+            LabProviderReliabilityController.finishGmsRequest(
+                    this, disableRequestId, "DISABLE_DENIED_" + reason);
         } catch (RuntimeException e) {
-            LabProviderReliabilityController.recordGmsEvent(this,
+            LabProviderReliabilityController.finishGmsRequest(
+                    this, disableRequestId,
                     "DISABLE_EXCEPTION_" + e.getClass().getSimpleName());
         }
     }
