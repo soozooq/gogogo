@@ -1,4 +1,4 @@
-> **soozooq / GoGoGo 集成测试版说明（2026-10-09）**：本 Fork 已整合历史 Lab 1–44 的实验开发成果，开发代码已通过 GitHub Actions 自动构建，但**尚未完成所有目标手机、腾讯真实密钥与第三方定位消费者的实机验收**。此仓库当前 APK 属于 **Preview / 测试版**，并非官方上游稳定发行版。
+> **soozooq / GoGoGo 集成测试版说明（2026-10-09）**：本 Fork 已整合历史 Lab 1–45 的实验开发成果，开发代码已通过 GitHub Actions 自动构建，但**尚未完成所有目标手机、腾讯真实密钥与第三方定位消费者的实机验收**。此仓库当前 APK 属于 **Preview / 测试版**，并非官方上游稳定发行版。
 >
 > - 本 Fork 源码： https://github.com/soozooq/gogogo
 > - 最新 `main` 构建： [Build Check](https://github.com/soozooq/gogogo/actions/workflows/build-check.yml) · [Preview APK（在 Artifacts 中下载 ZIP 并解压）](https://github.com/soozooq/gogogo/actions/workflows/build-release.yml)
@@ -20,6 +20,7 @@
 > - Lab 42 全球地点预设：[157 个离线国家城市地点、搜索页、首页与地图共用收藏](docs/lab42-global-place-picker.md)（选点不会自动开启模拟）
 > - Lab 43 国旗与国家折叠列表：[109 个国家国旗、国家展开／收起城市、搜索结果自动展开](docs/lab43-country-flag-accordion.md)（收藏仍与地图共用）
 > - Lab 44 地点页性能打磨：[国家／城市行复用、收藏状态缓存、搜索一键清空、窄屏和旋转体验](docs/lab44-place-picker-polish.md)（不变更定位服务）
+> - Lab 45 国家首字母索引：[中文国名按拼音 A–Z 排序、右侧快速跳转、展开城市后精准定位](docs/lab45-pinyin-alphabet-index.md)（原搜索收藏继续保留）
 > - Lab 25 发布阻断清单： [docs/lab25-release-readiness.md](docs/lab25-release-readiness.md)
 > - 后续自动构建： https://github.com/soozooq/gogogo/actions
 > - 备份旧 main： [backup/main-before-labs-20261009](https://github.com/soozooq/gogogo/tree/backup/main-before-labs-20261009)
