@@ -273,19 +273,19 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
         // the rail remains correct after expanding/collapsing city sections.
         List<String> orderedCountries = new ArrayList<>(groups.keySet());
         Collections.sort(orderedCountries, LabPlaceAlphabet.COUNTRY_ORDER);
-        letterAnchors.clear();
+        Map<String, Integer> visibleCityCounts = new LinkedHashMap<>();
         for (String country : orderedCountries) {
-            String letter = LabPlaceAlphabet.initialOf(country);
-            if (!letterAnchors.containsKey(letter)) {
-                letterAnchors.put(letter, displayed.size());
-            }
             List<PlaceOption> cities = groups.get(country);
             boolean expanded = isExpanded(country, searching);
+            visibleCityCounts.put(country, expanded ? cities.size() : 0);
             displayed.add(PickerRow.country(country, cities.size(), expanded));
             if (expanded) {
                 for (PlaceOption option : cities) displayed.add(PickerRow.city(option));
             }
         }
+        letterAnchors.clear();
+        letterAnchors.putAll(LabPlaceAlphabet.headerAnchors(
+                orderedCountries, visibleCityCounts));
 
         allTab.setText("全部预设 · " + LabLocationPresets.size()
                 + (favoritesOnly ? "" : " ✓"));
