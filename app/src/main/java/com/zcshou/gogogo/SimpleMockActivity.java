@@ -1,6 +1,7 @@
 package com.zcshou.gogogo;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.AppOpsManager;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -20,6 +21,9 @@ import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.InputType;
 import android.view.Gravity;
@@ -32,6 +36,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.app.ActivityCompat;
 
 import org.json.JSONObject;
@@ -59,6 +65,39 @@ public class SimpleMockActivity extends AppCompatActivity {
     private boolean homeToolsExpanded = false;
     private boolean diagnosticsLoaded = false;
     private static final String HOME_TOOLS_EXPANDED = "gogogo.home.tools.expanded";
+    private static final long SERVICE_OBSERVE_WINDOW_MS = 2200L;
+    private final Handler serviceStatusHandler = new Handler(Looper.getMainLooper());
+    private final Runnable serviceStatusRefresh = this::updateServiceStatus;
+    private LabHomeServiceStatus.Request pendingServiceRequest =
+            LabHomeServiceStatus.Request.NONE;
+    private long serviceRequestElapsed = -1L;
+
+    private final ActivityResultLauncher<Intent> mapPicker =
+            registerForActivityResult(
+                    new ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        if (result.getResultCode() != Activity.RESULT_OK
+                                || result.getData() == null) return;
+                        Intent data = result.getData();
+                        if (!data.hasExtra(LabMapActivity.EXTRA_RESULT_LONGITUDE)
+                                || !data.hasExtra(LabMapActivity.EXTRA_RESULT_LATITUDE)) return;
+                        try {
+                            LabHomeCoordinates.Point selected = LabHomeCoordinates.parse(
+                                    Double.toString(data.getDoubleExtra(
+                                            LabMapActivity.EXTRA_RESULT_LONGITUDE, Double.NaN)),
+                                    Double.toString(data.getDoubleExtra(
+                                            LabMapActivity.EXTRA_RESULT_LATITUDE, Double.NaN)));
+                            longitudeInput.setText(Double.toString(selected.longitude));
+                            latitudeInput.setText(Double.toString(selected.latitude));
+                            showHomeStatus(ServiceGo.sRunning
+                                            ? "已从地图填入坐标 · 当前运行的模拟未改变；点击「开始模拟」才会应用"
+                                            : "已从地图填入坐标 · 尚未启动模拟",
+                                    GoGoUi.StatusTone.INFO);
+                        } catch (IllegalArgumentException invalid) {
+                            showHomeStatus("地图返回的坐标无效，已忽略",
+                                    GoGoUi.StatusTone.WARNING);
+                        }
+                    });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,14 +120,18 @@ public class SimpleMockActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Returning from Map or Lab Hub must not falsely display "not started".
-        if (statusView != null) {
-            showHomeStatus(ServiceGo.sRunning
-                    ? "状态：模拟服务运行中 · 可到实验与诊断核实消费者结果"
-                    : "状态：服务未运行",
-                    ServiceGo.sRunning
-                            ? GoGoUi.StatusTone.INFO : GoGoUi.StatusTone.NEUTRAL);
+        // A process flag is observed state, not confirmation of external
+        // consumer behavior or any GMS/provider reset.
+        updateServiceStatus();
+        if (pendingServiceRequest != LabHomeServiceStatus.Request.NONE) {
+            scheduleServiceStatusObservations();
         }
+    }
+
+    @Override
+    protected void onStop() {
+        serviceStatusHandler.removeCallbacks(serviceStatusRefresh);
+        super.onStop();
     }
 
     private void buildUi() {
@@ -328,7 +371,7 @@ public class SimpleMockActivity extends AppCompatActivity {
         } catch (IllegalArgumentException ignored) {
             // MapLibre falls back to Myawaddy when the home input is invalid.
         }
-        startActivity(intent);
+        mapPicker.launch(intent);
     }
 
     private void showToolsMenu() {
@@ -432,6 +475,41 @@ public class SimpleMockActivity extends AppCompatActivity {
         GoGoUi.setStatusTone(statusView, tone);
     }
 
+    private void updateServiceStatus() {
+        if (statusView == null) return;
+        boolean running = ServiceGo.sRunning;
+        boolean windowElapsed = serviceRequestElapsed >= 0L
+                && SystemClock.elapsedRealtime() - serviceRequestElapsed
+                >= SERVICE_OBSERVE_WINDOW_MS;
+        LabHomeServiceStatus.Summary state = LabHomeServiceStatus.render(
+                running, pendingServiceRequest, windowElapsed);
+        showHomeStatus(state.text, state.tone == LabHomeServiceStatus.Tone.WARNING
+                ? GoGoUi.StatusTone.WARNING
+                : state.tone == LabHomeServiceStatus.Tone.INFO
+                ? GoGoUi.StatusTone.INFO : GoGoUi.StatusTone.NEUTRAL);
+        if (LabHomeServiceStatus.requestConfirmed(running, pendingServiceRequest)) {
+            pendingServiceRequest = LabHomeServiceStatus.Request.NONE;
+            serviceRequestElapsed = -1L;
+            serviceStatusHandler.removeCallbacks(serviceStatusRefresh);
+        }
+    }
+
+    private void beginServiceStatusObservation(LabHomeServiceStatus.Request request) {
+        pendingServiceRequest = request;
+        serviceRequestElapsed = SystemClock.elapsedRealtime();
+        updateServiceStatus();
+        scheduleServiceStatusObservations();
+    }
+
+    private void scheduleServiceStatusObservations() {
+        serviceStatusHandler.removeCallbacks(serviceStatusRefresh);
+        if (pendingServiceRequest == LabHomeServiceStatus.Request.NONE) return;
+        // No system polling loop and no network/location probes. Just two
+        // checks of ServiceGo's in-process lifecycle flag.
+        serviceStatusHandler.postDelayed(serviceStatusRefresh, 550L);
+        serviceStatusHandler.postDelayed(serviceStatusRefresh, 2500L);
+    }
+
     private void startMock() {
         ensureLocationPermission();
 
@@ -466,11 +544,21 @@ public class SimpleMockActivity extends AppCompatActivity {
         intent.putExtra(MainActivity.LAT_MSG_ID, lat);
         intent.putExtra(MainActivity.ALT_MSG_ID, 55.0);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(intent);
-        } else {
-            startService(intent);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(intent);
+            } else {
+                startService(intent);
+            }
+        } catch (RuntimeException rejected) {
+            pendingServiceRequest = LabHomeServiceStatus.Request.NONE;
+            serviceRequestElapsed = -1L;
+            serviceStatusHandler.removeCallbacks(serviceStatusRefresh);
+            showHomeStatus("系统未接受启动请求，请检查定位权限及后台服务限制",
+                    GoGoUi.StatusTone.ERROR);
+            return;
         }
+        beginServiceStatusObservation(LabHomeServiceStatus.Request.START);
 
         String wifiWarning = "";
         try {
@@ -481,15 +569,34 @@ public class SimpleMockActivity extends AppCompatActivity {
         } catch (Throwable ignored) {
         }
 
-        showHomeStatus("状态：已请求启动模拟服务\n经度 " + lng + "\n纬度 "
-                + lat + wifiWarning, wifiWarning.isEmpty()
-                ? GoGoUi.StatusTone.INFO : GoGoUi.StatusTone.WARNING);
+        if (!wifiWarning.isEmpty()) {
+            Toast.makeText(this,
+                    "启动请求已提交；Wi-Fi 环境可能影响部分定位消费者",
+                    Toast.LENGTH_LONG).show();
+        }
         scheduleOptionalDiagnostics(1200);
     }
 
     private void stopMock() {
-        stopService(new Intent(this, ServiceGo.class));
-        showHomeStatus("状态：已请求停止服务 · 状态稍后刷新", GoGoUi.StatusTone.INFO);
+        try {
+            boolean found = stopService(new Intent(this, ServiceGo.class));
+            if (!found) {
+                pendingServiceRequest = LabHomeServiceStatus.Request.NONE;
+                serviceRequestElapsed = -1L;
+                serviceStatusHandler.removeCallbacks(serviceStatusRefresh);
+                showHomeStatus("系统未找到需要停止的服务 · 仍可到诊断查看历史清理结果",
+                        GoGoUi.StatusTone.NEUTRAL);
+                return;
+            }
+        } catch (RuntimeException rejected) {
+            pendingServiceRequest = LabHomeServiceStatus.Request.NONE;
+            serviceRequestElapsed = -1L;
+            serviceStatusHandler.removeCallbacks(serviceStatusRefresh);
+            showHomeStatus("系统拒绝停止请求，请到诊断中心排查",
+                    GoGoUi.StatusTone.ERROR);
+            return;
+        }
+        beginServiceStatusObservation(LabHomeServiceStatus.Request.STOP);
         scheduleOptionalDiagnostics(500);
     }
 
