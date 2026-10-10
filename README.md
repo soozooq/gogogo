@@ -1,4 +1,4 @@
-> **soozooq / GoGoGo 集成测试版说明（2026-10-09）**：本 Fork 已整合历史 Lab 1–38 的实验开发成果，开发代码已通过 GitHub Actions 自动构建，但**尚未完成所有目标手机、腾讯真实密钥与第三方定位消费者的实机验收**。此仓库当前 APK 属于 **Preview / 测试版**，并非官方上游稳定发行版。
+> **soozooq / GoGoGo 集成测试版说明（2026-10-09）**：本 Fork 已整合历史 Lab 1–39 的实验开发成果，开发代码已通过 GitHub Actions 自动构建，但**尚未完成所有目标手机、腾讯真实密钥与第三方定位消费者的实机验收**。此仓库当前 APK 属于 **Preview / 测试版**，并非官方上游稳定发行版。
 >
 > - 本 Fork 源码： https://github.com/soozooq/gogogo
 > - 最新 `main` 构建： [Build Check](https://github.com/soozooq/gogogo/actions/workflows/build-check.yml) · [Preview APK（在 Artifacts 中下载 ZIP 并解压）](https://github.com/soozooq/gogogo/actions/workflows/build-release.yml)
@@ -14,6 +14,7 @@
 > - Lab 36 跨会话稳定性修复：[阻止旧服务迟到回调干扰新服务](docs/lab36-stale-gms-retry.md)（保留诊断，不增加实验页面）
 > - Lab 37 退出清理加固：[正常停止与迟到补偿统一请求所有权检查，清理步骤故障隔离](docs/lab37-service-teardown-hardening.md)（无新增页面）
 > - Lab 38 诊断中心 UI 收尾：[顶部状态概览与高级工具折叠分组](docs/lab38-diagnostics-hub-ui.md)（原研究入口保留，免长列表）
+> - Lab 39 首页减负：[设备工具折叠与按需环境检测，坐标异常值拦截](docs/lab39-home-lazy-diagnostics.md)（不丢原设置功能）
 > - Lab 25 发布阻断清单： [docs/lab25-release-readiness.md](docs/lab25-release-readiness.md)
 > - 后续自动构建： https://github.com/soozooq/gogogo/actions
 > - 备份旧 main： [backup/main-before-labs-20261009](https://github.com/soozooq/gogogo/tree/backup/main-before-labs-20261009)
