@@ -105,6 +105,11 @@
             android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
+            android:name=".LabPlacePickerActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
             android:name=".LabHubActivity"
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
