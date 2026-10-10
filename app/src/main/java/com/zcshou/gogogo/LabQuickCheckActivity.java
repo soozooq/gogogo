@@ -157,7 +157,7 @@ public final class LabQuickCheckActivity extends AppCompatActivity {
         String date = savedAt > 0L
                 ? new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                 .format(new Date(savedAt)) : "未知";
-        String diff = "基准保存时间：" + date + "\\n\\n"
+        String diff = "基准保存时间：" + date + "\n\n"
                 + Lab33DiagnosticBundle.compare(baseline, now);
         TextView text = GoGoUi.reportPanel(this);
         text.setTextIsSelectable(true);
