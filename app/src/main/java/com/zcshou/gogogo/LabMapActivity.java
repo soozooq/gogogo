@@ -1,5 +1,6 @@
 package com.zcshou.gogogo;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -65,6 +66,9 @@ public class LabMapActivity extends AppCompatActivity {
 
     public static final String EXTRA_START_LATITUDE = "gogogo.map.startLatitude";
     public static final String EXTRA_START_LONGITUDE = "gogogo.map.startLongitude";
+    // Explicit map-to-home result. Merely navigating back never changes home.
+    public static final String EXTRA_RESULT_LATITUDE = "gogogo.map.resultLatitude";
+    public static final String EXTRA_RESULT_LONGITUDE = "gogogo.map.resultLongitude";
     private static final double DEFAULT_LAT = LabLocationPresets.defaultPreset().latitude;
     private static final double DEFAULT_LNG = LabLocationPresets.defaultPreset().longitude;
     private static final String STYLE_DEMO = "https://demotiles.maplibre.org/style.json";
@@ -233,6 +237,9 @@ public class LabMapActivity extends AppCompatActivity {
         // wrap labels on compact displays instead of squeezing four into one row.
         control.addView(GoGoUi.primaryButton(this, "模拟这里",
                 v -> simulateSelected()), GoGoUi.matchWrap());
+        control.addView(GoGoUi.gap(this, 6));
+        control.addView(GoGoUi.secondaryButton(this, "填入首页（不启动模拟）",
+                v -> returnSelectedToHome()), GoGoUi.matchWrap());
         control.addView(GoGoUi.gap(this, 6));
 
         LinearLayout routeActions = GoGoUi.row(this);
@@ -857,6 +864,23 @@ public class LabMapActivity extends AppCompatActivity {
         }
         serviceBound = false;
         serviceBinder = null;
+    }
+
+    private void returnSelectedToHome() {
+        if (selectedPoint == null) return;
+        try {
+            LabHomeCoordinates.Point checked = LabHomeCoordinates.parse(
+                    Double.toString(selectedPoint.getLongitude()),
+                    Double.toString(selectedPoint.getLatitude()));
+            Intent result = new Intent();
+            result.putExtra(EXTRA_RESULT_LONGITUDE, checked.longitude);
+            result.putExtra(EXTRA_RESULT_LATITUDE, checked.latitude);
+            setResult(Activity.RESULT_OK, result);
+            finish();
+        } catch (IllegalArgumentException invalid) {
+            Toast.makeText(this, "所选坐标无效，无法填入首页",
+                    Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void simulateSelected() {
