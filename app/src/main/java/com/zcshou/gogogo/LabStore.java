@@ -47,8 +47,8 @@ public final class LabStore {
         // Same coordinate -> move to top and refresh name/time.
         for (int i = items.size() - 1; i >= 0; i--) {
             SavedPoint p = items.get(i);
-            if (Math.abs(p.longitude - longitude) < 0.000001
-                    && Math.abs(p.latitude - latitude) < 0.000001) {
+            if (LabPlaceCoordinateMatch.same(p.longitude, p.latitude,
+                    longitude, latitude)) {
                 items.remove(i);
             }
         }
@@ -92,10 +92,8 @@ public final class LabStore {
     }
 
     private static boolean sameCoordinate(SavedPoint point, double longitude, double latitude) {
-        return Double.isFinite(longitude) && Double.isFinite(latitude)
-                && Double.isFinite(point.longitude) && Double.isFinite(point.latitude)
-                && Math.abs(point.longitude - longitude) < 0.000001
-                && Math.abs(point.latitude - latitude) < 0.000001;
+        return LabPlaceCoordinateMatch.same(point.longitude, point.latitude,
+                longitude, latitude);
     }
 
     public static List<SavedPoint> getFavorites(Context context) {
