@@ -78,6 +78,10 @@ public final class LabQuickCheckActivity extends AppCompatActivity {
         root.addView(GoGoUi.gap(this, 18));
         root.addView(GoGoUi.sectionTitle(this, "需要进一步排查？"),
                 GoGoUi.matchWrap());
+        root.addView(GoGoUi.navigationTile(this, "异常退出与恢复取证",
+                "一页对照上次异常、Provider 清理及 GMS 关闭历史回调",
+                v -> open(LabRecoveryTriageActivity.class)), GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 8));
         root.addView(GoGoUi.navigationTile(this, "实验仪表盘",
                 "查看服务生命周期、Provider 清理取证与详细系统信息",
                 v -> open(LabDiagnosticsActivity.class)), GoGoUi.matchWrap());

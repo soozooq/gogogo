@@ -48,6 +48,12 @@ public final class LabHubActivity extends AppCompatActivity {
                 "先看权限、模拟位置 AppOps 和服务标记；可复制隐私精简摘要",
                 v -> open(LabQuickCheckActivity.class)), GoGoUi.matchWrap());
 
+        root.addView(GoGoUi.gap(this, 8));
+        root.addView(GoGoUi.navigationTile(this,
+                "异常退出与恢复取证",
+                "正常停止／强停后的 Provider 与 GMS 历史记录对照",
+                v -> open(LabRecoveryTriageActivity.class)), GoGoUi.matchWrap());
+
         addGroup(root, "定位与兼容",
                 "先检查标准位置消费者，再决定是否使用更深入的探针。",
                 new Entry[]{

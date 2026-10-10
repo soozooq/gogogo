@@ -141,7 +141,11 @@ public final class LabServiceLifecycleJournal {
         }
     }
 
-    public static String report(Context context, boolean serviceRunning) {
+    /**
+     * Structured equivalent of the lifecycle report verdict.
+     * Readers must not parse translated text or infer live provider state.
+     */
+    public static Verdict currentVerdict(Context context, boolean serviceRunning) {
         SharedPreferences prefs = preferences(context);
         String state = prefs.getString(KEY_STATE, "");
         boolean hasRecord = STATE_ACTIVE.equals(state) || STATE_STOPPED.equals(state);
@@ -154,8 +158,16 @@ public final class LabServiceLifecycleJournal {
         boolean sameBoot = isSameBoot(
                 prefs.getLong(KEY_STARTED_BOOT_COUNT, -1L), bootCount,
                 prefs.getLong(KEY_STARTED_WALL, 0L), startedElapsed, wall, elapsed);
-        Verdict verdict = classify(hasRecord, STATE_STOPPED.equals(state),
+        return classify(hasRecord, STATE_STOPPED.equals(state),
                 sameProcess, serviceRunning, sameBoot);
+    }
+
+    public static String report(Context context, boolean serviceRunning) {
+        SharedPreferences prefs = preferences(context);
+        String state = prefs.getString(KEY_STATE, "");
+        boolean hasRecord = STATE_ACTIVE.equals(state) || STATE_STOPPED.equals(state);
+        long bootCount = readBootCount(context);
+        Verdict verdict = currentVerdict(context, serviceRunning);
 
         StringBuilder text = new StringBuilder();
         text.append("当前主进程 PID: ").append(Process.myPid()).append('\n');
