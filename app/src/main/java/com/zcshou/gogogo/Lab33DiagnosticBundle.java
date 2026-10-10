@@ -16,14 +16,6 @@ public final class Lab33DiagnosticBundle {
                                     LabRecoveryTriage.Snapshot recovery) {
         if (quick == null) return Priority.FIX_PREREQUISITES;
 
-        if (quick.systemLocation == LabQuickCheckReport.Signal.NO
-                || quick.finePermission == LabQuickCheckReport.Signal.NO
-                || quick.coarsePermission == LabQuickCheckReport.Signal.NO
-                       && quick.finePermission != LabQuickCheckReport.Signal.YES
-                || quick.mockAppOp == LabQuickCheckReport.Signal.NO) {
-            return Priority.FIX_PREREQUISITES;
-        }
-
         if (quick.systemLocation != LabQuickCheckReport.Signal.YES
                 || quick.finePermission != LabQuickCheckReport.Signal.YES
                 || quick.mockAppOp != LabQuickCheckReport.Signal.YES) {
