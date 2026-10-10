@@ -638,7 +638,7 @@ public class ServiceGo extends Service {
         if (mFusedClient == null) return;
         long disableRequestId;
         if (onlyIfStillOwner) {
-            disableRequestId = LabProviderReliabilityController.beginGmsLateDisableIfCurrent(
+            disableRequestId = LabProviderReliabilityController.beginGmsDisableIfCurrent(
                     this, mLastGmsRequestId, "DISABLE_REQUESTED_" + reason);
             if (disableRequestId <= 0L) {
                 // A newer ServiceGo request has taken ownership; silently
