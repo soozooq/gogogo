@@ -14,6 +14,7 @@ import android.widget.BaseAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,6 +24,7 @@ import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -60,6 +62,10 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
     private MaterialButton allTab;
     private MaterialButton favoritesTab;
     private boolean favoritesOnly;
+    private ScrollView alphabetScroll;
+    private LinearLayout alphabetColumn;
+    private final Map<String, Integer> letterAnchors = new LinkedHashMap<>();
+    private String renderedAlphabet = "";
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
@@ -161,7 +167,23 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
             if (row.isCountry()) toggleCountry(row.country);
             else choose(row.place);
         });
-        root.addView(resultsList, new LinearLayout.LayoutParams(
+        // Thin right-hand A-Z rail stays visible independently of the list
+        // scroll. On compact phones the rail itself scrolls instead of
+        // shrinking 20+ tap targets below usable size.
+        LinearLayout listWithIndex = GoGoUi.row(this);
+        listWithIndex.setGravity(Gravity.TOP);
+        listWithIndex.addView(resultsList, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.MATCH_PARENT, 1f));
+        alphabetColumn = new LinearLayout(this);
+        alphabetColumn.setOrientation(LinearLayout.VERTICAL);
+        alphabetScroll = new ScrollView(this);
+        alphabetScroll.setFillViewport(false);
+        alphabetScroll.setVerticalScrollBarEnabled(false);
+        alphabetScroll.setContentDescription("按国家拼音首字母快速跳转");
+        alphabetScroll.addView(alphabetColumn);
+        listWithIndex.addView(alphabetScroll, new LinearLayout.LayoutParams(
+                GoGoUi.dp(this, 36), ViewGroup.LayoutParams.MATCH_PARENT));
+        root.addView(listWithIndex, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
         TextView note = GoGoUi.muted(this,
@@ -246,9 +268,18 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
             }
         }
 
-        for (Map.Entry<String, List<PlaceOption>> entry : groups.entrySet()) {
-            String country = entry.getKey();
-            List<PlaceOption> cities = entry.getValue();
+        // Country ordering is stable Hanyu Pinyin, rather than the old
+        // source-data insertion order. Track the actual header position so
+        // the rail remains correct after expanding/collapsing city sections.
+        List<String> orderedCountries = new ArrayList<>(groups.keySet());
+        Collections.sort(orderedCountries, LabPlaceAlphabet.COUNTRY_ORDER);
+        letterAnchors.clear();
+        for (String country : orderedCountries) {
+            String letter = LabPlaceAlphabet.initialOf(country);
+            if (!letterAnchors.containsKey(letter)) {
+                letterAnchors.put(letter, displayed.size());
+            }
+            List<PlaceOption> cities = groups.get(country);
             boolean expanded = isExpanded(country, searching);
             displayed.add(PickerRow.country(country, cities.size(), expanded));
             if (expanded) {
@@ -265,13 +296,47 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
         favoritesTab.setContentDescription("我的收藏，" + favoriteSnapshot.size()
                 + " 个地点，" + (favoritesOnly ? "已选中" : "未选中"));
         resultsLabel.setText(groups.size() + " 个国家 / 分类 · " + matches
-                + " 个地点" + (searching ? " · 已展开搜索结果" : " · 点＋看城市"));
+                + " 个地点" + (searching ? " · 已展开搜索结果" : " · 拼音 A–Z · 点＋看城市"));
+        updateAlphabetRail(searching);
         boolean isEmpty = groups.isEmpty();
         emptyLabel.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
         emptyLabel.setText(favoritesOnly
                 ? "还没有符合条件的收藏。切到「全部预设」点星号即可收藏。"
                 : "没有匹配结果，试试输入国家名、城市名，或清空搜索。");
         adapter.notifyDataSetChanged();
+    }
+
+    private void updateAlphabetRail(boolean searching) {
+        if (alphabetScroll == null || alphabetColumn == null) return;
+        // Search results already narrow to matching cities. Do not waste
+        // screen width with an index when typing or viewing only 1 category.
+        boolean show = !searching && letterAnchors.size() > 1;
+        alphabetScroll.setVisibility(show ? View.VISIBLE : View.GONE);
+        if (!show) return;
+
+        StringBuilder signature = new StringBuilder();
+        for (String letter : letterAnchors.keySet()) signature.append(letter).append(',');
+        String keys = signature.toString();
+        if (keys.equals(renderedAlphabet)) return;
+        renderedAlphabet = keys;
+        alphabetColumn.removeAllViews();
+        for (String letter : letterAnchors.keySet()) {
+            TextView shortcut = GoGoUi.muted(this, letter);
+            shortcut.setGravity(Gravity.CENTER);
+            shortcut.setTextSize(12);
+            shortcut.setMinimumHeight(GoGoUi.dp(this, 24));
+            shortcut.setContentDescription("跳转到拼音首字母 " + letter + " 的国家");
+            shortcut.setOnClickListener(v -> {
+                Integer headerPosition = letterAnchors.get(letter);
+                if (headerPosition != null && resultsList != null) {
+                    resultsList.setSelectionFromTop(headerPosition, 0);
+                }
+            });
+            alphabetColumn.addView(shortcut, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    GoGoUi.dp(this, 24)));
+        }
+        alphabetScroll.scrollTo(0, 0);
     }
 
     private void choose(PlaceOption option) {
