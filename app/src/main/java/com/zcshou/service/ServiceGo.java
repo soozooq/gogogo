@@ -279,6 +279,9 @@ public class ServiceGo extends Service {
         super.onCreate();
         sRunning = true;
         LabServiceLifecycleJournal.onServiceCreated(this);
+        // A previous ServiceGo may still have GMS Task callbacks pending.
+        // Invalidate its authority before this instance initializes providers.
+        LabProviderReliabilityController.markGmsServiceSessionStarted(this);
         recordProvenance("SERVICE", "ServiceGo created");
 
         PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
