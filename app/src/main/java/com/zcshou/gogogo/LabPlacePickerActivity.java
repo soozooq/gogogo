@@ -1,6 +1,10 @@
 package com.zcshou.gogogo;
 
 import android.app.Activity;
+import android.graphics.drawable.GradientDrawable;
+import android.view.HapticFeedbackConstants;
+import android.view.MotionEvent;
+import android.view.accessibility.AccessibilityEvent;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
@@ -66,6 +70,10 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
     private LinearLayout alphabetColumn;
     private final Map<String, Integer> letterAnchors = new LinkedHashMap<>();
     private String renderedAlphabet = "";
+    private final List<String> railLetters = new ArrayList<>();
+    private final Map<String, TextView> railShortcuts = new LinkedHashMap<>();
+    private String selectedRailLetter;
+    private boolean railTouchActive;
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
@@ -320,23 +328,107 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
         if (keys.equals(renderedAlphabet)) return;
         renderedAlphabet = keys;
         alphabetColumn.removeAllViews();
-        for (String letter : letterAnchors.keySet()) {
+        railShortcuts.clear();
+        railLetters.clear();
+        railLetters.addAll(letterAnchors.keySet());
+        selectedRailLetter = null;
+        for (String letter : railLetters) {
             TextView shortcut = GoGoUi.muted(this, letter);
             shortcut.setGravity(Gravity.CENTER);
             shortcut.setTextSize(12);
             shortcut.setMinimumHeight(GoGoUi.dp(this, 24));
             shortcut.setContentDescription("跳转到拼音首字母 " + letter + " 的国家");
-            shortcut.setOnClickListener(v -> {
-                Integer headerPosition = letterAnchors.get(letter);
-                if (headerPosition != null && resultsList != null) {
-                    resultsList.setSelectionFromTop(headerPosition, 0);
-                }
-            });
+            // TalkBack / keyboard activation still goes through a real click.
+            shortcut.setOnClickListener(v -> jumpToLetter(letter));
+            // Finger down selects an initial. Sliding across letters previews
+            // them in the actual country list, with system-respecting haptics.
+            shortcut.setOnTouchListener((v, event) ->
+                    handleAlphabetTouch(v, event, letter));
+            railShortcuts.put(letter, shortcut);
             alphabetColumn.addView(shortcut, new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     GoGoUi.dp(this, 24)));
         }
         alphabetScroll.scrollTo(0, 0);
+    }
+
+    private boolean handleAlphabetTouch(View view, MotionEvent event, String tappedLetter) {
+        switch (event.getActionMasked()) {
+            case MotionEvent.ACTION_DOWN:
+                railTouchActive = true;
+                // ScrollView must not steal the drag from the letter currently
+                // handling this gesture. The edge-scroll handles short screens.
+                alphabetScroll.requestDisallowInterceptTouchEvent(true);
+                jumpToLetterAt(event.getRawY(), false);
+                return true;
+            case MotionEvent.ACTION_MOVE:
+                if (!railTouchActive) return false;
+                jumpToLetterAt(event.getRawY(), true);
+                return true;
+            case MotionEvent.ACTION_UP:
+                if (!railTouchActive) return false;
+                railTouchActive = false;
+                if (tappedLetter.equals(selectedRailLetter)) {
+                    // Keep the accessible click path without snapping a
+                    // completed drag back to the starting letter.
+                    view.performClick();
+                } else {
+                    view.sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_CLICKED);
+                }
+                return true;
+            case MotionEvent.ACTION_CANCEL:
+                railTouchActive = false;
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private void jumpToLetterAt(float rawY, boolean canEdgeScroll) {
+        if (alphabetScroll == null || railLetters.isEmpty()) return;
+        int[] screen = new int[2];
+        alphabetScroll.getLocationOnScreen(screen);
+        if (canEdgeScroll) {
+            int direction = LabAlphabetRailTouch.edgeScrollDirection(
+                    rawY, screen[1], alphabetScroll.getHeight(), GoGoUi.dp(this, 28));
+            if (direction != 0) {
+                alphabetScroll.scrollBy(0, direction * GoGoUi.dp(this, 12));
+            }
+        }
+        String letter = LabAlphabetRailTouch.letterAt(
+                railLetters, rawY, screen[1], alphabetScroll.getScrollY(),
+                GoGoUi.dp(this, 24));
+        if (letter != null) jumpToLetter(letter);
+    }
+
+    private void jumpToLetter(String letter) {
+        Integer headerPosition = letterAnchors.get(letter);
+        if (headerPosition == null || resultsList == null) return;
+        // Even tapping the same letter again must jump back after the user
+        // manually scrolls away from that letter's country section.
+        resultsList.setSelectionFromTop(headerPosition, 0);
+        if (letter.equals(selectedRailLetter)) return;
+        selectedRailLetter = letter;
+        alphabetScroll.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
+        resultsLabel.setText("已跳至 " + letter + " · 选择国家后可展开城市");
+        renderSelectedRailLetter();
+    }
+
+    private void renderSelectedRailLetter() {
+        for (Map.Entry<String, TextView> entry : railShortcuts.entrySet()) {
+            TextView text = entry.getValue();
+            boolean selected = entry.getKey().equals(selectedRailLetter);
+            text.setTextColor(GoGoUi.color(this, selected
+                    ? R.color.gogogo_primary_dark : R.color.gogogo_text_muted));
+            if (selected) {
+                GradientDrawable highlight = new GradientDrawable();
+                highlight.setColor(GoGoUi.color(this, R.color.gogogo_primary_soft));
+                highlight.setCornerRadius(GoGoUi.dp(this, 8));
+                text.setBackground(highlight);
+            } else {
+                text.setBackground(null);
+            }
+        }
     }
 
     private void choose(PlaceOption option) {
