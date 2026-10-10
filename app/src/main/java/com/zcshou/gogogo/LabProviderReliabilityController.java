@@ -337,12 +337,12 @@ public final class LabProviderReliabilityController {
     }
 
     /**
-     * Atomically checks that a stopped ServiceGo still owns the latest GMS
-     * request before allowing its late-enable cleanup retry to be initiated.
-     * The check and the new audit request token are serialized within this
-     * process. This cannot serialize Play Services' asynchronous execution.
+     * Atomically checks that a ServiceGo still owns the latest GMS request
+     * before allowing its normal-stop or late-enable disable request.
+     * The check and new audit token are serialized within this process.
+     * This cannot serialize Play Services' asynchronous execution.
      */
-    public static synchronized long beginGmsLateDisableIfCurrent(
+    public static synchronized long beginGmsDisableIfCurrent(
             Context context, long ownerRequestId, String event) {
         SharedPreferences p = context.getApplicationContext()
                 .getSharedPreferences(AUDIT_PREFS, Context.MODE_PRIVATE);
@@ -393,7 +393,7 @@ public final class LabProviderReliabilityController {
         out.append("GMS 已忽略的过期异步回调次数: ")
                 .append(p.getLong("gms_late_callback_count", 0L))
                 .append("（只影响审计记录，不代表 GMS 已修复）").append('\n');
-        out.append("GMS 已阻止的过期服务补发关闭次数: ")
+        out.append("GMS 已阻止的过期服务关闭请求次数: ")
                 .append(p.getLong("gms_suppressed_late_retry_count", 0L))
                 .append("（保护新服务请求顺序，非实际 GMS 状态证明）").append('\n');
         long opAt = p.getLong("appops_changed_at", 0L);
