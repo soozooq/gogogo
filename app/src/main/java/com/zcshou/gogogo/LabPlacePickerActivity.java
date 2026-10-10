@@ -20,8 +20,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Shared searchable, offline global preset picker for home and MapLibre.
@@ -35,8 +39,13 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
 
     private static final String KEY_QUERY = "gogogo.place.query";
     private static final String KEY_FAVORITES_TAB = "gogogo.place.favoritesTab";
+    private static final String KEY_EXPANDED = "gogogo.place.expandedCountries";
 
-    private final List<PlaceOption> displayed = new ArrayList<>();
+    // Accordion country headers and optional city rows share a single ListView.
+    private final List<PickerRow> displayed = new ArrayList<>();
+    private final Set<String> expandedCountries = new HashSet<>();
+    private final Set<String> searchCollapsedCountries = new HashSet<>();
+    private String lastQuery = "";
     private final PickerAdapter adapter = new PickerAdapter();
     private EditText searchField;
     private TextView resultsLabel;
@@ -49,6 +58,10 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
         favoritesOnly = state != null && state.getBoolean(KEY_FAVORITES_TAB, false);
+        if (state != null) {
+            ArrayList<String> restored = state.getStringArrayList(KEY_EXPANDED);
+            if (restored != null) expandedCountries.addAll(restored);
+        }
         buildUi(state == null ? "" : state.getString(KEY_QUERY, ""));
     }
 
@@ -60,6 +73,7 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
 
     @Override protected void onSaveInstanceState(Bundle out) {
         out.putBoolean(KEY_FAVORITES_TAB, favoritesOnly);
+        out.putStringArrayList(KEY_EXPANDED, new ArrayList<>(expandedCountries));
         if (searchField != null) out.putString(KEY_QUERY, searchField.getText().toString());
         super.onSaveInstanceState(out);
     }
@@ -76,7 +90,7 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.heroTitle(this, "国家与城市"), GoGoUi.matchWrap());
         root.addView(GoGoUi.subtitle(this,
-                "搜索国家或城市，点地点选择，点星号收藏。坐标为离线参考值，选择后不会自动模拟。"),
+                "国旗代表国家，点击右侧 ＋ 展开城市；可搜索、选点和收藏。选点不会自动启动模拟。"),
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 12));
 
@@ -113,9 +127,10 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
         resultsList.setCacheColorHint(android.graphics.Color.TRANSPARENT);
         resultsList.setAdapter(adapter);
         resultsList.setOnItemClickListener((parent, view, position, id) -> {
-            if (position >= 0 && position < displayed.size()) {
-                choose(displayed.get(position));
-            }
+            if (position < 0 || position >= displayed.size()) return;
+            PickerRow row = displayed.get(position);
+            if (row.isCountry()) toggleCountry(row.country);
+            else choose(row.place);
         });
         root.addView(resultsList, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
@@ -140,42 +155,86 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
 
     private void switchTab(boolean onlyFavorites) {
         favoritesOnly = onlyFavorites;
+        searchCollapsedCountries.clear();
+        refreshResults();
+        if (resultsList != null) resultsList.setSelection(0);
+    }
+
+    private boolean isExpanded(String country, boolean searching) {
+        return searching ? !searchCollapsedCountries.contains(country)
+                : expandedCountries.contains(country);
+    }
+
+    private void toggleCountry(String country) {
+        boolean searching = searchField != null
+                && !searchField.getText().toString().trim().isEmpty();
+        if (searching) {
+            if (!searchCollapsedCountries.add(country)) searchCollapsedCountries.remove(country);
+        } else {
+            if (!expandedCountries.add(country)) expandedCountries.remove(country);
+        }
         refreshResults();
     }
 
     private void refreshResults() {
         if (searchField == null || resultsLabel == null) return;
         String query = searchField.getText().toString();
+        boolean searching = !query.trim().isEmpty();
+        if (!query.equals(lastQuery)) {
+            // A fresh search automatically reveals all matching cities;
+            // tapping a country can still collapse it while searching.
+            searchCollapsedCountries.clear();
+            lastQuery = query;
+        }
         displayed.clear();
         List<LabStore.SavedPoint> favorites = LabStore.getFavorites(this);
+        Map<String, List<PlaceOption>> groups = new LinkedHashMap<>();
+        int matches = 0;
 
         if (favoritesOnly) {
             for (LabStore.SavedPoint point : favorites) {
-                if (LabPlaceSearch.matches(point.name, query)) {
-                    displayed.add(new PlaceOption(point.name, point.longitude,
-                            point.latitude));
-                }
+                if (!LabPlaceSearch.matches(point.name, query)) continue;
+                if (!Double.isFinite(point.longitude) || !Double.isFinite(point.latitude)
+                        || Math.abs(point.longitude) > 180.0
+                        || Math.abs(point.latitude) > 90.0) continue;
+                String country = LabPlaceCountries.countryOf(point.name);
+                groups.computeIfAbsent(country, unused -> new ArrayList<>())
+                        .add(new PlaceOption(point.name, point.longitude, point.latitude));
+                matches++;
             }
         } else {
             for (int i = 0; i < LabLocationPresets.size(); i++) {
                 LabLocationPresets.Preset preset = LabLocationPresets.get(i);
-                if (LabPlaceSearch.matches(preset.name, query)) {
-                    displayed.add(new PlaceOption(preset.name, preset.longitude,
-                            preset.latitude));
-                }
+                if (!LabPlaceSearch.matches(preset.name, query)) continue;
+                String country = LabPlaceCountries.countryOf(preset.name);
+                groups.computeIfAbsent(country, unused -> new ArrayList<>())
+                        .add(new PlaceOption(preset.name, preset.longitude, preset.latitude));
+                matches++;
             }
         }
+
+        for (Map.Entry<String, List<PlaceOption>> entry : groups.entrySet()) {
+            String country = entry.getKey();
+            List<PlaceOption> cities = entry.getValue();
+            boolean expanded = isExpanded(country, searching);
+            displayed.add(PickerRow.country(country, cities.size(), expanded));
+            if (expanded) {
+                for (PlaceOption option : cities) displayed.add(PickerRow.city(option));
+            }
+        }
+
         allTab.setText("全部预设 · " + LabLocationPresets.size()
                 + (favoritesOnly ? "" : " ✓"));
         favoritesTab.setText("我的收藏 · " + favorites.size()
                 + (favoritesOnly ? " ✓" : ""));
         allTab.setContentDescription("全部预设，" + LabLocationPresets.size()
-                + " 项，" + (favoritesOnly ? "未选中" : "已选中"));
+                + " 个地点，" + (favoritesOnly ? "未选中" : "已选中"));
         favoritesTab.setContentDescription("我的收藏，" + favorites.size()
-                + " 项，" + (favoritesOnly ? "已选中" : "未选中"));
-        resultsLabel.setText("找到 " + displayed.size()
-                + " 个" + (favoritesOnly ? "收藏地点" : "预设地点"));
-        boolean isEmpty = displayed.isEmpty();
+                + " 个地点，" + (favoritesOnly ? "已选中" : "未选中"));
+        resultsLabel.setText("找到 " + groups.size() + " 个国家或分类 · " + matches
+                + " 个" + (favoritesOnly ? "收藏地点" : "预设城市")
+                + (searching ? " · 已自动展开匹配城市" : " · 点 ＋ 展开"));
+        boolean isEmpty = groups.isEmpty();
         emptyLabel.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
         emptyLabel.setText(favoritesOnly
                 ? "还没有符合条件的收藏。切到「全部预设」点星号即可收藏。"
@@ -198,6 +257,29 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
         }
     }
 
+    /** A header never represents a coordinate; only expanded city rows are selectable. */
+    private static final class PickerRow {
+        final String country;
+        final PlaceOption place;
+        final int count;
+        final boolean expanded;
+
+        private PickerRow(String country, PlaceOption place, int count, boolean expanded) {
+            this.country = country;
+            this.place = place;
+            this.count = count;
+            this.expanded = expanded;
+        }
+
+        static PickerRow country(String country, int count, boolean expanded) {
+            return new PickerRow(country, null, count, expanded);
+        }
+        static PickerRow city(PlaceOption place) {
+            return new PickerRow(null, place, 0, false);
+        }
+        boolean isCountry() { return place == null; }
+    }
+
     private static final class PlaceOption {
         final String label;
         final double longitude;
@@ -216,21 +298,67 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
         @Override public long getItemId(int position) { return position; }
 
         @Override public View getView(int position, View convertView, ViewGroup parent) {
-            PlaceOption option = displayed.get(position);
+            PickerRow entry = displayed.get(position);
+            if (entry.isCountry()) return countryHeader(entry);
+            return cityRow(entry.place);
+        }
+
+        private View countryHeader(PickerRow entry) {
             LinearLayout row = GoGoUi.row(LabPlacePickerActivity.this);
-            row.setPadding(GoGoUi.dp(LabPlacePickerActivity.this, 8),
+            row.setPadding(GoGoUi.dp(LabPlacePickerActivity.this, 12),
+                    GoGoUi.dp(LabPlacePickerActivity.this, 8),
+                    GoGoUi.dp(LabPlacePickerActivity.this, 8),
+                    GoGoUi.dp(LabPlacePickerActivity.this, 8));
+            row.setBackground(GoGoUi.card(LabPlacePickerActivity.this).getBackground());
+
+            TextView title = GoGoUi.sectionTitle(LabPlacePickerActivity.this,
+                    LabPlaceCountries.flagOf(entry.country) + "  " + entry.country);
+            title.setTextSize(16);
+            title.setPadding(0, 0, 0, 0);
+            row.addView(title, new LinearLayout.LayoutParams(
+                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+
+            TextView count = GoGoUi.muted(LabPlacePickerActivity.this,
+                    entry.count + (favoritesOnly ? " 个收藏" : " 个城市"));
+            row.addView(count, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            GoGoUi.addHorizontalGap(LabPlacePickerActivity.this, row, 8);
+
+            MaterialButton toggle = GoGoUi.secondaryButton(LabPlacePickerActivity.this,
+                    entry.expanded ? "−" : "+", v -> toggleCountry(entry.country));
+            toggle.setTextSize(20);
+            toggle.setContentDescription((entry.expanded ? "收起" : "展开") + entry.country
+                    + "的" + entry.count + "个地点");
+            row.addView(toggle, new LinearLayout.LayoutParams(
+                    GoGoUi.dp(LabPlacePickerActivity.this, 52),
+                    ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            row.setClickable(true);
+            row.setFocusable(true);
+            row.setContentDescription(LabPlaceCountries.flagOf(entry.country) + " "
+                    + entry.country + "，" + entry.count
+                    + (favoritesOnly ? "个收藏" : "个城市") + "，"
+                    + (entry.expanded ? "已展开" : "已收起"));
+            row.setOnClickListener(v -> toggleCountry(entry.country));
+            return row;
+        }
+
+        private View cityRow(PlaceOption option) {
+            LinearLayout row = GoGoUi.row(LabPlacePickerActivity.this);
+            row.setPadding(GoGoUi.dp(LabPlacePickerActivity.this, 24),
                     GoGoUi.dp(LabPlacePickerActivity.this, 4),
                     GoGoUi.dp(LabPlacePickerActivity.this, 8),
                     GoGoUi.dp(LabPlacePickerActivity.this, 4));
             row.setBackground(GoGoUi.card(LabPlacePickerActivity.this).getBackground());
             row.setClickable(true);
             row.setFocusable(true);
-            row.setContentDescription("选择地点：" + option.label);
+            row.setContentDescription("选择城市：" + option.label);
             row.setOnClickListener(v -> choose(option));
 
             LinearLayout info = new LinearLayout(LabPlacePickerActivity.this);
             info.setOrientation(LinearLayout.VERTICAL);
-            TextView title = GoGoUi.sectionTitle(LabPlacePickerActivity.this, option.label);
+            TextView title = GoGoUi.sectionTitle(LabPlacePickerActivity.this,
+                    LabPlaceCountries.cityOf(option.label));
             title.setTextSize(15);
             title.setPadding(0, 0, 0, 0);
             info.addView(title, GoGoUi.matchWrap());

@@ -1,4 +1,4 @@
-> **soozooq / GoGoGo 集成测试版说明（2026-10-09）**：本 Fork 已整合历史 Lab 1–42 的实验开发成果，开发代码已通过 GitHub Actions 自动构建，但**尚未完成所有目标手机、腾讯真实密钥与第三方定位消费者的实机验收**。此仓库当前 APK 属于 **Preview / 测试版**，并非官方上游稳定发行版。
+> **soozooq / GoGoGo 集成测试版说明（2026-10-09）**：本 Fork 已整合历史 Lab 1–43 的实验开发成果，开发代码已通过 GitHub Actions 自动构建，但**尚未完成所有目标手机、腾讯真实密钥与第三方定位消费者的实机验收**。此仓库当前 APK 属于 **Preview / 测试版**，并非官方上游稳定发行版。
 >
 > - 本 Fork 源码： https://github.com/soozooq/gogogo
 > - 最新 `main` 构建： [Build Check](https://github.com/soozooq/gogogo/actions/workflows/build-check.yml) · [Preview APK（在 Artifacts 中下载 ZIP 并解压）](https://github.com/soozooq/gogogo/actions/workflows/build-release.yml)
@@ -18,6 +18,7 @@
 > - Lab 40 首页与地图交互：[地图选点明确回填首页、请求与服务实际状态分开提示](docs/lab40-map-handoff-status.md)（不自动启动或切换模拟）
 > - Lab 41 旋转恢复修复：[首页坐标编辑、地图选点及路线跨屏幕重建保留](docs/lab41-rotation-state.md)（仅布局状态，不变更定位服务）
 > - Lab 42 全球地点预设：[157 个离线国家城市地点、搜索页、首页与地图共用收藏](docs/lab42-global-place-picker.md)（选点不会自动开启模拟）
+> - Lab 43 国旗与国家折叠列表：[109 个国家国旗、国家展开／收起城市、搜索结果自动展开](docs/lab43-country-flag-accordion.md)（收藏仍与地图共用）
 > - Lab 25 发布阻断清单： [docs/lab25-release-readiness.md](docs/lab25-release-readiness.md)
 > - 后续自动构建： https://github.com/soozooq/gogogo/actions
 > - 备份旧 main： [backup/main-before-labs-20261009](https://github.com/soozooq/gogogo/tree/backup/main-before-labs-20261009)
