@@ -29,6 +29,7 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.zcshou.service.ServiceGo;
 
@@ -69,6 +70,17 @@ public class LabMapActivity extends AppCompatActivity {
     // Explicit map-to-home result. Merely navigating back never changes home.
     public static final String EXTRA_RESULT_LATITUDE = "gogogo.map.resultLatitude";
     public static final String EXTRA_RESULT_LONGITUDE = "gogogo.map.resultLongitude";
+    private static final String STATE_SELECTED_LAT = "gogogo.map.selected.lat";
+    private static final String STATE_SELECTED_LNG = "gogogo.map.selected.lng";
+    private static final String STATE_STYLE = "gogogo.map.style";
+    private static final String STATE_FOLLOW = "gogogo.map.follow";
+    private static final String STATE_FOLLOW_HEADING = "gogogo.map.followHeading";
+    private static final String STATE_ROUTE_EDIT = "gogogo.map.routeEdit";
+    private static final String STATE_CAMERA_LAT = "gogogo.map.camera.lat";
+    private static final String STATE_CAMERA_LNG = "gogogo.map.camera.lng";
+    private static final String STATE_CAMERA_ZOOM = "gogogo.map.camera.zoom";
+    private static final String STATE_CAMERA_BEARING = "gogogo.map.camera.bearing";
+    private static final String STATE_CAMERA_TILT = "gogogo.map.camera.tilt";
     private static final double DEFAULT_LAT = LabLocationPresets.defaultPreset().latitude;
     private static final double DEFAULT_LNG = LabLocationPresets.defaultPreset().longitude;
     private static final String STYLE_DEMO = "https://demotiles.maplibre.org/style.json";
@@ -80,10 +92,13 @@ public class LabMapActivity extends AppCompatActivity {
     private Marker liveMarker;
     private Polyline routeLine;
     private LatLng selectedPoint = new LatLng(DEFAULT_LAT, DEFAULT_LNG);
-    private final List<RouteFileParser.RoutePoint> routePoints = new ArrayList<>();
+    // Route points can be numerous. A retained ViewModel keeps them in
+    // memory on rotation without storing thousands in the Binder state Bundle.
+    private List<RouteFileParser.RoutePoint> routePoints;
     private final List<Marker> routeEditMarkers = new ArrayList<>();
     private boolean routeEditMode = false;
     private String currentStyle = STYLE_LIBERTY;
+    private CameraPosition restoredCamera;
 
     private TextView statusView;
     private TextView routeView;
@@ -141,6 +156,9 @@ public class LabMapActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        LabMapRouteSession routeSession =
+                new ViewModelProvider(this).get(LabMapRouteSession.class);
+        routePoints = routeSession.points;
         // The home form can center the map, but cannot start mock publishing.
         Intent launch = getIntent();
         if (launch != null && launch.hasExtra(EXTRA_START_LATITUDE)
@@ -152,8 +170,49 @@ public class LabMapActivity extends AppCompatActivity {
                 selectedPoint = new LatLng(lat, lng);
             }
         }
+        if (savedInstanceState != null) {
+            // A restored selection wins over the original launch coordinates.
+            // A simple rotation must not send a user back to the launch point.
+            boolean hasSavedPoint = savedInstanceState.containsKey(STATE_SELECTED_LAT)
+                    && savedInstanceState.containsKey(STATE_SELECTED_LNG);
+            LabHomeCoordinates.Point restored = LabMapSelectionRestore.choose(
+                    selectedPoint.getLongitude(), selectedPoint.getLatitude(),
+                    hasSavedPoint,
+                    savedInstanceState.getDouble(STATE_SELECTED_LNG, Double.NaN),
+                    savedInstanceState.getDouble(STATE_SELECTED_LAT, Double.NaN));
+            selectedPoint = new LatLng(restored.latitude, restored.longitude);
+            String style = savedInstanceState.getString(STATE_STYLE, STYLE_LIBERTY);
+            currentStyle = STYLE_DEMO.equals(style) ? STYLE_DEMO : STYLE_LIBERTY;
+            followMock = savedInstanceState.getBoolean(STATE_FOLLOW, true);
+            followHeading = savedInstanceState.getBoolean(STATE_FOLLOW_HEADING, false);
+            routeEditMode = !routePoints.isEmpty()
+                    && savedInstanceState.getBoolean(STATE_ROUTE_EDIT, false);
+            restoreCamera(savedInstanceState);
+        }
         MapLibre.getInstance(this);
         buildUi(savedInstanceState);
+    }
+
+    private void restoreCamera(Bundle state) {
+        if (!state.containsKey(STATE_CAMERA_ZOOM)) return;
+        try {
+            LabHomeCoordinates.Point center = LabHomeCoordinates.parse(
+                    Double.toString(state.getDouble(STATE_CAMERA_LNG)),
+                    Double.toString(state.getDouble(STATE_CAMERA_LAT)));
+            double zoom = state.getDouble(STATE_CAMERA_ZOOM);
+            double bearing = state.getDouble(STATE_CAMERA_BEARING);
+            double tilt = state.getDouble(STATE_CAMERA_TILT);
+            if (!Double.isFinite(zoom) || zoom < 0.0 || zoom > 22.0
+                    || !Double.isFinite(bearing)
+                    || !Double.isFinite(tilt) || tilt < 0.0 || tilt > 60.0) {
+                return;
+            }
+            restoredCamera = new CameraPosition.Builder()
+                    .target(new LatLng(center.latitude, center.longitude))
+                    .zoom(zoom).bearing(bearing).tilt(tilt).build();
+        } catch (IllegalArgumentException ignored) {
+            // Restoring a bad map state should never prevent launching the map.
+        }
     }
 
     private void buildUi(Bundle savedInstanceState) {
@@ -230,6 +289,9 @@ public class LabMapActivity extends AppCompatActivity {
         routeView = GoGoUi.muted(this, "路线：未导入");
         routeView.setPadding(0, GoGoUi.dp(this, 4), 0, 0);
         control.addView(routeView, GoGoUi.matchWrap());
+        // An imported route may have survived a configuration change in
+        // the ViewModel even though the MapView itself has been recreated.
+        updateRouteView();
 
         control.addView(GoGoUi.gap(this, 10));
 
@@ -253,11 +315,14 @@ public class LabMapActivity extends AppCompatActivity {
         control.addView(routeActions, GoGoUi.matchWrap());
 
         LinearLayout followRow = GoGoUi.row(this);
-        followButton = GoGoUi.textButton(this, "跟随·开", v -> toggleFollow());
+        followButton = GoGoUi.textButton(this,
+                followMock ? "跟随·开" : "跟随·关", v -> toggleFollow());
         followRow.addView(followButton, GoGoUi.weighted());
         GoGoUi.addHorizontalGap(this, followRow, 8);
         headingFollowButton =
-                GoGoUi.textButton(this, "朝向·关", v -> toggleHeadingFollow());
+                GoGoUi.textButton(this,
+                        followHeading ? "朝向·开" : "朝向·关",
+                        v -> toggleHeadingFollow());
         followRow.addView(headingFollowButton, GoGoUi.weighted());
         control.addView(followRow, GoGoUi.matchWrap());
 
@@ -286,7 +351,8 @@ public class LabMapActivity extends AppCompatActivity {
                 addManualRoutePoint(point);
                 return true;
             });
-            map.setCameraPosition(new CameraPosition.Builder()
+            map.setCameraPosition(restoredCamera != null ? restoredCamera
+                    : new CameraPosition.Builder()
                     .target(selectedPoint)
                     .zoom(14.5)
                     .build());
@@ -1761,6 +1827,24 @@ public class LabMapActivity extends AppCompatActivity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
+        if (selectedPoint != null) {
+            outState.putDouble(STATE_SELECTED_LAT, selectedPoint.getLatitude());
+            outState.putDouble(STATE_SELECTED_LNG, selectedPoint.getLongitude());
+        }
+        outState.putString(STATE_STYLE, currentStyle);
+        outState.putBoolean(STATE_FOLLOW, followMock);
+        outState.putBoolean(STATE_FOLLOW_HEADING, followHeading);
+        outState.putBoolean(STATE_ROUTE_EDIT, routeEditMode);
+        if (map != null) {
+            CameraPosition camera = map.getCameraPosition();
+            if (camera != null && camera.target != null) {
+                outState.putDouble(STATE_CAMERA_LAT, camera.target.getLatitude());
+                outState.putDouble(STATE_CAMERA_LNG, camera.target.getLongitude());
+                outState.putDouble(STATE_CAMERA_ZOOM, camera.zoom);
+                outState.putDouble(STATE_CAMERA_BEARING, camera.bearing);
+                outState.putDouble(STATE_CAMERA_TILT, camera.tilt);
+            }
+        }
         super.onSaveInstanceState(outState);
         if (mapView != null) mapView.onSaveInstanceState(outState);
     }
