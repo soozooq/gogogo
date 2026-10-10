@@ -243,6 +243,9 @@ public class ServiceGo extends Service {
     private FusedLocationProviderClient mFusedClient; // Google Play Services fused mock, null = GMS 不可用
     private volatile boolean mFusedMockEnabled = false;
     private volatile boolean mFusedShutdownRequested = false;
+    // Request ID most recently issued by THIS ServiceGo instance. Never
+    // interpret older GMS callbacks as authority over a newer service.
+    private volatile long mLastGmsRequestId = 0L;
     // Read by the location HandlerThread and written during main-thread teardown.
     private volatile boolean isStop = false;
     private PowerManager.WakeLock mWakeLock;
@@ -583,6 +586,7 @@ public class ServiceGo extends Service {
             mFusedClient = LocationServices.getFusedLocationProviderClient(this);
             pendingRequestId = LabProviderReliabilityController.beginGmsRequest(
                     this, "ENABLE_REQUESTED");
+            mLastGmsRequestId = pendingRequestId;
             final long enableRequestId = pendingRequestId;
             mFusedClient.setMockMode(true)
                     .addOnSuccessListener(unused -> {
@@ -591,7 +595,9 @@ public class ServiceGo extends Service {
                             // must NOT overwrite a newer Task's audit state.
                             LabProviderReliabilityController.finishGmsRequest(
                                     this, enableRequestId, "LATE_ENABLE_AFTER_STOP");
-                            requestGmsMockDisable("LATE_ENABLE");
+                            // Do not let an obsolete ServiceGo issue a disable
+                            // for a newly started service's GMS mock session.
+                            requestGmsMockDisable("LATE_ENABLE", true);
                             return;
                         }
                         if (LabProviderReliabilityController.finishGmsRequest(
@@ -621,9 +627,26 @@ public class ServiceGo extends Service {
     }
 
     private void requestGmsMockDisable(String reason) {
+        requestGmsMockDisable(reason, false);
+    }
+
+    private void requestGmsMockDisable(String reason, boolean onlyIfStillOwner) {
         if (mFusedClient == null) return;
-        final long disableRequestId = LabProviderReliabilityController.beginGmsRequest(
-                this, "DISABLE_REQUESTED_" + reason);
+        long disableRequestId;
+        if (onlyIfStillOwner) {
+            disableRequestId = LabProviderReliabilityController.beginGmsLateDisableIfCurrent(
+                    this, mLastGmsRequestId, "DISABLE_REQUESTED_" + reason);
+            if (disableRequestId <= 0L) {
+                // A newer ServiceGo request has taken ownership; silently
+                // suppress this stale instance's extra best-effort cleanup.
+                return;
+            }
+        } else {
+            disableRequestId = LabProviderReliabilityController.beginGmsRequest(
+                    this, "DISABLE_REQUESTED_" + reason);
+        }
+        mLastGmsRequestId = disableRequestId;
+        final long callbackRequestId = disableRequestId;
         // The permission may be revoked while a Task is in flight.
         boolean fine = checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
                 == android.content.pm.PackageManager.PERMISSION_GRANTED;
@@ -631,7 +654,7 @@ public class ServiceGo extends Service {
                 == android.content.pm.PackageManager.PERMISSION_GRANTED;
         if (!fine && !coarse) {
             LabProviderReliabilityController.finishGmsRequest(
-                    this, disableRequestId,
+                    this, callbackRequestId,
                     "DISABLE_BLOCKED_NO_LOCATION_PERMISSION_" + reason);
             return;
         }
@@ -639,21 +662,21 @@ public class ServiceGo extends Service {
             mFusedClient.setMockMode(false)
                     .addOnSuccessListener(unused -> {
                         if (LabProviderReliabilityController.finishGmsRequest(
-                                ServiceGo.this, disableRequestId,
+                                ServiceGo.this, callbackRequestId,
                                 "DISABLE_SUCCEEDED_" + reason)) {
                             mFusedMockEnabled = false;
                         }
                     })
                     .addOnFailureListener(e ->
                             LabProviderReliabilityController.finishGmsRequest(
-                                    ServiceGo.this, disableRequestId,
+                                    ServiceGo.this, callbackRequestId,
                                     "DISABLE_FAILED_" + e.getClass().getSimpleName()));
         } catch (SecurityException e) {
             LabProviderReliabilityController.finishGmsRequest(
-                    this, disableRequestId, "DISABLE_DENIED_" + reason);
+                    this, callbackRequestId, "DISABLE_DENIED_" + reason);
         } catch (RuntimeException e) {
             LabProviderReliabilityController.finishGmsRequest(
-                    this, disableRequestId,
+                    this, callbackRequestId,
                     "DISABLE_EXCEPTION_" + e.getClass().getSimpleName());
         }
     }
