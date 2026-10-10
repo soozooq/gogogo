@@ -29,12 +29,19 @@ public final class LabRecoveryTriage {
         public final String phase;
         public final Cleanup outcome;
         public final Cleanup priorOutcome;
+        public final LabEvidenceTimeWindow.Relation window;
 
         public ProviderRow(String name, String phase, String outcome, String previous) {
+            this(name, phase, outcome, previous, LabEvidenceTimeWindow.Relation.UNKNOWN);
+        }
+
+        public ProviderRow(String name, String phase, String outcome, String previous,
+                           LabEvidenceTimeWindow.Relation window) {
             this.name = name == null ? "UNKNOWN" : name;
             this.phase = phase == null ? "UNKNOWN" : phase;
             this.outcome = cleanup(outcome);
             this.priorOutcome = cleanup(previous);
+            this.window = window == null ? LabEvidenceTimeWindow.Relation.UNKNOWN : window;
         }
     }
 
@@ -43,14 +50,24 @@ public final class LabRecoveryTriage {
         public final boolean localServiceFlag;
         public final List<ProviderRow> providers;
         public final Gms gms;
+        public final LabEvidenceTimeWindow.Relation gmsWindow;
 
         public Snapshot(Lifecycle lifecycle, boolean localServiceFlag,
                         List<ProviderRow> providers, String lastGmsEvent) {
+            this(lifecycle, localServiceFlag, providers, lastGmsEvent,
+                    LabEvidenceTimeWindow.Relation.UNKNOWN);
+        }
+
+        public Snapshot(Lifecycle lifecycle, boolean localServiceFlag,
+                        List<ProviderRow> providers, String lastGmsEvent,
+                        LabEvidenceTimeWindow.Relation gmsWindow) {
             this.lifecycle = lifecycle == null ? Lifecycle.REBOOT_UNCERTAIN : lifecycle;
             this.localServiceFlag = localServiceFlag;
             this.providers = Collections.unmodifiableList(new ArrayList<>(
                     providers == null ? Collections.emptyList() : providers));
             this.gms = gms(lastGmsEvent);
+            this.gmsWindow = gmsWindow == null
+                    ? LabEvidenceTimeWindow.Relation.UNKNOWN : gmsWindow;
         }
     }
 
@@ -123,24 +140,38 @@ public final class LabRecoveryTriage {
         int currentPending = 0;
         int currentFailures = 0;
         int previousPending = 0;
+        int olderWarnings = 0;
         int observed = 0;
         for (ProviderRow row : snapshot.providers) {
             if (row == null) continue;
             result.append(row.name).append(" · ").append(row.phase).append("：")
                     .append(cleanupText(row.outcome));
+            if (row.outcome != Cleanup.NOT_RECORDED) {
+                result.append(" [").append(LabEvidenceTimeWindow.label(row.window)).append("]");
+            }
             if (row.priorOutcome == Cleanup.PENDING) {
                 result.append("；更早一次曾 PENDING");
                 previousPending++;
             }
             result.append('\n');
-            if (row.outcome == Cleanup.PENDING) currentPending++;
+            boolean old = LabEvidenceTimeWindow.isFromEarlierStart(row.window);
+            if (row.outcome == Cleanup.PENDING) {
+                if (old) olderWarnings++; else currentPending++;
+            }
             if (row.outcome == Cleanup.SECURITY_DENIED
                     || row.outcome == Cleanup.OTHER_FAILURE
-                    || row.outcome == Cleanup.UNRECOGNIZED) currentFailures++;
+                    || row.outcome == Cleanup.UNRECOGNIZED) {
+                if (old) olderWarnings++; else currentFailures++;
+            }
             if (row.outcome != Cleanup.NOT_RECORDED) observed++;
         }
         if (observed == 0) result.append("无任何 Provider 清理证据\n");
-        result.append("\nGMS：").append(gmsText(snapshot.gms)).append("\n\n");
+        result.append("\nGMS：").append(gmsText(snapshot.gms));
+        if (snapshot.gms != Gms.NOT_RECORDED) {
+            result.append(" [").append(LabEvidenceTimeWindow.label(snapshot.gmsWindow))
+                    .append("]");
+        }
+        result.append("\n\n");
 
         result.append("建议：");
         if (snapshot.localServiceFlag || snapshot.lifecycle == Lifecycle.RUNNING) {
@@ -157,14 +188,22 @@ public final class LabRecoveryTriage {
             result.append("可在 Consumer Matrix 验证实时流，并到实验仪表盘查阅完整清理取证。");
         }
 
+        if (olderWarnings > 0) {
+            result.append("\n提醒：存在更早一次服务启动之前的异常记录；"
+                    + "它们不能作为最近一轮清理失败的证据。");
+        }
         if (previousPending > 0) {
             result.append("\n提醒：更早一次存在 PENDING，并不代表目前仍有 Provider 残留。");
         }
-        if (snapshot.gms == Gms.DISABLE_REQUESTED || snapshot.gms == Gms.DISABLE_FAILED) {
+        if (!LabEvidenceTimeWindow.isFromEarlierStart(snapshot.gmsWindow)
+                && (snapshot.gms == Gms.DISABLE_REQUESTED
+                    || snapshot.gms == Gms.DISABLE_FAILED)) {
             result.append("\n注意：GMS 关闭没有成功回调证据，需要独立检查。");
         }
         result.append("\n\n所有结果均为本应用保存的历史记录；REMOVE_RETURNED 和 GMS 历史成功事件");
         result.append("都不能证明微信／GMS 缓存／系统当前状态。");
+        result.append("事件时间与最近一次启动的前后关系只是墙上时钟排序，"
+                + "不能证明它属于哪个进程或应用会话。");
         result.append("不包含经纬度、IP、SSID、PID 或完整日志。");
         return result.toString();
     }

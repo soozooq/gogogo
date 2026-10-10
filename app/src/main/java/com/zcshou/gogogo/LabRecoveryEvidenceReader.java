@@ -18,6 +18,8 @@ public final class LabRecoveryEvidenceReader {
         SharedPreferences prefs = context.getApplicationContext()
                 .getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         boolean running = ServiceGo.sRunning;
+        long lastStartWall = LabServiceLifecycleJournal.lastServiceStartWall(context);
+        long nowWall = System.currentTimeMillis();
         LabServiceLifecycleJournal.Verdict verdict =
                 LabServiceLifecycleJournal.currentVerdict(context, running);
         LabRecoveryTriage.Lifecycle lifecycle;
@@ -43,12 +45,16 @@ public final class LabRecoveryEvidenceReader {
                         name.toUpperCase(java.util.Locale.US),
                         "startup_".equals(prefix) ? "启动扫尾" : "服务清理",
                         prefs.getString(key + "outcome", null),
-                        prefs.getString(key + "previous_outcome", null)));
+                        prefs.getString(key + "previous_outcome", null),
+                        LabEvidenceTimeWindow.classify(lastStartWall,
+                                prefs.getLong(key + "started_at", 0L), nowWall)));
             }
         }
 
         return new LabRecoveryTriage.Snapshot(
                 lifecycle, running, rows,
-                prefs.getString("gms_last_event", null));
+                prefs.getString("gms_last_event", null),
+                LabEvidenceTimeWindow.classify(lastStartWall,
+                        prefs.getLong("gms_last_at", 0L), nowWall));
     }
 }

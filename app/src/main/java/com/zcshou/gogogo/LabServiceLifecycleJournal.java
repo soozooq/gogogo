@@ -145,6 +145,11 @@ public final class LabServiceLifecycleJournal {
      * Structured equivalent of the lifecycle report verdict.
      * Readers must not parse translated text or infer live provider state.
      */
+    /** Wall-clock anchor only; not a cryptographic or monotonic session identity. */
+    public static long lastServiceStartWall(Context context) {
+        return preferences(context).getLong(KEY_STARTED_WALL, 0L);
+    }
+
     public static Verdict currentVerdict(Context context, boolean serviceRunning) {
         SharedPreferences prefs = preferences(context);
         String state = prefs.getString(KEY_STATE, "");

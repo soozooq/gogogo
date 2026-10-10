@@ -25,13 +25,15 @@ public final class Lab33DiagnosticBundle {
         if (recovery == null
                 || recovery.lifecycle == LabRecoveryTriage.Lifecycle.INTERRUPTED_CANDIDATE
                 || recovery.lifecycle == LabRecoveryTriage.Lifecycle.REBOOT_UNCERTAIN
-                || recovery.gms == LabRecoveryTriage.Gms.DISABLE_FAILED
-                || recovery.gms == LabRecoveryTriage.Gms.DISABLE_REQUESTED) {
+                || (!LabEvidenceTimeWindow.isFromEarlierStart(recovery.gmsWindow)
+                    && (recovery.gms == LabRecoveryTriage.Gms.DISABLE_FAILED
+                        || recovery.gms == LabRecoveryTriage.Gms.DISABLE_REQUESTED))) {
             return Priority.REVIEW_RECOVERY;
         }
 
         for (LabRecoveryTriage.ProviderRow row : recovery.providers) {
-            if (row == null) continue;
+            if (row == null
+                    || LabEvidenceTimeWindow.isFromEarlierStart(row.window)) continue;
             if (row.outcome == LabRecoveryTriage.Cleanup.PENDING
                     || row.outcome == LabRecoveryTriage.Cleanup.SECURITY_DENIED
                     || row.outcome == LabRecoveryTriage.Cleanup.OTHER_FAILURE
@@ -69,6 +71,8 @@ public final class Lab33DiagnosticBundle {
         result.append("\n\n========== 验证边界 ==========\n");
         result.append("本摘要仅包含授权/运行标记及本应用已保存的清理结果枚举。");
         result.append("没有实时读取或验证微信、腾讯 SDK、GMS 缓存、系统原生 GNSS。");
+        result.append("标注旧记录的清理失败不会被当作本轮故障；");
+        result.append("墙上时钟顺序也不证明事件所属进程。");
         result.append("历史 REMOVE_RETURNED、DISABLE_SUCCEEDED 不代表第三方已经更新位置。");
         result.append("不自动修改模拟位置、清理 Provider、申请 Shizuku 权限。");
         return result.toString();
