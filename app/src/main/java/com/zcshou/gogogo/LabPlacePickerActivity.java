@@ -223,6 +223,10 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
                     GoGoUi.dp(LabPlacePickerActivity.this, 8),
                     GoGoUi.dp(LabPlacePickerActivity.this, 4));
             row.setBackground(GoGoUi.card(LabPlacePickerActivity.this).getBackground());
+            row.setClickable(true);
+            row.setFocusable(true);
+            row.setContentDescription("选择地点：" + option.label);
+            row.setOnClickListener(v -> choose(option));
 
             LinearLayout info = new LinearLayout(LabPlacePickerActivity.this);
             info.setOrientation(LinearLayout.VERTICAL);
