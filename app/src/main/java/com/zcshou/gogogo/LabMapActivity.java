@@ -173,17 +173,14 @@ public class LabMapActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
             // A restored selection wins over the original launch coordinates.
             // A simple rotation must not send a user back to the launch point.
-            if (savedInstanceState.containsKey(STATE_SELECTED_LAT)
-                    && savedInstanceState.containsKey(STATE_SELECTED_LNG)) {
-                try {
-                    LabHomeCoordinates.Point saved = LabHomeCoordinates.parse(
-                            Double.toString(savedInstanceState.getDouble(STATE_SELECTED_LNG)),
-                            Double.toString(savedInstanceState.getDouble(STATE_SELECTED_LAT)));
-                    selectedPoint = new LatLng(saved.latitude, saved.longitude);
-                } catch (IllegalArgumentException ignored) {
-                    // Keep validated launch coordinates on corrupt saved state.
-                }
-            }
+            boolean hasSavedPoint = savedInstanceState.containsKey(STATE_SELECTED_LAT)
+                    && savedInstanceState.containsKey(STATE_SELECTED_LNG);
+            LabHomeCoordinates.Point restored = LabMapSelectionRestore.choose(
+                    selectedPoint.getLongitude(), selectedPoint.getLatitude(),
+                    hasSavedPoint,
+                    savedInstanceState.getDouble(STATE_SELECTED_LNG, Double.NaN),
+                    savedInstanceState.getDouble(STATE_SELECTED_LAT, Double.NaN));
+            selectedPoint = new LatLng(restored.latitude, restored.longitude);
             String style = savedInstanceState.getString(STATE_STYLE, STYLE_LIBERTY);
             currentStyle = STYLE_DEMO.equals(style) ? STYLE_DEMO : STYLE_LIBERTY;
             followMock = savedInstanceState.getBoolean(STATE_FOLLOW, true);
