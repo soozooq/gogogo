@@ -33,6 +33,12 @@ public final class LabVpnExitSync {
     public static final String KEY_LAT = "lat_bits";
     public static final String KEY_LNG = "lng_bits";
     public static final String KEY_APPLIED_AT = "applied_at";
+    public static final String KEY_LOCKED = "location_locked";
+    public static final String KEY_LOCKED_AT = "location_locked_at";
+    public static final String KEY_LOCK_LAT = "locked_lat_bits";
+    public static final String KEY_LOCK_LNG = "locked_lng_bits";
+    public static final String KEY_LOCK_COUNTRY = "locked_country";
+    public static final String KEY_LOCK_CITY = "locked_city";
     private static final String URL_ENDPOINT = "https://ipwho.is/?fields=success,country,city,latitude,longitude";
     private final Context context;
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -71,9 +77,79 @@ public final class LabVpnExitSync {
     }
 
     public static void configure(Context context, boolean enabled) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                .putBoolean(KEY_ENABLED, enabled)
+        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        if (prefs.getBoolean(KEY_LOCKED, false)) return; // Explicit unlock required.
+        prefs.edit().putBoolean(KEY_ENABLED, enabled)
                 .putString(KEY_STATUS, enabled ? "等待模拟服务与 VPN 网络" : "已关闭 VPN 联动")
+                .apply();
+    }
+
+    public static boolean locked(Context context) {
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getBoolean(KEY_LOCKED, false);
+    }
+
+    public static final class LockedTarget {
+        public final double latitude;
+        public final double longitude;
+        public final String country;
+        public final String city;
+        public final long lockedAt;
+        private LockedTarget(double latitude, double longitude,
+                             String country, String city, long lockedAt) {
+            this.latitude = latitude;
+            this.longitude = longitude;
+            this.country = country;
+            this.city = city;
+            this.lockedAt = lockedAt;
+        }
+    }
+
+    public static LockedTarget getLockedTarget(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        if (!prefs.getBoolean(KEY_LOCKED, false)) return null;
+        double latitude = Double.longBitsToDouble(prefs.getLong(KEY_LOCK_LAT,
+                Double.doubleToRawLongBits(Double.NaN)));
+        double longitude = Double.longBitsToDouble(prefs.getLong(KEY_LOCK_LNG,
+                Double.doubleToRawLongBits(Double.NaN)));
+        String country = prefs.getString(KEY_LOCK_COUNTRY, "");
+        if (!LabVpnGeoPolicy.valid(latitude, longitude, country)) return null;
+        return new LockedTarget(latitude, longitude, country,
+                prefs.getString(KEY_LOCK_CITY, ""), prefs.getLong(KEY_LOCKED_AT, 0L));
+    }
+
+    /**
+     * Persist the exact last coordinate that ServiceGo successfully applied.
+     * Turns OFF future VPN-follow updates, including callbacks already in flight.
+     */
+    public static boolean freezeLastApplied(Context context) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        double latitude = Double.longBitsToDouble(prefs.getLong(KEY_LAT,
+                Double.doubleToRawLongBits(Double.NaN)));
+        double longitude = Double.longBitsToDouble(prefs.getLong(KEY_LNG,
+                Double.doubleToRawLongBits(Double.NaN)));
+        String country = prefs.getString(KEY_COUNTRY, "");
+        long applied = prefs.getLong(KEY_APPLIED_AT, 0L);
+        if (!LabVpnGeoPolicy.canFreeze(prefs.getBoolean(KEY_ENABLED, false),
+                prefs.getBoolean(KEY_LOCKED, false), applied,
+                LabVpnGeoPolicy.valid(latitude, longitude, country))) return false;
+        // commit() makes the lock durable before the service receives CONFIG.
+        return prefs.edit()
+                .putLong(KEY_LOCK_LAT, Double.doubleToRawLongBits(latitude))
+                .putLong(KEY_LOCK_LNG, Double.doubleToRawLongBits(longitude))
+                .putString(KEY_LOCK_COUNTRY, country)
+                .putString(KEY_LOCK_CITY, prefs.getString(KEY_CITY, ""))
+                .putLong(KEY_LOCKED_AT, System.currentTimeMillis())
+                .putBoolean(KEY_LOCKED, true).putBoolean(KEY_ENABLED, false)
+                .putString(KEY_STATUS, "VPN 坐标已锁定；节点切换或重连不再更新")
+                .commit();
+    }
+
+    /** Unlocking does not change the current mock target or silently reenable sync. */
+    public static void unfreeze(Context context) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                .putBoolean(KEY_LOCKED, false).putBoolean(KEY_ENABLED, false)
+                .putString(KEY_STATUS, "已解锁；原位置保持不变，可手动开启 VPN 跟随")
                 .apply();
     }
 
@@ -91,6 +167,13 @@ public final class LabVpnExitSync {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         String state = prefs.getString(KEY_STATUS,
                 "未开启；不会向第三方 IP 地理位置服务发起请求");
+        LockedTarget fixed = getLockedTarget(context);
+        if (fixed != null) {
+            return "🔒 已锁定 VPN 出口位置：" + fixed.country
+                    + (fixed.city.isEmpty() ? "" : " · " + fixed.city)
+                    + "\\n锁定坐标已保存；即使 VPN 掉线/恢复/换节点也不会改动。"
+                    + "\\n仅在模拟服务运行时生效；服务被系统终止无法保证继续覆盖系统定位。";
+        }
         long at = prefs.getLong(KEY_APPLIED_AT, 0);
         if (at > 0 && enabled(context)) {
             state += "\n上次已应用：" + prefs.getString(KEY_COUNTRY, "?")
@@ -104,7 +187,7 @@ public final class LabVpnExitSync {
     public void startOrStopFromConfig() {
         if (!enabled(context)) {
             stop();
-            writeStatus("已关闭 VPN 联动；之前模拟的位置保持不变");
+            if (!locked(context)) writeStatus("已关闭 VPN 联动；之前模拟的位置保持不变");
             return;
         }
         if (running) {
@@ -255,8 +338,8 @@ public final class LabVpnExitSync {
                 final GeoPlace place = result;
                 final String error = failure;
                 handler.post(() -> {
-                    if (!running || !enabled(context) || token != generation
-                            || !network.equals(vpnNetwork)) return;
+                    if (!running || !enabled(context) || locked(context)
+                            || token != generation || !network.equals(vpnNetwork)) return;
                     if (place == null) {
                         writeStatus(error == null ? "IP 定位无结果" : error
                                 + "；继续保持现有模拟位置");
