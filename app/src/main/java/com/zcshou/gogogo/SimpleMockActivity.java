@@ -70,6 +70,7 @@ public class SimpleMockActivity extends AppCompatActivity {
     private TextView publicIpView;
     private TextView vpnSyncStatusView;
     private com.google.android.material.button.MaterialButton vpnSyncToggle;
+    private com.google.android.material.button.MaterialButton vpnFreezeToggle;
     private long lastVpnCoordinateSeen;
     private final Handler vpnSyncUiHandler = new Handler(Looper.getMainLooper());
     private final Runnable vpnSyncUiTick = new Runnable() {
@@ -313,6 +314,11 @@ public class SimpleMockActivity extends AppCompatActivity {
         locationContent.addView(vpnSyncStatusView, GoGoUi.matchWrap());
         vpnSyncToggle = GoGoUi.secondaryButton(this, "开启 VPN 自动跟随",
                 v -> {
+                    if (LabVpnExitSync.locked(this)) {
+                        Toast.makeText(this, "当前 VPN 坐标已锁定，请先解除锁定",
+                                Toast.LENGTH_LONG).show();
+                        return;
+                    }
                     boolean desired = !LabVpnExitSync.enabled(this);
                     LabVpnExitSync.configure(this, desired);
                     if (ServiceGo.sRunning) {
@@ -331,6 +337,35 @@ public class SimpleMockActivity extends AppCompatActivity {
                     refreshVpnSyncStatus();
                 });
         locationContent.addView(vpnSyncToggle, GoGoUi.matchWrap());
+        vpnFreezeToggle = GoGoUi.secondaryButton(this, "🔒 锁定上次成功同步的 VPN 定位",
+                v -> {
+                    boolean wasLocked = LabVpnExitSync.locked(this);
+                    if (wasLocked) {
+                        LabVpnExitSync.unfreeze(this);
+                        Toast.makeText(this, "已解除锁定，保持现有模拟位置；可重新开启跟随",
+                                Toast.LENGTH_LONG).show();
+                    } else if (!LabVpnExitSync.freezeLastApplied(this)) {
+                        Toast.makeText(this,
+                                "锁定前需要先开启 VPN 自动跟随并成功同步一次定位",
+                                Toast.LENGTH_LONG).show();
+                        return;
+                    } else {
+                        Toast.makeText(this,
+                                "🔒 VPN 坐标已保存并锁定；VPN 掉线和换节点都不会更新",
+                                Toast.LENGTH_LONG).show();
+                    }
+                    if (ServiceGo.sRunning) {
+                        try {
+                            startService(new Intent(this, ServiceGo.class)
+                                    .setAction(ServiceGo.ACTION_VPN_SYNC_CONFIG));
+                        } catch (RuntimeException unavailable) {
+                            Toast.makeText(this, "服务设置更新失败，需检查模拟服务状态",
+                                    Toast.LENGTH_LONG).show();
+                        }
+                    }
+                    refreshVpnSyncStatus();
+                });
+        locationContent.addView(vpnFreezeToggle, GoGoUi.matchWrap());
         locationContent.addView(GoGoUi.secondaryButton(this,
                 "立即检查 VPN 出口并更新模拟位置",
                 v -> {
@@ -745,11 +780,25 @@ public class SimpleMockActivity extends AppCompatActivity {
     private void refreshVpnSyncStatus() {
         if (vpnSyncStatusView == null || vpnSyncToggle == null) return;
         boolean on = LabVpnExitSync.enabled(this);
-        vpnSyncToggle.setText(on ? "关闭 VPN 自动跟随" : "开启 VPN 自动跟随");
-        vpnSyncStatusView.setText((on ? "已开启 · " : "已关闭 · ")
+        LabVpnExitSync.LockedTarget fixed = LabVpnExitSync.getLockedTarget(this);
+        boolean isLocked = LabVpnExitSync.locked(this);
+        vpnSyncToggle.setText(isLocked ? "VPN 位置已锁定（先解除锁定）"
+                : on ? "关闭 VPN 自动跟随" : "开启 VPN 自动跟随");
+        if (vpnFreezeToggle != null) {
+            vpnFreezeToggle.setText(isLocked ? "🔓 解除锁定（原位置不变）"
+                    : "🔒 锁定上次成功同步的 VPN 定位");
+        }
+        vpnSyncStatusView.setText((isLocked ? "🔒 锁定 · " : on ? "已开启 · " : "已关闭 · ")
                 + LabVpnExitSync.statusText(this)
-                + "\n同步只更新 GoGoGo 模拟目标，不能保证微信等应用接受该位置。");
-        if (on && ServiceGo.sRunning && longitudeInput != null
+                + "\n锁定时，点击「开始模拟」会使用保存的坐标；要改位置请先解锁。"
+                + "\nVPN / 模拟定位对微信实际效果仍需单独确认。");
+        if (fixed != null && longitudeInput != null && latitudeInput != null
+                && fixed.lockedAt > lastVpnCoordinateSeen) {
+            longitudeInput.setText(Double.toString(fixed.longitude));
+            latitudeInput.setText(Double.toString(fixed.latitude));
+            lastVpnCoordinateSeen = fixed.lockedAt;
+        }
+        if (!isLocked && on && ServiceGo.sRunning && longitudeInput != null
                 && latitudeInput != null && !longitudeInput.hasFocus()
                 && !latitudeInput.hasFocus()) {
             android.content.SharedPreferences prefs = getSharedPreferences(
@@ -783,15 +832,29 @@ public class SimpleMockActivity extends AppCompatActivity {
 
         final double lng;
         final double lat;
-        try {
-            LabHomeCoordinates.Point point = LabHomeCoordinates.parse(
-                    longitudeInput.getText().toString(),
-                    latitudeInput.getText().toString());
-            lng = point.longitude;
-            lat = point.latitude;
-        } catch (IllegalArgumentException invalid) {
-            showHomeStatus("状态：" + invalid.getMessage(), GoGoUi.StatusTone.ERROR);
+        LabVpnExitSync.LockedTarget fixed = LabVpnExitSync.getLockedTarget(this);
+        if (LabVpnExitSync.locked(this) && fixed == null) {
+            showHomeStatus("已锁定的坐标无效；请先解除锁定",
+                    GoGoUi.StatusTone.ERROR);
             return;
+        }
+        if (fixed != null) {
+            lng = fixed.longitude;
+            lat = fixed.latitude;
+            // Keep homepage fields consistent with the actual selected locked target.
+            longitudeInput.setText(Double.toString(lng));
+            latitudeInput.setText(Double.toString(lat));
+        } else {
+            try {
+                LabHomeCoordinates.Point point = LabHomeCoordinates.parse(
+                        longitudeInput.getText().toString(),
+                        latitudeInput.getText().toString());
+                lng = point.longitude;
+                lat = point.latitude;
+            } catch (IllegalArgumentException invalid) {
+                showHomeStatus("状态：" + invalid.getMessage(), GoGoUi.StatusTone.ERROR);
+                return;
+            }
         }
 
         if (!GoUtils.isGpsOpened(this)) {
