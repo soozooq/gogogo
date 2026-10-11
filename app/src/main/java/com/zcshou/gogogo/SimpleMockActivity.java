@@ -68,6 +68,16 @@ public class SimpleMockActivity extends AppCompatActivity {
     private int homeCountryLookupGeneration;
     private TextView diagnosticView;
     private TextView publicIpView;
+    private TextView vpnSyncStatusView;
+    private com.google.android.material.button.MaterialButton vpnSyncToggle;
+    private long lastVpnCoordinateSeen;
+    private final Handler vpnSyncUiHandler = new Handler(Looper.getMainLooper());
+    private final Runnable vpnSyncUiTick = new Runnable() {
+        @Override public void run() {
+            refreshVpnSyncStatus();
+            vpnSyncUiHandler.postDelayed(this, 3000L);
+        }
+    };
     private LabTimedSupportCopy timedSupportCopy;
     private LinearLayout diagnosticDetails;
     private LinearLayout homeToolsPanel;
@@ -200,11 +210,14 @@ public class SimpleMockActivity extends AppCompatActivity {
         if (pendingServiceRequest != LabHomeServiceStatus.Request.NONE) {
             scheduleServiceStatusObservations();
         }
+        vpnSyncUiHandler.removeCallbacks(vpnSyncUiTick);
+        vpnSyncUiHandler.post(vpnSyncUiTick);
     }
 
     @Override
     protected void onStop() {
         serviceStatusHandler.removeCallbacks(serviceStatusRefresh);
+        vpnSyncUiHandler.removeCallbacks(vpnSyncUiTick);
         super.onStop();
     }
 
@@ -283,6 +296,62 @@ public class SimpleMockActivity extends AppCompatActivity {
         locationContent.addView(GoGoUi.secondaryButton(this,
                 "识别自定义坐标的国家（系统地理编码，可能联网）",
                 v -> lookupHomeCountry()), GoGoUi.matchWrap());
+
+        // Optional VPN-follow UI belongs next to the coordinate target, not Labs.
+        locationContent.addView(GoGoUi.gap(this, 12));
+        locationContent.addView(GoGoUi.sectionTitle(this, "VPN 出口 → 模拟定位联动"),
+                GoGoUi.matchWrap());
+        locationContent.addView(GoGoUi.muted(this,
+                "默认关闭。启用后仅在 GoGoGo 的流量确实走 VPN 时，使用 HTTPS"
+                        + " 获取出口 IP 的近似国家/城市坐标。可能将公网 IP 提供给 ipwho.is；"
+                        + " VPN 分流、代理模式和 IP 数据库误差可能导致无法一致。"
+                        + " 停止模拟或断开 VPN 不会自动改为真实位置。"),
+                GoGoUi.matchWrap());
+        vpnSyncStatusView = GoGoUi.muted(this, "未启用 VPN 联动");
+        vpnSyncStatusView.setTextIsSelectable(true);
+        locationContent.addView(GoGoUi.gap(this, 7));
+        locationContent.addView(vpnSyncStatusView, GoGoUi.matchWrap());
+        vpnSyncToggle = GoGoUi.secondaryButton(this, "开启 VPN 自动跟随",
+                v -> {
+                    boolean desired = !LabVpnExitSync.enabled(this);
+                    LabVpnExitSync.configure(this, desired);
+                    if (ServiceGo.sRunning) {
+                        Intent command = new Intent(this, ServiceGo.class);
+                        command.setAction(ServiceGo.ACTION_VPN_SYNC_CONFIG);
+                        try { startService(command); }
+                        catch (RuntimeException ignored) {
+                            Toast.makeText(this, "服务命令发送失败；请手动重启模拟",
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                    Toast.makeText(this, desired
+                            ? "VPN 联动已启用；仅在运行模拟时自动校准"
+                            : "VPN 联动已关闭；当前模拟位置不变",
+                            Toast.LENGTH_LONG).show();
+                    refreshVpnSyncStatus();
+                });
+        locationContent.addView(vpnSyncToggle, GoGoUi.matchWrap());
+        locationContent.addView(GoGoUi.secondaryButton(this,
+                "立即检查 VPN 出口并更新模拟位置",
+                v -> {
+                    if (!LabVpnExitSync.enabled(this)) {
+                        Toast.makeText(this, "请先开启 VPN 联动", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    if (!ServiceGo.sRunning) {
+                        Toast.makeText(this, "先启动模拟服务，才可自动更新运行中的位置",
+                                Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    try {
+                        startService(new Intent(this, ServiceGo.class)
+                                .setAction(ServiceGo.ACTION_VPN_SYNC_REFRESH));
+                        Toast.makeText(this, "已请求重新核对 VPN 出口位置",
+                                Toast.LENGTH_SHORT).show();
+                    } catch (RuntimeException failure) {
+                        Toast.makeText(this, "刷新请求被系统拒绝", Toast.LENGTH_SHORT).show();
+                    }
+                }), GoGoUi.matchWrap());
 
         // This label follows edits and map/picker returns, not the phone's real location.
         TextWatcher countryWatcher = new TextWatcher() {
@@ -671,6 +740,34 @@ public class SimpleMockActivity extends AppCompatActivity {
         // checks of ServiceGo's in-process lifecycle flag.
         serviceStatusHandler.postDelayed(serviceStatusRefresh, 550L);
         serviceStatusHandler.postDelayed(serviceStatusRefresh, 2500L);
+    }
+
+    private void refreshVpnSyncStatus() {
+        if (vpnSyncStatusView == null || vpnSyncToggle == null) return;
+        boolean on = LabVpnExitSync.enabled(this);
+        vpnSyncToggle.setText(on ? "关闭 VPN 自动跟随" : "开启 VPN 自动跟随");
+        vpnSyncStatusView.setText((on ? "已开启 · " : "已关闭 · ")
+                + LabVpnExitSync.statusText(this)
+                + "\n同步只更新 GoGoGo 模拟目标，不能保证微信等应用接受该位置。");
+        if (on && ServiceGo.sRunning && longitudeInput != null
+                && latitudeInput != null && !longitudeInput.hasFocus()
+                && !latitudeInput.hasFocus()) {
+            android.content.SharedPreferences prefs = getSharedPreferences(
+                    LabVpnExitSync.PREFS, MODE_PRIVATE);
+            long appliedAt = prefs.getLong(LabVpnExitSync.KEY_APPLIED_AT, 0);
+            if (appliedAt > lastVpnCoordinateSeen) {
+                double latitude = Double.longBitsToDouble(prefs.getLong(
+                        LabVpnExitSync.KEY_LAT, Double.doubleToRawLongBits(Double.NaN)));
+                double longitude = Double.longBitsToDouble(prefs.getLong(
+                        LabVpnExitSync.KEY_LNG, Double.doubleToRawLongBits(Double.NaN)));
+                if (LabVpnGeoPolicy.valid(latitude, longitude,
+                        prefs.getString(LabVpnExitSync.KEY_COUNTRY, ""))) {
+                    longitudeInput.setText(Double.toString(longitude));
+                    latitudeInput.setText(Double.toString(latitude));
+                    lastVpnCoordinateSeen = appliedAt;
+                }
+            }
+        }
     }
 
     private void startMock() {
