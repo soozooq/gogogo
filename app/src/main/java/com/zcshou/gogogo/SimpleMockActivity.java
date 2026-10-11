@@ -69,6 +69,7 @@ public class SimpleMockActivity extends AppCompatActivity {
     private TextView diagnosticView;
     private TextView publicIpView;
     private TextView vpnSyncStatusView;
+    private TextView vpnTimeZoneView;
     private com.google.android.material.button.MaterialButton vpnSyncToggle;
     private com.google.android.material.button.MaterialButton vpnFreezeToggle;
     private long lastVpnCoordinateSeen;
@@ -366,6 +367,23 @@ public class SimpleMockActivity extends AppCompatActivity {
                     refreshVpnSyncStatus();
                 });
         locationContent.addView(vpnFreezeToggle, GoGoUi.matchWrap());
+        locationContent.addView(GoGoUi.gap(this, 8));
+        locationContent.addView(GoGoUi.sectionTitle(this, "VPN 时区自动跟随"),
+                GoGoUi.matchWrap());
+        vpnTimeZoneView = GoGoUi.muted(this, "等待 VPN 时区…");
+        vpnTimeZoneView.setTextIsSelectable(true);
+        locationContent.addView(vpnTimeZoneView, GoGoUi.matchWrap());
+        locationContent.addView(GoGoUi.muted(this,
+                "随 VPN 出口地区自动更新时区和当地时间，和 VPN 坐标一起锁定。"
+                + " 此处是 GoGoGo 的时区预览；手机系统时区需要额外授权，"
+                + "不会静默改变。"), GoGoUi.matchWrap());
+        locationContent.addView(GoGoUi.secondaryButton(this, "设置手机系统时区",
+                v -> safeOpen(new Intent(Settings.ACTION_DATE_SETTINGS), null)),
+                GoGoUi.matchWrap());
+        locationContent.addView(GoGoUi.secondaryButton(this,
+                "补填历史锁定位置的时区（IANA）", v -> promptLockedTimezone()),
+                GoGoUi.matchWrap());
+        locationContent.addView(GoGoUi.gap(this, 8));
         locationContent.addView(GoGoUi.secondaryButton(this,
                 "立即检查 VPN 出口并更新模拟位置",
                 v -> {
@@ -815,6 +833,34 @@ public class SimpleMockActivity extends AppCompatActivity {
         serviceStatusHandler.postDelayed(serviceStatusRefresh, 2500L);
     }
 
+    private void promptLockedTimezone() {
+        LabVpnExitSync.LockedTarget target = LabVpnExitSync.getLockedTarget(this);
+        if (target == null) {
+            Toast.makeText(this, "仅能为旧版本已锁定的目标手动补填时区",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        EditText input = new EditText(this);
+        input.setSingleLine(true);
+        input.setHint("例如 America/Los_Angeles");
+        input.setText(LabVpnTimeZone.valid(target.timezoneId)
+                ? target.timezoneId : "");
+        new AlertDialog.Builder(this)
+                .setTitle("锁定位置的时区")
+                .setMessage("如果锁定操作发生在旧版，可能缺少时区信息。"
+                        + "请填入确认过的 IANA 时区；不从国家猜时区，也不更改 GPS。")
+                .setView(input)
+                .setNegativeButton("取消", (dialog, which) -> {})
+                .setPositiveButton("保存", (dialog, which) -> {
+                    String zone = input.getText().toString().trim();
+                    if (!LabVpnExitSync.chooseLockedTimezone(this, zone)) {
+                        Toast.makeText(this, "无效时区，请使用 IANA 名称",
+                                Toast.LENGTH_LONG).show();
+                    }
+                    refreshVpnSyncStatus();
+                }).show();
+    }
+
     private void refreshVpnSyncStatus() {
         if (vpnSyncStatusView == null || vpnSyncToggle == null) return;
         boolean on = LabVpnExitSync.enabled(this);
@@ -830,6 +876,17 @@ public class SimpleMockActivity extends AppCompatActivity {
                 + LabVpnExitSync.statusText(this)
                 + "\n锁定时，点击「开始模拟」会使用保存的坐标；要改位置请先解锁。"
                 + "\nVPN / 模拟定位对微信实际效果仍需单独确认。");
+        if (vpnTimeZoneView != null) {
+            String tz = LabVpnExitSync.timezoneId(this);
+            String systemTz = java.util.TimeZone.getDefault().getID();
+            vpnTimeZoneView.setText((isLocked ? "🔒 时区锁定：" : "VPN 自动时区：")
+                    + "\n" + LabVpnTimeZone.display(tz, System.currentTimeMillis())
+                    + "\n手机系统时区：" + systemTz
+                    + (LabVpnTimeZone.valid(tz) && !tz.equals(systemTz)
+                    ? "\n注意：目前仅 GoGoGo 预览跟随，手机系统时间未同步" : "")
+                    + (isLocked && !LabVpnTimeZone.valid(tz)
+                    ? "\n旧版锁定记录缺少时区，点「补填历史锁定位置的时区」" : ""));
+        }
         if (fixed != null && longitudeInput != null && latitudeInput != null
                 && fixed.lockedAt > lastVpnCoordinateSeen) {
             longitudeInput.setText(Double.toString(fixed.longitude));
