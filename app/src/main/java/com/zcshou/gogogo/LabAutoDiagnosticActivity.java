@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -58,6 +59,8 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
     private TextView backgroundComparisonView;
     private TextView workflowStatusView;
     private EditText workflowManualNote;
+    private LinearLayout weChatManualSection;
+    private LinearLayout abManualSection;
     private String workflowStage = LabDiagnosticWorkflow.NONE;
     private String workflowLog = "";
     private long workflowStarted;
@@ -147,8 +150,10 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
         workflowBody.addView(GoGoUi.gap(this, 8));
         workflowBody.addView(GoGoUi.primaryButton(this, "创建 / 继续全流程任务",
                 v -> resumeWorkflow()), GoGoUi.matchWrap());
-        workflowBody.addView(GoGoUi.gap(this, 8));
-        workflowBody.addView(GoGoUi.muted(this,
+        weChatManualSection = new LinearLayout(this);
+        weChatManualSection.setOrientation(LinearLayout.VERTICAL);
+        weChatManualSection.addView(GoGoUi.gap(this, 8));
+        weChatManualSection.addView(GoGoUi.muted(this,
                 "微信人工步骤：打开「发送位置」看自动定位；如有需要再看朋友圈所在位置。"
                         + "不要把手动选位置当成自动定位成功。只记录测试结果，不填真实隐私信息。"),
                 GoGoUi.matchWrap());
@@ -157,14 +162,17 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
         workflowManualNote.setMinLines(2);
         workflowManualNote.setMaxLines(4);
         GoGoUi.styleInput(workflowManualNote);
-        workflowBody.addView(workflowManualNote, GoGoUi.matchWrap());
-        workflowBody.addView(GoGoUi.gap(this, 8));
-        workflowBody.addView(GoGoUi.secondaryButton(this, "打开微信，由我确认界面",
+        weChatManualSection.addView(workflowManualNote, GoGoUi.matchWrap());
+        weChatManualSection.addView(GoGoUi.gap(this, 8));
+        weChatManualSection.addView(GoGoUi.secondaryButton(this, "打开微信，由我确认界面",
                 v -> openWeChatForWorkflow()), GoGoUi.matchWrap());
-        workflowBody.addView(GoGoUi.secondaryButton(this, "我已完成微信界面观察，继续",
+        weChatManualSection.addView(GoGoUi.secondaryButton(this, "我已完成微信界面观察，继续",
                 v -> confirmWeChatWorkflow()), GoGoUi.matchWrap());
-        workflowBody.addView(GoGoUi.gap(this, 8));
-        workflowBody.addView(GoGoUi.secondaryButton(this, "打开微信 / 控制组自动实验",
+        workflowBody.addView(weChatManualSection, GoGoUi.matchWrap());
+        abManualSection = new LinearLayout(this);
+        abManualSection.setOrientation(LinearLayout.VERTICAL);
+        abManualSection.addView(GoGoUi.gap(this, 8));
+        abManualSection.addView(GoGoUi.secondaryButton(this, "打开微信 / 控制组自动实验",
                 v -> {
                     if (!LabDiagnosticWorkflow.BACKGROUND_AB.equals(workflowStage)) {
                         Toast.makeText(this, "请先完成前面阶段", Toast.LENGTH_SHORT).show();
@@ -173,12 +181,14 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
                     saveWorkflow();
                     startActivity(new Intent(this, CompatibilitySessionActivity.class));
                 }), GoGoUi.matchWrap());
-        workflowBody.addView(GoGoUi.secondaryButton(this, "检查 A/B 完成情况并汇总",
+        abManualSection.addView(GoGoUi.secondaryButton(this, "检查 A/B 完成情况并汇总",
                 v -> checkAbWorkflow()), GoGoUi.matchWrap());
+        abManualSection.addView(GoGoUi.secondaryButton(this, "A/B 无法进行，标记跳过并汇总",
+                v -> completeWorkflow(true)), GoGoUi.matchWrap());
+        workflowBody.addView(abManualSection, GoGoUi.matchWrap());
+        workflowBody.addView(GoGoUi.gap(this, 8));
         workflowBody.addView(GoGoUi.secondaryButton(this, "中止并归档当前任务",
                 v -> archiveIncompleteWorkflow()), GoGoUi.matchWrap());
-        workflowBody.addView(GoGoUi.secondaryButton(this, "A/B 无法进行，标记跳过并汇总",
-                v -> completeWorkflow(true)), GoGoUi.matchWrap());
         root.addView(workflowCard, GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 12));
 
@@ -447,6 +457,14 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
 
     private void refreshWorkflowUi() {
         if (workflowStatusView == null) return;
+        if (weChatManualSection != null) {
+            weChatManualSection.setVisibility(LabDiagnosticWorkflow.WECHAT_UI.equals(
+                    workflowStage) ? View.VISIBLE : View.GONE);
+        }
+        if (abManualSection != null) {
+            abManualSection.setVisibility(LabDiagnosticWorkflow.BACKGROUND_AB.equals(
+                    workflowStage) ? View.VISIBLE : View.GONE);
+        }
         String info = LabDiagnosticWorkflow.title(workflowStage);
         if (workflowStarted > 0) info += "\n任务编号：GOGOGO-" + workflowStarted;
         if (workflowInterrupted) info += "\n上次执行被中断：点击「创建 / 继续」重做当前阶段";
@@ -507,6 +525,11 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
     }
 
     private void startBaseline() {
+        if (LabDiagnosticWorkflow.isActive(workflowStage) && !workflowStepRunning) {
+            Toast.makeText(this, "当前有全流程任务，请先完成、继续或归档",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (running) {
             Toast.makeText(this, "请先结束当前任务", Toast.LENGTH_SHORT).show();
             return;
@@ -554,6 +577,11 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
     }
 
     private void startPassive() {
+        if (LabDiagnosticWorkflow.isActive(workflowStage) && !workflowStepRunning) {
+            Toast.makeText(this, "当前有全流程任务，请先完成、继续或归档",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
         if (running) {
             Toast.makeText(this, "请先结束当前任务", Toast.LENGTH_SHORT).show();
             return;
