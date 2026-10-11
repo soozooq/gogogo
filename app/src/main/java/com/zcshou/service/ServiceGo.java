@@ -980,7 +980,7 @@ public class ServiceGo extends Service {
             // With the optional toggle enabled, resolve an up-to-date VPN target
             // after this explicit manual start (without creating a second service).
             if (mVpnExitSync != null && LabVpnExitSync.enabled(this)) {
-                mVpnExitSync.manualRefresh();
+                mVpnExitSync.onManualPositionSelected();
             }
         } else {
             if (restoreRouteCheckpoint()) {
