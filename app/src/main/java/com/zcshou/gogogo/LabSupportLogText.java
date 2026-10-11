@@ -48,8 +48,10 @@ public final class LabSupportLogText {
             return "ERROR " + (words.length > 1 ? safeToken(words[1]) : "UNKNOWN");
         }
         if (raw.startsWith("SDK_STATUS ")) {
-            int cut = raw.indexOf(" desc=");
-            return safeToken(cut >= 0 ? raw.substring(0, cut) : raw);
+            // name/description are SDK-controlled free text: never persist them.
+            java.util.regex.Matcher code = java.util.regex.Pattern
+                    .compile("=([-]?[0-9]{1,8})").matcher(raw);
+            return "SDK_STATUS code=" + (code.find() ? code.group(1) : "UNKNOWN");
         }
         return null;
     }
