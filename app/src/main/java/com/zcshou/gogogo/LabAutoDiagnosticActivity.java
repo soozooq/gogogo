@@ -186,8 +186,8 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
         try {
             LabAutoExperimentStore.Comparison result = LabAutoExperimentStore.compare(this);
             backgroundComparisonView.setText("上次 A/B 结果：" + result.verdict
-                    + "\\n" + result.explanation
-                    + "\\n注意：仅比较两组的后台调度样本，不解析微信的内部进程和定位行为。");
+                    + "\n" + result.explanation
+                    + "\n注意：仅比较两组的后台调度样本，不解析微信的内部进程和定位行为。");
         } catch (RuntimeException unavailable) {
             backgroundComparisonView.setText("历史 A/B 实验不可读取；可进入旧版后台实验页面重新执行。");
         }
