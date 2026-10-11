@@ -189,6 +189,14 @@ public final class LabVpnExitSync {
         scheduleFetch(0);
     }
 
+    /** Explicit manual position set by owner: invalidate in-flight IP lookup,
+     * then request the current VPN city instead of accepting stale results. */
+    public void onManualPositionSelected() {
+        if (!running) return;
+        generation++;
+        scheduleFetch(2500);
+    }
+
     private void scheduleFetch(long delayMs) {
         handler.removeCallbacks(fetch);
         if (running && vpnNetwork != null) handler.postDelayed(fetch, delayMs);
