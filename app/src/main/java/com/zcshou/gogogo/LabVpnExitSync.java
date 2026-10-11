@@ -30,6 +30,8 @@ public final class LabVpnExitSync {
     public static final String KEY_STATUS = "status";
     public static final String KEY_COUNTRY = "country";
     public static final String KEY_CITY = "city";
+    public static final String KEY_TIMEZONE = "timezone_id";
+    public static final String KEY_LOCK_TIMEZONE = "locked_timezone_id";
     public static final String KEY_LAT = "lat_bits";
     public static final String KEY_LNG = "lng_bits";
     public static final String KEY_APPLIED_AT = "applied_at";
@@ -39,7 +41,7 @@ public final class LabVpnExitSync {
     public static final String KEY_LOCK_LNG = "locked_lng_bits";
     public static final String KEY_LOCK_COUNTRY = "locked_country";
     public static final String KEY_LOCK_CITY = "locked_city";
-    private static final String URL_ENDPOINT = "https://ipwho.is/?fields=success,country,city,latitude,longitude";
+    private static final String URL_ENDPOINT = "https://ipwho.is/?fields=success,country,city,latitude,longitude,timezone";
     private final Context context;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final ConnectivityManager connectivity;
@@ -94,13 +96,15 @@ public final class LabVpnExitSync {
         public final double longitude;
         public final String country;
         public final String city;
+        public final String timezoneId;
         public final long lockedAt;
         private LockedTarget(double latitude, double longitude,
-                             String country, String city, long lockedAt) {
+                             String country, String city, String timezoneId, long lockedAt) {
             this.latitude = latitude;
             this.longitude = longitude;
             this.country = country;
             this.city = city;
+            this.timezoneId = timezoneId;
             this.lockedAt = lockedAt;
         }
     }
@@ -115,7 +119,9 @@ public final class LabVpnExitSync {
         String country = prefs.getString(KEY_LOCK_COUNTRY, "");
         if (!LabVpnGeoPolicy.valid(latitude, longitude, country)) return null;
         return new LockedTarget(latitude, longitude, country,
-                prefs.getString(KEY_LOCK_CITY, ""), prefs.getLong(KEY_LOCKED_AT, 0L));
+                prefs.getString(KEY_LOCK_CITY, ""),
+                prefs.getString(KEY_LOCK_TIMEZONE, ""),
+                prefs.getLong(KEY_LOCKED_AT, 0L));
     }
 
     /**
@@ -139,10 +145,33 @@ public final class LabVpnExitSync {
                 .putLong(KEY_LOCK_LNG, Double.doubleToRawLongBits(longitude))
                 .putString(KEY_LOCK_COUNTRY, country)
                 .putString(KEY_LOCK_CITY, prefs.getString(KEY_CITY, ""))
+                .putString(KEY_LOCK_TIMEZONE,
+                        prefs.getString(KEY_TIMEZONE, ""))
                 .putLong(KEY_LOCKED_AT, System.currentTimeMillis())
                 .putBoolean(KEY_LOCKED, true).putBoolean(KEY_ENABLED, false)
                 .putString(KEY_STATUS, "VPN 坐标已锁定；节点切换或重连不再更新")
                 .commit();
+    }
+
+    /**
+     * One-time repair for freezes created before the timezone feature existed.
+     * User explicitly selects an IANA zone for the already-locked coordinates;
+     * this never queries a different VPN exit or changes the mock coordinates.
+     */
+    public static boolean chooseLockedTimezone(Context context, String zoneId) {
+        if (!LabVpnTimeZone.valid(zoneId)) return false;
+        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        if (!prefs.getBoolean(KEY_LOCKED, false) || getLockedTarget(context) == null) return false;
+        return prefs.edit().putString(KEY_LOCK_TIMEZONE, zoneId).commit();
+    }
+
+    public static String timezoneId(Context context) {
+        LockedTarget fixed = getLockedTarget(context);
+        if (fixed != null) return fixed.timezoneId;
+        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        return prefs.getBoolean(KEY_ENABLED, false)
+                && prefs.getLong(KEY_APPLIED_AT, 0L) > 0
+                ? prefs.getString(KEY_TIMEZONE, "") : "";
     }
 
     /** Unlocking does not change the current mock target or silently reenable sync. */
@@ -318,11 +347,13 @@ public final class LabVpnExitSync {
                             if (!json.optBoolean("success", false)) {
                                 throw new IllegalArgumentException("api_not_successful");
                             }
+                            JSONObject timeZoneInfo = json.optJSONObject("timezone");
                             GeoPlace found = new GeoPlace(
                                     json.optDouble("latitude", Double.NaN),
                                     json.optDouble("longitude", Double.NaN),
                                     json.optString("country", ""),
-                                    json.optString("city", ""));
+                                    json.optString("city", ""),
+                                    timeZoneInfo == null ? "" : timeZoneInfo.optString("id", ""));
                             if (!LabVpnGeoPolicy.valid(found.latitude, found.longitude,
                                     found.country)) {
                                 throw new IllegalArgumentException("invalid_ip_geo");
@@ -356,6 +387,7 @@ public final class LabVpnExitSync {
                             .putLong(KEY_LNG, Double.doubleToRawLongBits(place.longitude))
                             .putString(KEY_COUNTRY, place.country)
                             .putString(KEY_CITY, place.city)
+                            .putString(KEY_TIMEZONE, place.timezoneId)
                             .putLong(KEY_APPLIED_AT, System.currentTimeMillis())
                             .putString(KEY_STATUS, "已跟随 VPN 出口近似坐标：" + place.summary())
                             .apply();
@@ -376,11 +408,14 @@ public final class LabVpnExitSync {
         final double longitude;
         final String country;
         final String city;
-        GeoPlace(double latitude, double longitude, String country, String city) {
+        final String timezoneId;
+        GeoPlace(double latitude, double longitude, String country, String city,
+                 String timezoneId) {
             this.latitude = latitude;
             this.longitude = longitude;
             this.country = country;
             this.city = city;
+            this.timezoneId = LabVpnTimeZone.valid(timezoneId) ? timezoneId : "";
         }
         String summary() { return country + (city.isEmpty() ? "" : " · " + city); }
     }
