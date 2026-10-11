@@ -58,6 +58,7 @@ import com.zcshou.gogogo.LabHeadingTraceRecorder;
 import com.zcshou.gogogo.R;
 import com.zcshou.gogogo.SimpleMockActivity;
 import com.zcshou.gogogo.LabVpnExitSync;
+import com.zcshou.gogogo.LabVpnSystemTimeZone;
 import com.zcshou.gogogo.LabVpnGeoPolicy;
 import com.zcshou.gogogo.LabSupportLog;
 import com.zcshou.joystick.JoyStick;
@@ -256,6 +257,7 @@ public class ServiceGo extends Service {
     private volatile boolean isStop = false;
     private PowerManager.WakeLock mWakeLock;
     private LabVpnExitSync mVpnExitSync;
+    private LabVpnSystemTimeZone mVpnSystemTimeZone;
 
     // 手机朝向：直接从系统方向传感器读取，避免高德在 Mock 模式下不再更新自身罗盘。
     private SensorManager mSensorManager;
@@ -363,8 +365,13 @@ public class ServiceGo extends Service {
         }
         // Owned by the existing foreground mock service: no second background service.
         // Only opts in when user deliberately enables VPN geo-follow.
-        mVpnExitSync = new LabVpnExitSync(this, this::applyVpnExitCoordinate);
+        mVpnSystemTimeZone = new LabVpnSystemTimeZone(this);
+        mVpnExitSync = new LabVpnExitSync(this, this::applyVpnExitCoordinate,
+                zoneId -> {
+                    if (mVpnSystemTimeZone != null) mVpnSystemTimeZone.onTarget(zoneId);
+                });
         mVpnExitSync.startOrStopFromConfig();
+        mVpnSystemTimeZone.refresh();
     }
 
     private boolean applyVpnExitCoordinate(double latitude, double longitude) {
@@ -730,6 +737,7 @@ public class ServiceGo extends Service {
 
         if (intent != null && ACTION_VPN_SYNC_CONFIG.equals(intent.getAction())) {
             if (mVpnExitSync != null) mVpnExitSync.startOrStopFromConfig();
+            if (mVpnSystemTimeZone != null) mVpnSystemTimeZone.refresh();
             return START_STICKY; // never reset coordinates from a settings-only intent
         }
         if (intent != null && ACTION_VPN_SYNC_REFRESH.equals(intent.getAction())) {
@@ -1193,6 +1201,10 @@ public class ServiceGo extends Service {
 
     @Override
     public void onDestroy() {
+        if (mVpnSystemTimeZone != null) {
+            mVpnSystemTimeZone.close();
+            mVpnSystemTimeZone = null;
+        }
         if (mVpnExitSync != null) {
             mVpnExitSync.stop();
             mVpnExitSync = null;
