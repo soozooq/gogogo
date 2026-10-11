@@ -14,6 +14,14 @@ public class LabVpnGeoPolicyTest {
         assertTrue(LabVpnGeoPolicy.valid(-33.9, 151.2, "Australia"));
     }
 
+    @Test public void freezingRequiresAPriorAppliedResultAndNoExistingLock() {
+        assertFalse(LabVpnGeoPolicy.canFreeze(false, false, 100L, true));
+        assertFalse(LabVpnGeoPolicy.canFreeze(true, true, 100L, true));
+        assertFalse(LabVpnGeoPolicy.canFreeze(true, false, 0L, true));
+        assertFalse(LabVpnGeoPolicy.canFreeze(true, false, 100L, false));
+        assertTrue(LabVpnGeoPolicy.canFreeze(true, false, 100L, true));
+    }
+
     @Test public void neverAppliesWithoutOptInRealVpnOrFixedMode() {
         assertFalse(LabVpnGeoPolicy.canApply(false, true, true, true));
         assertFalse(LabVpnGeoPolicy.canApply(true, false, true, true));
