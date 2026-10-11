@@ -128,8 +128,8 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.heroTitle(this, "自动化诊断任务"), GoGoUi.matchWrap());
         root.addView(GoGoUi.subtitle(this,
-                "点一次就执行固定流程、记录步骤和结果。所有任务只在此页面打开时运行；"
-                        + "不自动启动模拟、不强停微信、不更改系统设置。"),
+                "基础排障与被动缓存采样仅在页面前台运行；微信 A/B 使用已有的后台录制服务。"
+                        + "系统自动串联阶段，需要你操作时暂停，不强停微信。"),
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 12));
 
