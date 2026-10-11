@@ -9,6 +9,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.net.ConnectivityManager;
@@ -27,6 +29,8 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.InputType;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -47,6 +51,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
+import java.util.Locale;
 
 import com.google.android.gms.location.LocationServices;
 import com.zcshou.service.ServiceGo;
@@ -58,6 +64,8 @@ public class SimpleMockActivity extends AppCompatActivity {
     private EditText longitudeInput;
     private EditText latitudeInput;
     private TextView statusView;
+    private TextView homeCountryView;
+    private int homeCountryLookupGeneration;
     private TextView diagnosticView;
     private TextView publicIpView;
     private LabTimedSupportCopy timedSupportCopy;
@@ -202,6 +210,7 @@ public class SimpleMockActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        homeCountryLookupGeneration++;
         if (timedSupportCopy != null) timedSupportCopy.close();
         super.onDestroy();
     }
@@ -266,6 +275,26 @@ public class SimpleMockActivity extends AppCompatActivity {
                 | InputType.TYPE_NUMBER_FLAG_SIGNED);
         GoGoUi.styleInput(latitudeInput);
         locationContent.addView(latitudeInput, GoGoUi.matchWrap());
+
+        homeCountryView = GoGoUi.muted(this, "所选国家 / 城市：正在识别…");
+        homeCountryView.setTextIsSelectable(true);
+        locationContent.addView(GoGoUi.gap(this, 10));
+        locationContent.addView(homeCountryView, GoGoUi.matchWrap());
+        locationContent.addView(GoGoUi.secondaryButton(this,
+                "识别自定义坐标的国家（系统地理编码，可能联网）",
+                v -> lookupHomeCountry()), GoGoUi.matchWrap());
+
+        // This label follows edits and map/picker returns, not the phone's real location.
+        TextWatcher countryWatcher = new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                updateHomeCountryLabel();
+            }
+            @Override public void afterTextChanged(Editable text) {}
+        };
+        longitudeInput.addTextChangedListener(countryWatcher);
+        latitudeInput.addTextChangedListener(countryWatcher);
+        updateHomeCountryLabel();
 
         locationContent.addView(GoGoUi.gap(this, 10));
         locationContent.addView(
@@ -430,6 +459,62 @@ public class SimpleMockActivity extends AppCompatActivity {
                 refreshDiagnostics();
             }
         }, delayMs);
+    }
+
+    private void updateHomeCountryLabel() {
+        homeCountryLookupGeneration++;
+        if (homeCountryView == null || longitudeInput == null || latitudeInput == null) return;
+        homeCountryView.setText(LabHomePlaceLabel.forCoordinates(
+                longitudeInput.getText().toString(), latitudeInput.getText().toString()));
+    }
+
+    /** Optional reverse geocoding of the user-entered target, never the device location. */
+    private void lookupHomeCountry() {
+        final String longitudeText = longitudeInput.getText().toString();
+        final String latitudeText = latitudeInput.getText().toString();
+        final LabHomeCoordinates.Point point;
+        try {
+            point = LabHomeCoordinates.parse(longitudeText, latitudeText);
+        } catch (IllegalArgumentException invalid) {
+            updateHomeCountryLabel();
+            Toast.makeText(this, "请先输入有效经纬度", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final String offline = LabHomePlaceLabel.forCoordinates(longitudeText, latitudeText);
+        if (offline.contains("（离线预设）")) {
+            homeCountryView.setText(offline);
+            return;
+        }
+        final int generation = ++homeCountryLookupGeneration;
+        homeCountryView.setText("所选国家 / 城市：正在查询（使用系统地理编码服务）…");
+        new Thread(() -> {
+            String result = "自定义坐标 · 系统无法识别国家（可继续模拟）";
+            try {
+                if (Geocoder.isPresent()) {
+                    Geocoder geocoder = new Geocoder(getApplicationContext(), Locale.SIMPLIFIED_CHINESE);
+                    List<Address> addresses = geocoder.getFromLocation(point.latitude, point.longitude, 1);
+                    if (addresses != null && !addresses.isEmpty()) {
+                        Address match = addresses.get(0);
+                        String country = match.getCountryName();
+                        if (country != null && !country.trim().isEmpty()) {
+                            String city = match.getLocality();
+                            result = country.trim()
+                                    + (city == null || city.trim().isEmpty() ? "" : " · " + city.trim())
+                                    + "（系统反查，仅供参考）";
+                        }
+                    }
+                }
+            } catch (Exception unavailable) {
+                // Geocoder may have no backend, be offline or fail independently of mock service.
+            }
+            final String display = result;
+            runOnUiThread(() -> {
+                if (generation != homeCountryLookupGeneration || isFinishing() || isDestroyed()) return;
+                if (!longitudeText.equals(longitudeInput.getText().toString())
+                        || !latitudeText.equals(latitudeInput.getText().toString())) return;
+                homeCountryView.setText("所选国家 / 城市：" + display);
+            });
+        }, "GoGoGo-HomeTargetGeocoder").start();
     }
 
     private void showLocationPresets() {
