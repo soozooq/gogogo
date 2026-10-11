@@ -1,6 +1,7 @@
 package com.zcshou.gogogo;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -267,6 +268,7 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
         }, 67000L); // Allow time for the last GMS async cache callback.
     }
 
+    @SuppressLint("MissingPermission") // Explicit permission gate at task start; each read catches revocation.
     private void readPassiveShot(int token, int shot) {
         final Context app = getApplicationContext();
         new Thread(() -> {
