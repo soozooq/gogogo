@@ -45,6 +45,7 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
     private static final String FLOW_LOG = "workflow_log";
     private static final String FLOW_STARTED = "workflow_started";
     private static final String FLOW_INTERRUPTED = "workflow_interrupted";
+    private static final String FLOW_RUNNING = "workflow_running";
     private static final String FLOW_NOTE = "workflow_wechat_note";
     private static final int MAX_REPORT_CHARS = 30000;
 
@@ -85,6 +86,20 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
         workflowLog = prefs.getString(FLOW_LOG, "");
         workflowStarted = prefs.getLong(FLOW_STARTED, 0L);
         workflowInterrupted = prefs.getBoolean(FLOW_INTERRUPTED, false);
+        if (prefs.getBoolean(FLOW_RUNNING, false)
+                && (LabDiagnosticWorkflow.BASELINE.equals(workflowStage)
+                    || LabDiagnosticWorkflow.PASSIVE.equals(workflowStage))) {
+            // A prior app process exited before reporting finish/cancel.
+            // Never claim these partially scheduled samples completed.
+            workflowInterrupted = true;
+            workflowLog = LabDiagnosticWorkflow.appendSection(workflowLog,
+                    "UNEXPECTED_PROCESS_TERMINATION · " + now(),
+                    "自动阶段未报告完成；可能是进程退出或系统杀进程。"
+                            + "需要用户明确点击继续后重新执行本阶段。");
+            prefs.edit().putString(FLOW_LOG, workflowLog)
+                    .putBoolean(FLOW_INTERRUPTED, true)
+                    .putBoolean(FLOW_RUNNING, false).apply();
+        }
         buildUi();
         workflowManualNote.setText(prefs.getString(FLOW_NOTE, ""));
         refreshWorkflowUi();
@@ -486,7 +501,8 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
         edit.putString(FLOW_STAGE, workflowStage)
                 .putString(FLOW_LOG, workflowLog)
                 .putLong(FLOW_STARTED, workflowStarted)
-                .putBoolean(FLOW_INTERRUPTED, workflowInterrupted);
+                .putBoolean(FLOW_INTERRUPTED, workflowInterrupted)
+                .putBoolean(FLOW_RUNNING, workflowStepRunning);
         if (workflowManualNote != null) {
             edit.putString(FLOW_NOTE, workflowManualNote.getText().toString());
         }
