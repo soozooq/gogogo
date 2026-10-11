@@ -370,7 +370,7 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                 .append(sample.render()).append("\n\n");
         if (passiveHistoryView != null) passiveHistoryView.setText(passiveHistory);
         LabSupportLog.append(this, LabSupportLog.PASSIVE,
-                "shot=" + shot + " " + sample.supportLine());
+                "shot=" + shot + " " + sample.supportLine(this));
         render();
     }
 
@@ -535,10 +535,10 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
         if (lastSupportLogElapsed < 0L || now - lastSupportLogElapsed >= 3000L) {
             lastSupportLogElapsed = now;
             LabSupportLog.append(this, LabSupportLog.ACTIVE,
-                    gps.supportLine() + " | " + network.supportLine()
-                    + " | " + gmsLast.supportLine()
-                    + " | " + gmsCurrent.supportLine()
-                    + " | " + gmsUpdates.supportLine());
+                    gps.supportLine(this) + " | " + network.supportLine(this)
+                    + " | " + gmsLast.supportLine(this)
+                    + " | " + gmsCurrent.supportLine(this)
+                    + " | " + gmsUpdates.supportLine(this));
         }
         frameworkView.setText(
                 gps.render() + "\n\n" + network.render());
@@ -698,7 +698,7 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                     stream);
         }
 
-        String supportLine() {
+        String supportLine(android.content.Context context) {
             if (location == null) {
                 return LabSupportLogText.safeToken(name) + "=NO_SAMPLE error="
                         + LabSupportLogText.safeToken(error);
@@ -709,6 +709,9 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                     + " fix_age_ms=" + fixAgeMs()
                     + " callback_age_ms=" + callbackAgeMs()
                     + " accuracy_m=" + String.format(Locale.US, "%.1f", location.getAccuracy())
+                    + " distance_to_last_requested_mock="
+                    + LabSupportLog.distanceToRequestedTarget(context,
+                            location.getLongitude(), location.getLatitude())
                     + " coord=" + (isMock()
                         ? String.format(Locale.US, "%.5f,%.5f",
                                 location.getLongitude(), location.getLatitude())
