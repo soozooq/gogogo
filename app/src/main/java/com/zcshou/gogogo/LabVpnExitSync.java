@@ -38,15 +38,12 @@ public final class LabVpnExitSync {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final ConnectivityManager connectivity;
     private final ApplyLocation applyLocation;
-    private final Runnable poll = () -> {
-        if (!running) return;
-        scheduleFetch(0);
-        handler.postDelayed(pollInternal, LabVpnGeoPolicy.POLL_INTERVAL_MS);
-    };
-    private final Runnable pollInternal = () -> {
-        if (!running) return;
-        scheduleFetch(0);
-        handler.postDelayed(poll, LabVpnGeoPolicy.POLL_INTERVAL_MS);
+    private final Runnable poll = new Runnable() {
+        @Override public void run() {
+            if (!running) return;
+            scheduleFetch(0);
+            handler.postDelayed(this, LabVpnGeoPolicy.POLL_INTERVAL_MS);
+        }
     };
     private final Runnable fetch = this::fetchLatest;
     private ExecutorService executor;
@@ -160,7 +157,6 @@ public final class LabVpnExitSync {
         generation++;
         handler.removeCallbacks(fetch);
         handler.removeCallbacks(poll);
-        handler.removeCallbacks(pollInternal);
         if (callback != null && connectivity != null) {
             try {
                 connectivity.unregisterNetworkCallback(callback);
