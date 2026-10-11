@@ -951,6 +951,10 @@ public class SimpleMockActivity extends AppCompatActivity {
                     if (!LabVpnExitSync.chooseLockedTimezone(this, zone)) {
                         Toast.makeText(this, "无效时区，请使用 IANA 名称",
                                 Toast.LENGTH_LONG).show();
+                    } else {
+                        // An existing opt-in Shizuku sync should see this explicit
+                        // correction without requiring a full mock service restart.
+                        notifyVpnServiceConfigurationChanged();
                     }
                     refreshVpnSyncStatus();
                 }).show();
