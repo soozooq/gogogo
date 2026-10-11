@@ -29,8 +29,8 @@ android {
         minSdkVersion 27
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 35
-        versionCode 2400059
-        versionName '2.4.0-lab47.5-vpn-freeze' // https://semver.org/lang/zh-CN/
+        versionCode 2400060
+        versionName '2.4.0-lab47.6-vpn-country' // https://semver.org/lang/zh-CN/
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += ['zh', 'zh-rCN', 'en', 'en-rUS']
         ndk {
