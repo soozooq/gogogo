@@ -48,6 +48,8 @@ import rikka.shizuku.Shizuku;
 
 @SuppressWarnings("deprecation")
 public class LabDiagnosticsActivity extends AppCompatActivity implements SensorEventListener {
+    /** Explicit user navigation from Lab 47: run a read-only snapshot if authorized. */
+    public static final String EXTRA_WECHAT_PROCESS_SNAPSHOT = "gogogo.extra.wechat_process_snapshot";
     private static final int REQ_SHIZUKU = 3301;
     private SensorManager sensorManager;
     private Sensor rotationSensor;
@@ -76,6 +78,7 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
     private ILabPrivilegedService privilegedService;
     private boolean privilegedBinding = false;
     private boolean pendingPrivilegedBind = false;
+    private boolean pendingWeChatProcessSnapshot = false;
 
     private final ServiceConnection privilegedConnection = new ServiceConnection() {
         @Override
@@ -85,6 +88,10 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
             privilegedView.setText("UserService：已连接\n"
                     + "这段代码现在运行在 Shizuku 提供的 shell/root 独立进程里 😈");
             refreshViews();
+            if (pendingWeChatProcessSnapshot) {
+                pendingWeChatProcessSnapshot = false;
+                runPrivilegedProbe(6);
+            }
         }
 
         @Override
@@ -145,6 +152,10 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         Shizuku.addBinderReceivedListenerSticky(shizukuBinderReceived);
         Shizuku.addBinderDeadListener(shizukuBinderDead);
         Shizuku.addRequestPermissionResultListener(shizukuPermissionResult);
+        if (getIntent().getBooleanExtra(EXTRA_WECHAT_PROCESS_SNAPSHOT, false)) {
+            pendingWeChatProcessSnapshot = true;
+            bindPrivilegedUserService();
+        }
     }
 
     private void buildUi() {
@@ -219,6 +230,15 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
                 button("👥 用户 / Device Policy", v -> runPrivilegedProbe(4)),
                 button("🧪 AVF / pKVM", v -> runPrivilegedProbe(5))
         ));
+        root.addView(button("微信后台进程快照（只读、不强停）",
+                v -> {
+                    if (privilegedService == null) {
+                        pendingWeChatProcessSnapshot = true;
+                        bindPrivilegedUserService();
+                    } else {
+                        runPrivilegedProbe(6);
+                    }
+                }), matchWrap());
 
         // Sandbox / Work Profile navigation belongs to LabHub.
         Button developer = button("🛠 打开开发者选项", v -> {
@@ -621,8 +641,10 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
                     report = service.getSystemReport();
                 } else if (type == 4) {
                     report = service.getUserPolicyReport();
-                } else {
+                } else if (type == 5) {
                     report = service.getVirtualizationReport();
+                } else {
+                    report = service.getWeChatProcessReport();
                 }
             } catch (Throwable t) {
                 report = "高权限诊断失败：" + t.getClass().getSimpleName()
@@ -643,7 +665,8 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         else if (type == 2) title = "📍 高权限定位系统报告";
         else if (type == 3) title = "🖥 高权限系统报告";
         else if (type == 4) title = "👥 高权限用户 / Device Policy 报告";
-        else title = "🧪 AVF / pKVM / Microdroid 报告";
+        else if (type == 5) title = "🧪 AVF / pKVM / Microdroid 报告";
+        else title = "微信相关进程快照（Shizuku 只读）";
 
         TextView view = new TextView(this);
         int pad = dp(16);
