@@ -7,6 +7,7 @@ import android.system.StructUtsname;
 
 import androidx.annotation.Keep;
 import com.zcshou.gogogo.LabWeChatProcessSummary;
+import com.zcshou.gogogo.LabVpnTimeZone;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -82,6 +83,47 @@ public class LabPrivilegedService extends ILabPrivilegedService.Stub {
                     + "（不能认定微信已停止）";
         } finally {
             if (process != null) process.destroy();
+        }
+    }
+
+    /**
+     * Opt-in system-wide timezone action. Caller handles Shizuku consent and
+     * manual Android automatic-timezone setting. Never changes wall-clock
+     * milliseconds or system automatic-detection policy.
+     */
+    @Override
+    public String setSystemTimeZone(String ianaZone) {
+        if (!LabVpnTimeZone.valid(ianaZone)) return "INVALID_IANA_TIMEZONE";
+        Process child = null;
+        try {
+            // Fixed argv, no shell interpolation. Only recognized IANA zone IDs.
+            child = new ProcessBuilder("cmd", "alarm", "set-timezone", ianaZone)
+                    .redirectErrorStream(true).start();
+            if (!child.waitFor(5, TimeUnit.SECONDS)) {
+                child.destroyForcibly();
+                return "TIMEOUT: system timezone unchanged or unverified";
+            }
+            if (child.exitValue() != 0) {
+                return "UNAVAILABLE: cmd alarm exit=" + child.exitValue();
+            }
+            // cmd alarm success is not yet a proof that OEM kept the timezone.
+            Process verify = new ProcessBuilder("getprop", "persist.sys.timezone")
+                    .redirectErrorStream(true).start();
+            String observed = "";
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(verify.getInputStream(), StandardCharsets.UTF_8))) {
+                observed = reader.readLine();
+            }
+            if (!verify.waitFor(3, TimeUnit.SECONDS)) {
+                verify.destroyForcibly();
+                return "SENT_BUT_NOT_VERIFIED";
+            }
+            return ianaZone.equals(observed) ? "APPLIED:" + ianaZone
+                    : "SENT_BUT_NOT_VERIFIED";
+        } catch (Throwable t) {
+            return "UNAVAILABLE:" + t.getClass().getSimpleName();
+        } finally {
+            if (child != null) child.destroy();
         }
     }
 
