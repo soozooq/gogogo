@@ -27,6 +27,18 @@ public final class LabSupportLogText {
         return out.toString();
     }
 
+    /** Show newest complete rows rather than repeatedly pasting stale experiments. */
+    public static String lastLines(String previous, int maximum) {
+        if (previous == null || previous.isEmpty()) return "NO_RECORD\n";
+        String[] lines = previous.split("\\n");
+        StringBuilder out = new StringBuilder();
+        for (int i = Math.max(0, lines.length - Math.max(1, maximum));
+             i < lines.length; i++) {
+            if (!lines[i].isEmpty()) out.append(lines[i]).append('\n');
+        }
+        return out.length() == 0 ? "NO_RECORD\n" : out.toString();
+    }
+
     /** Only deterministic tokens; never persist a Tencent SDK reason, place name, key or coordinates. */
     public static String summarizeTencent(String raw) {
         if (raw == null || raw.isEmpty()) return null;

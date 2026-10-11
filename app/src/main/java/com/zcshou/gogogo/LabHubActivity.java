@@ -23,6 +23,7 @@ public final class LabHubActivity extends AppCompatActivity {
     private final boolean[] expanded = new boolean[GROUP_COUNT];
     private TextView readinessTitle;
     private TextView readinessDetail;
+    private LabTimedSupportCopy timedSupportCopy;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,6 +39,11 @@ public final class LabHubActivity extends AppCompatActivity {
     @Override protected void onResume() {
         super.onResume();
         refreshReadiness();
+    }
+
+    @Override protected void onDestroy() {
+        if (timedSupportCopy != null) timedSupportCopy.close();
+        super.onDestroy();
     }
 
     @Override protected void onSaveInstanceState(Bundle outState) {
@@ -96,8 +102,11 @@ public final class LabHubActivity extends AppCompatActivity {
                 }), GoGoUi.matchWrap());
 
         root.addView(GoGoUi.gap(this, 10));
-        root.addView(GoGoUi.primaryButton(this, "📋 复制完整诊断日志（发给 GPT）",
+        root.addView(GoGoUi.primaryButton(this, "📋 复制最近诊断日志（发给 GPT）",
                 v -> LabSupportLog.copy(this, "", "")), GoGoUi.matchWrap());
+        timedSupportCopy = new LabTimedSupportCopy(this, () -> new String[] {"", ""});
+        root.addView(GoGoUi.gap(this, 10));
+        root.addView(timedSupportCopy.view(), GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 20));
         root.addView(GoGoUi.sectionTitle(this, "按需展开其他工具"),
                 GoGoUi.matchWrap());

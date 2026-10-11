@@ -6,6 +6,12 @@ import android.content.SharedPreferences;
 import android.os.Process;
 import android.os.SystemClock;
 import android.provider.Settings;
+import android.util.AtomicFile;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -19,6 +25,7 @@ import java.util.UUID;
  */
 public final class LabServiceLifecycleJournal {
     private static final String PREFERENCES = "lab_service_lifecycle_v1";
+    private static final String CROSS_PROCESS_EVENT = "lab_service_last_event_v1.txt";
     private static final String KEY_STATE = "state";
     private static final String KEY_PID = "service_pid";
     private static final String KEY_GENERATION = "service_generation";
@@ -75,6 +82,7 @@ public final class LabServiceLifecycleJournal {
                 .putLong(KEY_STARTED_BOOT_COUNT, nowBootCount)
                 .putLong(KEY_SESSION_COUNT, prefs.getLong(KEY_SESSION_COUNT, 0L) + 1L)
                 .commit(); // A process may be force-stopped without onDestroy().
+        writeCrossProcessEvent(context, STATE_ACTIVE, nowWall, nowElapsed, nowBootCount);
     }
 
     /** Call after ServiceGo's normal best-effort cleanup has completed. */
@@ -83,10 +91,62 @@ public final class LabServiceLifecycleJournal {
         if (!PROCESS_GENERATION.equals(prefs.getString(KEY_GENERATION, ""))) {
             return;
         }
+        long stoppedWall = System.currentTimeMillis();
         prefs.edit()
                 .putString(KEY_STATE, STATE_STOPPED)
-                .putLong(KEY_STOPPED_WALL, System.currentTimeMillis())
+                .putLong(KEY_STOPPED_WALL, stoppedWall)
                 .commit();
+        writeCrossProcessEvent(context, STATE_STOPPED, stoppedWall,
+                SystemClock.elapsedRealtime(), readBootCount(context));
+    }
+
+    /**
+     * AtomicFile is read afresh from disk in :consumer, unlike process-cached
+     * SharedPreferences. An event is still historical, not a live service check.
+     */
+    private static void writeCrossProcessEvent(Context context, String state,
+                                               long wall, long elapsed, long boot) {
+        AtomicFile file = new AtomicFile(new File(
+                context.getApplicationContext().getFilesDir(), CROSS_PROCESS_EVENT));
+        FileOutputStream output = null;
+        try {
+            output = file.startWrite();
+            String record = state + "," + wall + "," + elapsed + "," + boot;
+            output.write(record.getBytes(StandardCharsets.UTF_8));
+            file.finishWrite(output);
+        } catch (Exception ignored) {
+            if (output != null) file.failWrite(output);
+            // Diagnostic I/O must not block the mock service lifecycle.
+        }
+    }
+
+    private static String lastCrossProcessEvent(Context context) {
+        AtomicFile file = new AtomicFile(new File(
+                context.getApplicationContext().getFilesDir(), CROSS_PROCESS_EVENT));
+        try (FileInputStream input = file.openRead()) {
+            byte[] bytes = new byte[160];
+            int size = input.read(bytes);
+            if (size <= 0 || size >= bytes.length) return "NO_VALID_RECORD";
+            String[] parts = new String(bytes, 0, size, StandardCharsets.UTF_8).split(",");
+            if (parts.length != 4
+                    || (!STATE_ACTIVE.equals(parts[0]) && !STATE_STOPPED.equals(parts[0]))) {
+                return "NO_VALID_RECORD";
+            }
+            long wall = Long.parseLong(parts[1]);
+            long elapsed = Long.parseLong(parts[2]);
+            long boot = Long.parseLong(parts[3]);
+            long nowElapsed = SystemClock.elapsedRealtime();
+            boolean sameBoot = isSameBoot(boot, readBootCount(context), wall, elapsed,
+                    System.currentTimeMillis(), nowElapsed);
+            String status = STATE_ACTIVE.equals(parts[0])
+                    ? "LAST_START_SEEN_NOT_PROOF_RUNNING"
+                    : "LAST_STOP_CALLBACK_SEEN_NOT_PROOF_PROVIDER_CLEARED";
+            return status + "; wall=" + formatTime(wall)
+                    + "; elapsed_age_ms=" + (sameBoot ? nowElapsed - elapsed : -1L)
+                    + "; boot=" + (sameBoot ? "SAME" : "UNKNOWN_OR_CHANGED");
+        } catch (Exception e) {
+            return "NO_RECORD_OR_UNAVAILABLE";
+        }
     }
 
     /**
@@ -175,8 +235,12 @@ public final class LabServiceLifecycleJournal {
         Verdict verdict = currentVerdict(context, serviceRunning);
 
         StringBuilder text = new StringBuilder();
-        text.append("当前主进程 PID: ").append(Process.myPid()).append('\n');
-        text.append("ServiceGo 当前运行标记: ").append(serviceRunning ? "RUNNING" : "STOPPED").append('\n');
+        text.append("跨进程最近生命周期事件（不是实时服务状态）: ")
+                .append(lastCrossProcessEvent(context)).append('\n');
+        text.append("以下偏好存档在独立消费者进程可能过时，不能确认主服务状态。\n");
+        text.append("当前报告进程 PID: ").append(Process.myPid()).append('\n');
+        text.append("ServiceGo 本报告进程标记: ")
+                .append(serviceRunning ? "RUNNING" : "STOPPED").append('\n');
         text.append("模拟位置 AppOps: ").append(mockLocationAppOps(context)).append('\n');
         text.append("开机身份来源: ").append(bootCount >= 0L ? "BOOT_COUNT" : "开机时间估算").append('\n');
         text.append("已记录模拟会话: ").append(prefs.getLong(KEY_SESSION_COUNT, 0L)).append('\n');

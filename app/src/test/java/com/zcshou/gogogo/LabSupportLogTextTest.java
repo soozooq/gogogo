@@ -46,6 +46,16 @@ public final class LabSupportLogTextTest {
                 LabSupportLogText.distanceBucket(999.0, 39.0, 119.0, 26.0));
     }
 
+    @Test public void recentRowsKeepWholeEntriesAndDropOldExperiments() {
+        String rows = "";
+        for (int i = 0; i < 14; i++) {
+            rows = LabSupportLogText.appendBounded(rows, "shot=" + i, 14);
+        }
+        String recent = LabSupportLogText.lastLines(rows, 3);
+        assertEquals("shot=11\nshot=12\nshot=13\n", recent);
+        assertEquals("NO_RECORD\n", LabSupportLogText.lastLines("NO_RECORD\n", 3));
+    }
+
     @Test public void boundEntryCannotInjectNewLines() {
         String result = LabSupportLogText.appendBounded("", "ok\nextra", 5);
         assertEquals("ok extra\n", result);

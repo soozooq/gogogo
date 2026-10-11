@@ -28,7 +28,7 @@ public final class LabSupportLog {
     public static final String PASSIVE = "consumer_passive";
     public static final String TENCENT = "tencent";
     private static final int MAX_ENTRIES = 14;
-    private static final int MAX_FILE_BYTES = 14_000;
+    private static final int MAX_FILE_BYTES = 32_000;
 
     private LabSupportLog() {}
 
@@ -70,7 +70,7 @@ public final class LabSupportLog {
                     Locale.US).format(new Date());
             String sanitized = event.replace('\n', ' ').replace('\r', ' ');
             String entry = now + " elapsed_ms=" + SystemClock.elapsedRealtime()
-                    + " " + sanitized.substring(0, Math.min(650, sanitized.length()));
+                    + " " + sanitized.substring(0, Math.min(1800, sanitized.length()));
             String next = LabSupportLogText.appendBounded(previous, entry, MAX_ENTRIES);
             AtomicFile atomic = new AtomicFile(file(context, section));
             FileOutputStream output = null;
@@ -180,17 +180,28 @@ public final class LabSupportLog {
         out.append("service_flag_scope=THIS_PROCESS_ONLY; consumer_process_false_not_global_stop\n");
         out.append("privacy=real_consumer_coordinates_hidden; mock_coordinates_included; ")
                 .append("no_ssid_ip_keys_phone_identifiers\n");
-        out.append("target_lon=").append(LabSupportLogText.finiteTarget(
-                expectedLongitude, true)).append('\n');
-        out.append("target_lat=").append(LabSupportLogText.finiteTarget(
-                expectedLatitude, false)).append('\n');
-        out.append("last_requested_mock_target=").append(requestedTarget(context))
-                .append(" (WGS84 lng,lat,wall_ms; requested_not_confirmed)\\n");
+        String lastRequested = requestedTarget(context);
+        String[] saved = lastRequested.split(",");
+        boolean pageTarget = expectedLongitude != null && !expectedLongitude.trim().isEmpty()
+                && expectedLatitude != null && !expectedLatitude.trim().isEmpty();
+        String longitude = expectedLongitude == null || expectedLongitude.trim().isEmpty()
+                ? (saved.length == 3 ? saved[0] : null) : expectedLongitude;
+        String latitude = expectedLatitude == null || expectedLatitude.trim().isEmpty()
+                ? (saved.length == 3 ? saved[1] : null) : expectedLatitude;
+        out.append("target_source=").append(pageTarget ? "PAGE_INPUT"
+                : saved.length == 3 ? "LAST_REQUESTED_NOT_CONFIRMED" : "UNAVAILABLE").append('\n');
+        out.append("target_lon=").append(longitude == null ? "UNKNOWN"
+                : LabSupportLogText.finiteTarget(longitude, true)).append('\n');
+        out.append("target_lat=").append(latitude == null ? "UNKNOWN"
+                : LabSupportLogText.finiteTarget(latitude, false)).append('\n');
+        out.append("last_requested_mock_target=").append(lastRequested)
+                .append(" (WGS84 lng,lat,wall_ms; requested_not_confirmed)\n");
         section(out, "QUICK_AND_RECOVERY", captureSafe(context, 0));
         section(out, "SERVICE_LIFECYCLE", captureSafe(context, 1));
-        section(out, "CONSUMER_ACTIVE_SAVED", read(context, ACTIVE));
-        section(out, "CONSUMER_PASSIVE_SAVED", read(context, PASSIVE));
-        section(out, "TENCENT_SDK_SAVED", read(context, TENCENT));
+        out.append("history_scope=RECENT_ONLY; stored_history_remains_bounded\n");
+        section(out, "CONSUMER_ACTIVE_RECENT", LabSupportLogText.lastLines(read(context, ACTIVE), 4));
+        section(out, "CONSUMER_PASSIVE_RECENT", LabSupportLogText.lastLines(read(context, PASSIVE), 9));
+        section(out, "TENCENT_SDK_RECENT", LabSupportLogText.lastLines(read(context, TENCENT), 4));
         out.append("END_GOGOGO_SUPPORT_LOG_V1\n");
         return out.toString();
     }
@@ -198,6 +209,12 @@ public final class LabSupportLog {
     /** User action only. Do not upload automatically. */
     public static void copy(Context context, String expectedLongitude,
                             String expectedLatitude) {
+        copyWithResult(context, expectedLongitude, expectedLatitude);
+    }
+
+    /** Also used by the user-started countdown, never by background polling. */
+    public static boolean copyWithResult(Context context, String expectedLongitude,
+                                         String expectedLatitude) {
         try {
             ClipboardManager manager = (ClipboardManager) context.getSystemService(
                     Context.CLIPBOARD_SERVICE);
@@ -205,9 +222,11 @@ public final class LabSupportLog {
             manager.setPrimaryClip(ClipData.newPlainText("GoGoGo 诊断日志",
                     generate(context, expectedLongitude, expectedLatitude)));
             Toast.makeText(context, "日志已复制，直接粘贴发给 GPT 即可", Toast.LENGTH_LONG).show();
+            return true;
         } catch (Exception e) {
             Toast.makeText(context, "复制失败：" + e.getClass().getSimpleName(),
                     Toast.LENGTH_LONG).show();
+            return false;
         }
     }
 }

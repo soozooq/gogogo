@@ -60,6 +60,7 @@ public class SimpleMockActivity extends AppCompatActivity {
     private TextView statusView;
     private TextView diagnosticView;
     private TextView publicIpView;
+    private LabTimedSupportCopy timedSupportCopy;
     private LinearLayout diagnosticDetails;
     private LinearLayout homeToolsPanel;
     private com.google.android.material.button.MaterialButton homeToolsToggle;
@@ -199,6 +200,12 @@ public class SimpleMockActivity extends AppCompatActivity {
         super.onStop();
     }
 
+    @Override
+    protected void onDestroy() {
+        if (timedSupportCopy != null) timedSupportCopy.close();
+        super.onDestroy();
+    }
+
     private void buildUi() {
         int pad = GoGoUi.dp(this, 18);
 
@@ -308,11 +315,17 @@ public class SimpleMockActivity extends AppCompatActivity {
                 v -> startActivity(new Intent(this, LabHubActivity.class))),
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 10));
-        root.addView(GoGoUi.primaryButton(this, "📋 一键复制诊断日志（发给 GPT）",
+        root.addView(GoGoUi.primaryButton(this, "📋 复制最近诊断日志（发给 GPT）",
                 v -> LabSupportLog.copy(this,
                         longitudeInput == null ? "" : longitudeInput.getText().toString(),
                         latitudeInput == null ? "" : latitudeInput.getText().toString())),
                 GoGoUi.matchWrap());
+        timedSupportCopy = new LabTimedSupportCopy(this, () -> new String[] {
+                longitudeInput == null ? "" : longitudeInput.getText().toString(),
+                latitudeInput == null ? "" : latitudeInput.getText().toString()
+        });
+        root.addView(GoGoUi.gap(this, 10));
+        root.addView(timedSupportCopy.view(), GoGoUi.matchWrap());
         root.addView(GoGoUi.muted(this,
                 "不主动定位、不上传；只复制已有的服务与检测记录。真实坐标、IP、密钥等默认隐藏。"),
                 GoGoUi.matchWrap());

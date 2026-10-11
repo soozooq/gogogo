@@ -57,6 +57,7 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
     private TextView gmsView;
     private TextView comparisonView;
     private TextView noteView;
+    private LabTimedSupportCopy timedSupportCopy;
 
     private LocationManager locationManager;
     private FusedLocationProviderClient fusedClient;
@@ -170,8 +171,11 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                 GoGoUi.weighted());
         statusContent.addView(actions, GoGoUi.matchWrap());
         statusContent.addView(GoGoUi.gap(this, 8));
-        statusContent.addView(GoGoUi.secondaryButton(this, "📋 一键复制全部诊断日志",
+        statusContent.addView(GoGoUi.secondaryButton(this, "📋 复制最近诊断日志",
                 v -> LabSupportLog.copy(this, "", "")), GoGoUi.matchWrap());
+        timedSupportCopy = new LabTimedSupportCopy(this, () -> new String[] {"", ""});
+        statusContent.addView(GoGoUi.gap(this, 10));
+        statusContent.addView(timedSupportCopy.view(), GoGoUi.matchWrap());
         GoGoUi.addCard(root, statusCard, 16);
 
         com.google.android.material.card.MaterialCardView fwCard = GoGoUi.card(this);
@@ -628,6 +632,7 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        if (timedSupportCopy != null) timedSupportCopy.close();
         stopConsumers();
         super.onDestroy();
     }
