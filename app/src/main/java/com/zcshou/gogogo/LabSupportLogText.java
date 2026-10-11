@@ -63,6 +63,30 @@ public final class LabSupportLogText {
         return safe.substring(0, Math.min(safe.length(), 150));
     }
 
+    /** Privacy-preserving distance category to a previously requested synthetic target. */
+    public static String distanceBucket(double targetLng, double targetLat,
+                                        double fixLng, double fixLat) {
+        if (!Double.isFinite(targetLng) || !Double.isFinite(targetLat)
+                || !Double.isFinite(fixLng) || !Double.isFinite(fixLat)
+                || Math.abs(targetLng) > 180 || Math.abs(fixLng) > 180
+                || Math.abs(targetLat) > 90 || Math.abs(fixLat) > 90) {
+            return "UNKNOWN";
+        }
+        double lat1 = Math.toRadians(targetLat);
+        double lat2 = Math.toRadians(fixLat);
+        double dLat = lat2 - lat1;
+        double dLon = Math.toRadians(fixLng - targetLng);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(lat1) * Math.cos(lat2)
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double distanceKm = 6371.0 * 2.0 * Math.asin(Math.min(1.0, Math.sqrt(a)));
+        if (distanceKm < 1.0) return "LT_1KM";
+        if (distanceKm < 20.0) return "LT_20KM";
+        if (distanceKm < 100.0) return "LT_100KM";
+        if (distanceKm < 1000.0) return "LT_1000KM";
+        return "GE_1000KM";
+    }
+
     public static String finiteTarget(String value, boolean longitude) {
         if (value == null) return "INVALID";
         try {
