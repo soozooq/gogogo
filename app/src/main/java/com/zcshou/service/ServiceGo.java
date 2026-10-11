@@ -57,6 +57,9 @@ import com.zcshou.gogogo.LabAttitudeHeadingEngine;
 import com.zcshou.gogogo.LabHeadingTraceRecorder;
 import com.zcshou.gogogo.R;
 import com.zcshou.gogogo.SimpleMockActivity;
+import com.zcshou.gogogo.LabVpnExitSync;
+import com.zcshou.gogogo.LabVpnGeoPolicy;
+import com.zcshou.gogogo.LabSupportLog;
 import com.zcshou.joystick.JoyStick;
 
 public class ServiceGo extends Service {
@@ -85,6 +88,8 @@ public class ServiceGo extends Service {
     public static final String ACTION_RECORD_STOP = "com.soozooq.gogogo.action.RECORD_STOP";
     public static final String ACTION_RECORD_CLEAR = "com.soozooq.gogogo.action.RECORD_CLEAR";
     public static final String ACTION_SCENARIO_RESET = "com.soozooq.gogogo.action.SCENARIO_RESET";
+    public static final String ACTION_VPN_SYNC_CONFIG = "com.soozooq.gogogo.action.VPN_SYNC_CONFIG";
+    public static final String ACTION_VPN_SYNC_REFRESH = "com.soozooq.gogogo.action.VPN_SYNC_REFRESH";
 
     public static final String EXTRA_ROUTE_LATS = "ROUTE_LATS";
     public static final String EXTRA_ROUTE_LNGS = "ROUTE_LNGS";
@@ -250,6 +255,7 @@ public class ServiceGo extends Service {
     // Read by the location HandlerThread and written during main-thread teardown.
     private volatile boolean isStop = false;
     private PowerManager.WakeLock mWakeLock;
+    private LabVpnExitSync mVpnExitSync;
 
     // 手机朝向：直接从系统方向传感器读取，避免高德在 Mock 模式下不再更新自身罗盘。
     private SensorManager mSensorManager;
@@ -355,6 +361,28 @@ public class ServiceGo extends Service {
         if (mProviderReliability != null) {
             mProviderReliability.startMonitoring();
         }
+        // Owned by the existing foreground mock service: no second background service.
+        // Only opts in when user deliberately enables VPN geo-follow.
+        mVpnExitSync = new LabVpnExitSync(this, this::applyVpnExitCoordinate);
+        mVpnExitSync.startOrStopFromConfig();
+    }
+
+    private boolean applyVpnExitCoordinate(double latitude, double longitude) {
+        if (!LabVpnGeoPolicy.canApply(LabVpnExitSync.enabled(this), true,
+                !mRouteActive && !mRoamActive && !mReplayActive && !isStop,
+                LabVpnGeoPolicy.valid(latitude, longitude, "vpn"))) return false;
+        // Same fixed backend/provider pipeline as a manual target, no new injection path.
+        mCurLat = latitude;
+        mCurLng = longitude;
+        mCurAlt = DEFAULT_ALT;
+        mSpeed = 0.0;
+        mProvenanceSource = "VPN_EGRESS_IP_GEO";
+        activateSimulationBackend("FIXED");
+        recordProvenance("VPN_EGRESS", "approximate city target updated with user opt-in");
+        persistCurrentLocation(getSharedPreferences("mock_location_state", MODE_PRIVATE));
+        LabSupportLog.rememberRequestedTarget(this, longitude, latitude);
+        if (mJoyStick != null) mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+        return true;
     }
 
     private void initHeadingSensor() {
@@ -700,6 +728,15 @@ public class ServiceGo extends Service {
         android.content.SharedPreferences state =
                 getSharedPreferences("mock_location_state", MODE_PRIVATE);
 
+        if (intent != null && ACTION_VPN_SYNC_CONFIG.equals(intent.getAction())) {
+            if (mVpnExitSync != null) mVpnExitSync.startOrStopFromConfig();
+            return START_STICKY; // never reset coordinates from a settings-only intent
+        }
+        if (intent != null && ACTION_VPN_SYNC_REFRESH.equals(intent.getAction())) {
+            if (mVpnExitSync != null) mVpnExitSync.manualRefresh();
+            return START_STICKY;
+        }
+
         if (intent != null && ACTION_SCENARIO_RESET.equals(intent.getAction())) {
             mScenarioStep = 0L;
             recordProvenance("SCENARIO", "replay reset to tick 0");
@@ -939,6 +976,11 @@ public class ServiceGo extends Service {
             activateSimulationBackend("FIXED");
             recordProvenance("MANUAL", "position selected");
             persistCurrentLocation(state);
+            // With the optional toggle enabled, resolve an up-to-date VPN target
+            // after this explicit manual start (without creating a second service).
+            if (mVpnExitSync != null && LabVpnExitSync.enabled(this)) {
+                mVpnExitSync.manualRefresh();
+            }
         } else {
             if (restoreRouteCheckpoint()) {
                 if (mJoyStick != null) {
@@ -1150,6 +1192,10 @@ public class ServiceGo extends Service {
 
     @Override
     public void onDestroy() {
+        if (mVpnExitSync != null) {
+            mVpnExitSync.stop();
+            mVpnExitSync = null;
+        }
         mFusedShutdownRequested = true;
         isStop = true;
         sRunning = false;
