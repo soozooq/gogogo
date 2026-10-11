@@ -95,6 +95,54 @@ public final class LabSupportLog {
         }
     }
 
+    private static File requestedTargetFile(Context context) {
+        return new File(context.getApplicationContext().getFilesDir(),
+                "support_last_requested_target.txt");
+    }
+
+    /** Synthetic request target only; never read/store a user's true Location. */
+    public static synchronized void rememberRequestedTarget(
+            Context context, double longitude, double latitude) {
+        if (!Double.isFinite(longitude) || !Double.isFinite(latitude)
+                || Math.abs(longitude) > 180 || Math.abs(latitude) > 90) return;
+        AtomicFile atomic = new AtomicFile(requestedTargetFile(context));
+        FileOutputStream output = null;
+        try {
+            output = atomic.startWrite();
+            String record = longitude + "," + latitude + "," + System.currentTimeMillis();
+            output.write(record.getBytes(StandardCharsets.UTF_8));
+            atomic.finishWrite(output);
+        } catch (Exception e) {
+            if (output != null) atomic.failWrite(output);
+        }
+    }
+
+    private static String requestedTarget(Context context) {
+        AtomicFile atomic = new AtomicFile(requestedTargetFile(context));
+        try (FileInputStream input = atomic.openRead()) {
+            byte[] buffer = new byte[120];
+            int size = input.read(buffer);
+            if (size <= 0 || size >= buffer.length) return "NO_TARGET";
+            return new String(buffer, 0, size, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return "NO_TARGET";
+        }
+    }
+
+    /** Used only on fixes already delivered by existing consumer callbacks. */
+    public static String distanceToRequestedTarget(Context context,
+                                                   double longitude, double latitude) {
+        String[] fields = requestedTarget(context).split(",");
+        if (fields.length != 3) return "NO_TARGET";
+        try {
+            return LabSupportLogText.distanceBucket(
+                    Double.parseDouble(fields[0]), Double.parseDouble(fields[1]),
+                    longitude, latitude);
+        } catch (RuntimeException e) {
+            return "UNKNOWN";
+        }
+    }
+
     private static void section(StringBuilder out, String label, String detail) {
         out.append("\n--- ").append(label).append(" ---\n").append(detail).append('\n');
     }
@@ -136,6 +184,8 @@ public final class LabSupportLog {
                 expectedLongitude, true)).append('\n');
         out.append("target_lat=").append(LabSupportLogText.finiteTarget(
                 expectedLatitude, false)).append('\n');
+        out.append("last_requested_mock_target=").append(requestedTarget(context))
+                .append(" (WGS84 lng,lat,wall_ms; requested_not_confirmed)\\n");
         section(out, "QUICK_AND_RECOVERY", captureSafe(context, 0));
         section(out, "SERVICE_LIFECYCLE", captureSafe(context, 1));
         section(out, "CONSUMER_ACTIVE_SAVED", read(context, ACTIVE));
