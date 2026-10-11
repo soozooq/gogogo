@@ -307,6 +307,15 @@ public class SimpleMockActivity extends AppCompatActivity {
                 "实验与诊断", "Consumer Matrix · Shizuku · Provider 与系统实验",
                 v -> startActivity(new Intent(this, LabHubActivity.class))),
                 GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 10));
+        root.addView(GoGoUi.primaryButton(this, "📋 一键复制诊断日志（发给 GPT）",
+                v -> LabSupportLog.copy(this,
+                        longitudeInput == null ? "" : longitudeInput.getText().toString(),
+                        latitudeInput == null ? "" : latitudeInput.getText().toString())),
+                GoGoUi.matchWrap());
+        root.addView(GoGoUi.muted(this,
+                "不主动定位、不上传；只复制已有的服务与检测记录。真实坐标、IP、密钥等默认隐藏。"),
+                GoGoUi.matchWrap());
 
         // One optional disclosure replaces a second always-visible home card.
         // Everything below remains available but costs no diagnostic reads
