@@ -164,8 +164,19 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
         workflowBody.addView(GoGoUi.secondaryButton(this, "我已完成微信界面观察，继续",
                 v -> confirmWeChatWorkflow()), GoGoUi.matchWrap());
         workflowBody.addView(GoGoUi.gap(this, 8));
+        workflowBody.addView(GoGoUi.secondaryButton(this, "打开微信 / 控制组自动实验",
+                v -> {
+                    if (!LabDiagnosticWorkflow.BACKGROUND_AB.equals(workflowStage)) {
+                        Toast.makeText(this, "请先完成前面阶段", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    saveWorkflow();
+                    startActivity(new Intent(this, CompatibilitySessionActivity.class));
+                }), GoGoUi.matchWrap());
         workflowBody.addView(GoGoUi.secondaryButton(this, "检查 A/B 完成情况并汇总",
                 v -> checkAbWorkflow()), GoGoUi.matchWrap());
+        workflowBody.addView(GoGoUi.secondaryButton(this, "中止并归档当前任务",
+                v -> archiveIncompleteWorkflow()), GoGoUi.matchWrap());
         workflowBody.addView(GoGoUi.secondaryButton(this, "A/B 无法进行，标记跳过并汇总",
                 v -> completeWorkflow(true)), GoGoUi.matchWrap());
         root.addView(workflowCard, GoGoUi.matchWrap());
@@ -251,6 +262,217 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
                         + "后台切走、锁屏导致的系统调度差异不属于此页保证范围。"),
                 GoGoUi.matchWrap());
         setContentView(scroll);
+    }
+
+    /**
+     * Single user-created task with persisted checkpoints. All safe app-side
+     * stages run automatically; external UI observations remain explicit gates.
+     */
+    private void resumeWorkflow() {
+        if (running) {
+            Toast.makeText(this, "自动步骤正在执行，无法同时开启另一项", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (LabDiagnosticWorkflow.NONE.equals(workflowStage)
+                || LabDiagnosticWorkflow.DONE.equals(workflowStage)) {
+            workflowStarted = System.currentTimeMillis();
+            workflowStage = LabDiagnosticWorkflow.BASELINE;
+            workflowInterrupted = false;
+            workflowManualNote.setText("");
+            workflowLog = "GOGOGO_WORKFLOW_TOTAL_REPORT_V1\n"
+                    + "task_id=GOGOGO-" + workflowStarted + "\n"
+                    + "created_at=" + now() + "\n"
+                    + "scope=local_authorized_diagnostics\n"
+                    + "auto_stages=read_only_baseline,passive_cache\n"
+                    + "manual_gates=wechat_ui,background_A_B_if_available\n"
+                    + "no_real_coordinates=true; no_third_party_force_stop=true\n";
+        }
+
+        if (LabDiagnosticWorkflow.BASELINE.equals(workflowStage)
+                || LabDiagnosticWorkflow.PASSIVE.equals(workflowStage)) {
+            String next = workflowStage;
+            workflowStepRunning = true;
+            workflowInterrupted = false;
+            saveWorkflow();
+            refreshWorkflowUi();
+            if (LabDiagnosticWorkflow.BASELINE.equals(next)) startBaseline();
+            else startPassive();
+            return;
+        }
+
+        if (LabDiagnosticWorkflow.BACKGROUND_AB.equals(workflowStage)) {
+            checkAbWorkflow();
+        } else {
+            refreshWorkflowUi();
+            Toast.makeText(this, "任务已暂停在人工确认点，请按当前步骤操作",
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void openWeChatForWorkflow() {
+        if (!LabDiagnosticWorkflow.WECHAT_UI.equals(workflowStage)) {
+            Toast.makeText(this, "先完成前面的自动检查阶段", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        saveWorkflow();
+        Intent launch = getPackageManager().getLaunchIntentForPackage("com.tencent.mm");
+        if (launch == null) {
+            Toast.makeText(this, "无法打开主微信，请自行打开后返回记录观察结果",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        try {
+            startActivity(launch);
+        } catch (RuntimeException unavailable) {
+            Toast.makeText(this, "打开微信失败，可手动进入微信再回来",
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void confirmWeChatWorkflow() {
+        if (running || !LabDiagnosticWorkflow.WECHAT_UI.equals(workflowStage)) {
+            Toast.makeText(this, "当前不是微信人工确认阶段", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String note = workflowManualNote.getText().toString().trim();
+        if (note.isEmpty()) note = "用户未填写观察结果；微信 UI 行为仍为 UNKNOWN";
+        if (note.length() > 1400) note = note.substring(0, 1400) + " [TRUNCATED]";
+        workflowLog = LabDiagnosticWorkflow.appendSection(workflowLog,
+                "MANUAL_WECHAT_UI · " + now(),
+                "source=user_observation; not_automatically_verified=true\n"
+                        + note);
+        workflowStage = LabDiagnosticWorkflow.BACKGROUND_AB;
+        workflowInterrupted = false;
+        saveWorkflow();
+        refreshWorkflowUi();
+        Toast.makeText(this, "微信观察已入总日志；进入后台 A/B 对照阶段",
+                Toast.LENGTH_LONG).show();
+    }
+
+    private boolean bothCurrentAbResults() {
+        LabAutoExperimentStore.Result wechat =
+                LabAutoExperimentStore.load(this, LabAutoExperimentStore.TYPE_WECHAT);
+        LabAutoExperimentStore.Result control =
+                LabAutoExperimentStore.load(this, LabAutoExperimentStore.TYPE_CONTROL);
+        return wechat.present && control.present
+                && LabDiagnosticWorkflow.bothAbResultsFromThisRun(workflowStarted,
+                wechat.savedAtMs, control.savedAtMs);
+    }
+
+    private void checkAbWorkflow() {
+        if (running || !LabDiagnosticWorkflow.BACKGROUND_AB.equals(workflowStage)) {
+            Toast.makeText(this, "当前不是 A/B 对照阶段", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (bothCurrentAbResults()) completeWorkflow(false);
+        else {
+            refreshWorkflowUi();
+            Toast.makeText(this,
+                    "本任务还缺微信组或控制组结果；请运行两组各 60 秒，或标记跳过",
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void completeWorkflow(boolean skipAb) {
+        if (running || !LabDiagnosticWorkflow.BACKGROUND_AB.equals(workflowStage)) {
+            if (skipAb) Toast.makeText(this, "请先完成微信人工观察阶段",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!skipAb && !bothCurrentAbResults()) {
+            checkAbWorkflow();
+            return;
+        }
+
+        if (skipAb) {
+            workflowLog = LabDiagnosticWorkflow.appendSection(workflowLog,
+                    "BACKGROUND_AB_SKIPPED · " + now(),
+                    "本次没有完整的当轮微信组/控制组结果。原因：由用户明确选择跳过。"
+                            + "不能使用旧 A/B 结论替代本轮证据。");
+        } else {
+            LabAutoExperimentStore.Result wechat =
+                    LabAutoExperimentStore.load(this, LabAutoExperimentStore.TYPE_WECHAT);
+            LabAutoExperimentStore.Result control =
+                    LabAutoExperimentStore.load(this, LabAutoExperimentStore.TYPE_CONTROL);
+            LabAutoExperimentStore.Comparison comparison =
+                    LabAutoExperimentStore.compare(wechat, control);
+            workflowLog = LabDiagnosticWorkflow.appendSection(workflowLog,
+                    "BACKGROUND_AB_COMPARISON · " + now(),
+                    "source=existing_Lab18_19_recorder\n"
+                            + "wechat_saved_at=" + wechat.savedAtMs
+                            + " duration_ms=" + wechat.durationMs
+                            + " worst_gap_ms=" + wechat.worstGapMs
+                            + " p99_ms=" + wechat.worstP99Ms
+                            + " grade=" + wechat.grade + "\n"
+                            + "control_saved_at=" + control.savedAtMs
+                            + " duration_ms=" + control.durationMs
+                            + " worst_gap_ms=" + control.worstGapMs
+                            + " p99_ms=" + control.worstP99Ms
+                            + " grade=" + control.grade + "\n"
+                            + "verdict=" + comparison.verdict + "\n"
+                            + comparison.explanation
+                            + "\nnot_proof_of_wechat_killing_or_accepting_mock=true");
+        }
+        workflowStage = LabDiagnosticWorkflow.DONE;
+        workflowInterrupted = false;
+        workflowLog = LabDiagnosticWorkflow.appendSection(workflowLog,
+                "FINAL_SUMMARY · " + now(),
+                "status=COMPLETE_WITH_OBSERVATIONAL_LIMITATIONS\n"
+                        + "automated_baseline_and_cache_evidence=see_sections_above\n"
+                        + "wechat_auto_location_success=NOT_AUTO_VERIFIED\n"
+                        + "wechat_clone_termination=NOT_AUTO_VERIFIED\n"
+                        + "third_party_force_stop=NOT_PERFORMED\n"
+                        + "将整份日志复制给 GPT，进一步交叉核对时间顺序与未覆盖来源。");
+        saveWorkflow();
+        refreshWorkflowUi();
+        reportView.setText(workflowLog);
+    }
+
+    private void archiveIncompleteWorkflow() {
+        if (!LabDiagnosticWorkflow.isActive(workflowStage)) {
+            Toast.makeText(this, "当前没有未完成的总任务", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (running) cancelTask("用户主动中止并归档整个任务");
+        workflowLog = LabDiagnosticWorkflow.appendSection(workflowLog,
+                "INCOMPLETE_ARCHIVE · " + now(),
+                "task_archived_incomplete_at_stage=" + workflowStage
+                        + "\n后续阶段未执行，不能作为完整自动诊断成功。");
+        workflowStage = LabDiagnosticWorkflow.DONE;
+        workflowInterrupted = false;
+        workflowStepRunning = false;
+        saveWorkflow();
+        refreshWorkflowUi();
+    }
+
+    private void refreshWorkflowUi() {
+        if (workflowStatusView == null) return;
+        String info = LabDiagnosticWorkflow.title(workflowStage);
+        if (workflowStarted > 0) info += "\n任务编号：GOGOGO-" + workflowStarted;
+        if (workflowInterrupted) info += "\n上次执行被中断：点击「创建 / 继续」重做当前阶段";
+        if (LabDiagnosticWorkflow.WECHAT_UI.equals(workflowStage)) {
+            info += "\n请自行查看微信自动定位，再填写观察并点击「继续」";
+        } else if (LabDiagnosticWorkflow.BACKGROUND_AB.equals(workflowStage)) {
+            info += "\n需在下方「微信后台自动 A/B 对照」运行微信组与控制组，"
+                    + "返回后会自动检查本轮结果。";
+        }
+        workflowStatusView.setText(info);
+        if (!running && reportView != null && !workflowLog.isEmpty()) {
+            reportView.setText(workflowLog);
+            if (progressView != null) progressView.setText(info);
+        }
+    }
+
+    private void saveWorkflow() {
+        SharedPreferences.Editor edit = getSharedPreferences(PREFS, MODE_PRIVATE).edit();
+        edit.putString(FLOW_STAGE, workflowStage)
+                .putString(FLOW_LOG, workflowLog)
+                .putLong(FLOW_STARTED, workflowStarted)
+                .putBoolean(FLOW_INTERRUPTED, workflowInterrupted);
+        if (workflowManualNote != null) {
+            edit.putString(FLOW_NOTE, workflowManualNote.getText().toString());
+        }
+        edit.apply();
     }
 
     private void updateBackgroundComparison() {
