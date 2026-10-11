@@ -633,6 +633,9 @@ public class SimpleMockActivity extends AppCompatActivity {
                     GoGoUi.StatusTone.ERROR);
             return;
         }
+        // Diagnostic-only reference for comparing later cached fixes.
+        // Record only the user's requested mock target, never any real location.
+        LabSupportLog.rememberRequestedTarget(this, lng, lat);
         beginServiceStatusObservation(LabHomeServiceStatus.Request.START);
 
         String wifiWarning = "";
