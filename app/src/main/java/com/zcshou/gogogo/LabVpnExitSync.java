@@ -77,6 +77,16 @@ public final class LabVpnExitSync {
                 .apply();
     }
 
+    /** A new manual fixed target supersedes the displayed last-applied VPN target
+     * until a fresh VPN lookup has actually re-applied new coordinates. */
+    public static void markManualTargetPending(Context context) {
+        if (!enabled(context)) return;
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                .putLong(KEY_APPLIED_AT, 0L)
+                .putString(KEY_STATUS, "已设置手动坐标，等待下次 VPN 出口校准")
+                .apply();
+    }
+
     public static String statusText(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         String state = prefs.getString(KEY_STATUS,
