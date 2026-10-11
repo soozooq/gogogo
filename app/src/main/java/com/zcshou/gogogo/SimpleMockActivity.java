@@ -57,9 +57,29 @@ import java.util.Locale;
 import com.google.android.gms.location.LocationServices;
 import com.zcshou.service.ServiceGo;
 import com.zcshou.utils.GoUtils;
+import rikka.shizuku.Shizuku;
 
 public class SimpleMockActivity extends AppCompatActivity {
     private static final int REQ_LOCATION = 1001;
+    private static final int REQ_SHIZUKU_TIMEZONE = 3302;
+    private boolean pendingTimeZoneConsent;
+    private final Shizuku.OnRequestPermissionResultListener timezoneShizukuPermission =
+            (requestCode, grantResult) -> {
+                if (requestCode != REQ_SHIZUKU_TIMEZONE || !pendingTimeZoneConsent) return;
+                pendingTimeZoneConsent = false;
+                runOnUiThread(() -> {
+                    if (grantResult == PackageManager.PERMISSION_GRANTED) {
+                        LabVpnSystemTimeZone.setEnabled(this, true);
+                        notifyVpnServiceConfigurationChanged();
+                        Toast.makeText(this, "已授权系统时区自动跟随（仅模拟服务运行时）",
+                                Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(this, "Shizuku 未授权；系统时区没有自动修改",
+                                Toast.LENGTH_LONG).show();
+                    }
+                    refreshVpnSyncStatus();
+                });
+            };
 
     private EditText longitudeInput;
     private EditText latitudeInput;
@@ -70,6 +90,7 @@ public class SimpleMockActivity extends AppCompatActivity {
     private TextView publicIpView;
     private TextView vpnSyncStatusView;
     private TextView vpnTimeZoneView;
+    private com.google.android.material.button.MaterialButton systemTimeZoneToggle;
     private com.google.android.material.button.MaterialButton vpnSyncToggle;
     private com.google.android.material.button.MaterialButton vpnFreezeToggle;
     private long lastVpnCoordinateSeen;
@@ -157,6 +178,10 @@ public class SimpleMockActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        try {
+            Shizuku.addRequestPermissionResultListener(timezoneShizukuPermission);
+        } catch (Throwable ignored) {
+        }
         homeToolsExpanded = savedInstanceState != null
                 && savedInstanceState.getBoolean(HOME_TOOLS_EXPANDED, false);
         // The input views are created programmatically without stable IDs,
@@ -225,6 +250,10 @@ public class SimpleMockActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        pendingTimeZoneConsent = false;
+        try {
+            Shizuku.removeRequestPermissionResultListener(timezoneShizukuPermission);
+        } catch (Throwable ignored) {}
         homeCountryLookupGeneration++;
         if (timedSupportCopy != null) timedSupportCopy.close();
         super.onDestroy();
@@ -377,7 +406,10 @@ public class SimpleMockActivity extends AppCompatActivity {
                 "随 VPN 出口地区自动更新时区和当地时间，和 VPN 坐标一起锁定。"
                 + " 此处是 GoGoGo 的时区预览；手机系统时区需要额外授权，"
                 + "不会静默改变。"), GoGoUi.matchWrap());
-        locationContent.addView(GoGoUi.secondaryButton(this, "设置手机系统时区",
+        systemTimeZoneToggle = GoGoUi.secondaryButton(this,
+                "开启手机系统时区自动跟随（Shizuku）", v -> toggleSystemTimeZoneFollow());
+        locationContent.addView(systemTimeZoneToggle, GoGoUi.matchWrap());
+        locationContent.addView(GoGoUi.secondaryButton(this, "手机系统日期与时区设置",
                 v -> safeOpen(new Intent(Settings.ACTION_DATE_SETTINGS), null)),
                 GoGoUi.matchWrap());
         locationContent.addView(GoGoUi.secondaryButton(this,
@@ -833,6 +865,69 @@ public class SimpleMockActivity extends AppCompatActivity {
         serviceStatusHandler.postDelayed(serviceStatusRefresh, 2500L);
     }
 
+    private void notifyVpnServiceConfigurationChanged() {
+        if (!ServiceGo.sRunning) return;
+        try {
+            startService(new Intent(this, ServiceGo.class)
+                    .setAction(ServiceGo.ACTION_VPN_SYNC_CONFIG));
+        } catch (RuntimeException error) {
+            Toast.makeText(this, "无法通知模拟服务，需在下次启动模拟时生效",
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void toggleSystemTimeZoneFollow() {
+        if (LabVpnSystemTimeZone.isEnabled(this)) {
+            LabVpnSystemTimeZone.setEnabled(this, false);
+            notifyVpnServiceConfigurationChanged();
+            refreshVpnSyncStatus();
+            return;
+        }
+        if (!LabVpnTimeZone.valid(LabVpnExitSync.timezoneId(this))) {
+            Toast.makeText(this, "还没有有效时区。请先同步 VPN，或为旧版锁定位置补填时区",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (Settings.Global.getInt(getContentResolver(),
+                Settings.Global.AUTO_TIME_ZONE, 1) != 0) {
+            new AlertDialog.Builder(this)
+                    .setTitle("先关闭手机自动时区")
+                    .setMessage("Android 系统自动检测时区可能立刻覆盖 VPN 时区。"
+                            + "请到系统「日期与时间」关闭「自动设置时区」，返回后再开启此功能。"
+                            + "不会修改系统时间的毫秒值。")
+                    .setNegativeButton("取消", (d, w) -> {})
+                    .setPositiveButton("打开设置", (d, w) ->
+                            safeOpen(new Intent(Settings.ACTION_DATE_SETTINGS), null))
+                    .show();
+            return;
+        }
+        try {
+            if (!Shizuku.pingBinder()) {
+                Toast.makeText(this, "请先启动 Shizuku 服务，再回来开启系统时区跟随",
+                        Toast.LENGTH_LONG).show();
+                return;
+            }
+            if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) {
+                if (Shizuku.shouldShowRequestPermissionRationale()) {
+                    Toast.makeText(this, "请先在 Shizuku 中授权 GoGoGo",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
+                pendingTimeZoneConsent = true;
+                Shizuku.requestPermission(REQ_SHIZUKU_TIMEZONE);
+                return;
+            }
+            LabVpnSystemTimeZone.setEnabled(this, true);
+            notifyVpnServiceConfigurationChanged();
+            Toast.makeText(this, "系统时区自动跟随已开启，等待 Shizuku 更新并核验",
+                    Toast.LENGTH_LONG).show();
+            refreshVpnSyncStatus();
+        } catch (Throwable unavailable) {
+            Toast.makeText(this, "Shizuku 不可用：" + unavailable.getClass().getSimpleName(),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
     private void promptLockedTimezone() {
         LabVpnExitSync.LockedTarget target = LabVpnExitSync.getLockedTarget(this);
         if (target == null) {
@@ -878,12 +973,19 @@ public class SimpleMockActivity extends AppCompatActivity {
                 + "\nVPN / 模拟定位对微信实际效果仍需单独确认。");
         if (vpnTimeZoneView != null) {
             String tz = LabVpnExitSync.timezoneId(this);
+            boolean systemFollow = LabVpnSystemTimeZone.isEnabled(this);
+            if (systemTimeZoneToggle != null) {
+                systemTimeZoneToggle.setText(systemFollow
+                        ? "关闭手机系统时区自动跟随" : "开启手机系统时区自动跟随（Shizuku）");
+            }
             String systemTz = java.util.TimeZone.getDefault().getID();
             vpnTimeZoneView.setText((isLocked ? "🔒 时区锁定：" : "VPN 自动时区：")
                     + "\n" + LabVpnTimeZone.display(tz, System.currentTimeMillis())
                     + "\n手机系统时区：" + systemTz
+                    + "\n系统自动跟随：" + (systemFollow ? "已选择（需 Shizuku）" : "未启用")
+                    + "\n状态：" + LabVpnSystemTimeZone.statusText(this)
                     + (LabVpnTimeZone.valid(tz) && !tz.equals(systemTz)
-                    ? "\n注意：目前仅 GoGoGo 预览跟随，手机系统时间未同步" : "")
+                    ? "\n手机时区与 VPN 时区目前不同" : "")
                     + (isLocked && !LabVpnTimeZone.valid(tz)
                     ? "\n旧版锁定记录缺少时区，点「补填历史锁定位置的时区」" : ""));
         }
