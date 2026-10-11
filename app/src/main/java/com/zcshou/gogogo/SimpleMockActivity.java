@@ -565,10 +565,38 @@ public class SimpleMockActivity extends AppCompatActivity {
         }, delayMs);
     }
 
+    /**
+     * Prefer already-known VPN metadata for that same target (including a
+     * locked target). No new network request and no extrapolation to nearby
+     * hand-entered coordinates.
+     */
+    private String vpnCountryLabelForCurrentCoordinates() {
+        if (longitudeInput == null || latitudeInput == null) return null;
+        String longitudeText = longitudeInput.getText().toString();
+        String latitudeText = latitudeInput.getText().toString();
+        LabVpnExitSync.LockedTarget locked = LabVpnExitSync.getLockedTarget(this);
+        if (locked != null) {
+            return LabHomePlaceLabel.vpnLabelForCoordinates(longitudeText, latitudeText,
+                    locked.longitude, locked.latitude, locked.country, locked.city);
+        }
+        if (!LabVpnExitSync.enabled(this)) return null;
+        android.content.SharedPreferences prefs = getSharedPreferences(
+                LabVpnExitSync.PREFS, MODE_PRIVATE);
+        if (prefs.getLong(LabVpnExitSync.KEY_APPLIED_AT, 0L) <= 0L) return null;
+        double latitude = Double.longBitsToDouble(prefs.getLong(
+                LabVpnExitSync.KEY_LAT, Double.doubleToRawLongBits(Double.NaN)));
+        double longitude = Double.longBitsToDouble(prefs.getLong(
+                LabVpnExitSync.KEY_LNG, Double.doubleToRawLongBits(Double.NaN)));
+        return LabHomePlaceLabel.vpnLabelForCoordinates(longitudeText, latitudeText,
+                longitude, latitude, prefs.getString(LabVpnExitSync.KEY_COUNTRY, ""),
+                prefs.getString(LabVpnExitSync.KEY_CITY, ""));
+    }
+
     private void updateHomeCountryLabel() {
         homeCountryLookupGeneration++;
         if (homeCountryView == null || longitudeInput == null || latitudeInput == null) return;
-        homeCountryView.setText(LabHomePlaceLabel.forCoordinates(
+        String vpn = vpnCountryLabelForCurrentCoordinates();
+        homeCountryView.setText(vpn != null ? vpn : LabHomePlaceLabel.forCoordinates(
                 longitudeInput.getText().toString(), latitudeInput.getText().toString()));
     }
 
@@ -582,6 +610,14 @@ public class SimpleMockActivity extends AppCompatActivity {
         } catch (IllegalArgumentException invalid) {
             updateHomeCountryLabel();
             Toast.makeText(this, "请先输入有效经纬度", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        // A known, coordinate-matched VPN exit country is a better offline
+        // explanation than launching Geocoder on an Android device with no backend.
+        String vpnLabel = vpnCountryLabelForCurrentCoordinates();
+        if (vpnLabel != null) {
+            homeCountryLookupGeneration++;
+            homeCountryView.setText(vpnLabel);
             return;
         }
         final String offline = LabHomePlaceLabel.forCoordinates(longitudeText, latitudeText);
@@ -616,7 +652,9 @@ public class SimpleMockActivity extends AppCompatActivity {
                 if (generation != homeCountryLookupGeneration || isFinishing() || isDestroyed()) return;
                 if (!longitudeText.equals(longitudeInput.getText().toString())
                         || !latitudeText.equals(latitudeInput.getText().toString())) return;
-                homeCountryView.setText("所选国家 / 城市：" + display);
+                String vpnNow = vpnCountryLabelForCurrentCoordinates();
+                homeCountryView.setText(vpnNow != null ? vpnNow
+                        : "所选国家 / 城市：" + display);
             });
         }, "GoGoGo-HomeTargetGeocoder").start();
     }
@@ -815,6 +853,15 @@ public class SimpleMockActivity extends AppCompatActivity {
                     latitudeInput.setText(Double.toString(latitude));
                     lastVpnCoordinateSeen = appliedAt;
                 }
+            }
+        }
+        // A VPN report may arrive after the text watchers have fired (or when
+        // returning from background); update the country without a new API call.
+        if (homeCountryView != null) {
+            String matched = vpnCountryLabelForCurrentCoordinates();
+            if (matched != null && !matched.contentEquals(homeCountryView.getText())) {
+                homeCountryLookupGeneration++;
+                homeCountryView.setText(matched);
             }
         }
     }
