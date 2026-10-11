@@ -171,8 +171,8 @@ public final class LabVpnExitSync {
         if (fixed != null) {
             return "🔒 已锁定 VPN 出口位置：" + fixed.country
                     + (fixed.city.isEmpty() ? "" : " · " + fixed.city)
-                    + "\\n锁定坐标已保存；即使 VPN 掉线/恢复/换节点也不会改动。"
-                    + "\\n仅在模拟服务运行时生效；服务被系统终止无法保证继续覆盖系统定位。";
+                    + "\n锁定坐标已保存；即使 VPN 掉线/恢复/换节点也不会改动。"
+                    + "\n仅在模拟服务运行时生效；服务被系统终止无法保证继续覆盖系统定位。";
         }
         long at = prefs.getLong(KEY_APPLIED_AT, 0);
         if (at > 0 && enabled(context)) {
