@@ -129,7 +129,7 @@ public final class LabSupportLog {
                 ? android.app.Application.getProcessName() : "UNKNOWN_PRE_28";
         out.append("report_process=")
                 .append(LabSupportLogText.safeToken(processName)).append('\n');
-        out.append("service_flag_scope=THIS_PROCESS_ONLY; consumer_process_false_not_global_stop\\n");
+        out.append("service_flag_scope=THIS_PROCESS_ONLY; consumer_process_false_not_global_stop\n");
         out.append("privacy=real_consumer_coordinates_hidden; mock_coordinates_included; ")
                 .append("no_ssid_ip_keys_phone_identifiers\n");
         out.append("target_lon=").append(LabSupportLogText.finiteTarget(
