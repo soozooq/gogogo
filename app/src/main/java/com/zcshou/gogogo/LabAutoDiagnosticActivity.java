@@ -48,6 +48,12 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
     private StringBuilder report = new StringBuilder();
     private TextView progressView;
     private TextView reportView;
+    private TextView backgroundComparisonView;
+
+    @Override protected void onResume() {
+        super.onResume();
+        updateBackgroundComparison();
+    }
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
@@ -131,6 +137,22 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
                 v -> copyReport()), GoGoUi.matchWrap());
 
         root.addView(GoGoUi.gap(this, 20));
+        root.addView(GoGoUi.sectionTitle(this, "微信后台自动 A/B 对照"),
+                GoGoUi.matchWrap());
+        root.addView(GoGoUi.muted(this,
+                "复用现有 Lab 18/19 后台录制服务：微信组与控制组各 60 秒，"
+                        + "支持切换到微信后持续记录，并自动保存、比较回调间隔。"
+                        + "它只分析关联性，不证明微信杀进程。"), GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 8));
+        backgroundComparisonView = GoGoUi.muted(this, "正在读取上次微信/控制组实验…");
+        backgroundComparisonView.setTextIsSelectable(true);
+        root.addView(backgroundComparisonView, GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 8));
+        root.addView(GoGoUi.navigationTile(this, "运行微信组 / 控制组 60 秒实验",
+                "可切换应用；由现有前台录制服务负责自动停止与保存结果",
+                v -> startActivity(new Intent(this, CompatibilitySessionActivity.class))),
+                GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 20));
         root.addView(GoGoUi.sectionTitle(this, "需要时再打开其他诊断"),
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.navigationTile(this, "被动快照（单次手动补拍）",
@@ -157,6 +179,18 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
                         + "后台切走、锁屏导致的系统调度差异不属于此页保证范围。"),
                 GoGoUi.matchWrap());
         setContentView(scroll);
+    }
+
+    private void updateBackgroundComparison() {
+        if (backgroundComparisonView == null) return;
+        try {
+            LabAutoExperimentStore.Comparison result = LabAutoExperimentStore.compare(this);
+            backgroundComparisonView.setText("上次 A/B 结果：" + result.verdict
+                    + "\\n" + result.explanation
+                    + "\\n注意：仅比较两组的后台调度样本，不解析微信的内部进程和定位行为。");
+        } catch (RuntimeException unavailable) {
+            backgroundComparisonView.setText("历史 A/B 实验不可读取；可进入旧版后台实验页面重新执行。");
+        }
     }
 
     private void begin(boolean passive) {
