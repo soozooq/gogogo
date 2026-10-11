@@ -121,6 +121,11 @@
             android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
+            android:name=".LabAutoDiagnosticActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
             android:name=".LabRecoveryTriageActivity"
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
