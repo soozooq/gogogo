@@ -6,6 +6,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
@@ -13,6 +14,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -38,6 +40,11 @@ import java.util.concurrent.Callable;
 public final class LabAutoDiagnosticActivity extends AppCompatActivity {
     private static final String PREFS = "gogogo_auto_diagnostics_panel";
     private static final String LAST_REPORT = "last_report";
+    private static final String FLOW_STAGE = "workflow_stage";
+    private static final String FLOW_LOG = "workflow_log";
+    private static final String FLOW_STARTED = "workflow_started";
+    private static final String FLOW_INTERRUPTED = "workflow_interrupted";
+    private static final String FLOW_NOTE = "workflow_wechat_note";
     private static final int MAX_REPORT_CHARS = 30000;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -49,18 +56,40 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
     private TextView progressView;
     private TextView reportView;
     private TextView backgroundComparisonView;
+    private TextView workflowStatusView;
+    private EditText workflowManualNote;
+    private String workflowStage = LabDiagnosticWorkflow.NONE;
+    private String workflowLog = "";
+    private long workflowStarted;
+    private boolean workflowInterrupted;
+    private boolean workflowStepRunning;
 
     @Override protected void onResume() {
         super.onResume();
         updateBackgroundComparison();
+        if (LabDiagnosticWorkflow.BACKGROUND_AB.equals(workflowStage)
+                && bothCurrentAbResults()) {
+            completeWorkflow(false);
+        } else {
+            refreshWorkflowUi();
+        }
     }
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
+        SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        workflowStage = prefs.getString(FLOW_STAGE, LabDiagnosticWorkflow.NONE);
+        workflowLog = prefs.getString(FLOW_LOG, "");
+        workflowStarted = prefs.getLong(FLOW_STARTED, 0L);
+        workflowInterrupted = prefs.getBoolean(FLOW_INTERRUPTED, false);
         buildUi();
-        String previous = getSharedPreferences(PREFS, MODE_PRIVATE)
-                .getString(LAST_REPORT, "");
-        if (!previous.isEmpty()) {
+        workflowManualNote.setText(prefs.getString(FLOW_NOTE, ""));
+        refreshWorkflowUi();
+        String previous = prefs.getString(LAST_REPORT, "");
+        if (LabDiagnosticWorkflow.isActive(workflowStage)
+                || LabDiagnosticWorkflow.DONE.equals(workflowStage)) {
+            reportView.setText(workflowLog);
+        } else if (!previous.isEmpty()) {
             reportView.setText(previous);
             progressView.setText("已载入上次报告 · 可复制或重新执行");
         }
@@ -70,6 +99,7 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
         // No background task or extra foreground service: leaving this page
         // ends the observation and records an explicit cancellation.
         if (running) cancelTask("页面离开，自动诊断已中止（避免误以为后台仍采样）");
+        saveWorkflow();
         super.onStop();
     }
 
@@ -100,10 +130,52 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 12));
 
+        // Primary use case: a single resumable task that owns all stages and evidence.
+        com.google.android.material.card.MaterialCardView workflowCard = GoGoUi.card(this);
+        LinearLayout workflowBody = GoGoUi.cardContent(this);
+        workflowCard.addView(workflowBody);
+        workflowBody.addView(GoGoUi.sectionTitle(this, "全流程自动诊断 · 任务总控"),
+                GoGoUi.matchWrap());
+        workflowBody.addView(GoGoUi.muted(this,
+                "创建一次任务 → 自动基础排障 → 自动 60 秒被动缓存观察 →"
+                        + "微信界面人工确认 → 微信后台 A/B 对照 → 自动汇总完整日志。"
+                        + "离开页面会保留断点；需要你操作时明确暂停。"),
+                GoGoUi.matchWrap());
+        workflowBody.addView(GoGoUi.gap(this, 8));
+        workflowStatusView = GoGoUi.status(this, "尚未创建任务");
+        workflowBody.addView(workflowStatusView, GoGoUi.matchWrap());
+        workflowBody.addView(GoGoUi.gap(this, 8));
+        workflowBody.addView(GoGoUi.primaryButton(this, "创建 / 继续全流程任务",
+                v -> resumeWorkflow()), GoGoUi.matchWrap());
+        workflowBody.addView(GoGoUi.gap(this, 8));
+        workflowBody.addView(GoGoUi.muted(this,
+                "微信人工步骤：打开「发送位置」看自动定位；如有需要再看朋友圈所在位置。"
+                        + "不要把手动选位置当成自动定位成功。只记录测试结果，不填真实隐私信息。"),
+                GoGoUi.matchWrap());
+        workflowManualNote = new EditText(this);
+        workflowManualNote.setHint("例如：聊天自动定位显示福建；朋友圈一直搜索（可不填）");
+        workflowManualNote.setMinLines(2);
+        workflowManualNote.setMaxLines(4);
+        GoGoUi.styleInput(workflowManualNote);
+        workflowBody.addView(workflowManualNote, GoGoUi.matchWrap());
+        workflowBody.addView(GoGoUi.gap(this, 8));
+        workflowBody.addView(GoGoUi.secondaryButton(this, "打开微信，由我确认界面",
+                v -> openWeChatForWorkflow()), GoGoUi.matchWrap());
+        workflowBody.addView(GoGoUi.secondaryButton(this, "我已完成微信界面观察，继续",
+                v -> confirmWeChatWorkflow()), GoGoUi.matchWrap());
+        workflowBody.addView(GoGoUi.gap(this, 8));
+        workflowBody.addView(GoGoUi.secondaryButton(this, "检查 A/B 完成情况并汇总",
+                v -> checkAbWorkflow()), GoGoUi.matchWrap());
+        workflowBody.addView(GoGoUi.secondaryButton(this, "A/B 无法进行，标记跳过并汇总",
+                v -> completeWorkflow(true)), GoGoUi.matchWrap());
+        root.addView(workflowCard, GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 12));
+
         com.google.android.material.card.MaterialCardView card = GoGoUi.card(this);
         LinearLayout body = GoGoUi.cardContent(this);
         card.addView(body);
-        body.addView(GoGoUi.sectionTitle(this, "任务队列"), GoGoUi.matchWrap());
+        body.addView(GoGoUi.sectionTitle(this, "独立检测（高级 / 补充）"),
+                GoGoUi.matchWrap());
         body.addView(GoGoUi.muted(this,
                 "任务 A · 基础授权、服务标记、微信包状态、分身可见性、"
                         + "已保存的清理/消费者诊断证据（只读）"), GoGoUi.matchWrap());
@@ -402,6 +474,19 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
         append("finished_at=" + now() + "\nresult=" + description);
         render(description);
         saveReport();
+        if (workflowStepRunning) {
+            workflowStepRunning = false;
+            workflowLog = LabDiagnosticWorkflow.appendSection(workflowLog,
+                    LabDiagnosticWorkflow.title(workflowStage) + " · " + now(),
+                    report.toString());
+            workflowStage = LabDiagnosticWorkflow.next(workflowStage);
+            workflowInterrupted = false;
+            saveWorkflow();
+            refreshWorkflowUi();
+            if (LabDiagnosticWorkflow.PASSIVE.equals(workflowStage)) {
+                handler.post(() -> resumeWorkflow()); // Automatic stage transition.
+            }
+        }
     }
 
     private void cancelTask(String reason) {
@@ -415,6 +500,15 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
         append("canceled_at=" + now() + "\nreason=" + reason);
         render("任务已取消 · " + reason);
         saveReport();
+        if (workflowStepRunning) {
+            workflowStepRunning = false;
+            workflowInterrupted = true;
+            workflowLog = LabDiagnosticWorkflow.appendSection(workflowLog,
+                    "INTERRUPTED " + LabDiagnosticWorkflow.title(workflowStage) + " · " + now(),
+                    report.toString());
+            saveWorkflow();
+            refreshWorkflowUi();
+        }
     }
 
     private void saveReport() {
@@ -425,8 +519,11 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
     }
 
     private void copyReport() {
-        String current = report.length() > 0 ? report.toString() :
-                getSharedPreferences(PREFS, MODE_PRIVATE).getString(LAST_REPORT, "");
+        String current = (LabDiagnosticWorkflow.isActive(workflowStage)
+                || LabDiagnosticWorkflow.DONE.equals(workflowStage))
+                && !workflowLog.isEmpty() ? workflowLog : report.length() > 0
+                ? report.toString()
+                : getSharedPreferences(PREFS, MODE_PRIVATE).getString(LAST_REPORT, "");
         if (current.isEmpty()) {
             Toast.makeText(this, "还没有诊断报告", Toast.LENGTH_SHORT).show();
             return;
