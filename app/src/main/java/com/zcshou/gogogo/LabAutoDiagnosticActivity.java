@@ -26,6 +26,7 @@ import com.google.android.gms.tasks.Task;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 /**
@@ -39,9 +40,9 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
     private static final int MAX_REPORT_CHARS = 30000;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
-    private int generation;
-    private boolean running;
-    private boolean passiveMode;
+    private volatile int generation;
+    private volatile boolean running;
+    private final boolean[] gmsCompleted = new boolean[4];
     private int progress;
     private StringBuilder report = new StringBuilder();
     private TextView progressView;
@@ -165,7 +166,7 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
         }
         generation++;
         running = true;
-        passiveMode = passive;
+        Arrays.fill(gmsCompleted, false);
         progress = 0;
         report = new StringBuilder();
         report.append("GOGOGO_AUTO_DIAGNOSTIC_V1\n")
@@ -204,6 +205,8 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
     }
 
     private void checkStep(int token, String label, Callable<String> work) {
+        // Cancellation prevents additional background reads after the current step.
+        if (generation != token || !running) return;
         String result;
         try {
             result = work.call();
@@ -253,7 +256,14 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
             }, planned * 1000L);
         }
         handler.postDelayed(() -> {
-            if (active(token)) finishTask(token, "60 秒观察完成 · 报告可复制");
+            if (!active(token)) return;
+            for (int i = 0; i < gmsCompleted.length; i++) {
+                if (!gmsCompleted[i]) {
+                    append("  #" + (i + 1)
+                            + " GMS_LAST：ASYNC_PENDING（等待窗口结束，结果未知）");
+                }
+            }
+            finishTask(token, "60 秒观察完成 · 报告可复制");
         }, 67000L); // Allow time for the last GMS async cache callback.
     }
 
@@ -291,10 +301,10 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
                     } else {
                         line = describeFix(app, "GMS_LAST", done.getResult());
                     }
-                    postLine(token, "  #" + shot + " " + line + "（GMS 异步完成）");
+                    postGmsLine(token, shot, "  #" + shot + " " + line + "（GMS 异步完成）");
                 });
             } catch (Exception unavailable) {
-                postLine(token, "  #" + shot + " GMS_LAST：UNAVAILABLE "
+                postGmsLine(token, shot, "  #" + shot + " GMS_LAST：UNAVAILABLE "
                         + unavailable.getClass().getSimpleName());
             }
         }, "GoGoGo-CacheShot-" + shot).start();
@@ -308,6 +318,18 @@ public final class LabAutoDiagnosticActivity extends AppCompatActivity {
         String bucket = mock ? LabSupportLog.distanceToRequestedTarget(context,
                 fix.getLongitude(), fix.getLatitude()) : null;
         return LabAutoDiagnosticPlan.cacheLine(source, true, mock, ageMs, bucket);
+    }
+
+    private void postGmsLine(int token, int shot, String message) {
+        handler.post(() -> {
+            if (!active(token)) return;
+            if (shot >= 1 && shot <= gmsCompleted.length) {
+                if (gmsCompleted[shot - 1]) return;
+                gmsCompleted[shot - 1] = true;
+            }
+            append(message);
+            render("被动缓存观察 · " + progress + "/4");
+        });
     }
 
     private void postLine(int token, String message) {
