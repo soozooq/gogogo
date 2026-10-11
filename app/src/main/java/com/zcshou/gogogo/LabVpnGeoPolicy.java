@@ -17,6 +17,13 @@ public final class LabVpnGeoPolicy {
         return enabled && vpnIsDefaultForApp && fixedMode && resultValid;
     }
 
+    /** Freeze only a successfully applied VPN coordinate, never raw IP lookup data
+     * or a historical location superseded by a later manual target. */
+    public static boolean canFreeze(boolean followEnabled, boolean alreadyLocked,
+                                    long appliedAtMs, boolean validSavedTarget) {
+        return followEnabled && !alreadyLocked && appliedAtMs > 0L && validSavedTarget;
+    }
+
     /** Small enough to avoid per-IP quota exhaustion; changes are separately signaled. */
     public static final long POLL_INTERVAL_MS = 180_000L;
     public static final long MIN_MANUAL_INTERVAL_MS = 15_000L;
