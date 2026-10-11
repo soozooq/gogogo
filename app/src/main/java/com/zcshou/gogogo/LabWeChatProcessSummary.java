@@ -23,16 +23,16 @@ public final class LabWeChatProcessSummary {
             if (matches < 30) {
                 output.append(columns[0]).append("  ")
                         .append(columns[1]).append("  ")
-                        .append(processName).append("\\n");
+                        .append(processName).append("\n");
             }
             matches++;
         }
         if (matches == 0) {
             return "当前快照未发现微信相关进程；不代表已强停或分身一定不存在";
         }
-        return "当前可见微信相关进程：" + matches + " 条（含子进程）\\n"
-                + "用户标识  PID  进程名\\n" + output
-                + (matches > 30 ? "…其余记录省略\\n" : "")
+        return "当前可见微信相关进程：" + matches + " 条（含子进程）\n"
+                + "用户标识  PID  进程名\n" + output
+                + (matches > 30 ? "…其余记录省略\n" : "")
                 + "本结果为单次只读快照，无法单凭进程名区分主微信与 vivo 分身；"
                 + "不能证明后续后台存活或微信定位来源。";
     }
