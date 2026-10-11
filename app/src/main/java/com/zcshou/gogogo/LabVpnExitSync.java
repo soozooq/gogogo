@@ -46,6 +46,7 @@ public final class LabVpnExitSync {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final ConnectivityManager connectivity;
     private final ApplyLocation applyLocation;
+    private final AppliedZone appliedZone;
     private final Runnable poll = new Runnable() {
         @Override public void run() {
             if (!running) return;
@@ -66,9 +67,14 @@ public final class LabVpnExitSync {
         boolean accept(double latitude, double longitude);
     }
 
-    public LabVpnExitSync(Context context, ApplyLocation applyLocation) {
+    public interface AppliedZone {
+        void onLocationAppliedWithTimeZone(String ianaZoneId);
+    }
+
+    public LabVpnExitSync(Context context, ApplyLocation applyLocation, AppliedZone appliedZone) {
         this.context = context.getApplicationContext();
         this.applyLocation = applyLocation;
+        this.appliedZone = appliedZone;
         this.connectivity = (ConnectivityManager) this.context.getSystemService(
                 Context.CONNECTIVITY_SERVICE);
     }
@@ -391,6 +397,11 @@ public final class LabVpnExitSync {
                             .putLong(KEY_APPLIED_AT, System.currentTimeMillis())
                             .putString(KEY_STATUS, "已跟随 VPN 出口近似坐标：" + place.summary())
                             .apply();
+                    // Do not attempt a system timezone change unless the
+                    // coordinate update succeeded and owner separately opted in.
+                    if (appliedZone != null && LabVpnTimeZone.valid(place.timezoneId)) {
+                        appliedZone.onLocationAppliedWithTimeZone(place.timezoneId);
+                    }
                 });
             });
         } catch (RuntimeException unavailable) {
