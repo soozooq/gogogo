@@ -95,6 +95,9 @@ public final class LabHubActivity extends AppCompatActivity {
                     startActivity(intent);
                 }), GoGoUi.matchWrap());
 
+        root.addView(GoGoUi.gap(this, 10));
+        root.addView(GoGoUi.primaryButton(this, "📋 复制完整诊断日志（发给 GPT）",
+                v -> LabSupportLog.copy(this, "", "")), GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 20));
         root.addView(GoGoUi.sectionTitle(this, "按需展开其他工具"),
                 GoGoUi.matchWrap());

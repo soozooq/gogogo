@@ -430,6 +430,8 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
     }
 
     private void appendLog(String line) {
+        String safe = LabSupportLogText.summarizeTencent(line);
+        if (safe != null) LabSupportLog.append(this, LabSupportLog.TENCENT, safe);
         sdkLog.append(new SimpleDateFormat("HH:mm:ss", Locale.getDefault())
                 .format(new Date())).append(" ").append(line).append('\n');
         if (sdkLog.length() > MAX_LOG_CHARS) {

@@ -48,6 +48,7 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
     private final StringBuilder passiveHistory = new StringBuilder();
     private int passiveShotNumber = 0;
     private int passiveHistoryEpoch = 0;
+    private long lastSupportLogElapsed = -1L;
     private final Channel passiveGps = new Channel("GPS lastKnownLocation", false);
     private final Channel passiveNetwork = new Channel("NETWORK lastKnownLocation", false);
 
@@ -168,6 +169,9 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                 GoGoUi.primaryButton(this, "清空结果", v -> clearChannels()),
                 GoGoUi.weighted());
         statusContent.addView(actions, GoGoUi.matchWrap());
+        statusContent.addView(GoGoUi.gap(this, 8));
+        statusContent.addView(GoGoUi.secondaryButton(this, "📋 一键复制全部诊断日志",
+                v -> LabSupportLog.copy(this, "", "")), GoGoUi.matchWrap());
         GoGoUi.addCard(root, statusCard, 16);
 
         com.google.android.material.card.MaterialCardView fwCard = GoGoUi.card(this);
@@ -365,6 +369,8 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                 .append(completedElapsed).append(" ms\n")
                 .append(sample.render()).append("\n\n");
         if (passiveHistoryView != null) passiveHistoryView.setText(passiveHistory);
+        LabSupportLog.append(this, LabSupportLog.PASSIVE,
+                "shot=" + shot + " " + sample.supportLine(this));
         render();
     }
 
@@ -498,6 +504,7 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
     }
 
     private void clearChannels() {
+        LabSupportLog.clear(this, passiveMode ? LabSupportLog.PASSIVE : LabSupportLog.ACTIVE);
         if (passiveMode) {
             ++passiveHistoryEpoch;
             passiveShotNumber = 0;
@@ -523,6 +530,15 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
             comparisonView.setText("被动模式：仅显示缓存，不评估实时流或新鲜定位。"
                     + "样本 fixAge 随时间增长，不保证其他进程不会更新缓存。");
             return;
+        }
+        long now = SystemClock.elapsedRealtime();
+        if (lastSupportLogElapsed < 0L || now - lastSupportLogElapsed >= 3000L) {
+            lastSupportLogElapsed = now;
+            LabSupportLog.append(this, LabSupportLog.ACTIVE,
+                    gps.supportLine(this) + " | " + network.supportLine(this)
+                    + " | " + gmsLast.supportLine(this)
+                    + " | " + gmsCurrent.supportLine(this)
+                    + " | " + gmsUpdates.supportLine(this));
         }
         frameworkView.setText(
                 gps.render() + "\n\n" + network.render());
@@ -680,6 +696,26 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                     callbackAgeMs(),
                     isMock(),
                     stream);
+        }
+
+        String supportLine(android.content.Context context) {
+            if (location == null) {
+                return LabSupportLogText.safeToken(name) + "=NO_SAMPLE error="
+                        + LabSupportLogText.safeToken(error);
+            }
+            return LabSupportLogText.safeToken(name) + "=YES"
+                    + " provider=" + LabSupportLogText.safeToken(location.getProvider())
+                    + " mock=" + (isMock() ? "YES" : "NO")
+                    + " fix_age_ms=" + fixAgeMs()
+                    + " callback_age_ms=" + callbackAgeMs()
+                    + " accuracy_m=" + String.format(Locale.US, "%.1f", location.getAccuracy())
+                    + " distance_to_last_requested_mock="
+                    + LabSupportLog.distanceToRequestedTarget(context,
+                            location.getLongitude(), location.getLatitude())
+                    + " coord=" + (isMock()
+                        ? String.format(Locale.US, "%.5f,%.5f",
+                                location.getLongitude(), location.getLatitude())
+                        : "REDACTED");
         }
 
         String render() {
