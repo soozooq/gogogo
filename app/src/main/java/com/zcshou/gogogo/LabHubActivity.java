@@ -24,6 +24,7 @@ public final class LabHubActivity extends AppCompatActivity {
     private TextView readinessTitle;
     private TextView readinessDetail;
     private LabTimedSupportCopy timedSupportCopy;
+    private LabExperimentPreflight experimentPreflight;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -39,10 +40,12 @@ public final class LabHubActivity extends AppCompatActivity {
     @Override protected void onResume() {
         super.onResume();
         refreshReadiness();
+        if (experimentPreflight != null) experimentPreflight.refresh();
     }
 
     @Override protected void onDestroy() {
         if (timedSupportCopy != null) timedSupportCopy.close();
+        if (experimentPreflight != null) experimentPreflight.close();
         super.onDestroy();
     }
 
@@ -81,6 +84,10 @@ public final class LabHubActivity extends AppCompatActivity {
         readinessDetail = GoGoUi.muted(this, "不验证微信、GMS 缓存或 Provider 清理。");
         overviewBody.addView(readinessDetail, GoGoUi.matchWrap());
         root.addView(overview, GoGoUi.matchWrap());
+
+        root.addView(GoGoUi.gap(this, 12));
+        experimentPreflight = new LabExperimentPreflight(this);
+        root.addView(experimentPreflight.view(), GoGoUi.matchWrap());
 
         root.addView(GoGoUi.gap(this, 18));
         root.addView(GoGoUi.sectionTitle(this, "先用这两个工具"),

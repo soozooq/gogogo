@@ -79,6 +79,12 @@
             android:foregroundServiceType="location"
             android:name="com.zcshou.service.ServiceGo" />
 
+        <!-- Private same-UID read-only runtime probe, located in main process. -->
+        <provider
+            android:name=".LabRuntimeStatusProvider"
+            android:authorities="${applicationId}.lab.runtime"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileProvider"

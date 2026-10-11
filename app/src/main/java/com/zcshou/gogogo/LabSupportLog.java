@@ -198,6 +198,11 @@ public final class LabSupportLog {
                 .append(" (WGS84 lng,lat,wall_ms; requested_not_confirmed)\n");
         section(out, "QUICK_AND_RECOVERY", captureSafe(context, 0));
         section(out, "SERVICE_LIFECYCLE", captureSafe(context, 1));
+        Boolean mainWeChatStopped = LabExperimentPreflight.observeCurrentUserWeChat(context);
+        out.append("wechat_main_flag_stopped=")
+                .append(mainWeChatStopped == null ? "UNKNOWN" : mainWeChatStopped ? "YES" : "NO")
+                .append(" (not_process_proof)\n");
+        out.append("wechat_clone_stopped=UNKNOWN_CROSS_PROFILE_NOT_READABLE\n");
         out.append("history_scope=RECENT_ONLY; stored_history_remains_bounded\n");
         section(out, "CONSUMER_ACTIVE_RECENT", LabSupportLogText.lastLines(read(context, ACTIVE), 4));
         section(out, "CONSUMER_PASSIVE_RECENT", LabSupportLogText.lastLines(read(context, PASSIVE), 9));

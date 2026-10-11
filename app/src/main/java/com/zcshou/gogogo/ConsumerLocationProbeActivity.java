@@ -58,6 +58,7 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
     private TextView comparisonView;
     private TextView noteView;
     private LabTimedSupportCopy timedSupportCopy;
+    private LabExperimentPreflight experimentPreflight;
 
     private LocationManager locationManager;
     private FusedLocationProviderClient fusedClient;
@@ -88,6 +89,12 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         ageRefreshHandler.postDelayed(ageRefresh, 1000L);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (experimentPreflight != null) experimentPreflight.refresh();
     }
 
     @Override
@@ -147,6 +154,9 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
         com.google.android.material.card.MaterialCardView statusCard = GoGoUi.card(this);
         LinearLayout statusContent = GoGoUi.cardContent(this);
         statusCard.addView(statusContent);
+        experimentPreflight = new LabExperimentPreflight(this);
+        statusContent.addView(experimentPreflight.view(), GoGoUi.matchWrap());
+        statusContent.addView(GoGoUi.gap(this, 14));
         statusContent.addView(GoGoUi.sectionTitle(this, "消费者状态"), GoGoUi.matchWrap());
         statusView = GoGoUi.status(this, passiveMode
                 ? "被动模式：本页不主动获取新位置；缓存可能被其他应用更新"
@@ -633,6 +643,7 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         if (timedSupportCopy != null) timedSupportCopy.close();
+        if (experimentPreflight != null) experimentPreflight.close();
         stopConsumers();
         super.onDestroy();
     }
