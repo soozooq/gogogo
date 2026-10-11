@@ -35,6 +35,17 @@ public final class LabSupportLogTextTest {
         assertEquals("INVALID", LabSupportLogText.finiteTarget("not-an-address", true));
     }
 
+    @Test public void distanceOnlyReportsBroadBucket() {
+        assertEquals("LT_1KM",
+                LabSupportLogText.distanceBucket(116.39747, 39.90549,
+                        116.39748, 39.90550));
+        assertEquals("GE_1000KM",
+                LabSupportLogText.distanceBucket(116.39747, 39.90549,
+                        119.2, 26.0));
+        assertEquals("UNKNOWN",
+                LabSupportLogText.distanceBucket(999.0, 39.0, 119.0, 26.0));
+    }
+
     @Test public void boundEntryCannotInjectNewLines() {
         String result = LabSupportLogText.appendBounded("", "ok\nextra", 5);
         assertEquals("ok extra\n", result);
