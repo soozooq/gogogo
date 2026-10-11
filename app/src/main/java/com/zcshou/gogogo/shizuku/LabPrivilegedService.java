@@ -6,6 +6,7 @@ import android.system.Os;
 import android.system.StructUtsname;
 
 import androidx.annotation.Keep;
+import com.zcshou.gogogo.LabWeChatProcessSummary;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -47,6 +48,41 @@ public class LabPrivilegedService extends ILabPrivilegedService.Stub {
         appendProbe(out, "$ id", new String[]{"id"});
         appendProbe(out, "$ cat /proc/self/status", new String[]{"cat", "/proc/self/status"});
         return trim(out);
+    }
+
+    /**
+     * Whitelisted, read-only process snapshot. No force-stop, cross-user
+     * mutation, app content access or installation lookup.
+     */
+    @Override
+    public String getWeChatProcessReport() {
+        Process process = null;
+        try {
+            process = new ProcessBuilder("ps", "-A", "-o", "USER,PID,NAME")
+                    .redirectErrorStream(true).start();
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (output.length() + line.length() > 128000) {
+                        process.destroyForcibly();
+                        return "系统进程列表超出安全长度，快照不完整（不可判断后台状态）";
+                    }
+                    output.append(line).append('\n');
+                }
+            }
+            if (!process.waitFor(3, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                return "系统进程查询超时，无法判断微信后台状态";
+            }
+            return LabWeChatProcessSummary.fromPs(output.toString(), process.exitValue() == 0);
+        } catch (Throwable unavailable) {
+            return "进程快照不可用：" + unavailable.getClass().getSimpleName()
+                    + "（不能认定微信已停止）";
+        } finally {
+            if (process != null) process.destroy();
+        }
     }
 
     @Override
