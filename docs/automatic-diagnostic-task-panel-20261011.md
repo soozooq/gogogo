@@ -10,7 +10,7 @@
 
 1. **一键只读基础排障**：依次生成基础权限报告、主进程模拟服务标记、主微信 FLAG_STOPPED 与分身可见性（皆非进程存活证据）、Provider/GMS 历史清理报告和最近已保存的 Consumer 诊断。5 步在后台工作线程收集，UI 按完成顺序显示进度。不会自动启动 ServiceGo、申请权限或刷新位置。
 2. **60 秒被动缓存时序观察**：用户点击后在前台页面的 0、10、30、60 秒检查 GPS 与 NETWORK 的 `getLastKnownLocation()`，以及 GMS 的 `getLastLocation()`；只记录来源、`isMock`、fixAge、NULL/错误、实际触发时间以及 *Mock 样本* 与用户上次要求目标的距离区间。绝不记录真实坐标，也不会调用 `getCurrentLocation` 或 `requestLocationUpdates`。没有定位权限直接结束任务，**不主动申请**；GMS 异步可能延迟，结束窗口 67 秒，不晚到补写。
-3. **手动入口**：既有被动快照单次补拍、普通 Consumer Matrix（明确说明属于主动定位，可能更新缓存）、既有 Shizuku 微信进程只读探针。后两者都不会由前两个自动任务暗中触发。
+3. **微信后台自动 A/B 对照**：复用已有 Lab 18/19 的 CompatibilitySessionService，在专用界面一键启动微信组或控制组 60 秒前台服务录制，允许切到微信观察系统后台调度，自动停止并保存到 LabAutoExperimentStore。新面板读取两组比较结论，不重复实现后台服务，不把相关性描述成微信强杀。\n4. **手动入口**：既有被动快照单次补拍、普通 Consumer Matrix（明确说明属于主动定位，可能更新缓存）、既有 Shizuku 微信进程只读探针。后两者都不会由前两个自动任务暗中触发。
 
 ## 状态与证据
 
