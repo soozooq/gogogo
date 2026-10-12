@@ -21,6 +21,15 @@ public class LabCrossAppEvidenceTest {
         assertTrue(out.contains("no_raw_coordinates=true"));
     }
 
+    @Test public void redactCommonSecretsFromNotes() {
+        String s = LabCrossAppEvidence.describe(0, 0, true,
+                "定位 38.0177934,-121.8162185 手机 13800138000 abc@example.com");
+        assertFalse(s.contains("38.0177934"));
+        assertFalse(s.contains("13800138000"));
+        assertFalse(s.contains("abc@example.com"));
+        assertTrue(s.contains("[COORD_REDACTED]"));
+    }
+
     @Test public void noMisattributionOfPoiAndDot() {
         assertNotEquals(LabCrossAppEvidence.OBSERVATIONS[0],
                 LabCrossAppEvidence.OBSERVATIONS[2]);
