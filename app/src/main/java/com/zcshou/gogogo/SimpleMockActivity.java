@@ -502,6 +502,12 @@ public class SimpleMockActivity extends AppCompatActivity {
                 "手机卡归属地", "SIM 发卡国家 / 运营商 · 双卡详情 · 7 位号段离线查询",
                 v -> startActivity(new Intent(this, LabSimAttributionActivity.class))),
                 GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 9));
+        root.addView(GoGoUi.navigationTile(this, R.drawable.ic_gogogo_lab,
+                "网络与定位隐私体检",
+                "VPN · DNS · IPv4/IPv6 · 时区 · 浏览器 WebRTC 检测入口",
+                v -> startActivity(new Intent(this, LabPrivacyAuditActivity.class))),
+                GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 10));
         root.addView(GoGoUi.primaryButton(this, "📋 复制最近诊断日志（发给 GPT）",
                 v -> LabSupportLog.copy(this,
