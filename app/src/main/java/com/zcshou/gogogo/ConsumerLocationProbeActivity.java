@@ -617,7 +617,7 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
             gmsView.setText(gmsLast.render());
             comparisonView.setText("被动模式：仅显示缓存，不评估实时流或新鲜定位。"
                     + "样本 fixAge 随时间增长，不保证其他进程不会更新缓存。"
-                    + "\\n\\n" + eventTimeline.renderRecent(14));
+                    + "\n\n" + eventTimeline.renderRecent(14));
             return;
         }
         long now = SystemClock.elapsedRealtime();
