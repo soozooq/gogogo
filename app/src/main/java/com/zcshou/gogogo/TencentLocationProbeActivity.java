@@ -356,6 +356,7 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
                 // its listener even if the SDK unexpectedly sends more data.
                 stopTencent();
             }
+            refreshTimelineDisplay();
         });
     }
 
@@ -492,7 +493,7 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
 
     private void refreshTimelineDisplay() {
         if (tencentView != null) {
-            tencentView.setText(sdkLog.toString() + "\\n\\n"
+            tencentView.setText(sdkLog.toString() + "\n\n"
                     + evidenceTimeline.renderRecent(14));
         }
     }
