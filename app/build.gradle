@@ -124,6 +124,8 @@ dependencies {
     implementation 'me.ihxq.projects:phone-number-geo:1.0.10-202502'
     // Required by the prefix database's logger; no network or logging backend is added.
     implementation 'org.slf4j:slf4j-api:1.7.36'
+    // Silence only the lookup library's optional SLF4J logs, preserving number privacy.
+    implementation 'org.slf4j:slf4j-nop:1.7.36'
     // 腾讯地图 SDK (GCJ02 坐标系，与微信小程序一致)
     // 官方分包: vector-sdk (核心绘制) + openmap:foundation (LatLng/MapPoi 等基础类型)
     implementation 'com.tencent.map:tencent-map-vector-sdk:6.11.0.260507.ab2310c2.209828299'
