@@ -43,6 +43,7 @@ import com.zcshou.gogogo.MainActivity;
 import com.zcshou.gogogo.LabPolicyEngine;
 import com.zcshou.gogogo.LabProviderReliabilityController;
 import com.zcshou.gogogo.LabGmsPublishEvidence;
+import com.zcshou.gogogo.LabGmsPublishGate;
 import com.zcshou.gogogo.LabPublishPerformanceEvidence;
 import com.zcshou.gogogo.LabServiceLifecycleJournal;
 import com.zcshou.gogogo.LabServiceTeardownSequence;
@@ -228,6 +229,7 @@ public class ServiceGo extends Service {
     // The dispatch count means a Task was returned, NOT that delivery succeeded.
     private volatile long mGmsFusedDispatchCount = 0L;
     private final LabGmsPublishEvidence mGmsPublishEvidence = new LabGmsPublishEvidence();
+    private final LabGmsPublishGate mGmsPublishGate = new LabGmsPublishGate();
     // Lab 52: evidence only; does not adjust the 33ms sleep or mock providers.
     private final LabPublishPerformanceEvidence mPublishPerformanceEvidence =
             new LabPublishPerformanceEvidence();
@@ -2456,6 +2458,7 @@ public class ServiceGo extends Service {
                 publishTask.addOnCompleteListener(Runnable::run, result -> {
                     boolean succeeded = result.isSuccessful();
                     long completedElapsed = SystemClock.elapsedRealtime();
+                    mGmsPublishGate.complete(token, succeeded, completedElapsed);
                     mGmsPublishEvidence.onTaskCompleted(succeeded);
                     mPublishPerformanceEvidence.onTaskFinished(succeeded,
                             taskReturnedElapsed, completedElapsed);
@@ -2465,11 +2468,13 @@ public class ServiceGo extends Service {
                 });
             } catch (RuntimeException observerError) {
                 // A returned Task without a registered observer is UNKNOWN, not failed.
+                mGmsPublishGate.complete(token, false, SystemClock.elapsedRealtime());
                 mGmsPublishEvidence.onCallbackUnavailable();
                 mPublishPerformanceEvidence.onCallbackUnavailable();
             }
         } catch (Throwable t) {
             // Do not log every tick; report synchronous failures as separate evidence.
+            mGmsPublishGate.complete(token, false, SystemClock.elapsedRealtime());
             mGmsPublishEvidence.onSynchronousFailure();
         }
     }
@@ -2669,6 +2674,11 @@ public class ServiceGo extends Service {
         public long getNetworkPublishCount() { return mNetworkPublishCount; }
         public long getFusedProviderPublishCount() { return mFusedProviderPublishCount; }
         public long getGmsFusedDispatchCount() { return mGmsFusedDispatchCount; }
+        public long getGmsFusedAcceptedCount() { return mGmsPublishGate.succeeded(); }
+        public long getGmsFusedFailedCount() { return mGmsPublishGate.failed(); }
+        public long getGmsFusedBackpressureCount() { return mGmsPublishGate.coalesced(); }
+        public long getGmsFusedPendingAgeMs() { return mGmsPublishGate.pendingAgeMs(SystemClock.elapsedRealtime()); }
+        public long getGmsFusedLastAcceptedAgeMs() { return mGmsPublishGate.lastSuccessAgeMs(SystemClock.elapsedRealtime()); }
         public LabGmsPublishEvidence.Snapshot getGmsPublishEvidenceSnapshot() {
             return mGmsPublishEvidence.snapshot();
         }
