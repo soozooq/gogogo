@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
@@ -56,7 +57,9 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
     private boolean recording;
     private boolean waitingSingle;
     private boolean destroyed;
-    private long requestAtMillis;
+    private long requestAtElapsedMs = -1L;
+    private final LabLocationEvidenceTimeline evidenceTimeline =
+            new LabLocationEvidenceTimeline();
     private String requestLabel = "NONE";
     private StringBuilder sdkLog = new StringBuilder();
     private Runnable singleTimeout;
@@ -207,7 +210,9 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
             request.setAllowCache(allowCache.isChecked());
             request.setAllowGPS(true);
             final boolean requestedPoi = poiLevel.isChecked();
-            requestAtMillis = System.currentTimeMillis();
+            requestAtElapsedMs = SystemClock.elapsedRealtime();
+        evidenceTimeline.add(LabLocationEvidenceTimeline.Source.TENCENT,
+                LabLocationEvidenceTimeline.Stage.REQUEST, requestAtElapsedMs);
             requestLabel = (continuous ? "STREAM" : "SINGLE_FRESH")
                     + " / " + (requestedPoi ? "POI" : "GEO")
                     + " / cache=" + allowCache.isChecked();
@@ -237,6 +242,11 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
                         activeListener, Looper.getMainLooper());
             }
             appendLog("SDK_REQUEST_RETURN " + resultCode + " (not a location result)");
+            evidenceTimeline.add(LabLocationEvidenceTimeline.Source.TENCENT,
+                    resultCode == 0
+                            ? LabLocationEvidenceTimeline.Stage.REQUEST_ACCEPTED
+                            : LabLocationEvidenceTimeline.Stage.REQUEST_REJECTED,
+                    SystemClock.elapsedRealtime());
             if (resultCode != 0) {
                 stopTencent();
                 statusView.setText("腾讯 SDK 拒绝启动请求 · code=" + resultCode
@@ -250,6 +260,9 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
                 singleTimeout = () -> {
                     if (waitingSingle && !destroyed && probeState.accepts(sessionId)) {
                         stopTencent();
+                        evidenceTimeline.add(LabLocationEvidenceTimeline.Source.TENCENT,
+                                LabLocationEvidenceTimeline.Stage.TIMEOUT,
+                                SystemClock.elapsedRealtime());
                         appendLog("TIMEOUT: 20s 未收到 SDK 回调（不能视为定位成功）");
                         statusView.setText("腾讯单次定位超时 · TIMEOUT");
                     }
@@ -275,6 +288,10 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
         }
         TencentLocationListener listener = activeListener;
         activeListener = null;
+        if (listener != null) {
+            evidenceTimeline.add(LabLocationEvidenceTimeline.Source.TENCENT,
+                    LabLocationEvidenceTimeline.Stage.STOP, SystemClock.elapsedRealtime());
+        }
         if (manager != null && listener != null) {
             try {
                 manager.removeUpdates(listener);
@@ -291,18 +308,31 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             if (destroyed || !probeState.accepts(sessionId)) return;
             long now = System.currentTimeMillis();
-            long duration = requestAtMillis <= 0 ? -1 : now - requestAtMillis;
+            long currentElapsed = SystemClock.elapsedRealtime();
+            long duration = LabLocationAge.callbackAgeMs(currentElapsed, requestAtElapsedMs);
             appendLog("CALLBACK " + sessionLabel + " error=" + errorCode
                     + " reason=" + String.valueOf(reason)
                     + " latency=" + duration + "ms");
             if (errorCode != TencentLocation.ERROR_OK) {
+                evidenceTimeline.add(LabLocationEvidenceTimeline.Source.TENCENT,
+                        LabLocationEvidenceTimeline.Stage.CALLBACK_FAILED,
+                        currentElapsed);
                 appendLog("LOCATION_ERROR: SDK returned non-OK; do not display coordinates as success");
                 statusView.setText("腾讯 SDK 定位失败 · error=" + errorCode
                         + "\nreason=" + reason);
             } else if (fix == null) {
+                evidenceTimeline.add(LabLocationEvidenceTimeline.Source.TENCENT,
+                        LabLocationEvidenceTimeline.Stage.CALLBACK_EMPTY,
+                        currentElapsed);
                 appendLog("LOCATION_ERROR: SDK returned OK but location=null");
                 statusView.setText("腾讯 SDK 返回空位置 · INVALID");
             } else {
+                evidenceTimeline.add(LabLocationEvidenceTimeline.Source.TENCENT,
+                        LabLocationEvidenceTimeline.Stage.CALLBACK_FIX,
+                        currentElapsed,
+                        LabLocationEvidenceTimeline.estimateWallAgeMs(now, fix.getTime()),
+                        LabLocationEvidenceTimeline.AgeBasis.TENCENT_WALL_ESTIMATE,
+                        LabLocationEvidenceTimeline.MockState.UNKNOWN);
                 double lat = fix.getLatitude();
                 double lon = fix.getLongitude();
                 boolean valid = TencentProbeMath.validCoordinate(lat, lon);
@@ -390,7 +420,16 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
                     LocationManager.GPS_PROVIDER,
                     LocationManager.NETWORK_PROVIDER, "fused"}) {
                 try {
+                    LabLocationEvidenceTimeline.Source source =
+                            LocationManager.GPS_PROVIDER.equals(provider)
+                                    ? LabLocationEvidenceTimeline.Source.GPS
+                                    : LocationManager.NETWORK_PROVIDER.equals(provider)
+                                    ? LabLocationEvidenceTimeline.Source.NETWORK
+                                    : LabLocationEvidenceTimeline.Source.FRAMEWORK_FUSED;
+                    evidenceTimeline.add(source, LabLocationEvidenceTimeline.Stage.REQUEST,
+                            SystemClock.elapsedRealtime());
                     Location loc = lm.getLastKnownLocation(provider);
+                    recordStandardFix(source, loc);
                     out.append(provider).append(": ").append(describeAndroid(loc)).append('\n');
                 } catch (Throwable e) {
                     out.append(provider).append(": ").append(e.getClass().getSimpleName()).append('\n');
@@ -398,24 +437,63 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
             }
         }
         androidView.setText(out.toString() + "Google Fused: requesting lastLocation…");
+        evidenceTimeline.add(LabLocationEvidenceTimeline.Source.GMS_LAST,
+                LabLocationEvidenceTimeline.Stage.REQUEST, SystemClock.elapsedRealtime());
         try {
             LocationServices.getFusedLocationProviderClient(this)
                     .getLastLocation()
                     .addOnSuccessListener(loc -> {
                         if (!destroyed && standardsState.accepts(snapshotId)) {
+                            recordStandardFix(LabLocationEvidenceTimeline.Source.GMS_LAST, loc);
                             androidView.setText(out.toString() + "GMS Fused last: "
                                     + describeAndroid(loc));
                         }
                     })
                     .addOnFailureListener(e -> {
                         if (!destroyed && standardsState.accepts(snapshotId)) {
+                            evidenceTimeline.add(LabLocationEvidenceTimeline.Source.GMS_LAST,
+                                    LabLocationEvidenceTimeline.Stage.CALLBACK_FAILED,
+                                    SystemClock.elapsedRealtime());
+                            refreshTimelineDisplay();
                             androidView.setText(out.toString() + "GMS Fused failed: "
                                     + e.getClass().getSimpleName());
                         }
                     });
         } catch (Throwable e) {
+            evidenceTimeline.add(LabLocationEvidenceTimeline.Source.GMS_LAST,
+                    LabLocationEvidenceTimeline.Stage.CALLBACK_FAILED,
+                    SystemClock.elapsedRealtime());
+            refreshTimelineDisplay();
             androidView.setText(out.toString() + "GMS Fused unavailable: "
                     + e.getClass().getSimpleName());
+        }
+    }
+
+    /** Android results have boot-monotonic fix timestamps; Tencent only exposes wall-time. */
+    private void recordStandardFix(LabLocationEvidenceTimeline.Source source,
+                                   Location loc) {
+        long nowElapsed = SystemClock.elapsedRealtime();
+        if (loc == null) {
+            evidenceTimeline.add(source, LabLocationEvidenceTimeline.Stage.CALLBACK_EMPTY,
+                    nowElapsed);
+        } else {
+            long fixAge = LabLocationAge.fixAgeMs(SystemClock.elapsedRealtimeNanos(),
+                    loc.getElapsedRealtimeNanos());
+            boolean isMock = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                    ? loc.isMock() : loc.isFromMockProvider();
+            evidenceTimeline.add(source, LabLocationEvidenceTimeline.Stage.CALLBACK_FIX,
+                    nowElapsed, fixAge,
+                    LabLocationEvidenceTimeline.AgeBasis.ANDROID_MONOTONIC,
+                    isMock ? LabLocationEvidenceTimeline.MockState.YES
+                            : LabLocationEvidenceTimeline.MockState.NO);
+        }
+        refreshTimelineDisplay();
+    }
+
+    private void refreshTimelineDisplay() {
+        if (tencentView != null) {
+            tencentView.setText(sdkLog.toString() + "\\n\\n"
+                    + evidenceTimeline.renderRecent(14));
         }
     }
 
@@ -423,10 +501,12 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
         if (loc == null) return "NULL";
         boolean mock = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
                 ? loc.isMock() : loc.isFromMockProvider();
+        long fixAge = LabLocationAge.fixAgeMs(SystemClock.elapsedRealtimeNanos(),
+                loc.getElapsedRealtimeNanos());
         return TencentProbeMath.describeCoordinate(loc.getLatitude(), loc.getLongitude())
                 + " WGS84 | mock=" + mock
-                + " | age=" + TencentProbeMath.displayAge(loc.getTime(),
-                System.currentTimeMillis()) + " | accuracy=" + loc.getAccuracy() + "m";
+                + " | fixAge(monotonic)=" + (fixAge < 0L ? "UNKNOWN" : fixAge + "ms")
+                + " | accuracy=" + loc.getAccuracy() + "m";
     }
 
     private void appendLog(String line) {
@@ -437,7 +517,7 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
         if (sdkLog.length() > MAX_LOG_CHARS) {
             sdkLog.delete(0, sdkLog.length() - MAX_LOG_CHARS + 1500);
         }
-        if (tencentView != null) tencentView.setText(sdkLog.toString());
+        refreshTimelineDisplay();
     }
 
     @Override
