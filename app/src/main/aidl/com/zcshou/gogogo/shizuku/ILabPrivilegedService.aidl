@@ -7,4 +7,5 @@ interface ILabPrivilegedService {
     String getSystemReport() = 3;
     String getUserPolicyReport() = 4;
     String getVirtualizationReport() = 5;
+    String getWeChatCloneReadOnlyReport() = 6;
 }

@@ -220,6 +220,13 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
                 button("🧪 AVF / pKVM", v -> runPrivilegedProbe(5))
         ));
 
+        root.addView(button("🔎 Lab 50：微信主号/分身只读检查",
+                v -> runPrivilegedProbe(6)), matchWrap());
+        root.addView(GoGoUi.muted(this,
+                "仅统计可查询的 Android 用户空间及微信包安装情况；"
+                        + "无 Shizuku 授权不会查询。不会强停微信、读取聊天或访问私有缓存。"
+                        + "没有发现也不代表 vivo 分身不存在。"), matchWrap());
+
         // Sandbox / Work Profile navigation belongs to LabHub.
         Button developer = button("🛠 打开开发者选项", v -> {
             try {
@@ -621,8 +628,12 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
                     report = service.getSystemReport();
                 } else if (type == 4) {
                     report = service.getUserPolicyReport();
-                } else {
+                } else if (type == 5) {
                     report = service.getVirtualizationReport();
+                } else if (type == 6) {
+                    report = service.getWeChatCloneReadOnlyReport();
+                } else {
+                    report = "UNKNOWN_PROBE";
                 }
             } catch (Throwable t) {
                 report = "高权限诊断失败：" + t.getClass().getSimpleName()
@@ -643,7 +654,9 @@ public class LabDiagnosticsActivity extends AppCompatActivity implements SensorE
         else if (type == 2) title = "📍 高权限定位系统报告";
         else if (type == 3) title = "🖥 高权限系统报告";
         else if (type == 4) title = "👥 高权限用户 / Device Policy 报告";
-        else title = "🧪 AVF / pKVM / Microdroid 报告";
+        else if (type == 5) title = "🧪 AVF / pKVM / Microdroid 报告";
+        else if (type == 6) title = "🔎 微信双开 · 隐私精简只读报告";
+        else title = "未知报告";
 
         TextView view = new TextView(this);
         int pad = dp(16);

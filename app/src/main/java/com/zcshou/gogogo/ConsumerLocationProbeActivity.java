@@ -56,6 +56,8 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
     private TextView frameworkView;
     private TextView gmsView;
     private TextView comparisonView;
+    private final LabLocationEvidenceTimeline eventTimeline =
+            new LabLocationEvidenceTimeline();
     private TextView noteView;
     private LabTimedSupportCopy timedSupportCopy;
     private LabExperimentPreflight experimentPreflight;
@@ -313,6 +315,12 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
         }
 
         final int shot = ++passiveShotNumber;
+        eventTimeline.add(LabLocationEvidenceTimeline.Source.PASSIVE_GPS,
+                LabLocationEvidenceTimeline.Stage.REQUEST, SystemClock.elapsedRealtime());
+        eventTimeline.add(LabLocationEvidenceTimeline.Source.PASSIVE_NETWORK,
+                LabLocationEvidenceTimeline.Stage.REQUEST, SystemClock.elapsedRealtime());
+        eventTimeline.add(LabLocationEvidenceTimeline.Source.GMS_LAST,
+                LabLocationEvidenceTimeline.Stage.REQUEST, SystemClock.elapsedRealtime());
         final int epoch = passiveHistoryEpoch;
         passiveGps.clear();
         passiveNetwork.clear();
@@ -369,6 +377,11 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
         if (location != null) sample.update(location);
         else sample.error = error;
         sample.completedElapsedMs = completedElapsed;
+        LabLocationEvidenceTimeline.Source source =
+                channel == passiveGps ? LabLocationEvidenceTimeline.Source.PASSIVE_GPS
+                        : channel == passiveNetwork ? LabLocationEvidenceTimeline.Source.PASSIVE_NETWORK
+                        : LabLocationEvidenceTimeline.Source.GMS_LAST;
+        recordObservedFix(source, location);
 
         if (shot == passiveShotNumber) {
             if (location != null) channel.update(location);
@@ -396,15 +409,20 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
 
         gpsListener = location -> {
             gps.update(location);
+            recordObservedFix(LabLocationEvidenceTimeline.Source.GPS, location);
             render();
         };
         networkListener = location -> {
             network.update(location);
+            recordObservedFix(LabLocationEvidenceTimeline.Source.NETWORK, location);
             render();
         };
 
         try {
             if (locationManager != null) {
+                eventTimeline.add(LabLocationEvidenceTimeline.Source.GPS,
+                        LabLocationEvidenceTimeline.Stage.REQUEST,
+                        SystemClock.elapsedRealtime());
                 locationManager.requestLocationUpdates(
                         LocationManager.GPS_PROVIDER,
                         100L,
@@ -414,10 +432,16 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
             }
         } catch (Throwable t) {
             gps.error = t.getClass().getSimpleName();
+            eventTimeline.add(LabLocationEvidenceTimeline.Source.GPS,
+                    LabLocationEvidenceTimeline.Stage.CALLBACK_FAILED,
+                    SystemClock.elapsedRealtime());
         }
 
         try {
             if (locationManager != null) {
+                eventTimeline.add(LabLocationEvidenceTimeline.Source.NETWORK,
+                        LabLocationEvidenceTimeline.Stage.REQUEST,
+                        SystemClock.elapsedRealtime());
                 locationManager.requestLocationUpdates(
                         LocationManager.NETWORK_PROVIDER,
                         100L,
@@ -427,6 +451,9 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
             }
         } catch (Throwable t) {
             network.error = t.getClass().getSimpleName();
+            eventTimeline.add(LabLocationEvidenceTimeline.Source.NETWORK,
+                    LabLocationEvidenceTimeline.Stage.CALLBACK_FAILED,
+                    SystemClock.elapsedRealtime());
         }
 
         gmsCallback = new LocationCallback() {
@@ -436,6 +463,8 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                 for (Location location : result.getLocations()) {
                     if (location != null) {
                         gmsUpdates.update(location);
+                        recordObservedFix(LabLocationEvidenceTimeline.Source.GMS_UPDATES,
+                                location);
                     }
                 }
                 render();
@@ -449,16 +478,24 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                     .setMinUpdateIntervalMillis(100L)
                     .setWaitForAccurateLocation(false)
                     .build();
+            eventTimeline.add(LabLocationEvidenceTimeline.Source.GMS_UPDATES,
+                    LabLocationEvidenceTimeline.Stage.REQUEST, SystemClock.elapsedRealtime());
             fusedClient.requestLocationUpdates(
                     request,
                     gmsCallback,
                     Looper.getMainLooper())
                     .addOnFailureListener(e -> {
                         gmsUpdates.error = e.getClass().getSimpleName();
+                        eventTimeline.add(LabLocationEvidenceTimeline.Source.GMS_UPDATES,
+                                LabLocationEvidenceTimeline.Stage.CALLBACK_FAILED,
+                                SystemClock.elapsedRealtime());
                         render();
                     });
         } catch (Throwable t) {
             gmsUpdates.error = t.getClass().getSimpleName();
+            eventTimeline.add(LabLocationEvidenceTimeline.Source.GMS_UPDATES,
+                    LabLocationEvidenceTimeline.Stage.CALLBACK_FAILED,
+                    SystemClock.elapsedRealtime());
         }
 
         requestOneShots();
@@ -470,8 +507,11 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
         if (fusedClient == null) return;
 
         try {
+            eventTimeline.add(LabLocationEvidenceTimeline.Source.GMS_LAST,
+                    LabLocationEvidenceTimeline.Stage.REQUEST, SystemClock.elapsedRealtime());
             fusedClient.getLastLocation()
                     .addOnSuccessListener(location -> {
+                        recordObservedFix(LabLocationEvidenceTimeline.Source.GMS_LAST, location);
                         if (location != null) {
                             gmsLast.update(location);
                         } else {
@@ -481,10 +521,16 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                     })
                     .addOnFailureListener(e -> {
                         gmsLast.error = e.getClass().getSimpleName();
+                        eventTimeline.add(LabLocationEvidenceTimeline.Source.GMS_LAST,
+                                LabLocationEvidenceTimeline.Stage.CALLBACK_FAILED,
+                                SystemClock.elapsedRealtime());
                         render();
                     });
         } catch (Throwable t) {
             gmsLast.error = t.getClass().getSimpleName();
+            eventTimeline.add(LabLocationEvidenceTimeline.Source.GMS_LAST,
+                    LabLocationEvidenceTimeline.Stage.CALLBACK_FAILED,
+                    SystemClock.elapsedRealtime());
         }
 
         try {
@@ -499,8 +545,11 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                     .setDurationMillis(5000L)
                     .build();
 
+            eventTimeline.add(LabLocationEvidenceTimeline.Source.GMS_CURRENT,
+                    LabLocationEvidenceTimeline.Stage.REQUEST, SystemClock.elapsedRealtime());
             fusedClient.getCurrentLocation(request, currentToken.getToken())
                     .addOnSuccessListener(location -> {
+                        recordObservedFix(LabLocationEvidenceTimeline.Source.GMS_CURRENT, location);
                         if (location != null) {
                             gmsCurrent.update(location);
                         } else {
@@ -510,14 +559,21 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                     })
                     .addOnFailureListener(e -> {
                         gmsCurrent.error = e.getClass().getSimpleName();
+                        eventTimeline.add(LabLocationEvidenceTimeline.Source.GMS_CURRENT,
+                                LabLocationEvidenceTimeline.Stage.CALLBACK_FAILED,
+                                SystemClock.elapsedRealtime());
                         render();
                     });
         } catch (Throwable t) {
             gmsCurrent.error = t.getClass().getSimpleName();
+            eventTimeline.add(LabLocationEvidenceTimeline.Source.GMS_CURRENT,
+                    LabLocationEvidenceTimeline.Stage.CALLBACK_FAILED,
+                    SystemClock.elapsedRealtime());
         }
     }
 
     private void clearChannels() {
+        eventTimeline.clear();
         LabSupportLog.clear(this, passiveMode ? LabSupportLog.PASSIVE : LabSupportLog.ACTIVE);
         if (passiveMode) {
             ++passiveHistoryEpoch;
@@ -536,13 +592,32 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
         render();
     }
 
+    /** Reuses the Lab 30 monotonic sample-age calculation; never retains coordinates. */
+    private void recordObservedFix(LabLocationEvidenceTimeline.Source source,
+                                   Location location) {
+        long now = SystemClock.elapsedRealtime();
+        if (location == null) {
+            eventTimeline.add(source, LabLocationEvidenceTimeline.Stage.CALLBACK_EMPTY, now);
+            return;
+        }
+        long age = LabLocationAge.fixAgeMs(SystemClock.elapsedRealtimeNanos(),
+                location.getElapsedRealtimeNanos());
+        boolean isMock = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                ? location.isMock() : location.isFromMockProvider();
+        eventTimeline.add(source, LabLocationEvidenceTimeline.Stage.CALLBACK_FIX, now,
+                age, LabLocationEvidenceTimeline.AgeBasis.ANDROID_MONOTONIC,
+                isMock ? LabLocationEvidenceTimeline.MockState.YES
+                        : LabLocationEvidenceTimeline.MockState.NO);
+    }
+
     private void render() {
         if (passiveMode) {
             frameworkView.setText(passiveGps.render() + "\n\n"
                     + passiveNetwork.render());
             gmsView.setText(gmsLast.render());
             comparisonView.setText("被动模式：仅显示缓存，不评估实时流或新鲜定位。"
-                    + "样本 fixAge 随时间增长，不保证其他进程不会更新缓存。");
+                    + "样本 fixAge 随时间增长，不保证其他进程不会更新缓存。"
+                    + "\n\n" + eventTimeline.renderRecent(14));
             return;
         }
         long now = SystemClock.elapsedRealtime();
@@ -601,6 +676,7 @@ public class ConsumerLocationProbeActivity extends AppCompatActivity {
                 matrix.staleSnapshots.isEmpty()
                         ? "none"
                         : android.text.TextUtils.join(", ", matrix.staleSnapshots)));
+        comparisonView.append("\n\n" + eventTimeline.renderRecent(14));
     }
 
     @SuppressLint("MissingPermission")

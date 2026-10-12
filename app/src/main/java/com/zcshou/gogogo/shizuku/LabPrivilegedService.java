@@ -100,6 +100,50 @@ public class LabPrivilegedService extends ILabPrivilegedService.Stub {
         return trim(out);
     }
 
+    /**
+     * The only cross-user probe added by Lab 50. Commands are fixed and
+     * read-only. Raw user names, numeric user IDs, and shell stdout must not
+     * escape this UserService process into a UI/export.
+     */
+    @Override
+    public String getWeChatCloneReadOnlyReport() {
+        try {
+            String currentRaw = run(new String[]{"am", "get-current-user"});
+            String usersRaw = run(new String[]{"pm", "list", "users"});
+            String verboseRaw = run(new String[]{"cmd", "user", "list", "-v"});
+            Integer currentUser = LabCloneUserReadOnly.parseCurrentUser(currentRaw);
+            boolean enumerationOk = LabCloneUserReadOnly.commandSucceeded(usersRaw);
+            java.util.List<Integer> users = LabCloneUserReadOnly.parseUserIds(usersRaw);
+            java.util.Map<Integer, Boolean> packageChecks = new java.util.HashMap<>();
+
+            // Query only the known package. Never enumerate the user's app list.
+            // Include current user even when OEM 'pm list users' is incomplete.
+            int remaining = LabCloneUserReadOnly.MAX_QUERIED_USERS;
+            if (currentUser != null) {
+                packageChecks.put(currentUser, LabCloneUserReadOnly.containsWeChat(
+                        run(new String[]{"pm", "list", "packages", "--user",
+                                String.valueOf(currentUser), "com.tencent.mm"})));
+                remaining--;
+            }
+            for (Integer userId : users) {
+                if (remaining <= 0) break;
+                if (userId == null || userId.equals(currentUser)) continue;
+                packageChecks.put(userId, LabCloneUserReadOnly.containsWeChat(
+                        run(new String[]{"pm", "list", "packages", "--user",
+                                String.valueOf(userId), "com.tencent.mm"})));
+                remaining--;
+            }
+            return LabCloneUserReadOnly.summary(currentUser, enumerationOk,
+                    users, verboseRaw, packageChecks);
+        } catch (Throwable error) {
+            // Never expose raw command stdout, user names or exception messages.
+            return "Lab 50 · 只读诊断 UNKNOWN\n"
+                    + "USER_ENUMERATION=UNKNOWN\n"
+                    + "WECHAT_FORCE_STOP=NOT_CHECKED\n"
+                    + "没有执行用户/应用数据修改。";
+        }
+    }
+
     @Override
     public String getVirtualizationReport() {
         StringBuilder out = new StringBuilder();

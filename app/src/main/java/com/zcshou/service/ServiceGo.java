@@ -42,6 +42,8 @@ import com.google.android.gms.location.LocationServices;
 import com.zcshou.gogogo.MainActivity;
 import com.zcshou.gogogo.LabPolicyEngine;
 import com.zcshou.gogogo.LabProviderReliabilityController;
+import com.zcshou.gogogo.LabGmsPublishEvidence;
+import com.zcshou.gogogo.LabPublishPerformanceEvidence;
 import com.zcshou.gogogo.LabServiceLifecycleJournal;
 import com.zcshou.gogogo.LabServiceTeardownSequence;
 import com.zcshou.gogogo.LabRouteCheckpointStore;
@@ -217,7 +219,13 @@ public class ServiceGo extends Service {
     private volatile long mGpsPublishCount = 0L;
     private volatile long mNetworkPublishCount = 0L;
     private volatile long mFusedProviderPublishCount = 0L;
+    // The dispatch count means a Task was returned, NOT that delivery succeeded.
     private volatile long mGmsFusedDispatchCount = 0L;
+    private final LabGmsPublishEvidence mGmsPublishEvidence = new LabGmsPublishEvidence();
+    // Lab 52: evidence only; does not adjust the 33ms sleep or mock providers.
+    private final LabPublishPerformanceEvidence mPublishPerformanceEvidence =
+            new LabPublishPerformanceEvidence();
+    private volatile long mLastGmsFusedTaskSuccessElapsed = -1L;
     private volatile long mGpsPublishFailureCount = 0L;
     private volatile long mNetworkPublishFailureCount = 0L;
     private volatile long mFusedProviderPublishFailureCount = 0L;
@@ -325,8 +333,8 @@ public class ServiceGo extends Service {
         removeTestProviderGPS();
         addTestProviderGPS();
 
-        // Android 12+ 起 LocationManager 也有 "fused" provider,部分应用(WeChat 走的就是
-        // 这条) 不直接读 GPS/NETWORK 而是读 fused。能注就注,失败也无所谓。
+        // Android 12+ supports a framework FUSED provider, distinct from Google FLP.
+        // A target app's use of this provider has NOT been demonstrated here.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             removeTestProviderFused();
             addTestProviderFused();
@@ -340,15 +348,12 @@ public class ServiceGo extends Service {
             // No-map test build: floating joystick intentionally disabled.
         }
 
-        // 关键:维持 Provider 活跃订阅。Android 12+ 上没有活跃 listener 的 Provider
-        // 会进入低功耗/缓存退化状态,微信小程序调 getLastKnownLocation 拿不到
-        // 刚 push 的 mock 数据 (高德/百度 App 自己有订阅就能看到)。
-        // Baidu 版靠 LocationClient(:remote, scanSpan=1000)做这件事,迁移后需要补回来。
+        // Keep standard providers subscribed for our own lifecycle diagnostics.
+        // This does NOT establish which APIs WeChat or other apps invoke.
         initPersistentLocationListener();
 
-        // 第二条路径: 用 GMS FusedLocationProviderClient.setMockMode + setMockLocation
-        // 覆盖走 Google Play Services 路径的应用(部分 WeChat/腾讯小程序场景)。
-        // 设备没装 GMS 就 try/catch 静默跳过。
+        // Independent Google Play services FLP mock path (if installed).
+        // Its Task result and the target application's consumption are separate evidence.
         initFusedMock();
         // Observe permission changes without changing any AppOps value.
         // The observer lives only as long as this ServiceGo instance.
@@ -1396,6 +1401,7 @@ public class ServiceGo extends Service {
                     Thread.sleep(TICK_INTERVAL_MS);
 
                     if (!isStop) {
+                        mPublishPerformanceEvidence.onTick(SystemClock.elapsedRealtime());
                         advanceLabMotion();
                         sampleTrackIfNeeded(false);
                         sampleProvenanceIfNeeded();
@@ -2370,11 +2376,36 @@ public class ServiceGo extends Service {
             loc.setTime(System.currentTimeMillis());
             loc.setSpeed((float) mPublishedSpeed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
-            mFusedClient.setMockLocation(loc);
+            // Returning a Task only proves submission. Its asynchronous result is
+            // tracked separately; even Task success does not prove consumer delivery.
+            com.google.android.gms.tasks.Task<Void> publishTask =
+                    mFusedClient.setMockLocation(loc);
             mGmsFusedDispatchCount++;
-            mLastGmsFusedDispatchElapsed = SystemClock.elapsedRealtime();
+            mGmsPublishEvidence.onTaskReturned();
+            mPublishPerformanceEvidence.onTaskReturned();
+            final long taskReturnedElapsed = SystemClock.elapsedRealtime();
+            mLastGmsFusedDispatchElapsed = taskReturnedElapsed;
+            try {
+                // Direct executor keeps high-frequency evidence callbacks off the UI
+                // queue. The recorder is synchronized and the callback does no I/O.
+                publishTask.addOnCompleteListener(Runnable::run, result -> {
+                    boolean succeeded = result.isSuccessful();
+                    long completedElapsed = SystemClock.elapsedRealtime();
+                    mGmsPublishEvidence.onTaskCompleted(succeeded);
+                    mPublishPerformanceEvidence.onTaskFinished(succeeded,
+                            taskReturnedElapsed, completedElapsed);
+                    if (succeeded) {
+                        mLastGmsFusedTaskSuccessElapsed = completedElapsed;
+                    }
+                });
+            } catch (RuntimeException observerError) {
+                // A returned Task without a registered observer is UNKNOWN, not failed.
+                mGmsPublishEvidence.onCallbackUnavailable();
+                mPublishPerformanceEvidence.onCallbackUnavailable();
+            }
         } catch (Throwable t) {
-            // 不打日志,避免每 33ms 刷屏
+            // Do not log every tick; report synchronous failures as separate evidence.
+            mGmsPublishEvidence.onSynchronousFailure();
         }
     }
 
@@ -2573,6 +2604,15 @@ public class ServiceGo extends Service {
         public long getNetworkPublishCount() { return mNetworkPublishCount; }
         public long getFusedProviderPublishCount() { return mFusedProviderPublishCount; }
         public long getGmsFusedDispatchCount() { return mGmsFusedDispatchCount; }
+        public LabGmsPublishEvidence.Snapshot getGmsPublishEvidenceSnapshot() {
+            return mGmsPublishEvidence.snapshot();
+        }
+        public LabPublishPerformanceEvidence.Snapshot getPublishPerformanceSnapshot() {
+            return mPublishPerformanceEvidence.snapshot();
+        }
+        public long getGmsFusedTaskSuccessAgeMs() {
+            return ageMs(mLastGmsFusedTaskSuccessElapsed);
+        }
         public long getGpsPublishFailureCount() { return mGpsPublishFailureCount; }
         public long getNetworkPublishFailureCount() { return mNetworkPublishFailureCount; }
         public long getFusedProviderPublishFailureCount() {
