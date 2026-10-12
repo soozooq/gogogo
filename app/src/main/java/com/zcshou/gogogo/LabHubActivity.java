@@ -89,6 +89,10 @@ public final class LabHubActivity extends AppCompatActivity {
         root.addView(GoGoUi.navigationTile(this, "自动化诊断任务面板",
                 "一键只读基础排障 · 0/10/30/60 秒自动被动缓存观察 · 报告复制",
                 v -> open(LabAutoDiagnosticActivity.class)), GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 10));
+        root.addView(GoGoUi.navigationTile(this, "跨应用定位来源对照",
+                "抖音 / 高德 / 微信 / 腾讯地图 · 前后被动快照与人工观察总日志",
+                v -> open(LabCrossAppLocationActivity.class)), GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 12));
         experimentPreflight = new LabExperimentPreflight(this);
         root.addView(experimentPreflight.view(), GoGoUi.matchWrap());
