@@ -8,4 +8,6 @@ interface ILabPrivilegedService {
     String getUserPolicyReport() = 4;
     String getVirtualizationReport() = 5;
     String getWeChatCloneReadOnlyReport() = 6;
+    String getWeChatProcessReport() = 7;
+    String setSystemTimeZone(String ianaZone) = 8;
 }
