@@ -6,6 +6,8 @@ import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.wifi.WifiManager;
+import android.provider.Settings;
 import android.os.Build;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
@@ -81,8 +83,17 @@ public final class LabCellularEthernetSnapshot {
                 .append(",operator=").append(label(safe(() -> tm.getNetworkOperatorName())))
                 .append("\n");
         out.append("cellular_data_state=").append(dataState(tm))
+                .append(",mobile_data_switch=").append(bool(() -> tm.isDataEnabled()))
                 .append(",registered_roaming=").append(bool(() -> tm.isNetworkRoaming()))
                 .append("\n");
+        WifiManager wifi = (WifiManager) context.getApplicationContext()
+                .getSystemService(Context.WIFI_SERVICE);
+        out.append("wifi_radio_switch=")
+                .append(wifi == null ? "UNKNOWN" : bool(() -> wifi.isWifiEnabled()))
+                .append(",airplane_mode=")
+                .append(Settings.Global.getInt(context.getContentResolver(),
+                        Settings.Global.AIRPLANE_MODE_ON, -1))
+                .append(" (-1 means unknown)\n");
         out.append("mobile_data_disabled_does_not_disable_radio_registration=true\n");
 
         int dataSub = SubscriptionManager.getDefaultDataSubscriptionId();
