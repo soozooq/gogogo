@@ -42,6 +42,7 @@ import com.google.android.gms.location.LocationServices;
 import com.zcshou.gogogo.MainActivity;
 import com.zcshou.gogogo.LabPolicyEngine;
 import com.zcshou.gogogo.LabProviderReliabilityController;
+import com.zcshou.gogogo.LabGmsPublishGate;
 import com.zcshou.gogogo.LabServiceLifecycleJournal;
 import com.zcshou.gogogo.LabServiceTeardownSequence;
 import com.zcshou.gogogo.LabRouteCheckpointStore;
@@ -224,6 +225,7 @@ public class ServiceGo extends Service {
     private volatile long mNetworkPublishCount = 0L;
     private volatile long mFusedProviderPublishCount = 0L;
     private volatile long mGmsFusedDispatchCount = 0L;
+    private final LabGmsPublishGate mGmsPublishGate = new LabGmsPublishGate();
     private volatile long mGpsPublishFailureCount = 0L;
     private volatile long mNetworkPublishFailureCount = 0L;
     private volatile long mFusedProviderPublishFailureCount = 0L;
@@ -1211,6 +1213,7 @@ public class ServiceGo extends Service {
         }
         mFusedShutdownRequested = true;
         isStop = true;
+        mGmsPublishGate.close(); // Old Tasks may return after ServiceGo teardown.
         sRunning = false;
         // A failed route checkpoint must never skip provider/GMS teardown.
         if (mRouteActive) {
@@ -2416,7 +2419,12 @@ public class ServiceGo extends Service {
 
     @SuppressLint("MissingPermission")
     private void setLocationFusedClient() {
-        if (!mPolicyPublish || mFusedClient == null || !mFusedMockEnabled) return;
+        if (!mPolicyPublish || isStop || mFusedClient == null || !mFusedMockEnabled) return;
+        // This 33-ms tick may outrun Google Play services' Binder/Task queue.
+        // Never submit another FLP mock fix before the previous Task finishes.
+        // Framework GPS/NETWORK/FUSED still publish every eligible tick.
+        long token = mGmsPublishGate.begin(SystemClock.elapsedRealtime());
+        if (token == 0L) return;
         try {
             Location loc = new Location("fused");
             loc.setAccuracy(Math.max(1.0f, mPublishedAccuracy));
@@ -2429,11 +2437,17 @@ public class ServiceGo extends Service {
             loc.setTime(System.currentTimeMillis());
             loc.setSpeed((float) mPublishedSpeed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
-            mFusedClient.setMockLocation(loc);
-            mGmsFusedDispatchCount++;
+            mFusedClient.setMockLocation(loc).addOnCompleteListener(task -> {
+                // Completion is evidence that Google API accepted/rejected this
+                // request, NOT evidence a specific app consumed the position.
+                mGmsPublishGate.complete(token, task.isSuccessful(),
+                        SystemClock.elapsedRealtime());
+            });
+            mGmsFusedDispatchCount++; // Submitted, not necessarily accepted.
             mLastGmsFusedDispatchElapsed = SystemClock.elapsedRealtime();
         } catch (Throwable t) {
-            // 不打日志,避免每 33ms 刷屏
+            mGmsPublishGate.complete(token, false, SystemClock.elapsedRealtime());
+            // No per-tick exception spam. Persistent errors visible via counters.
         }
     }
 
@@ -2632,6 +2646,15 @@ public class ServiceGo extends Service {
         public long getNetworkPublishCount() { return mNetworkPublishCount; }
         public long getFusedProviderPublishCount() { return mFusedProviderPublishCount; }
         public long getGmsFusedDispatchCount() { return mGmsFusedDispatchCount; }
+        public long getGmsFusedAcceptedCount() { return mGmsPublishGate.succeeded(); }
+        public long getGmsFusedFailedCount() { return mGmsPublishGate.failed(); }
+        public long getGmsFusedBackpressureCount() { return mGmsPublishGate.coalesced(); }
+        public long getGmsFusedPendingAgeMs() {
+            return mGmsPublishGate.pendingAgeMs(SystemClock.elapsedRealtime());
+        }
+        public long getGmsFusedLastAcceptedAgeMs() {
+            return mGmsPublishGate.lastSuccessAgeMs(SystemClock.elapsedRealtime());
+        }
         public long getGpsPublishFailureCount() { return mGpsPublishFailureCount; }
         public long getNetworkPublishFailureCount() { return mNetworkPublishFailureCount; }
         public long getFusedProviderPublishFailureCount() {
