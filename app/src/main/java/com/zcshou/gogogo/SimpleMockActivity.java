@@ -497,6 +497,11 @@ public class SimpleMockActivity extends AppCompatActivity {
                 "实验与诊断", "Consumer Matrix · Shizuku · Provider 与系统实验",
                 v -> startActivity(new Intent(this, LabHubActivity.class))),
                 GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 9));
+        root.addView(GoGoUi.navigationTile(this, R.drawable.ic_gogogo_lab,
+                "手机卡归属地", "SIM 发卡国家 / 运营商 · 双卡详情 · 7 位号段离线查询",
+                v -> startActivity(new Intent(this, LabSimAttributionActivity.class))),
+                GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 10));
         root.addView(GoGoUi.primaryButton(this, "📋 复制最近诊断日志（发给 GPT）",
                 v -> LabSupportLog.copy(this,
