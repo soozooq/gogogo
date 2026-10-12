@@ -121,6 +121,11 @@
             android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
+            android:name=".LabPrivacyAuditActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
             android:name=".LabSimAttributionActivity"
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
