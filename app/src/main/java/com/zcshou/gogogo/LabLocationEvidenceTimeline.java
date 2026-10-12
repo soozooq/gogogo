@@ -19,7 +19,7 @@ public final class LabLocationEvidenceTimeline {
     }
 
     public enum Stage {
-        REQUEST, TASK_RETURNED, CALLBACK_FIX, CALLBACK_EMPTY,
+        REQUEST, REQUEST_ACCEPTED, REQUEST_REJECTED, TASK_RETURNED, CALLBACK_FIX, CALLBACK_EMPTY,
         CALLBACK_FAILED, TIMEOUT, STOP
     }
 
