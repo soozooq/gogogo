@@ -157,6 +157,17 @@ public final class LabSimAttributionActivity extends AppCompatActivity {
                 .append("\n");
         report.append("SIM MCC/MNC：").append(safe(value(() -> tm.getSimOperator())))
                 .append("\n");
+        String mismatch = LabCarrierConsistency.check(value(() -> tm.getSimCountryIso()),
+                value(() -> tm.getSimOperator()));
+        if (mismatch.startsWith("INCONSISTENT")) {
+            report.append("⚠️ SIM 国家与 MCC 归属不一致（").append(mismatch)
+                    .append("）；可能与默认订阅、系统报告或运营商设置有关。"
+                            + "无法据此确定真实位置或是否存在伪装。\n");
+        } else if (mismatch.startsWith("CONSISTENT")) {
+            report.append("SIM 国家与 MCC 对照：一致（仅字段检查）\n");
+        } else {
+            report.append("SIM 国家与 MCC 对照：未知（数据库只支持部分 MCC）\n");
+        }
         report.append("当前蜂窝网络国家：")
                 .append(LabSimAttribution.country(value(() -> tm.getNetworkCountryIso())))
                 .append("\n");
@@ -189,15 +200,34 @@ public final class LabSimAttributionActivity extends AppCompatActivity {
                 report.append("\n未发现可读取的活跃卡槽；可能无 SIM、eSIM 未启用或系统限制。");
             } else {
                 report.append("\n活跃 SIM / eSIM 数量：").append(active.size()).append("\n");
+                int defaultData = SubscriptionManager.getDefaultDataSubscriptionId();
+                int defaultVoice = SubscriptionManager.getDefaultVoiceSubscriptionId();
+                report.append("以下各卡槽单独读取，避免把不同卡的属性混用：\n");
                 for (SubscriptionInfo info : active) {
                     int slot = info.getSimSlotIndex();
+                    TelephonyManager perCard = tm.createForSubscriptionId(
+                            info.getSubscriptionId());
+                    String perIso = value(() -> perCard.getSimCountryIso());
+                    String perSimMcc = value(() -> perCard.getSimOperator());
                     report.append("\n卡槽 ").append(slot < 0 ? "未知" : (slot + 1))
-                            .append("：")
+                            .append(" [默认流量卡=")
+                            .append(info.getSubscriptionId() == defaultData ? "是" : "否")
+                            .append("，默认通话卡=")
+                            .append(info.getSubscriptionId() == defaultVoice ? "是" : "否")
+                            .append("]：")
                             .append(safe(info.getCarrierName() == null
                                     ? "" : info.getCarrierName().toString()))
                             .append("\n  发卡国家：")
                             .append(LabSimAttribution.country(info.getCountryIso()))
-                            .append("\n  MCC/MNC：")
+                            .append("\n  系统 SIM ISO / MCCMNC：")
+                            .append(safe(perIso)).append(" / ").append(safe(perSimMcc))
+                            .append("\n  SIM 字段一致性：")
+                            .append(LabCarrierConsistency.check(perIso, perSimMcc))
+                            .append("\n  当前注册蜂窝网络：")
+                            .append(safe(value(() -> perCard.getNetworkCountryIso())))
+                            .append(" / ")
+                            .append(safe(value(() -> perCard.getNetworkOperator())))
+                            .append("\n  运营商订阅资料 MCC/MNC：")
                             .append(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
                                     ? safe(info.getMccString())
                                     : Integer.toString(info.getMcc()))
