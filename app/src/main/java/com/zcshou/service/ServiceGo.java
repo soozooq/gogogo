@@ -43,6 +43,7 @@ import com.zcshou.gogogo.MainActivity;
 import com.zcshou.gogogo.LabPolicyEngine;
 import com.zcshou.gogogo.LabProviderReliabilityController;
 import com.zcshou.gogogo.LabGmsPublishEvidence;
+import com.zcshou.gogogo.LabPublishPerformanceEvidence;
 import com.zcshou.gogogo.LabServiceLifecycleJournal;
 import com.zcshou.gogogo.LabServiceTeardownSequence;
 import com.zcshou.gogogo.LabRouteCheckpointStore;
@@ -221,6 +222,9 @@ public class ServiceGo extends Service {
     // The dispatch count means a Task was returned, NOT that delivery succeeded.
     private volatile long mGmsFusedDispatchCount = 0L;
     private final LabGmsPublishEvidence mGmsPublishEvidence = new LabGmsPublishEvidence();
+    // Lab 52: evidence only; does not adjust the 33ms sleep or mock providers.
+    private final LabPublishPerformanceEvidence mPublishPerformanceEvidence =
+            new LabPublishPerformanceEvidence();
     private volatile long mLastGmsFusedTaskSuccessElapsed = -1L;
     private volatile long mGpsPublishFailureCount = 0L;
     private volatile long mNetworkPublishFailureCount = 0L;
@@ -1397,6 +1401,7 @@ public class ServiceGo extends Service {
                     Thread.sleep(TICK_INTERVAL_MS);
 
                     if (!isStop) {
+                        mPublishPerformanceEvidence.onTick(SystemClock.elapsedRealtime());
                         advanceLabMotion();
                         sampleTrackIfNeeded(false);
                         sampleProvenanceIfNeeded();
@@ -2377,20 +2382,26 @@ public class ServiceGo extends Service {
                     mFusedClient.setMockLocation(loc);
             mGmsFusedDispatchCount++;
             mGmsPublishEvidence.onTaskReturned();
-            mLastGmsFusedDispatchElapsed = SystemClock.elapsedRealtime();
+            mPublishPerformanceEvidence.onTaskReturned();
+            final long taskReturnedElapsed = SystemClock.elapsedRealtime();
+            mLastGmsFusedDispatchElapsed = taskReturnedElapsed;
             try {
                 // Direct executor keeps high-frequency evidence callbacks off the UI
                 // queue. The recorder is synchronized and the callback does no I/O.
                 publishTask.addOnCompleteListener(Runnable::run, result -> {
                     boolean succeeded = result.isSuccessful();
+                    long completedElapsed = SystemClock.elapsedRealtime();
                     mGmsPublishEvidence.onTaskCompleted(succeeded);
+                    mPublishPerformanceEvidence.onTaskFinished(succeeded,
+                            taskReturnedElapsed, completedElapsed);
                     if (succeeded) {
-                        mLastGmsFusedTaskSuccessElapsed = SystemClock.elapsedRealtime();
+                        mLastGmsFusedTaskSuccessElapsed = completedElapsed;
                     }
                 });
             } catch (RuntimeException observerError) {
                 // A returned Task without a registered observer is UNKNOWN, not failed.
                 mGmsPublishEvidence.onCallbackUnavailable();
+                mPublishPerformanceEvidence.onCallbackUnavailable();
             }
         } catch (Throwable t) {
             // Do not log every tick; report synchronous failures as separate evidence.
@@ -2595,6 +2606,9 @@ public class ServiceGo extends Service {
         public long getGmsFusedDispatchCount() { return mGmsFusedDispatchCount; }
         public LabGmsPublishEvidence.Snapshot getGmsPublishEvidenceSnapshot() {
             return mGmsPublishEvidence.snapshot();
+        }
+        public LabPublishPerformanceEvidence.Snapshot getPublishPerformanceSnapshot() {
+            return mPublishPerformanceEvidence.snapshot();
         }
         public long getGmsFusedTaskSuccessAgeMs() {
             return ageMs(mLastGmsFusedTaskSuccessElapsed);
