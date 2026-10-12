@@ -30,6 +30,22 @@ public class LabCrossAppEvidenceTest {
         assertTrue(s.contains("[COORD_REDACTED]"));
     }
 
+    @Test public void meituanScreenshotIsDifferentFromNetworkWideFailure() {
+        assertEquals("美团首页 / 新增收货地址",
+                LabCrossAppEvidence.APPLICATIONS[LabCrossAppEvidence.MEITUAN_INDEX]);
+        String[] opts = LabCrossAppEvidence.observationOptions(
+                LabCrossAppEvidence.MEITUAN_INDEX);
+        assertTrue(opts[0].contains("地址列表提示网络不通畅"));
+        assertTrue(opts[0].contains("蓝点在模拟地区"));
+        String record = LabCrossAppEvidence.describe(
+                LabCrossAppEvidence.MEITUAN_INDEX, 0, true, "");
+        assertTrue(record.contains("美团"));
+        assertTrue(record.contains("城市栏仍是国内旧城市"));
+        assertTrue(record.contains("USER_REPORTED_NOT_SDK_PROVEN"));
+        assertTrue(LabCrossAppEvidence.vpnComparison(0).contains("VPN 开启和关闭"));
+        assertTrue(LabCrossAppEvidence.vpnComparison(-1).contains("UNKNOWN"));
+    }
+
     @Test public void noMisattributionOfPoiAndDot() {
         assertNotEquals(LabCrossAppEvidence.OBSERVATIONS[0],
                 LabCrossAppEvidence.OBSERVATIONS[2]);
