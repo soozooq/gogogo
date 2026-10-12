@@ -30,6 +30,7 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
 
     private TextView summaryView;
     private TextView providerView;
+    private TextView performanceView;
     private TextView publishedView;
     private TextView guidanceView;
 
@@ -121,6 +122,12 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
         providerView = GoGoUi.muted(this, "暂无数据");
         providerView.setTextIsSelectable(true);
         providerContent.addView(providerView, GoGoUi.matchWrap());
+        providerContent.addView(GoGoUi.gap(this, 12), GoGoUi.matchWrap());
+        providerContent.addView(GoGoUi.sectionTitle(this,
+                "Lab 52 · 循环节奏与 GMS 异步积压"), GoGoUi.matchWrap());
+        performanceView = GoGoUi.muted(this, "尚无本次 ServiceGo 性能观测");
+        performanceView.setTextIsSelectable(true);
+        providerContent.addView(performanceView, GoGoUi.matchWrap());
         GoGoUi.addCard(root, providerCard, 12);
 
         com.google.android.material.card.MaterialCardView publishedCard = GoGoUi.card(this);
@@ -158,6 +165,7 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
                     ? "ServiceGo 正在运行 · 正在重连"
                     : "ServiceGo 未运行");
             providerView.setText("请先开始模拟位置，再观察 provider 健康度。");
+            performanceView.setText("ServiceGo 未连接；循环间隔与 Task 积压 UNKNOWN。");
             publishedView.setText("无 Published Sample");
             return;
         }
@@ -220,6 +228,7 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
                 gms.callbackUnavailable, gms.synchronousFailure, age(gmsAge),
                 b.getProviderReliabilitySummary(),
                 b.getRouteRecoverySummary()));
+        performanceView.setText(b.getPublishPerformanceSnapshot().render());
 
         publishedView.setText(String.format(Locale.US,
                 "publish=%s\n"
