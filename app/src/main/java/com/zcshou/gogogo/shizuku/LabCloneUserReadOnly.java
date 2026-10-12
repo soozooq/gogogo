@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
  */
 public final class LabCloneUserReadOnly {
     public static final int MAX_QUERIED_USERS = 8;
-    private static final Pattern USER_ID = Pattern.compile("UserInfo\\{([0-9]{1,5}):");
+    private static final Pattern USER_ID = Pattern.compile("(?m)^\\s*UserInfo\\{([0-9]{1,5}):");
     private static final Pattern CURRENT_USER = Pattern.compile(
             "(?m)^\\s*(?:Current user:\\s*)?([0-9]{1,5})\\s*$");
 
