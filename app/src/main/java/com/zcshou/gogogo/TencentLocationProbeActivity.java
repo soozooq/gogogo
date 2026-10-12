@@ -72,6 +72,7 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
         super.onCreate(state);
         buildUi();
         sdkAvailable = usableKeyPresent();
+        refreshModeComparison();
         if (!sdkAvailable) {
             statusView.setText("SDK 已集成，但未配置有效的腾讯位置服务 Key。\n"
                     + "此包构建使用的 TencentMapSDK 配置可能是 DUMMY。\n"
@@ -110,7 +111,7 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
         root.addView(opts);
 
         LinearLayout line1 = GoGoUi.row(this);
-        line1.addView(GoGoUi.primaryButton(this, "腾讯单次 Fresh", v ->
+        line1.addView(GoGoUi.primaryButton(this, "腾讯单次定位", v ->
                 requestTencent(false)), GoGoUi.weighted());
         GoGoUi.addHorizontalGap(this, line1, 8);
         line1.addView(GoGoUi.secondaryButton(this, "腾讯持续回调", v ->
@@ -139,7 +140,7 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
                     refreshModeComparison();
                 }), GoGoUi.matchWrap());
         root.addView(GoGoUi.muted(this,
-                "手动组合上面的 GEO/POI 和允许缓存开关，每组点一次「腾讯单次 Fresh」。"
+                "手动组合上面的 GEO/POI 和允许缓存开关，每组点一次「腾讯单次定位」。"
                         + "仅对比本应用收到的结果；SDK Key 未配置时不产生假数据。"
                         + "关闭缓存是请求参数，并非缓存一定未命中的证明。"),
                 GoGoUi.matchWrap());
@@ -242,8 +243,8 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
                 ledgerStarted = true;
                 refreshModeComparison();
             }
-        evidenceTimeline.add(LabLocationEvidenceTimeline.Source.TENCENT,
-                LabLocationEvidenceTimeline.Stage.REQUEST, requestAtElapsedMs);
+            evidenceTimeline.add(LabLocationEvidenceTimeline.Source.TENCENT,
+                    LabLocationEvidenceTimeline.Stage.REQUEST, requestAtElapsedMs);
             requestLabel = (continuous ? "STREAM" : "SINGLE_FRESH")
                     + " / " + (requestedPoi ? "POI" : "GEO")
                     + " / cache=" + requestedCache;
