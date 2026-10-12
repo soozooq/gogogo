@@ -22,8 +22,8 @@ import java.util.Locale;
  * Lab 15 standard Android location compatibility observatory.
  *
  * This screen does not inspect or alter another application's internals. It only reports
- * whether GoGoGo is successfully publishing through the standard GPS, network, framework
- * fused and Google Play Services fused paths that location clients may use.
+ * GoGoGo's own framework submission results and Google Play Services Task outcomes.
+ * None of these counters proves another application received or used a location.
  */
 public class LocationCompatibilityActivity extends AppCompatActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -105,7 +105,7 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
         LinearLayout summaryContent = GoGoUi.cardContent(this);
         summaryCard.addView(summaryContent);
         summaryContent.addView(
-                GoGoUi.sectionTitle(this, "兼容状态"),
+                GoGoUi.sectionTitle(this, "标准位置链状态（非微信验收）"),
                 GoGoUi.matchWrap());
         summaryView = GoGoUi.status(this, "等待 ServiceGo…");
         summaryView.setTextSize(16);
@@ -116,7 +116,7 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
         LinearLayout providerContent = GoGoUi.cardContent(this);
         providerCard.addView(providerContent);
         providerContent.addView(
-                GoGoUi.sectionTitle(this, "Provider 发布链"),
+                GoGoUi.sectionTitle(this, "Provider 提交 / GMS Task 完成证据"),
                 GoGoUi.matchWrap());
         providerView = GoGoUi.muted(this, "暂无数据");
         providerView.setTextIsSelectable(true);
@@ -142,10 +142,9 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
                 GoGoUi.matchWrap());
         guidanceView = GoGoUi.muted(
                 this,
-                "这里仅验证 Android 标准位置接口是否持续发布。"
-                        + "如果微信使用 GPS、NETWORK、framework fused 或 GMS fused，"
-                        + "这些链路越完整，兼容覆盖就越好；如果客户端还有额外平台限制，"
-                        + "本页不会尝试绕过，只会把标准链状态显示出来。");
+                "本页只显示 GoGoGo 的标准定位接口提交与 GMS Task 完成情况。"
+                        + "只有 Consumer Matrix 才能验证本应用测试消费者实际收到的 fix；"
+                        + "微信是否使用相同来源、是否采用模拟位置，仍需单独实机验证。");
         guideContent.addView(guidanceView, GoGoUi.matchWrap());
         GoGoUi.addCard(root, guideCard, 12);
 
@@ -167,11 +166,14 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
         long netAge = b.getNetworkPublishAgeMs();
         long fusedAge = b.getFusedProviderPublishAgeMs();
         long gmsAge = b.getGmsFusedDispatchAgeMs();
+        long gmsAckAge = b.getGmsFusedTaskSuccessAgeMs();
+        LabGmsPublishEvidence.Snapshot gms = b.getGmsPublishEvidenceSnapshot();
 
         boolean gpsFresh = fresh(gpsAge);
         boolean netFresh = fresh(netAge);
         boolean fusedFresh = fresh(fusedAge);
-        boolean gmsFresh = b.isGmsFusedMockEnabled() && fresh(gmsAge);
+        // Recent FLP submission is not enough: require an observed successful Task.
+        boolean gmsFresh = b.isGmsFusedMockEnabled() && fresh(gmsAckAge);
 
         int primaryHealthy = 0;
         if (gpsFresh) primaryHealthy++;
@@ -186,23 +188,26 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
         } else if (!b.isPolicyPublishing()) {
             status = "PAUSED · Policy 当前停止发布位置";
         } else if (primaryHealthy >= 3) {
-            status = "GOOD · GPS / NETWORK / FUSED 覆盖完整";
+            status = "ACTIVE · 3 条标准发布链近期有响应（非消费者验证）";
         } else if (primaryHealthy == 2) {
-            status = "PARTIAL · 两条主要位置链活跃";
+            status = "PARTIAL · 两条发布链近期有响应（非消费者验证）";
         } else {
-            status = "DEGRADED · 标准位置链覆盖不足";
+            status = "DEGRADED · 发布链响应不足或未经确认";
         }
 
         summaryView.setText(status);
 
         providerView.setText(String.format(Locale.US,
-                "GPS provider: %s · age %s · ok %d · fail %d\n"
-                        + "NETWORK provider: %s · age %s · ok %d · fail %d\n"
-                        + "Framework FUSED: %s · age %s · ok %d · fail %d\n"
-                        + "GMS Fused mock: %s · age %s · dispatch %d\n\n"
-                        + "Provider lifecycle: %s\n"
-                        + "Route recovery: %s\n\n"
-                        + "参考：GoGoGo tick ≈ 33 ms。age 长时间明显大于 500 ms 才值得重点排查。",
+                "GPS provider: %s · submit age %s · returned %d · failed %d\\n"
+                        + "NETWORK provider: %s · submit age %s · returned %d · failed %d\\n"
+                        + "Framework FUSED: %s · submit age %s · returned %d · failed %d\\n"
+                        + "GMS FLP mock: %s · last Task OK age %s\\n"
+                        + "  Task returned %d · OK %d · failed %d · pending %d\\n"
+                        + "  callback unknown %d · sync exception %d · last submit age %s\\n\\n"
+                        + "Provider lifecycle: %s\\n"
+                        + "Route recovery: %s\\n\\n"
+                        + "注：33 ms 是计划 tick 间隔，不是 Task 成功率。"
+                        + "即使 GMS Task OK，也不代表微信/第三方消费者使用了这条位置。",
                 enabled(b.isGpsProviderEnabled()), age(gpsAge),
                 b.getGpsPublishCount(), b.getGpsPublishFailureCount(),
                 enabled(b.isNetworkProviderEnabled()), age(netAge),
@@ -210,8 +215,9 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
                 enabled(b.isFusedProviderEnabled()), age(fusedAge),
                 b.getFusedProviderPublishCount(), b.getFusedProviderPublishFailureCount(),
                 b.isGmsFusedMockEnabled() ? "ENABLED" : "UNAVAILABLE",
-                age(gmsAge),
-                b.getGmsFusedDispatchCount(),
+                age(gmsAckAge),
+                gms.submitted, gms.taskSucceeded, gms.taskFailed, gms.pending,
+                gms.callbackUnavailable, gms.synchronousFailure, age(gmsAge),
                 b.getProviderReliabilitySummary(),
                 b.getRouteRecoverySummary()));
 
@@ -239,13 +245,14 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
                             + "如果开发者选项里取消过“模拟位置信息应用”，请重新选择 GoGoGo 后再观察。");
         } else if (primaryHealthy >= 3) {
             guidanceView.setText(
-                    "标准 Android 位置发布链目前完整。Provider Reclaimer 也没有发现孤儿状态。"
-                            + "这代表 GoGoGo 已经把 GPS / NETWORK / FUSED 兼容面尽量铺满；"
-                            + "如果微信仍然拿不到，问题就不再是某一条 provider 没有持续发布。");
+                    "GoGoGo 的标准位置提交近期有响应，且未报告孤儿 Provider。"
+                            + "这不能证明 Consumer Matrix 或微信收到了新鲜位置。"
+                            + "下一步应检查自有消费者的 fixAge/isMock，并独立对照微信页面。");
         } else if (!gmsFresh && !fusedFresh) {
             guidanceView.setText(
-                    "当前 FUSED 路径不完整。部分客户端会优先使用融合定位；"
-                            + "先观察 GMS 是否可用，以及 framework FUSED 是否能建立 test provider。");
+                    "尚无近期 FUSED Task 成功或 Framework FUSED 提交。"
+                            + "请区分 GMS Task pending/failed 和 Framework Provider 提交状态；"
+                            + "不要把提交计数作为微信成功的证明。");
         } else {
             guidanceView.setText(
                     "有标准 provider 的发布 age 偏大或不可用。"
