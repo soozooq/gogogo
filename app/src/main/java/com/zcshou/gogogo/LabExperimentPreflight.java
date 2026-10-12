@@ -56,6 +56,12 @@ public final class LabExperimentPreflight {
         root.addView(GoGoUi.secondaryButton(activity, "刷新模拟与微信状态",
                 v -> refresh()), GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(activity, 6));
+        root.addView(GoGoUi.secondaryButton(activity, "检查微信后台进程（Shizuku 只读）",
+                v -> activity.startActivity(
+                        new Intent(activity, LabDiagnosticsActivity.class)
+                                .putExtra(LabDiagnosticsActivity.EXTRA_WECHAT_PROCESS_SNAPSHOT, true))),
+                GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(activity, 6));
         root.addView(GoGoUi.secondaryButton(activity, "打开主微信应用详情（手动强停）",
                 v -> openSettings(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                         Uri.parse("package:" + WECHAT_PACKAGE)))), GoGoUi.matchWrap());
@@ -65,8 +71,10 @@ public final class LabExperimentPreflight {
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(activity, 8));
         root.addView(GoGoUi.muted(activity,
-                "说明：主微信的 FLAG_STOPPED 不是进程列表；vivo 分身可能在不可访问的其他用户空间。"
-                        + "刷新状态不等于强停操作。不要关闭分身或清除应用数据。"),
+                "说明：FLAG_STOPPED 是当前用户的包状态，不是进程是否存活。"
+                        + "Shizuku 只读快照可显示当时可见的微信主进程/子进程，"
+                        + "但不能仅凭进程名可靠区分主号和 vivo 分身；系统强停按钮能否再次点击不作依据。"
+                        + "不要关闭分身或清除应用数据。"),
                 GoGoUi.matchWrap());
     }
 
@@ -77,7 +85,7 @@ public final class LabExperimentPreflight {
     public void refresh() {
         final int generation = ++refreshGeneration;
         serviceStatus.setText("模拟服务：读取主进程状态中…");
-        weChatStatus.setText("主微信：查询系统 stopped 标记中…");
+        weChatStatus.setText("主微信包状态：查询 stopped 标记中（非后台进程）…");
         cloneStatus.setText("vivo 分身：查询可见配置中…");
         // A cold content-provider bind can start the app's main process.
         // Never perform that Binder call on the UI thread.
@@ -89,7 +97,7 @@ public final class LabExperimentPreflight {
                 if (generation != refreshGeneration || activity.isFinishing()
                         || activity.isDestroyed()) return;
                 serviceStatus.setText("模拟服务：" + LabExperimentStatusText.serviceFlag(running));
-                weChatStatus.setText("主微信：" + LabExperimentStatusText.weChatStopped(stopped));
+                weChatStatus.setText("主微信包状态：" + LabExperimentStatusText.weChatStopped(stopped));
                 cloneStatus.setText("vivo 分身：" + clone);
             });
         }, "GoGoGo-ExperimentPreflight").start();
