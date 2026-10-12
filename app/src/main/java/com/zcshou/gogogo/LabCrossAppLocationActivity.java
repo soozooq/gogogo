@@ -39,7 +39,8 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
     private static final int MAX_REPORT = 56000;
     private static final String[] PACKAGES = {
             "com.ss.android.ugc.aweme", "com.autonavi.minimap",
-            "com.tencent.mm", "com.tencent.map"
+            "com.tencent.mm", "com.tencent.map",
+            "com.sankuai.meituan"
     };
 
     private final StringBuilder total = new StringBuilder();
@@ -48,6 +49,7 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
     private EditText observationNote;
     private int appIndex = 0;
     private int observationIndex = -1; // Never preselect a user-observed outcome.
+    private int meituanVpnIndex = -1; // Multiple network states require human verification.
     private int generation;
     private boolean started;
     private boolean awaitingReturn;
@@ -97,7 +99,7 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.heroTitle(this, "跨应用定位来源对照"), GoGoUi.matchWrap());
         root.addView(GoGoUi.subtitle(this,
-                "高德、抖音、微信、腾讯地图 · 时间戳 + 被动缓存 + 人工观察"),
+                "高德、抖音、微信、腾讯地图、美团 · 时间戳 + 被动缓存 + 人工观察"),
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 12));
         com.google.android.material.card.MaterialCardView card = GoGoUi.card(this);
@@ -117,12 +119,17 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
                 v -> new AlertDialog.Builder(this)
                         .setTitle("本轮观察哪一个应用？")
                         .setSingleChoiceItems(LabCrossAppEvidence.APPLICATIONS, appIndex,
-                                (d, index) -> {appIndex = index; d.dismiss();
-                                    render("已选择：" + LabCrossAppEvidence.APPLICATIONS[appIndex]);})
+                                (d, index) -> {
+                                    appIndex = index;
+                                    observationIndex = -1;
+                                    meituanVpnIndex = -1;
+                                    d.dismiss();
+                                    render("已选择：" + LabCrossAppEvidence.APPLICATIONS[appIndex]);
+                                })
                         .setNegativeButton("取消", (d, w) -> {}).show()), GoGoUi.matchWrap());
         body.addView(GoGoUi.secondaryButton(this, "② 开始本轮并读取 BEFORE 被动快照",
                 v -> beginRound()), GoGoUi.matchWrap());
-        body.addView(GoGoUi.secondaryButton(this, "③ 打开目标应用 · 观察蓝点与附近地点",
+        body.addView(GoGoUi.secondaryButton(this, "③ 打开目标应用 · 观察蓝点 / POI / 地址功能",
                 v -> openExternalApp()), GoGoUi.matchWrap());
         body.addView(GoGoUi.secondaryButton(this, "④ 返回后补拍 / 确认 AFTER",
                 v -> {
@@ -141,16 +148,37 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
                     render("AFTER 快照已记录；下一步保存人工观察");
                 }), GoGoUi.matchWrap());
         body.addView(GoGoUi.gap(this, 9));
-        body.addView(GoGoUi.secondaryButton(this, "⑤ 选择蓝点与附近地点的观察结果",
+        body.addView(GoGoUi.secondaryButton(this, "⑤ 选择界面观察结果（地图/地址）",
                 v -> new AlertDialog.Builder(this)
-                        .setTitle("你观察到的界面结果")
-                        .setSingleChoiceItems(LabCrossAppEvidence.OBSERVATIONS,
+                        .setTitle(appIndex == LabCrossAppEvidence.MEITUAN_INDEX
+                                ? "美团：蓝点、城市栏和地址服务" : "蓝点与附近地点")
+                        .setSingleChoiceItems(LabCrossAppEvidence.observationOptions(appIndex),
                                 observationIndex, (d, idx) -> {
-                                    observationIndex=idx;
+                                    observationIndex = idx;
                                     d.dismiss();
-                                    render("观察选项：" + LabCrossAppEvidence.OBSERVATIONS[idx]);
+                                    render("观察选项："
+                                            + LabCrossAppEvidence.observationOptions(appIndex)[idx]);
                                 })
                         .setNegativeButton("取消", (d,w)->{}).show()), GoGoUi.matchWrap());
+        body.addView(GoGoUi.secondaryButton(this, "美团专项：VPN 开/关时地址结果（可跳过）",
+                v -> {
+                    if (appIndex != LabCrossAppEvidence.MEITUAN_INDEX) {
+                        Toast.makeText(this, "这一项仅用于美团新增地址实验",
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    new AlertDialog.Builder(this)
+                            .setTitle("不同 VPN 状态是否真正做过对照？")
+                            .setSingleChoiceItems(LabCrossAppEvidence.MEITUAN_VPN_OUTCOMES,
+                                    meituanVpnIndex, (d, choice) -> {
+                                        meituanVpnIndex = choice;
+                                        d.dismiss();
+                                        render("VPN 观察："
+                                                + LabCrossAppEvidence.vpnComparison(choice));
+                                    })
+                            .setNegativeButton("取消", (d,w)->{})
+                            .show();
+                }), GoGoUi.matchWrap());
         observationNote = new EditText(this);
         observationNote.setHint("可选备注：仅填写模糊现象，不要填写真实地址或精确坐标");
         observationNote.setMaxLines(3);
@@ -213,6 +241,7 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
         leftOurActivity = false;
         returnedSnapshot = false;
         observationIndex = -1;
+        meituanVpnIndex = -1;
         sessionStartWall = System.currentTimeMillis();
         sessionStartElapsed = SystemClock.elapsedRealtime();
         generation++;
@@ -270,6 +299,12 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
         append("HUMAN_OBSERVATION at=" + clock() + " elapsed_s=" + sinceStartSeconds()
                 + "\n" + LabCrossAppEvidence.describe(appIndex, observationIndex,
                 leftOurActivity, observationNote.getText().toString())
+                + (appIndex == LabCrossAppEvidence.MEITUAN_INDEX
+                    ? "\nmeituan_vpn_outcome="
+                            + LabCrossAppEvidence.vpnComparison(meituanVpnIndex)
+                            + "\nmeituan_address_api_status=NOT_ACCESSIBLE_FROM_OUR_APP"
+                            + "\nwarning=MAP_TILES_LOADING_NOT_PROOF_ADDRESS_API_WORKS"
+                    : "")
                 + "\nCAUTION=cannot_distinguish_cache_sdk_source_or_mock_rejection_without_more_evidence"
                 + "\nEND_ROUND");
         getSharedPreferences(PREFS, MODE_PRIVATE).edit()
