@@ -5,6 +5,10 @@
     <queries>
         <package android:name="moe.shizuku.privileged.api" />
         <package android:name="com.tencent.mm" />
+        <!-- Only for opening the user-selected app in a manual location comparison. -->
+        <package android:name="com.ss.android.ugc.aweme" />
+        <package android:name="com.autonavi.minimap" />
+        <package android:name="com.tencent.map" />
     </queries>
 
     <!-- Android Q 新增的权限。允许用户授予对两个不同范围的位置访问权限：在使用中（仅限前景）或始终（前景和后台） -->
