@@ -43,8 +43,6 @@ import java.util.concurrent.Executors;
 public final class LabPrivacyAuditActivity extends AppCompatActivity {
     private static final String IPV4_CHECK = "https://api4.ipify.org?format=json";
     private static final String IPV6_CHECK = "https://api6.ipify.org?format=json";
-    private static final String COUNTRY_CHECK =
-            "https://ipwho.is/?fields=success,country_code";
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private TextView status;
     private TextView local;
@@ -99,8 +97,9 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
         probeBody.addView(GoGoUi.sectionTitle(this, "自愿联网验证"), GoGoUi.matchWrap());
         probeBody.addView(GoGoUi.muted(this,
                 "点击后才向 api4.ipify.org、api6.ipify.org 和 ipwho.is"
-                        + " 发起 HTTPS 请求。这些服务会看到请求的公网出口 IP。"
-                        + " 本应用只保留协议连通性与粗略国家代码，不保存或复制 IP 地址。"
+                        + " 发起 HTTPS 请求，后者会核对两个公网出口 IP 的国家。"
+                        + " 这些服务会看到请求的公网出口 IP，ipwho.is 会收到两个出口地址。"
+                        + " 本应用只保留连通性及国家代码，不保存或复制 IP 地址。"
                         + " 仅测试 GoGoGo，不代表 Claude、微信或浏览器使用同一出口。"),
                 GoGoUi.matchWrap());
         status = GoGoUi.muted(this, "尚未开始联网检测");
@@ -113,9 +112,10 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
                 "确认联网检测 IPv4 / IPv6 / 出口国家",
                 v -> new AlertDialog.Builder(this)
                         .setTitle("进行第三方出口测试？")
-                        .setMessage("服务提供商会看到本次请求的出口 IP。"
-                                + "只有在 GoGoGo 默认网络明确显示 VPN 时才会执行。"
-                                + "不会保存 IP，无法检查 Claude 或浏览器是否分流。")
+                        .setMessage("ipify 会看到请求出口 IP；ipwho.is 会收到"
+                                + " IPv4/IPv6 出口地址用于归属国家查询。"
+                                + "仅在 GoGoGo 默认网络确认 VPN 时执行，"
+                                + "不保存 IP，也不能检查 Claude 或浏览器是否分流。")
                         .setNegativeButton("取消", (d, w) -> {})
                         .setPositiveButton("同意并检测", (d, w) -> startProbes())
                         .show()), GoGoUi.matchWrap());
@@ -267,9 +267,8 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
         running = true;
         status.setText("正在检查本应用 VPN 上的公网 IPv4 / IPv6 出口…");
         executor.execute(() -> {
-            String v4 = readFamily(current, IPV4_CHECK, false);
-            String v6 = readFamily(current, IPV6_CHECK, true);
-            String country = readCountry(current);
+            String[] v4 = readFamily(current, IPV4_CHECK, false);
+            String[] v6 = readFamily(current, IPV6_CHECK, true);
             runOnUiThread(() -> {
                 if (closing) return;
                 running = false;
@@ -280,9 +279,10 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
                         || !currentCaps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
                     latestExternal = "VPN 在检测过程中变化，全部结果已作废；请重新检测。";
                 } else {
-                    latestExternal = "IPv4 HTTPS 出口：" + v4
-                            + "\nIPv6 HTTPS 出口：" + v6
-                            + "\nGoGoGo VPN 出口粗略国家代码：" + country
+                    latestExternal = "IPv4 HTTPS 出口：" + v4[0] + " · 国家=" + v4[1]
+                            + "\nIPv6 HTTPS 出口：" + v6[0] + " · 国家=" + v6[1]
+                            + "\n双栈国家对照：" + LabPrivacyAuditRules.familyCountryComparison(
+                                    v4[1], v6[1])
                             + "\n仅针对本应用，其他应用/WebRTC/DNS泄露仍未验证。"
                             + "\n测试未存储任何 IP 地址。";
                 }
@@ -293,27 +293,35 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
         });
     }
 
-    private static String readFamily(Network network, String endpoint, boolean ipv6) {
+    private static String[] readFamily(Network network, String endpoint, boolean ipv6) {
         try {
             JSONObject result = new JSONObject(fetch(network, endpoint));
-            String ip = result.optString("ip", "");
-            if (ipv6) return ip.contains(":") ? "REACHABLE (IPv6)"
-                    : "UNKNOWN/UNEXPECTED_FAMILY";
-            return ip.matches("[0-9.]{7,15}") && ip.contains(".")
-                    ? "REACHABLE (IPv4)" : "UNKNOWN/UNEXPECTED_FAMILY";
+            String ip = result.optString("ip", "").trim();
+            boolean valid = ipv6
+                    ? ip.contains(":") && ip.matches("[0-9a-fA-F:.]{3,45}")
+                    : ip.matches("[0-9.]{7,15}") && ip.contains(".");
+            if (!valid) return new String[]{"UNKNOWN/UNEXPECTED_FAMILY", "UNKNOWN"};
+            return new String[]{
+                    ipv6 ? "REACHABLE (IPv6)" : "REACHABLE (IPv4)",
+                    readIpCountry(network, ip)
+            };
         } catch (Exception unavailable) {
-            return "FAILED/UNREACHABLE/PROXY_BLOCKED (not proof of no leakage)";
+            return new String[]{"FAILED/UNREACHABLE/PROXY_BLOCKED (not proof of no leakage)",
+                    "UNKNOWN"};
         }
     }
 
-    private static String readCountry(Network network) {
+    private static String readIpCountry(Network network, String validatedIp) {
         try {
-            JSONObject result = new JSONObject(fetch(network, COUNTRY_CHECK));
-            if (!result.optBoolean("success", false)) return "UNKNOWN/API_UNAVAILABLE";
+            // This explicit optional lookup discloses the exit IP to ipwho.is.
+            // Never write the IP to logs, UI or the copied summary.
+            JSONObject result = new JSONObject(fetch(network,
+                    "https://ipwho.is/" + validatedIp + "?fields=success,country_code"));
+            if (!result.optBoolean("success", false)) return "UNKNOWN";
             String code = result.optString("country_code", "");
             return code.matches("[A-Z]{2}") ? code : "UNKNOWN";
         } catch (Exception unavailable) {
-            return "UNKNOWN/REQUEST_FAILED";
+            return "UNKNOWN";
         }
     }
 
@@ -342,11 +350,15 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
 
     private void refreshReport() {
         String localText = local == null ? "UNKNOWN" : local.getText().toString();
+        String sanitized = localText
+                .replaceAll("手机系统时区：[^\\n]*", "手机系统时区：[已脱敏]")
+                .replaceAll("已保存 VPN 时区：[^\\n]*", "已保存 VPN 时区：[已脱敏]")
+                .replaceAll("手机语言/地区设置：[^\\n]*", "手机语言/地区设置：[已脱敏]");
         String egress = latestExternal == null ? "NOT_TESTED" : latestExternal;
         report = "GOGOGO_PRIVACY_AUDIT_V1\n"
                 + "scope=GoGoGo-default-network-only\n"
                 + "network_snapshot=READ_ONLY\n"
-                + localText + "\nEXTERNAL_OPTIONAL\n" + egress
+                + sanitized + "\nEXTERNAL_OPTIONAL\n" + egress
                 + "\nWEBRTC=NOT_VERIFIED_FOR_EXTERNAL_BROWSER\n"
                 + "DNS_LEAK=NOT_VERIFIED_FOR_EXTERNAL_BROWSER\n"
                 + "THIRD_PARTY_APP_ROUTING=UNKNOWN\n"
