@@ -97,6 +97,8 @@ public final class LabTencentModeComparison {
                             : o.poiCount < 0 ? "UNKNOWN" : Integer.toString(o.poiCount))
                     .append('\n');
         }
+        out.append("GEO cache OFF/ON: ").append(pairComparison(0, 1)).append('\\n');
+        out.append("POI cache OFF/ON: ").append(pairComparison(2, 3)).append('\\n');
         out.append("SDK_KEY=").append(sdkKeyConfigured
                 ? "PRESENT_NOT_VALIDATED" : "UNAVAILABLE").append('\n');
         out.append("注意：这是本应用单次请求的最后一次观测；allowCache 是请求偏好，"
@@ -104,6 +106,17 @@ public final class LabTencentModeComparison {
                 + "GEO/POI 请求及 SDK 返回的地点详情可能不同，"
                 + "结果不能证明微信采用相同定位。");
         return out.toString();
+    }
+
+    /** Descriptive only. Equal age buckets do not establish a cache hit. */
+    private String pairComparison(int off, int on) {
+        Observation a = slots[off], b = slots[on];
+        if (a.state != State.FIX_VALID || b.state != State.FIX_VALID) {
+            return "INCOMPLETE_OR_NONVALID";
+        }
+        return a.ageClass.equals(b.ageClass)
+                ? "SAME_ESTIMATED_AGE_BUCKET_NOT_CACHE_PROOF"
+                : "DIFFERENT_ESTIMATED_AGE_BUCKET_NOT_CAUSAL";
     }
 
     private static String ageClass(long wallAgeMs) {
