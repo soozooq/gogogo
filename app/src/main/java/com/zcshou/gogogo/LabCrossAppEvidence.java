@@ -25,6 +25,12 @@ public final class LabCrossAppEvidence {
                 ? OBSERVATIONS[observedIndex] : "UNKNOWN";
         String cleaned = note == null ? "" : note.trim()
                 .replace('\n', ' ').replace('\r', ' ');
+        // Optional user note is not a location source. Redact likely phone
+        // numbers, high-precision lat/lon and email before local aggregation.
+        cleaned = cleaned.replaceAll("[-+]?\\d{1,3}\\.\\d{4,}", "[COORD_REDACTED]")
+                .replaceAll("(?<!\\d)\\d{7,}(?!\\d)", "[NUMBER_REDACTED]")
+                .replaceAll("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}",
+                        "[EMAIL_REDACTED]");
         if (cleaned.length() > 240) cleaned = cleaned.substring(0, 240) + "…";
         return "app=" + app + "\nopened_by_user=" + appOpened
                 + "\nvisual_observation=" + observed
