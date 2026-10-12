@@ -293,6 +293,11 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
         append("PASSIVE_" + phase + " at=" + clock()
                 + "\nelapsed_s=" + sinceStartSeconds()
                 + "\nreads=getLastKnownLocation_GPS_NETWORK,GMS_getLastLocation_only");
+        // An independent read-only transport/telephony snapshot is captured
+        // even without location permission, so Ethernet-vs-cellular evidence
+        // is not lost when GPS/GMS cannot be read.
+        append("NETWORK_RADIO_" + phase + "\n"
+                + LabCellularEthernetSnapshot.capture(this));
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED
                 && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION)
