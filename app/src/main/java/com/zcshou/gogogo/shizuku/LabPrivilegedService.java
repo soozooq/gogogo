@@ -137,9 +137,9 @@ public class LabPrivilegedService extends ILabPrivilegedService.Stub {
                     users, verboseRaw, packageChecks);
         } catch (Throwable error) {
             // Never expose raw command stdout, user names or exception messages.
-            return "Lab 50 · 只读诊断 UNKNOWN\\n"
-                    + "USER_ENUMERATION=UNKNOWN\\n"
-                    + "WECHAT_FORCE_STOP=NOT_CHECKED\\n"
+            return "Lab 50 · 只读诊断 UNKNOWN\n"
+                    + "USER_ENUMERATION=UNKNOWN\n"
+                    + "WECHAT_FORCE_STOP=NOT_CHECKED\n"
                     + "没有执行用户/应用数据修改。";
         }
     }
