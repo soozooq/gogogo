@@ -153,7 +153,7 @@ public final class LabPublishPerformanceEvidence {
                     + "tick=%d · 有效间隔=%d · 最大间隔=%dms · >50ms=%d · >100ms=%d\n"
                     + "GMS Task returned=%d · finished=%d · failed=%d · unknown=%d\n"
                     + "pending=%d · peakPending=%d\n"
-                    + "Task 端到端完成耗时平均=%s ms · 最大=%dms · >100ms=%d\n"
+                    + "Task 返回→完成回调耗时平均=%s ms · 最大=%dms · >100ms=%d\n"
                     + "CLOCK_INVALID=%d · UNMATCHED_CALLBACK=%d\n"
                     + "注意：仅为本服务内部定时数据，不能证明第三方消费者收到位置；"
                     + "也不能据此声称 1Hz/5Hz/30Hz 哪种更兼容。",
