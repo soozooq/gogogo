@@ -47,7 +47,7 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
     private TextView reportView;
     private EditText observationNote;
     private int appIndex = 0;
-    private int observationIndex = 0;
+    private int observationIndex = -1; // Never preselect a user-observed outcome.
     private int generation;
     private boolean started;
     private boolean awaitingReturn;
@@ -212,6 +212,7 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
         awaitingReturn = false;
         leftOurActivity = false;
         returnedSnapshot = false;
+        observationIndex = -1;
         sessionStartWall = System.currentTimeMillis();
         sessionStartElapsed = SystemClock.elapsedRealtime();
         generation++;
@@ -258,6 +259,11 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
         }
         if (!returnedSnapshot) {
             Toast.makeText(this, "需要先打开应用并返回，或明确手动拍 AFTER",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (observationIndex < 0) {
+            Toast.makeText(this, "请先选择你实际观察到的蓝点和 POI 结果",
                     Toast.LENGTH_LONG).show();
             return;
         }
