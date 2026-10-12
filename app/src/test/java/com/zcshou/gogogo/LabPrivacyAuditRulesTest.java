@@ -14,6 +14,16 @@ public class LabPrivacyAuditRulesTest {
         assertEquals("NOT_REACHABLE_OR_BLOCKED_OR_FAILED",
                 LabPrivacyAuditRules.familyState(true, false));
     }
+    @Test public void twoFamiliesMustAgreeBeforeClaimingSameEgressCountry() {
+        assertTrue(LabPrivacyAuditRules.familyCountryComparison("US", "US")
+                .startsWith("CONSISTENT"));
+        assertTrue(LabPrivacyAuditRules.familyCountryComparison("US", "CN")
+                .startsWith("INCONSISTENT"));
+        assertTrue(LabPrivacyAuditRules.familyCountryComparison("US", "UNKNOWN")
+                .startsWith("UNKNOWN"));
+        assertTrue(LabPrivacyAuditRules.familyCountryComparison("US", "US")
+                .contains("不能证明"));
+    }
     @Test public void timezoneDifferenceNotProofOfLocationLeak() {
         String different = LabPrivacyAuditRules.comparison(
                 "Asia/Shanghai", "America/Los_Angeles", true);
