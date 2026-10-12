@@ -126,13 +126,15 @@ A：经过测试，影梭可以在鸿蒙系统上正常运行。
 
 Q：为何在微信等腾讯系应用上定位不起作用？
 
-A：v1.12.3 之前（百度 SDK 版本）依赖百度 LocationClient 在 `:remote` 进程持续订阅 Provider 间接保活，迁移到腾讯 SDK 后该机制丢失，导致 Android 12+ 上 Provider 进入低功耗状态，微信小程序通过 `getLastKnownLocation` 读不到 mock 数据。**新版本已通过下面三条独立路径修复**：(1) ServiceGo 中持久 LocationListener 保活，(2) 加 `LocationManager.FUSED_PROVIDER` 的 test provider (Android 12+)，(3) 调 `FusedLocationProviderClient.setMockMode + setMockLocation` 覆盖 GMS 路径。详见 [腾讯地图 SDK 迁移说明](#腾讯地图-sdk-迁移说明-v1123) 章节。仍然失效的少数 app（部分打车/银行/校园运动类）会主动检查 `Location.isMock()` 标记，**非 ROOT 设备无法绕过**。
+A：**目前没有经实机验证的通用微信兼容修复。** 本 Fork 尝试标准 Android GPS / NETWORK / Framework FUSED 测试 Provider，以及 Google Play services FLP Mock；不同手机、SDK 和业务页面可能使用不同定位来源、旧缓存或独立服务。即使 GoGoGo 调用成功、GMS Task 成功，也不能证明微信实际接收并采用了位置。2026-10-12 Lab 48 起诊断页将 GMS Task 提交与异步成功/失败分开报告。请在合法自有设备上进行消费者对照验证；不要根据模拟 App 按钮、发布次数或单个截图判断成功。研究说明见 [Lab 48](docs/lab48-gms-task-evidence.md)。
 
 Q：编译时 java 报错？
 
 A：Gradle 使用的 java 版本与 Android Studio 使用的不一致。Gradle 默认会在环境变量中搜索 JAVA_HOME 来确定 Java 位置。
 
 ## 腾讯地图 SDK 迁移说明 (v1.12.3+)
+
+> **研究审查说明（2026-10-12）**：本节保留历史设计记录，其中部分「微信一定使用某 API」「已经修复微信」属于当时的技术假设或描述，并非 vivo Android 13 双微信的验收结论。实际适配结果必须由目标设备和对应业务页面另行验证。
 
 &emsp;&emsp;v1.12.3 之前基于 **百度地图 + 百度定位 SDK**，新版迁移到 **腾讯地图 SDK 6.11.0**，使坐标系与微信小程序、腾讯地图、高德地图原生对齐（均为 GCJ02）。本节记录迁移涉及的所有技术细节，供后续维护参考。
 
@@ -193,7 +195,7 @@ WeChat / 高德 / 百度地图显示的点
 | `LocationManager.GPS_PROVIDER` test provider | 高德、百度地图、滴滴等绝大多数原生 app | `addTestProvider` + `setTestProviderLocation` |
 | `LocationManager.NETWORK_PROVIDER` test provider | 没 GPS 时的退路 | 同上 |
 | `LocationManager.FUSED_PROVIDER` test provider (Android 12+) | 部分新 app 直接读系统 fused | 能注就注，系统拒就跳过 |
-| `FusedLocationProviderClient` GMS API | **WeChat 小程序在 Android 12+ 走的就是这条** | `setMockMode(true)` + 每 tick `setMockLocation()`，没 GMS 静默跳过 |
+| `FusedLocationProviderClient` GMS API | 使用 Google Play services FLP 的消费者（微信是否使用未证实） | `setMockMode(true)` + `setMockLocation()`，Task 结果单独核验；无 GMS 则不可用 |
 
 &emsp;&emsp;`ServiceGo` 内 `HandlerThread` 以 **33ms (~30Hz)** 频率向上述所有通路 push 一次（旧版是 100ms）。tick 加密的目的是缩短"mock 过期"窗口，避免某些应用在两次 push 之间读到真实位置后漂移。
 
