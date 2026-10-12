@@ -129,6 +129,13 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
         performanceView.setTextIsSelectable(true);
         providerContent.addView(performanceView, GoGoUi.matchWrap());
         GoGoUi.addCard(root, providerCard, 12);
+        root.addView(GoGoUi.secondaryButton(this,
+                "分享 RC1 匿名验收摘要（不含坐标）", v -> shareRcAcceptance()),
+                GoGoUi.matchWrap());
+        root.addView(GoGoUi.muted(this,
+                "仅当你点击后打开系统分享选择；不会主动扫描微信、读取设备标识或刷新位置。"),
+                GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 8));
 
         com.google.android.material.card.MaterialCardView publishedCard = GoGoUi.card(this);
         LinearLayout publishedContent = GoGoUi.cardContent(this);
@@ -266,6 +273,37 @@ public class LocationCompatibilityActivity extends AppCompatActivity {
             guidanceView.setText(
                     "有标准 provider 的发布 age 偏大或不可用。"
                             + "继续保持本页打开几秒，确认问题是持续状态还是刚启动时的瞬态。");
+        }
+    }
+
+    /** Read-only local snapshot: no provider, GMS, Tencent or WeChat requests. */
+    private void shareRcAcceptance() {
+        ServiceGo.ServiceGoBinder b = binder;
+        LabReleaseAcceptanceSummary summary = LabReleaseAcceptanceSummary.unavailable();
+        if (b != null) {
+            try {
+                summary = LabReleaseAcceptanceSummary.observed(
+                        b.isPolicyPublishing(),
+                        b.getGpsPublishCount(), b.getGpsPublishFailureCount(),
+                        b.getNetworkPublishCount(), b.getNetworkPublishFailureCount(),
+                        b.getFusedProviderPublishCount(),
+                        b.getFusedProviderPublishFailureCount(),
+                        b.isGmsFusedMockEnabled(),
+                        b.getGmsPublishEvidenceSnapshot(),
+                        b.getPublishPerformanceSnapshot());
+            } catch (RuntimeException ignored) {
+                // A dying ServiceGo must not turn into a false-positive report.
+                summary = LabReleaseAcceptanceSummary.unavailable();
+            }
+        }
+        Intent send = new Intent(Intent.ACTION_SEND);
+        send.setType("text/plain");
+        send.putExtra(Intent.EXTRA_TEXT, summary.render());
+        try {
+            startActivity(Intent.createChooser(send, "主动分享匿名验收摘要"));
+        } catch (RuntimeException unavailable) {
+            guidanceView.setText("设备无法打开分享选择，请先检查系统分享功能。"
+                    + " 验收报告没有自动发送。");
         }
     }
 
