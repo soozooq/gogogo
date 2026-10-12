@@ -22,7 +22,8 @@ public final class LabCloneUserReadOnly {
 
     public static boolean commandSucceeded(String commandResult) {
         return commandResult != null
-                && commandResult.contains("[exit 0]");
+                && commandResult.trim().endsWith("[exit 0]")
+                && !commandResult.contains("output truncated");
     }
 
     public static Integer parseCurrentUser(String result) {
@@ -46,6 +47,8 @@ public final class LabCloneUserReadOnly {
     /** Only exact package match, with exit 0; permission errors remain UNKNOWN. */
     public static Boolean containsWeChat(String result) {
         if (!commandSucceeded(result)) return null;
+        if (result.contains("SecurityException") || result.contains("Permission denied")
+                || result.contains("Error:")) return null;
         for (String line : result.split("\n")) {
             if ("package:com.tencent.mm".equals(line.trim())) return Boolean.TRUE;
         }
@@ -90,7 +93,8 @@ public final class LabCloneUserReadOnly {
             }
         }
         out.append("ADDITIONAL_USER_COUNT=")
-                .append(userQuerySucceeded && currentUser != null ? otherFound : "UNKNOWN")
+                .append(userQuerySucceeded && currentUser != null
+                        ? Integer.toString(otherFound) : "UNKNOWN")
                 .append('\n');
         out.append("ADDITIONAL_USERS_CHECKED=").append(inspected).append('\n');
         out.append("ADDITIONAL_WECHAT=")
