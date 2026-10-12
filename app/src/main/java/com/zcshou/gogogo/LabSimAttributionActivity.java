@@ -20,8 +20,11 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
-import cn.lalaki.phone.location.PhoneLocation;
-import cn.lalaki.phone.location.PhoneLocation.PhoneInfo;
+import me.ihxq.projects.pna.PhoneNumberLookup;
+import me.ihxq.projects.pna.PhoneNumberInfo;
+import me.ihxq.projects.pna.Attribution;
+
+import java.util.Optional;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -37,6 +40,7 @@ public final class LabSimAttributionActivity extends AppCompatActivity {
     private TextView segmentResult;
     private EditText segmentInput;
     private final ExecutorService worker = Executors.newSingleThreadExecutor();
+    private volatile PhoneNumberLookup offlineLookup;
     private int generation;
 
     private final ActivityResultLauncher<String> permission =
@@ -228,14 +232,21 @@ public final class LabSimAttributionActivity extends AppCompatActivity {
         worker.execute(() -> {
             String output;
             try {
-                PhoneLocation.setTempDirectory(getCacheDir());
-                PhoneInfo info = PhoneLocation.queryPhoneInfo(segment);
-                if (info == null) {
+                PhoneNumberLookup lookup = offlineLookup;
+                if (lookup == null) {
+                    lookup = new PhoneNumberLookup();
+                    offlineLookup = lookup;
+                }
+                Optional<PhoneNumberInfo> found = lookup.lookup(segment);
+                if (!found.isPresent() || found.get().getAttribution() == null) {
                     output = "数据库未收录该号码段，不能推断开户城市。";
                 } else {
+                    PhoneNumberInfo info = found.get();
+                    Attribution cityInfo = info.getAttribution();
                     output = LabSimAttribution.displaySegmentResult(
-                            info.province(), info.city(), info.carrier(),
-                            String.valueOf(info.version()));
+                            cityInfo.getProvince(), cityInfo.getCity(),
+                            info.getIsp() == null ? "未知" : info.getIsp().getCnName(),
+                            "202502（内置离线库）");
                 }
             } catch (Throwable problem) {
                 output = "本地数据库暂不可用：" + problem.getClass().getSimpleName()
