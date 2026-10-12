@@ -83,7 +83,7 @@ public final class LabCellularEthernetSnapshot {
                 .append(",operator=").append(label(safe(() -> tm.getNetworkOperatorName())))
                 .append("\n");
         out.append("cellular_data_state=").append(dataState(tm))
-                .append(",mobile_data_switch=").append(bool(() -> tm.isDataEnabled()))
+                .append(",mobile_data_switch=").append(mobileDataSwitch(context, tm))
                 .append(",registered_roaming=").append(bool(() -> tm.isNetworkRoaming()))
                 .append("\n");
         WifiManager wifi = (WifiManager) context.getApplicationContext()
@@ -163,6 +163,20 @@ public final class LabCellularEthernetSnapshot {
         if (caps.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR)) out.append("CELLULAR+");
         if (out.length() == 0) return "OTHER_OR_UNKNOWN";
         return out.substring(0, out.length() - 1);
+    }
+
+    private static String mobileDataSwitch(Context context, TelephonyManager tm) {
+        if (context.checkSelfPermission(Manifest.permission.READ_PHONE_STATE)
+                != PackageManager.PERMISSION_GRANTED) {
+            return "UNKNOWN_READ_PHONE_STATE_NOT_GRANTED";
+        }
+        try {
+            return Boolean.toString(tm.isDataEnabled());
+        } catch (SecurityException denied) {
+            return "UNKNOWN_PERMISSION_DENIED";
+        } catch (RuntimeException unavailable) {
+            return "UNKNOWN_UNAVAILABLE";
+        }
     }
 
     private static String dataState(TelephonyManager tm) {
