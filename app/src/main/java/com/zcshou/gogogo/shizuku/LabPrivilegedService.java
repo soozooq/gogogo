@@ -6,6 +6,8 @@ import android.system.Os;
 import android.system.StructUtsname;
 
 import androidx.annotation.Keep;
+import com.zcshou.gogogo.LabWeChatProcessSummary;
+import com.zcshou.gogogo.LabVpnTimeZone;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -47,6 +49,82 @@ public class LabPrivilegedService extends ILabPrivilegedService.Stub {
         appendProbe(out, "$ id", new String[]{"id"});
         appendProbe(out, "$ cat /proc/self/status", new String[]{"cat", "/proc/self/status"});
         return trim(out);
+    }
+
+    /**
+     * Whitelisted, read-only process snapshot. No force-stop, cross-user
+     * mutation, app content access or installation lookup.
+     */
+    @Override
+    public String getWeChatProcessReport() {
+        Process process = null;
+        try {
+            process = new ProcessBuilder("ps", "-A", "-o", "USER,PID,NAME")
+                    .redirectErrorStream(true).start();
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (output.length() + line.length() > 128000) {
+                        process.destroyForcibly();
+                        return "系统进程列表超出安全长度，快照不完整（不可判断后台状态）";
+                    }
+                    output.append(line).append('\n');
+                }
+            }
+            if (!process.waitFor(3, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                return "系统进程查询超时，无法判断微信后台状态";
+            }
+            return LabWeChatProcessSummary.fromPs(output.toString(), process.exitValue() == 0);
+        } catch (Throwable unavailable) {
+            return "进程快照不可用：" + unavailable.getClass().getSimpleName()
+                    + "（不能认定微信已停止）";
+        } finally {
+            if (process != null) process.destroy();
+        }
+    }
+
+    /**
+     * Opt-in system-wide timezone action. Caller handles Shizuku consent and
+     * manual Android automatic-timezone setting. Never changes wall-clock
+     * milliseconds or system automatic-detection policy.
+     */
+    @Override
+    public String setSystemTimeZone(String ianaZone) {
+        if (!LabVpnTimeZone.valid(ianaZone)) return "INVALID_IANA_TIMEZONE";
+        Process child = null;
+        try {
+            // Fixed argv, no shell interpolation. Only recognized IANA zone IDs.
+            child = new ProcessBuilder("cmd", "alarm", "set-timezone", ianaZone)
+                    .redirectErrorStream(true).start();
+            if (!child.waitFor(5, TimeUnit.SECONDS)) {
+                child.destroyForcibly();
+                return "TIMEOUT: system timezone unchanged or unverified";
+            }
+            if (child.exitValue() != 0) {
+                return "UNAVAILABLE: cmd alarm exit=" + child.exitValue();
+            }
+            // cmd alarm success is not yet a proof that OEM kept the timezone.
+            Process verify = new ProcessBuilder("getprop", "persist.sys.timezone")
+                    .redirectErrorStream(true).start();
+            String observed = "";
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(verify.getInputStream(), StandardCharsets.UTF_8))) {
+                observed = reader.readLine();
+            }
+            if (!verify.waitFor(3, TimeUnit.SECONDS)) {
+                verify.destroyForcibly();
+                return "SENT_BUT_NOT_VERIFIED";
+            }
+            return ianaZone.equals(observed) ? "APPLIED:" + ianaZone
+                    : "SENT_BUT_NOT_VERIFIED";
+        } catch (Throwable t) {
+            return "UNAVAILABLE:" + t.getClass().getSimpleName();
+        } finally {
+            if (child != null) child.destroy();
+        }
     }
 
     @Override
