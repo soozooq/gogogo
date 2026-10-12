@@ -97,8 +97,8 @@ public final class LabTencentModeComparison {
                             : o.poiCount < 0 ? "UNKNOWN" : Integer.toString(o.poiCount))
                     .append('\n');
         }
-        out.append("GEO cache OFF/ON: ").append(pairComparison(0, 1)).append('\\n');
-        out.append("POI cache OFF/ON: ").append(pairComparison(2, 3)).append('\\n');
+        out.append("GEO cache OFF/ON: ").append(pairComparison(0, 1)).append((char) 10);
+        out.append("POI cache OFF/ON: ").append(pairComparison(2, 3)).append((char) 10);
         out.append("SDK_KEY=").append(sdkKeyConfigured
                 ? "PRESENT_NOT_VALIDATED" : "UNAVAILABLE").append('\n');
         out.append("注意：这是本应用单次请求的最后一次观测；allowCache 是请求偏好，"
