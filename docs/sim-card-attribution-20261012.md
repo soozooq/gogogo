@@ -13,7 +13,7 @@
 - 首页「常用入口」新增「手机卡归属地」独立页面，沿用 GoGoUi 现有样式，不与微信实验的自动任务混合。
 - 页面打开时可显示无需额外敏感授权能访问的 SIM 国家（ISO）、SIM 运营商、MCC/MNC、当前蜂窝网络国家/运营商、漫游标志；不足权限时清楚说明未知。
 - 点击「授权查看双卡 / eSIM 详情」才请求 `READ_PHONE_STATE`（manifest 早已有该权限，无新增权限）。然后显示每个 active subscription 的卡槽、运营商、发卡国家、MCC/MNC，**不读取 ICCID/IMSI/MSISDN、SIM 序列号、完整手机号码，也不自动触发短信/通话权限**。
-- 中国号码段归属地采用 `cn.lalaki:phone_location_android:1.2.1` (Maven Central, Android AAR, MIT metadata)，离线查询号码前 7 位。号码输入框限制 7 位，使用本地包内数据库查询；无网页 API 请求、无本地历史记录，不把输入加入共享诊断日志。
+- 中国号码段归属地采用 `cn.lalaki:phone_location_android:1.2.0` (Maven Central, Android AAR, MIT metadata)，离线查询号码前 7 位。号码输入框限制 7 位，使用本地包内数据库查询；无网页 API 请求、无本地历史记录，不把输入加入共享诊断日志。
 - 首次本地数据库加载可能在后台稍慢；查询在单线程执行，不阻塞主线程。Activity 销毁时清除输入框、忽略异步旧结果。
 - 数据库不是号码归属地“实时权威”，新号段可能未收录，某些号段运营商因携号转网变化不准确。没有数据时返回未知，不猜城市，也不根据 SIM / VPN 国家猜省份。
 
