@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Build;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -197,9 +198,13 @@ public final class LabSimAttributionActivity extends AppCompatActivity {
                             .append("\n  发卡国家：")
                             .append(LabSimAttribution.country(info.getCountryIso()))
                             .append("\n  MCC/MNC：")
-                            .append(info.getMccString() == null ? "未知" : info.getMccString())
+                            .append(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                                    ? safe(info.getMccString())
+                                    : Integer.toString(info.getMcc()))
                             .append("/")
-                            .append(info.getMncString() == null ? "未知" : info.getMncString())
+                            .append(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+                                    ? safe(info.getMncString())
+                                    : Integer.toString(info.getMnc()))
                             .append("\n");
                 }
             }
