@@ -16,6 +16,17 @@ public final class LabPrivacyAuditRules {
                 : "NOT_REACHABLE_OR_BLOCKED_OR_FAILED";
     }
 
+    public static String familyCountryComparison(String ipv4Country, String ipv6Country) {
+        if (ipv4Country == null || ipv6Country == null
+                || !ipv4Country.matches("[A-Z]{2}")
+                || !ipv6Country.matches("[A-Z]{2}")) {
+            return "UNKNOWN: 缺少完整的 IPv4/IPv6 公网国家证据";
+        }
+        return ipv4Country.equals(ipv6Country)
+                ? "CONSISTENT: 两个出口 IP 的数据库国家相同（不能证明真实国家不可见）"
+                : "INCONSISTENT: IPv4 和 IPv6 出口被数据库归属到不同国家；请检查 VPN 双栈路由";
+    }
+
     public static String comparison(String systemZone, String vpnZone, boolean validVpnZone) {
         if (!validVpnZone || systemZone == null || systemZone.isEmpty())
             return "UNKNOWN: 缺少可核对的 VPN IANA 时区";
