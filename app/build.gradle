@@ -120,8 +120,8 @@ dependencies {
     implementation 'org.maplibre.gl:android-sdk-opengl:13.5.2'
     implementation 'dev.rikka.shizuku:api:13.1.5'
     implementation 'dev.rikka.shizuku:provider:13.1.5'
-    // Open-source MIT Android phone-prefix database. Runtime lookups are fully offline.
-    implementation 'cn.lalaki:phone_location_android:1.2.0'
+    // MIT Java-8 library with bundled offline Chinese 7-digit prefix database (2025-02).
+    implementation 'me.ihxq.projects:phone-number-geo:1.0.10-202502'
     // 腾讯地图 SDK (GCJ02 坐标系，与微信小程序一致)
     // 官方分包: vector-sdk (核心绘制) + openmap:foundation (LatLng/MapPoi 等基础类型)
     implementation 'com.tencent.map:tencent-map-vector-sdk:6.11.0.260507.ab2310c2.209828299'
