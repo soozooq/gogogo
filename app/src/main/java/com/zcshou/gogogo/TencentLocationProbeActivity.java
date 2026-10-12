@@ -50,6 +50,9 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
     private TextView statusView;
     private TextView androidView;
     private TextView tencentView;
+    private TextView modeComparisonView;
+    private final LabTencentModeComparison modeComparison =
+            new LabTencentModeComparison();
     private CheckBox poiLevel;
     private CheckBox allowCache;
     private boolean sdkAvailable;
@@ -124,8 +127,25 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
 
         root.addView(GoGoUi.secondaryButton(this, "打开 Consumer Matrix（五通道）", v ->
                 startActivity(new Intent(this, ConsumerLocationProbeActivity.class))));
+        root.addView(GoGoUi.gap(this, 10));
+        root.addView(GoGoUi.sectionTitle(this, "Lab 51 · GEO / POI × 缓存对照"));
+        modeComparisonView = GoGoUi.muted(this, "等待采集单次请求");
+        modeComparisonView.setTextIsSelectable(true);
+        root.addView(modeComparisonView, GoGoUi.matchWrap());
+        root.addView(GoGoUi.secondaryButton(this, "清空本页面对照（不会清 SDK 缓存）",
+                v -> {
+                    stopTencent();
+                    modeComparison.clear();
+                    refreshModeComparison();
+                }), GoGoUi.matchWrap());
+        root.addView(GoGoUi.muted(this,
+                "手动组合上面的 GEO/POI 和允许缓存开关，每组点一次「腾讯单次 Fresh」。"
+                        + "仅对比本应用收到的结果；SDK Key 未配置时不产生假数据。"
+                        + "关闭缓存是请求参数，并非缓存一定未命中的证明。"),
+                GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 12));
 
+        refreshModeComparison();
         root.addView(GoGoUi.sectionTitle(this, "Android 与 Google 的公开定位结果"));
         androidView = GoGoUi.muted(this, "尚未读取");
         androidView.setTextIsSelectable(true);
@@ -142,7 +162,9 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
                 "诊断限定：本应用自己的定位回调。无微信内部读取权限；"
                 + "不改写定位 Provider，不修改 isMock 标记，不拦截第三方应用。"
                 + " POI 距离由腾讯 SDK 返回，本地距离仅作为独立对照。"
-                + " (0,0) 只是可疑未初始化值，不自动断言错误。"));
+                + " (0,0) 只是可疑未初始化值，不自动断言错误。"
+                + " 腾讯 SDK 以 GCJ-02 展示，Android/GMS 为 WGS-84，"
+                + " 禁止未经坐标变换直接比较两者的经纬度或 POI 距离。"));
         setContentView(scroll);
     }
 
@@ -197,6 +219,9 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
 
     private void startTencent(boolean continuous) {
         stopTencent();
+        final boolean selectedPoi = poiLevel.isChecked();
+        final boolean selectedCache = allowCache.isChecked();
+        boolean ledgerStarted = false;
         try {
             TencentLocationManager.setUserAgreePrivacy(true);
             if (manager == null) {
@@ -204,25 +229,31 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
             }
             manager.setCoordinateType(TencentLocationManager.COORDINATE_TYPE_GCJ02);
             TencentLocationRequest request = TencentLocationRequest.create();
-            request.setRequestLevel(poiLevel.isChecked()
+            request.setRequestLevel(selectedPoi
                     ? TencentLocationRequest.REQUEST_LEVEL_POI
                     : TencentLocationRequest.REQUEST_LEVEL_GEO);
-            request.setAllowCache(allowCache.isChecked());
+            request.setAllowCache(selectedCache);
             request.setAllowGPS(true);
-            final boolean requestedPoi = poiLevel.isChecked();
+            final boolean requestedPoi = selectedPoi;
+            final boolean requestedCache = selectedCache;
             requestAtElapsedMs = SystemClock.elapsedRealtime();
+            if (!continuous) {
+                modeComparison.begin(requestedPoi, requestedCache);
+                ledgerStarted = true;
+                refreshModeComparison();
+            }
         evidenceTimeline.add(LabLocationEvidenceTimeline.Source.TENCENT,
                 LabLocationEvidenceTimeline.Stage.REQUEST, requestAtElapsedMs);
             requestLabel = (continuous ? "STREAM" : "SINGLE_FRESH")
                     + " / " + (requestedPoi ? "POI" : "GEO")
-                    + " / cache=" + allowCache.isChecked();
+                    + " / cache=" + requestedCache;
             final String thisLabel = requestLabel;
             final long sessionId = probeState.begin();
             activeListener = new TencentLocationListener() {
                 @Override
                 public void onLocationChanged(TencentLocation fix, int errorCode, String reason) {
-                    onTencentLocationChanged(sessionId, requestedPoi,
-                            thisLabel, fix, errorCode, reason);
+                    onTencentLocationChanged(sessionId, requestedPoi, requestedCache,
+                            !continuous, thisLabel, fix, errorCode, reason);
                 }
 
                 @Override
@@ -242,6 +273,10 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
                         activeListener, Looper.getMainLooper());
             }
             appendLog("SDK_REQUEST_RETURN " + resultCode + " (not a location result)");
+            if (!continuous) {
+                modeComparison.requestReturn(requestedPoi, requestedCache, resultCode);
+                refreshModeComparison();
+            }
             evidenceTimeline.add(LabLocationEvidenceTimeline.Source.TENCENT,
                     resultCode == 0
                             ? LabLocationEvidenceTimeline.Stage.REQUEST_ACCEPTED
@@ -263,6 +298,10 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
                         evidenceTimeline.add(LabLocationEvidenceTimeline.Source.TENCENT,
                                 LabLocationEvidenceTimeline.Stage.TIMEOUT,
                                 SystemClock.elapsedRealtime());
+                        if (!continuous) {
+                            modeComparison.timeout(requestedPoi, requestedCache);
+                            refreshModeComparison();
+                        }
                         appendLog("TIMEOUT: 20s 未收到 SDK 回调（不能视为定位成功）");
                         statusView.setText("腾讯单次定位超时 · TIMEOUT");
                     }
@@ -272,6 +311,12 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
             refreshStandards();
         } catch (Throwable e) {
             stopTencent();
+            if (!continuous && ledgerStarted) {
+                modeComparison.callbackError(selectedPoi, selectedCache, -1,
+                        LabLocationAge.callbackAgeMs(SystemClock.elapsedRealtime(),
+                                requestAtElapsedMs));
+                refreshModeComparison();
+            }
             statusView.setText("SDK_INIT_OR_REQUEST_FAILED: "
                     + e.getClass().getSimpleName() + " · " + e.getMessage());
             appendLog("ERROR " + e.getClass().getSimpleName() + " " + e.getMessage());
@@ -302,6 +347,7 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
     }
 
     private void onTencentLocationChanged(long sessionId, boolean requestedPoi,
+                                           boolean requestedCache, boolean single,
                                            String sessionLabel, TencentLocation fix,
                                            int errorCode, String reason) {
         if (destroyed || !probeState.accepts(sessionId)) return;
@@ -314,6 +360,10 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
                     + " reason=" + String.valueOf(reason)
                     + " latency=" + duration + "ms");
             if (errorCode != TencentLocation.ERROR_OK) {
+                if (single) {
+                    modeComparison.callbackError(requestedPoi, requestedCache,
+                            errorCode, duration);
+                }
                 evidenceTimeline.add(LabLocationEvidenceTimeline.Source.TENCENT,
                         LabLocationEvidenceTimeline.Stage.CALLBACK_FAILED,
                         currentElapsed);
@@ -321,6 +371,9 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
                 statusView.setText("腾讯 SDK 定位失败 · error=" + errorCode
                         + "\nreason=" + reason);
             } else if (fix == null) {
+                if (single) {
+                    modeComparison.callbackEmpty(requestedPoi, requestedCache, duration);
+                }
                 evidenceTimeline.add(LabLocationEvidenceTimeline.Source.TENCENT,
                         LabLocationEvidenceTimeline.Stage.CALLBACK_EMPTY,
                         currentElapsed);
@@ -344,8 +397,15 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
                 if (!valid || zero) {
                     appendLog("SUSPECT_FIX: exclude from POI distance reference");
                 }
+                int reportedPoiCount = -1;
                 if (requestedPoi && valid && !zero) {
-                    appendPoi(fix, lat, lon);
+                    reportedPoiCount = appendPoi(fix, lat, lon);
+                }
+                if (single) {
+                    modeComparison.callbackFix(requestedPoi, requestedCache,
+                            valid, zero,
+                            LabLocationEvidenceTimeline.estimateWallAgeMs(now, fix.getTime()),
+                            duration, reportedPoiCount);
                 }
                 statusView.setText(valid && !zero
                         ? "腾讯 SDK 回调成功 · GCJ02\n" + sessionLabel
@@ -357,15 +417,16 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
                 stopTencent();
             }
             refreshTimelineDisplay();
+            refreshModeComparison();
         });
     }
 
-    private void appendPoi(TencentLocation fix, double lat, double lon) {
+    private int appendPoi(TencentLocation fix, double lat, double lon) {
         try {
             List<TencentPoi> points = fix.getPoiList();
             if (points == null) {
                 appendLog("POI_LIST: null");
-                return;
+                return -1;
             }
             appendLog("POI_COUNT " + points.size());
             for (int i = 0; i < Math.min(3, points.size()); i++) {
@@ -382,8 +443,10 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
                         : String.format(Locale.US, "%.1fm", compare))
                         + " (SDK origin should be location fix)");
             }
+            return points.size();
         } catch (Throwable e) {
             appendLog("POI_PARSE_ERROR " + e.getClass().getSimpleName());
+            return -1;
         }
     }
 
@@ -489,6 +552,12 @@ public class TencentLocationProbeActivity extends AppCompatActivity {
                             : LabLocationEvidenceTimeline.MockState.NO);
         }
         refreshTimelineDisplay();
+    }
+
+    private void refreshModeComparison() {
+        if (modeComparisonView != null) {
+            modeComparisonView.setText(modeComparison.render(sdkAvailable));
+        }
     }
 
     private void refreshTimelineDisplay() {
