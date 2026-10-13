@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The four stable Tianwaitian primary destinations. -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/twt_tab_location"
+        android:icon="@drawable/twt_nav_location"
+        android:title="定位" />
+    <item android:id="@+id/twt_tab_diagnostics"
+        android:icon="@drawable/twt_nav_diagnostics"
+        android:title="实验诊断" />
+    <item android:id="@+id/twt_tab_audit"
+        android:icon="@drawable/twt_nav_audit"
+        android:title="环境体检" />
+    <item android:id="@+id/twt_tab_settings"
+        android:icon="@drawable/twt_nav_settings"
+        android:title="设置" />
+</menu>
