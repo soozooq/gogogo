@@ -101,13 +101,16 @@ public class SimpleMockActivity extends AppCompatActivity {
             vpnSyncUiHandler.postDelayed(this, 3000L);
         }
     };
-    private LabTimedSupportCopy timedSupportCopy;
     private LinearLayout diagnosticDetails;
+    private LinearLayout vpnDetailsPanel;
+    private com.google.android.material.button.MaterialButton vpnDetailsToggle;
+    private boolean vpnDetailsExpanded = false;
     private LinearLayout homeToolsPanel;
     private com.google.android.material.button.MaterialButton homeToolsToggle;
     private boolean homeToolsExpanded = false;
     private boolean diagnosticsLoaded = false;
     private static final String HOME_TOOLS_EXPANDED = "gogogo.home.tools.expanded";
+    private static final String VPN_DETAILS_EXPANDED = "gogogo.home.vpn.details.expanded";
     private static final String HOME_LONGITUDE_TEXT = "gogogo.home.longitude_text";
     private static final String HOME_LATITUDE_TEXT = "gogogo.home.latitude_text";
     private static final String HOME_PENDING_REQUEST = "gogogo.home.pending_request";
@@ -184,6 +187,8 @@ public class SimpleMockActivity extends AppCompatActivity {
         }
         homeToolsExpanded = savedInstanceState != null
                 && savedInstanceState.getBoolean(HOME_TOOLS_EXPANDED, false);
+        vpnDetailsExpanded = savedInstanceState != null
+                && savedInstanceState.getBoolean(VPN_DETAILS_EXPANDED, false);
         // The input views are created programmatically without stable IDs,
         // so automatic Android view-state restoration cannot preserve edits.
         if (savedInstanceState != null) {
@@ -240,6 +245,7 @@ public class SimpleMockActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         outState.putBoolean(HOME_TOOLS_EXPANDED, homeToolsExpanded);
+        outState.putBoolean(VPN_DETAILS_EXPANDED, vpnDetailsExpanded);
         // Preserve raw text, even if currently incomplete or invalid: the user
         // may be partway through editing and should not lose their work.
         if (longitudeInput != null) {
@@ -280,7 +286,6 @@ public class SimpleMockActivity extends AppCompatActivity {
             Shizuku.removeRequestPermissionResultListener(timezoneShizukuPermission);
         } catch (Throwable ignored) {}
         homeCountryLookupGeneration++;
-        if (timedSupportCopy != null) timedSupportCopy.close();
         super.onDestroy();
     }
 
@@ -355,11 +360,23 @@ public class SimpleMockActivity extends AppCompatActivity {
                 "识别自定义坐标的国家（系统地理编码，可能联网）",
                 v -> lookupHomeCountry()), GoGoUi.matchWrap());
 
+        // Keep VPN-follow, lock and Shizuku controls in a single optional
+        // disclosure. These are advanced behaviors, not the default mock flow.
+        locationContent.addView(GoGoUi.gap(this, 8));
+        vpnDetailsToggle = GoGoUi.secondaryButton(this, "",
+                v -> {
+                    vpnDetailsExpanded = !vpnDetailsExpanded;
+                    updateVpnDetailsDisclosure();
+                });
+        locationContent.addView(vpnDetailsToggle, GoGoUi.matchWrap());
+        vpnDetailsPanel = new LinearLayout(this);
+        vpnDetailsPanel.setOrientation(LinearLayout.VERTICAL);
+        locationContent.addView(vpnDetailsPanel, GoGoUi.matchWrap());
         // Optional VPN-follow UI belongs next to the coordinate target, not Labs.
-        locationContent.addView(GoGoUi.gap(this, 12));
-        locationContent.addView(GoGoUi.sectionTitle(this, "VPN 出口 → 模拟定位联动"),
+        vpnDetailsPanel.addView(GoGoUi.gap(this, 12));
+        vpnDetailsPanel.addView(GoGoUi.sectionTitle(this, "VPN 出口 → 模拟定位联动"),
                 GoGoUi.matchWrap());
-        locationContent.addView(GoGoUi.muted(this,
+        vpnDetailsPanel.addView(GoGoUi.muted(this,
                 "默认关闭。启用后仅在 GoGoGo 的流量确实走 VPN 时，使用 HTTPS"
                         + " 获取出口 IP 的近似国家/城市坐标。可能将公网 IP 提供给 ipwho.is；"
                         + " VPN 分流、代理模式和 IP 数据库误差可能导致无法一致。"
@@ -367,8 +384,8 @@ public class SimpleMockActivity extends AppCompatActivity {
                 GoGoUi.matchWrap());
         vpnSyncStatusView = GoGoUi.muted(this, "未启用 VPN 联动");
         vpnSyncStatusView.setTextIsSelectable(true);
-        locationContent.addView(GoGoUi.gap(this, 7));
-        locationContent.addView(vpnSyncStatusView, GoGoUi.matchWrap());
+        vpnDetailsPanel.addView(GoGoUi.gap(this, 7));
+        vpnDetailsPanel.addView(vpnSyncStatusView, GoGoUi.matchWrap());
         vpnSyncToggle = GoGoUi.secondaryButton(this, "开启 VPN 自动跟随",
                 v -> {
                     if (LabVpnExitSync.locked(this)) {
@@ -393,7 +410,7 @@ public class SimpleMockActivity extends AppCompatActivity {
                             Toast.LENGTH_LONG).show();
                     refreshVpnSyncStatus();
                 });
-        locationContent.addView(vpnSyncToggle, GoGoUi.matchWrap());
+        vpnDetailsPanel.addView(vpnSyncToggle, GoGoUi.matchWrap());
         vpnFreezeToggle = GoGoUi.secondaryButton(this, "🔒 锁定上次成功同步的 VPN 定位",
                 v -> {
                     boolean wasLocked = LabVpnExitSync.locked(this);
@@ -422,28 +439,28 @@ public class SimpleMockActivity extends AppCompatActivity {
                     }
                     refreshVpnSyncStatus();
                 });
-        locationContent.addView(vpnFreezeToggle, GoGoUi.matchWrap());
-        locationContent.addView(GoGoUi.gap(this, 8));
-        locationContent.addView(GoGoUi.sectionTitle(this, "VPN 时区自动跟随"),
+        vpnDetailsPanel.addView(vpnFreezeToggle, GoGoUi.matchWrap());
+        vpnDetailsPanel.addView(GoGoUi.gap(this, 8));
+        vpnDetailsPanel.addView(GoGoUi.sectionTitle(this, "VPN 时区自动跟随"),
                 GoGoUi.matchWrap());
         vpnTimeZoneView = GoGoUi.muted(this, "等待 VPN 时区…");
         vpnTimeZoneView.setTextIsSelectable(true);
-        locationContent.addView(vpnTimeZoneView, GoGoUi.matchWrap());
-        locationContent.addView(GoGoUi.muted(this,
+        vpnDetailsPanel.addView(vpnTimeZoneView, GoGoUi.matchWrap());
+        vpnDetailsPanel.addView(GoGoUi.muted(this,
                 "随 VPN 出口地区自动更新时区和当地时间，和 VPN 坐标一起锁定。"
                 + " 此处是 GoGoGo 的时区预览；手机系统时区需要额外授权，"
                 + "不会静默改变。"), GoGoUi.matchWrap());
         systemTimeZoneToggle = GoGoUi.secondaryButton(this,
                 "开启手机系统时区自动跟随（Shizuku）", v -> toggleSystemTimeZoneFollow());
-        locationContent.addView(systemTimeZoneToggle, GoGoUi.matchWrap());
-        locationContent.addView(GoGoUi.secondaryButton(this, "手机系统日期与时区设置",
+        vpnDetailsPanel.addView(systemTimeZoneToggle, GoGoUi.matchWrap());
+        vpnDetailsPanel.addView(GoGoUi.secondaryButton(this, "手机系统日期与时区设置",
                 v -> safeOpen(new Intent(Settings.ACTION_DATE_SETTINGS), null)),
                 GoGoUi.matchWrap());
-        locationContent.addView(GoGoUi.secondaryButton(this,
+        vpnDetailsPanel.addView(GoGoUi.secondaryButton(this,
                 "补填历史锁定位置的时区（IANA）", v -> promptLockedTimezone()),
                 GoGoUi.matchWrap());
-        locationContent.addView(GoGoUi.gap(this, 8));
-        locationContent.addView(GoGoUi.secondaryButton(this,
+        vpnDetailsPanel.addView(GoGoUi.gap(this, 8));
+        vpnDetailsPanel.addView(GoGoUi.secondaryButton(this,
                 "立即检查 VPN 出口并更新模拟位置",
                 v -> {
                     if (!LabVpnExitSync.enabled(this)) {
@@ -464,6 +481,8 @@ public class SimpleMockActivity extends AppCompatActivity {
                         Toast.makeText(this, "刷新请求被系统拒绝", Toast.LENGTH_SHORT).show();
                     }
                 }), GoGoUi.matchWrap());
+
+        updateVpnDetailsDisclosure();
 
         // This label follows edits and map/picker returns, not the phone's real location.
         TextWatcher countryWatcher = new TextWatcher() {
@@ -513,43 +532,9 @@ public class SimpleMockActivity extends AppCompatActivity {
 
         GoGoUi.addCard(root, locationCard, 18);
 
-        // Frequent navigation routes: map edits position, Lab Hub collects tests.
-        root.addView(GoGoUi.gap(this, 18));
-        root.addView(GoGoUi.sectionTitle(this, "常用入口"), GoGoUi.matchWrap());
-        root.addView(GoGoUi.navigationTile(this, R.drawable.ic_gogogo_place,
-                "地图选点与路线", "OpenFreeMap · 城市跳转 · 收藏与路线",
-                v -> openMapLab()), GoGoUi.matchWrap());
-        root.addView(GoGoUi.gap(this, 9));
-        root.addView(GoGoUi.navigationTile(this, R.drawable.ic_gogogo_lab,
-                "实验与诊断", "Consumer Matrix · Shizuku · Provider 与系统实验",
-                v -> startActivity(new Intent(this, LabHubActivity.class))),
-                GoGoUi.matchWrap());
-        root.addView(GoGoUi.gap(this, 9));
-        root.addView(GoGoUi.navigationTile(this, R.drawable.ic_gogogo_lab,
-                "手机卡归属地", "SIM 发卡国家 / 运营商 · 双卡详情 · 7 位号段离线查询",
-                v -> startActivity(new Intent(this, LabSimAttributionActivity.class))),
-                GoGoUi.matchWrap());
-        root.addView(GoGoUi.gap(this, 9));
-        root.addView(GoGoUi.navigationTile(this, R.drawable.ic_gogogo_lab,
-                "网络与定位隐私体检",
-                "VPN · DNS · IPv4/IPv6 · 时区 · 浏览器 WebRTC 检测入口",
-                v -> startActivity(new Intent(this, LabPrivacyAuditActivity.class))),
-                GoGoUi.matchWrap());
-        root.addView(GoGoUi.gap(this, 10));
-        root.addView(GoGoUi.primaryButton(this, "📋 复制最近诊断日志（发给 GPT）",
-                v -> LabSupportLog.copy(this,
-                        longitudeInput == null ? "" : longitudeInput.getText().toString(),
-                        latitudeInput == null ? "" : latitudeInput.getText().toString())),
-                GoGoUi.matchWrap());
-        timedSupportCopy = new LabTimedSupportCopy(this, () -> new String[] {
-                longitudeInput == null ? "" : longitudeInput.getText().toString(),
-                latitudeInput == null ? "" : latitudeInput.getText().toString()
-        });
-        root.addView(GoGoUi.gap(this, 10));
-        root.addView(timedSupportCopy.view(), GoGoUi.matchWrap());
-        root.addView(GoGoUi.muted(this,
-                "不主动定位、不上传；只复制已有的服务与检测记录。真实坐标、IP、密钥等默认隐藏。"),
-                GoGoUi.matchWrap());
+        // No duplicated main tabs here: map, diagnostics and privacy audit
+        // are already first-class bottom navigation destinations. The SIM
+        // attribution utility stays available in the optional device panel.
 
         // One optional disclosure replaces a second always-visible home card.
         // Everything below remains available but costs no diagnostic reads
@@ -612,17 +597,35 @@ public class SimpleMockActivity extends AppCompatActivity {
         diagContent.addView(detailsButton, GoGoUi.matchWrap());
         diagContent.addView(diagnosticDetails, GoGoUi.matchWrap());
 
-        GoGoUi.addCard(homeToolsPanel, diagCard, 14);
+        GoGoUi.addCard(homeToolsPanel, diagCard, 10);
+        homeToolsPanel.addView(GoGoUi.navigationTile(this,
+                R.drawable.ic_gogogo_lab, "手机卡归属地",
+                "SIM 发卡国家 / 运营商 · 双卡详情 · 7 位号段查询",
+                v -> startActivity(new Intent(this, LabSimAttributionActivity.class))),
+                GoGoUi.matchWrap());
         updateHomeToolsDisclosure();
 
         TextView footer = GoGoUi.muted(
                 this,
-                "GoGoGo · Preview · 仅在明确点击开始后启动模拟位置。");
+                "天外天 · 模拟仅在明确点击开始后启动。");
         footer.setGravity(Gravity.CENTER);
         footer.setPadding(0, GoGoUi.dp(this, 18), 0, 0);
         root.addView(footer, GoGoUi.matchWrap());
 
         setContentView(scroll);
+    }
+
+    private void updateVpnDetailsDisclosure() {
+        if (vpnDetailsToggle == null || vpnDetailsPanel == null) return;
+        boolean locked = LabVpnExitSync.locked(this);
+        boolean on = LabVpnExitSync.enabled(this);
+        vpnDetailsPanel.setVisibility(vpnDetailsExpanded
+                ? android.view.View.VISIBLE : android.view.View.GONE);
+        vpnDetailsToggle.setText((vpnDetailsExpanded ? "▴ 收起 " : "▾ 展开 ")
+                + "VPN 联动与时区"
+                + (locked ? " · 已锁定" : on ? " · 已开启" : " · 已关闭"));
+        vpnDetailsToggle.setContentDescription((vpnDetailsExpanded ? "收起" : "展开")
+                + " VPN 联动、坐标锁定与 Shizuku 时区设置");
     }
 
     private void setHomeToolsExpanded(boolean expanded) {
@@ -1000,6 +1003,7 @@ public class SimpleMockActivity extends AppCompatActivity {
 
     private void refreshVpnSyncStatus() {
         if (vpnSyncStatusView == null || vpnSyncToggle == null) return;
+        updateVpnDetailsDisclosure();
         boolean on = LabVpnExitSync.enabled(this);
         LabVpnExitSync.LockedTarget fixed = LabVpnExitSync.getLockedTarget(this);
         boolean isLocked = LabVpnExitSync.locked(this);
