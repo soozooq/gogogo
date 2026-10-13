@@ -104,11 +104,18 @@
                 </LinearLayout>
 
                 <!-- Only the optional details collapse on compact screens; state remains visible. -->
-                <LinearLayout
+                <!-- Constrain optional content with a scrollable area on short phones. -->
+                <ScrollView
                     android:id="@+id/twt_home_details"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:fillViewport="false"
+                    android:overScrollMode="ifContentScrolls"
+                    android:scrollbars="vertical">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/twt_home_target"
@@ -169,7 +176,8 @@
                     android:textColor="@color/gogogo_primary"
                     app:cornerRadius="12dp"
                     app:backgroundTint="@color/gogogo_surface_alt" />
-                </LinearLayout>
+                    </LinearLayout>
+                </ScrollView>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
