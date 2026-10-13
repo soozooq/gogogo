@@ -143,6 +143,9 @@ public class LabMapActivity extends AppCompatActivity {
                                             LabPlacePickerActivity.EXTRA_LATITUDE, Double.NaN)));
                             LatLng point = new LatLng(selected.latitude, selected.longitude);
                             selectPoint(point, false);
+                            TianwaitianSelectedTarget.save(this,
+                                    selected.longitude, selected.latitude,
+                                    data.getStringExtra(LabPlacePickerActivity.EXTRA_LABEL));
                             if (map != null) {
                                 map.animateCamera(CameraUpdateFactory.newLatLngZoom(point, 12.5));
                             }
@@ -974,6 +977,8 @@ public class LabMapActivity extends AppCompatActivity {
             Intent result = new Intent();
             result.putExtra(EXTRA_RESULT_LONGITUDE, checked.longitude);
             result.putExtra(EXTRA_RESULT_LATITUDE, checked.latitude);
+            TianwaitianSelectedTarget.save(this,
+                    checked.longitude, checked.latitude, "地图选点");
             setResult(Activity.RESULT_OK, result);
             finish();
         } catch (IllegalArgumentException invalid) {
@@ -991,6 +996,8 @@ public class LabMapActivity extends AppCompatActivity {
         intent.putExtra(MainActivity.ALT_MSG_ID, 55.0);
 
         if (startLocationService(intent)) {
+            TianwaitianSelectedTarget.save(this,
+                    selectedPoint.getLongitude(), selectedPoint.getLatitude(), "地图选点");
             LabStore.addHistory(this, selectedPoint.getLongitude(), selectedPoint.getLatitude());
             Toast.makeText(this, "已把模拟位置切到地图选点", Toast.LENGTH_SHORT).show();
         }
