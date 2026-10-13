@@ -46,6 +46,13 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
     private final StringBuilder total = new StringBuilder();
     private TextView status;
     private TextView reportView;
+    private TextView summaryView;
+    private LinearLayout advancedPanel;
+    private com.google.android.material.button.MaterialButton advancedToggle;
+    private com.google.android.material.button.MaterialButton rawLogToggle;
+    private com.google.android.material.button.MaterialButton appChoiceButton;
+    private boolean advancedExpanded;
+    private boolean rawLogExpanded;
     private EditText observationNote;
     private int appIndex = 0;
     private int observationIndex = -1; // Never preselect a user-observed outcome.
@@ -62,8 +69,18 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
         super.onCreate(state);
         SharedPreferences prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
         total.append(prefs.getString(KEY_LOG, ""));
+        if (state != null) {
+            advancedExpanded = state.getBoolean("twt.crossapp.advanced", false);
+            rawLogExpanded = state.getBoolean("twt.crossapp.raw", false);
+        }
         buildUi();
         render("尚未开始 · 选择应用并启动一次对照实验");
+    }
+
+    @Override protected void onSaveInstanceState(Bundle outState) {
+        outState.putBoolean("twt.crossapp.advanced", advancedExpanded);
+        outState.putBoolean("twt.crossapp.raw", rawLogExpanded);
+        super.onSaveInstanceState(outState);
     }
 
     @Override protected void onStop() {
@@ -95,13 +112,50 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
         root.setPadding(padding, GoGoUi.dp(this, 22), padding, GoGoUi.dp(this, 26));
         scroll.addView(root);
 
-        root.addView(GoGoUi.eyebrow(this, "LOCATION  /  EVIDENCE STUDY"),
-                GoGoUi.matchWrap());
-        root.addView(GoGoUi.heroTitle(this, "跨应用定位来源对照"), GoGoUi.matchWrap());
+        root.addView(GoGoUi.brandStrip(this), GoGoUi.matchWrap());
+        root.addView(GoGoUi.heroTitle(this, "应用定位对比"), GoGoUi.matchWrap());
         root.addView(GoGoUi.subtitle(this,
-                "高德、抖音、微信、腾讯地图、美团 · 时间戳 + 被动缓存 + 人工观察"),
+                "先选应用，再打开观察，回来点一下就能保存结果。"),
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 12));
+
+        // Ordinary users have just three steps; expert controls are retained.
+        com.google.android.material.card.MaterialCardView quickCard = GoGoUi.card(this);
+        LinearLayout quick = GoGoUi.cardContent(this);
+        quickCard.addView(quick);
+        quick.addView(GoGoUi.sectionTitle(this, "三步完成一次对比"),
+                GoGoUi.matchWrap());
+        quick.addView(GoGoUi.muted(this,
+                "不会修改模拟位置，也不会主动获取新定位。"), GoGoUi.matchWrap());
+        quick.addView(GoGoUi.gap(this, 8));
+        status = GoGoUi.status(this, "等待开始");
+        quick.addView(status, GoGoUi.matchWrap());
+        quick.addView(GoGoUi.gap(this, 8));
+        appChoiceButton = GoGoUi.secondaryButton(this,
+                "① 选择应用 · " + LabCrossAppEvidence.APPLICATIONS[appIndex],
+                v -> showAppChoice());
+        quick.addView(appChoiceButton, GoGoUi.matchWrap());
+        quick.addView(GoGoUi.gap(this, 6));
+        quick.addView(GoGoUi.primaryButton(this, "② 开始观察 · 自动记录前后变化",
+                v -> startQuickRound()), GoGoUi.matchWrap());
+        quick.addView(GoGoUi.gap(this, 6));
+        quick.addView(GoGoUi.secondaryButton(this,
+                "③ 记录我看到的位置并保存", v -> saveQuickObservation()),
+                GoGoUi.matchWrap());
+        root.addView(quickCard, GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 12));
+
+        advancedToggle = GoGoUi.secondaryButton(this, "",
+                v -> {
+                    advancedExpanded = !advancedExpanded;
+                    updateDisclosures();
+                });
+        root.addView(advancedToggle, GoGoUi.matchWrap());
+        advancedPanel = new LinearLayout(this);
+        advancedPanel.setOrientation(LinearLayout.VERTICAL);
+        root.addView(advancedPanel, GoGoUi.matchWrap());
+
+
         com.google.android.material.card.MaterialCardView card = GoGoUi.card(this);
         LinearLayout body = GoGoUi.cardContent(this);
         card.addView(body);
@@ -111,22 +165,8 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
                         + "不会触发新的定位请求、强停第三方应用或修改模拟坐标。"),
                 GoGoUi.matchWrap());
         body.addView(GoGoUi.gap(this, 8));
-        status = GoGoUi.status(this, "等待启动");
-        body.addView(status, GoGoUi.matchWrap());
-
-        body.addView(GoGoUi.gap(this, 8));
         body.addView(GoGoUi.secondaryButton(this, "① 选择要对照的应用",
-                v -> new AlertDialog.Builder(this)
-                        .setTitle("本轮观察哪一个应用？")
-                        .setSingleChoiceItems(LabCrossAppEvidence.APPLICATIONS, appIndex,
-                                (d, index) -> {
-                                    appIndex = index;
-                                    observationIndex = -1;
-                                    meituanVpnIndex = -1;
-                                    d.dismiss();
-                                    render("已选择：" + LabCrossAppEvidence.APPLICATIONS[appIndex]);
-                                })
-                        .setNegativeButton("取消", (d, w) -> {}).show()), GoGoUi.matchWrap());
+                v -> showAppChoice()), GoGoUi.matchWrap());
         body.addView(GoGoUi.secondaryButton(this, "② 开始本轮并读取 BEFORE 被动快照",
                 v -> beginRound()), GoGoUi.matchWrap());
         body.addView(GoGoUi.secondaryButton(this, "③ 打开目标应用 · 观察蓝点 / POI / 地址功能",
@@ -187,18 +227,30 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
         body.addView(observationNote, GoGoUi.matchWrap());
         body.addView(GoGoUi.primaryButton(this, "保存本轮观察并追加到总日志",
                 v -> finishRound()), GoGoUi.matchWrap());
-        root.addView(card, GoGoUi.matchWrap());
+        advancedPanel.addView(card, GoGoUi.matchWrap());
 
         root.addView(GoGoUi.gap(this, 12));
         com.google.android.material.card.MaterialCardView reportCard = GoGoUi.card(this);
         LinearLayout inner = GoGoUi.cardContent(this);
         reportCard.addView(inner);
-        inner.addView(GoGoUi.sectionTitle(this, "多应用总日志 · 脱敏"),
+        inner.addView(GoGoUi.sectionTitle(this, "看得懂的实验结果"),
                 GoGoUi.matchWrap());
+        summaryView = GoGoUi.muted(this, "");
+        summaryView.setTextSize(14);
+        summaryView.setTextIsSelectable(true);
+        inner.addView(summaryView, GoGoUi.matchWrap());
+        inner.addView(GoGoUi.gap(this, 9));
+        rawLogToggle = GoGoUi.secondaryButton(this, "",
+                v -> {
+                    rawLogExpanded = !rawLogExpanded;
+                    updateDisclosures();
+                });
+        inner.addView(rawLogToggle, GoGoUi.matchWrap());
         reportView = GoGoUi.muted(this, "");
+        reportView.setTextSize(12);
         reportView.setTextIsSelectable(true);
         inner.addView(reportView, GoGoUi.matchWrap());
-        inner.addView(GoGoUi.secondaryButton(this, "复制全部对照记录",
+        inner.addView(GoGoUi.secondaryButton(this, "复制完整记录 · 发给 GPT",
                 v -> {
                     ClipboardManager clipboard = (ClipboardManager)
                             getSystemService(CLIPBOARD_SERVICE);
@@ -229,6 +281,98 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
                         + " 蓝点与 POI 由用户自主确认，结果只表明关联而非因果。"),
                 GoGoUi.matchWrap());
         setContentView(scroll);
+        updateDisclosures();
+    }
+
+    private void showAppChoice() {
+        if (started) {
+            Toast.makeText(this, "先记录当前一轮的观察结果，再换应用",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("这次要看哪个应用？")
+                .setSingleChoiceItems(LabCrossAppEvidence.APPLICATIONS, appIndex,
+                        (dialog, index) -> {
+                            appIndex = index;
+                            observationIndex = -1;
+                            meituanVpnIndex = -1;
+                            dialog.dismiss();
+                            if (appChoiceButton != null) {
+                                appChoiceButton.setText("① 选择应用 · "
+                                        + LabCrossAppEvidence.APPLICATIONS[appIndex]);
+                            }
+                            render("已选择 " + LabCrossAppEvidence.APPLICATIONS[appIndex]
+                                    + "，点击第二步开始");
+                        }).setNegativeButton("取消", null).show();
+    }
+
+    private void startQuickRound() {
+        if (started) {
+            Toast.makeText(this, "上一轮尚未保存，请先点击第三步",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        beginRound();
+        openExternalApp();
+    }
+
+    private void saveQuickObservation() {
+        if (!started) {
+            Toast.makeText(this, "请先点击第二步开始观察",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!returnedSnapshot) {
+            Toast.makeText(this, "先打开应用观察位置，再返回本页",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (appIndex == LabCrossAppEvidence.MEITUAN_INDEX) {
+            showFullObservationDialog();
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("刚才看到的位置是？")
+                .setItems(new String[]{
+                        "蓝点和附近地点都在模拟位置",
+                        "蓝点和附近地点都在国内",
+                        "其他 / 不确定（查看更多选项）"
+                }, (dialog, choice) -> {
+                    if (choice == 0 || choice == 1) {
+                        observationIndex = choice == 0 ? 1 : 0;
+                        finishRound();
+                    } else {
+                        showFullObservationDialog();
+                    }
+                }).setNegativeButton("取消", null).show();
+    }
+
+    private void showFullObservationDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("选择真实观察结果")
+                .setItems(LabCrossAppEvidence.observationOptions(appIndex),
+                        (dialog, choice) -> {
+                            observationIndex = choice;
+                            finishRound();
+                        })
+                .setNegativeButton("取消", null).show();
+    }
+
+    private void updateDisclosures() {
+        if (advancedPanel != null && advancedToggle != null) {
+            advancedPanel.setVisibility(advancedExpanded
+                    ? android.view.View.VISIBLE : android.view.View.GONE);
+            advancedToggle.setText(advancedExpanded
+                    ? "▴ 收起专业实验步骤"
+                    : "▾ 专业实验步骤与补拍（按需展开）");
+        }
+        if (reportView != null && rawLogToggle != null) {
+            reportView.setVisibility(rawLogExpanded
+                    ? android.view.View.VISIBLE : android.view.View.GONE);
+            rawLogToggle.setText(rawLogExpanded
+                    ? "▴ 收起英文技术日志" : "▾ 查看完整技术日志（高级）");
+        }
     }
 
     private void beginRound() {
@@ -269,13 +413,13 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
             if (intent != null) startActivity(intent);
             else {
                 append("launcher_unavailable=TRUE; user_must_open_app_manually");
-                Toast.makeText(this, "系统无法直接打开该应用，请手动切换，再返回 GoGoGo",
+                Toast.makeText(this, "系统无法直接打开该应用，请手动切换，再返回天外天",
                         Toast.LENGTH_LONG).show();
             }
         } catch (RuntimeException unavailable) {
             append("launcher_error=" + unavailable.getClass().getSimpleName()
                     + "; user_must_open_app_manually");
-            Toast.makeText(this, "请手动进入目标应用并返回 GoGoGo",
+            Toast.makeText(this, "请手动进入目标应用并返回天外天",
                     Toast.LENGTH_LONG).show();
         }
         persist();
@@ -397,9 +541,14 @@ public final class LabCrossAppLocationActivity extends AppCompatActivity {
     }
 
     private void render(String message) {
-        if(status!=null)status.setText(message);
-        if(reportView!=null)reportView.setText(total.length()>0
-                ?total.toString():"还没有诊断记录。");
+        if (status != null) status.setText(message);
+        if (summaryView != null) {
+            summaryView.setText(LabCrossAppReadableSummary.summarize(total.toString()));
+        }
+        if (reportView != null) {
+            reportView.setText(total.length() > 0
+                    ? total.toString() : "还没有技术日志。");
+        }
     }
 
     private long sinceStartSeconds() {
