@@ -100,8 +100,10 @@
                 android:resource="@xml/provider_paths" />
         </provider>
 
+        <!-- The actual launcher is the key-free OpenFreeMap Tianwaitian home.
+             SimpleMockActivity stays internal, preserving VPN/Shizuku controls. -->
         <activity
-            android:name=".SimpleMockActivity"
+            android:name=".TianwaitianHomeActivity"
             android:exported="true"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
@@ -109,6 +111,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".SimpleMockActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
             android:name=".LabMapActivity"
