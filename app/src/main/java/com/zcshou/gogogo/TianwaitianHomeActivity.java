@@ -123,7 +123,7 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
 
         // Top overlay is branded; the live map remains visible between panels.
         MaterialCardView brandCard = GoGoUi.card(this);
-        brandCard.setRadius(dp(22));
+        brandCard.setRadius(dp(20));
         brandCard.setCardElevation(dp(5));
         brandCard.setStrokeWidth(0);
         brandCard.setCardBackgroundColor(GoGoUi.color(this, R.color.twt_appbar_bg));
@@ -131,22 +131,22 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
         LinearLayout brand = new LinearLayout(this);
         brand.setGravity(Gravity.CENTER_VERTICAL);
         brand.setBackgroundResource(R.drawable.twt_launch_header_bg);
-        brand.setPadding(dp(15), dp(12), dp(15), dp(12));
+        brand.setPadding(dp(13), dp(9), dp(13), dp(9));
         ImageView emblem = new ImageView(this);
         emblem.setImageResource(R.drawable.twt_constellation_motif);
         emblem.setImageTintList(ColorStateList.valueOf(Color.WHITE));
         emblem.setContentDescription(null);
-        brand.addView(emblem, new LinearLayout.LayoutParams(dp(43), dp(43)));
+        brand.addView(emblem, new LinearLayout.LayoutParams(dp(36), dp(36)));
 
         LinearLayout words = new LinearLayout(this);
         words.setOrientation(LinearLayout.VERTICAL);
         LinearLayout.LayoutParams wordLayout = new LinearLayout.LayoutParams(0,
                 ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        wordLayout.leftMargin = dp(12);
+        wordLayout.leftMargin = dp(10);
         TextView title = new TextView(this);
         title.setText(R.string.app_name);
         title.setTextColor(Color.WHITE);
-        title.setTextSize(21);
+        title.setTextSize(20);
         title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         words.addView(title);
         TextView tagline = new TextView(this);
@@ -161,12 +161,12 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
         tools.setSingleLine(true);
         tools.setContentDescription("打开地图工具");
         brand.addView(tools, new LinearLayout.LayoutParams(
-                dp(48), ViewGroup.LayoutParams.WRAP_CONTENT));
+                dp(44), ViewGroup.LayoutParams.WRAP_CONTENT));
         brandCard.addView(brand);
 
         FrameLayout.LayoutParams top = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP);
-        top.setMargins(dp(14), dp(14), dp(14), 0);
+        top.setMargins(dp(12), dp(10), dp(12), 0);
         root.addView(brandCard, top);
 
         // Bottom glass-like command deck, using semantic DayNight surface colors.
@@ -174,7 +174,7 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
         deck.setRadius(dp(19));
         deck.setCardElevation(dp(8));
         LinearLayout content = GoGoUi.cardContent(this);
-        content.setPadding(dp(14), dp(11), dp(14), dp(11));
+        content.setPadding(dp(13), dp(10), dp(13), dp(10));
 
         labelView = GoGoUi.sectionTitle(this, selectedLabel);
         labelView.setSingleLine(true);
@@ -202,7 +202,7 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
         MaterialButton places = GoGoUi.secondaryButton(this,
                 "全球地点库", v -> placePicker.launch(
                         new Intent(this, LabPlacePickerActivity.class)));
-        boolean stack = LabResponsiveUiPolicy.stackHomeActions(
+        boolean stack = LabResponsiveUiPolicy.stackTianwaitianLauncherActions(
                 getResources().getConfiguration().screenWidthDp,
                 getResources().getConfiguration().fontScale);
         if (stack) {
@@ -227,7 +227,7 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 screenHeight < 540 ? dp(maxDeckHeight) : ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.BOTTOM);
-        bottom.setMargins(dp(14), 0, dp(14), dp(10));
+        bottom.setMargins(dp(12), 0, dp(12), dp(8));
         deck.addView(deckScroll);
         root.addView(deck, bottom);
 
