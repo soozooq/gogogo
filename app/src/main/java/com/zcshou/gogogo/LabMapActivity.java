@@ -142,6 +142,7 @@ public class LabMapActivity extends AppCompatActivity {
                                     Double.toString(data.getDoubleExtra(
                                             LabPlacePickerActivity.EXTRA_LATITUDE, Double.NaN)));
                             LatLng point = new LatLng(selected.latitude, selected.longitude);
+                            pauseMockCameraFollowForManualSelection();
                             selectPoint(point, false);
                             TianwaitianSelectedTarget.save(this,
                                     selected.longitude, selected.latitude,
@@ -366,7 +367,10 @@ public class LabMapActivity extends AppCompatActivity {
         mapView.getMapAsync(mapLibreMap -> {
             map = mapLibreMap;
             map.addOnMapClickListener(point -> {
+                pauseMockCameraFollowForManualSelection();
                 selectPoint(point, true);
+                TianwaitianSelectedTarget.save(this,
+                        point.getLongitude(), point.getLatitude(), "地图选点");
                 return true;
             });
             map.addOnMapLongClickListener(point -> {
@@ -763,6 +767,18 @@ public class LabMapActivity extends AppCompatActivity {
                     .build();
             map.moveCamera(CameraUpdateFactory.newCameraPosition(next));
         }
+    }
+
+    /**
+     * A manual map selection must remain visible even while the previously
+     * running ServiceGo is publishing another coordinate. This only suspends
+     * camera following; it does not stop or alter the simulated location.
+     */
+    private void pauseMockCameraFollowForManualSelection() {
+        followMock = false;
+        followHeading = false;
+        if (followButton != null) followButton.setText("🎯 跟随：关");
+        if (headingFollowButton != null) headingFollowButton.setText("🧭 地图朝向：关");
     }
 
     private void toggleFollow() {
