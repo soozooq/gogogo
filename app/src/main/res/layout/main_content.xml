@@ -197,6 +197,8 @@
             android:layout_marginTop="?attr/actionBarSize">
             <ListView
                 android:id="@+id/search_list_view"
+                android:divider="@color/twt_search_divider"
+                android:dividerHeight="1dp"
                 android:layout_width="match_parent"
                 android:layout_margin="10dp"
                 android:layout_height="wrap_content">
@@ -213,6 +215,8 @@
             android:layout_marginTop="?attr/actionBarSize">
             <ListView
                 android:id="@+id/search_history_list_view"
+                android:divider="@color/twt_search_divider"
+                android:dividerHeight="1dp"
                 android:layout_width="match_parent"
                 android:layout_margin="10dp"
                 android:layout_height="wrap_content">
