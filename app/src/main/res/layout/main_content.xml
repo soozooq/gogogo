@@ -101,6 +101,18 @@
                         android:text="@string/twt_home_idle"
                         android:textSize="11sp"
                         android:textColor="@color/gogogo_text_muted" />
+                    <!-- When details are folded, keep the chosen target readable. -->
+                    <TextView
+                        android:id="@+id/twt_home_compact_target"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:text="@string/twt_home_compact_no_target"
+                        android:textColor="@color/gogogo_text"
+                        android:textSize="12sp"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:visibility="gone" />
                 </LinearLayout>
 
                 <!-- Only the optional details collapse on compact screens; state remains visible. -->
