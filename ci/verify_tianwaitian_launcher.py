@@ -312,6 +312,10 @@ check("pauseMockCameraFollowForManualSelection();" in map_tools
       and "followMock = false;" in map_tools
       and "followHeading = false;" in map_tools,
       "manually selected Beijing must not be hidden by previous live mock camera follow")
+check("EXTRA_RESULT_LABEL" in map_tools
+      and "data.getStringExtra(LabMapActivity.EXTRA_RESULT_LABEL)" in home
+      and "data.getStringExtra(LabMapActivity.EXTRA_RESULT_LABEL)" in console,
+      "map return must preserve the selected Beijing label on both screens")
 check("已选目标 · " in home
       and "未自动改变正在运行的模拟" in home,
       "map must visibly distinguish selected destination from active simulation")
