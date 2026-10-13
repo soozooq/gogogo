@@ -191,7 +191,8 @@
             android:id="@+id/search_linear"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#ddffffff"
+            android:background="@color/twt_search_overlay_surface"
+            android:elevation="8dp"
             android:visibility="gone"
             android:layout_marginTop="?attr/actionBarSize">
             <ListView
@@ -206,7 +207,8 @@
             android:id="@+id/search_history_linear"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#ddffffff"
+            android:background="@color/twt_search_overlay_surface"
+            android:elevation="8dp"
             android:visibility="gone"
             android:layout_marginTop="?attr/actionBarSize">
             <ListView
