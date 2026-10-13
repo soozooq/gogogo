@@ -181,6 +181,7 @@ public final class LabHubActivity extends AppCompatActivity {
                         + "真实第三方位置兼容性必须用设备实测确认。"),
                 GoGoUi.matchWrap());
         setContentView(scroll);
+        TianwaitianBottomNav.attach(this, TianwaitianBottomNav.Tab.DIAGNOSTICS);
     }
 
     /**
