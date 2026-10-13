@@ -840,7 +840,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
         if (target != null) {
             if (mMarkLatLngMap != null) {
                 target.setText(String.format(Locale.US,
-                        "待提交目标 (GCJ-02)  %.6f, %.6f",
+                        "目标坐标  %.6f, %.6f",
                         mMarkLatLngMap.latitude, mMarkLatLngMap.longitude));
             } else {
                 target.setText(R.string.twt_home_target_unselected);
