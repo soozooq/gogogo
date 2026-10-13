@@ -194,9 +194,11 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
         super.onCreate(savedInstanceState);
         // Landscape/short devices keep the map usable until the user expands details.
         int screenHeightDp = getResources().getConfiguration().screenHeightDp;
+        boolean defaultExpanded =
+                LabResponsiveUiPolicy.tianwaitianHomeDetailsDefaultExpanded(screenHeightDp);
         twtHomeExpanded = savedInstanceState != null
-                ? savedInstanceState.getBoolean(TWT_HOME_EXPANDED_KEY, screenHeightDp >= 600)
-                : screenHeightDp >= 600;
+                ? savedInstanceState.getBoolean(TWT_HOME_EXPANDED_KEY, defaultExpanded)
+                : defaultExpanded;
         setContentView(R.layout.activity_main);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -782,9 +784,30 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
         int widthDp = getResources().getConfiguration().screenWidthDp;
         // Map buttons on the right reserve 108dp; never make the overlay wider
         // than 356dp on tablets/landscape, or more than the available column.
-        int availableDp = Math.max(120, widthDp - 124);
-        lp.width = GoGoUi.dp(this, Math.min(356, availableDp));
+        int cardWidthDp = LabResponsiveUiPolicy.tianwaitianHomeCardWidthDp(widthDp);
+        lp.width = GoGoUi.dp(this, cardWidthDp);
         card.setLayoutParams(lp);
+
+        // Weight-based horizontal actions become full-width buttons if labels
+        // would be squeezed on a 320–360dp handset or large system font.
+        android.widget.LinearLayout actions = findViewById(R.id.twt_home_actions);
+        boolean stacked = LabResponsiveUiPolicy.stackTianwaitianHomeActions(
+                cardWidthDp, getResources().getConfiguration().fontScale);
+        actions.setOrientation(stacked
+                ? android.widget.LinearLayout.VERTICAL : android.widget.LinearLayout.HORIZONTAL);
+        for (int i = 0; i < actions.getChildCount(); i++) {
+            View child = actions.getChildAt(i);
+            android.widget.LinearLayout.LayoutParams buttonLp =
+                    new android.widget.LinearLayout.LayoutParams(
+                            stacked ? ViewGroup.LayoutParams.MATCH_PARENT : 0,
+                            GoGoUi.dp(this, 48), stacked ? 0f : 1f);
+            if (stacked) {
+                buttonLp.bottomMargin = i == 0 ? GoGoUi.dp(this, 4) : 0;
+            } else if (i == 0) {
+                buttonLp.rightMargin = GoGoUi.dp(this, 8);
+            }
+            child.setLayoutParams(buttonLp);
+        }
 
         findViewById(R.id.twt_home_details).setVisibility(
                 twtHomeExpanded ? View.VISIBLE : View.GONE);
