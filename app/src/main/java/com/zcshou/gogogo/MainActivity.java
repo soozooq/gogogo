@@ -819,6 +819,8 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
         detailLp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
         details.setLayoutParams(detailLp);
         details.setVisibility(twtHomeExpanded ? View.VISIBLE : View.GONE);
+        findViewById(R.id.twt_home_compact_target).setVisibility(
+                twtHomeExpanded ? View.GONE : View.VISIBLE);
         if (twtHomeExpanded) {
             final int maxHeightPx = GoGoUi.dp(this,
                     LabResponsiveUiPolicy.tianwaitianHomeDetailsMaxHeightDp(
@@ -858,6 +860,16 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
     private void refreshTianwaitianHome() {
         TextView target = findViewById(R.id.twt_home_target);
         TextView state = findViewById(R.id.twt_home_state);
+        TextView compact = findViewById(R.id.twt_home_compact_target);
+        if (compact != null) {
+            if (mMarkLatLngMap != null) {
+                compact.setText(String.format(Locale.US,
+                        "目标  %.4f, %.4f · 点开查看", mMarkLatLngMap.latitude,
+                        mMarkLatLngMap.longitude));
+            } else {
+                compact.setText(R.string.twt_home_compact_no_target);
+            }
+        }
         if (target != null) {
             if (mMarkLatLngMap != null) {
                 target.setText(String.format(Locale.US,
