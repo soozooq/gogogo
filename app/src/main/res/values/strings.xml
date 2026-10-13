@@ -1,11 +1,11 @@
 <resources>
-    <string name="app_name">GoGoGo</string>
+    <string name="app_name">天外天</string>
     <string name="app_settings">设置</string>
     <string name="app_history">历史记录</string>
     <string name="app_author">ZCShou</string>
     <string name="app_email">zcsexp@gmail.com</string>
     <string name="app_statement">仅供学习使用，否则后果自负！</string>
-    <string name="app_service_tips">GoGoGo 模拟服务正在运行中</string>
+    <string name="app_service_tips">天外天模拟服务正在运行中</string>
     <string name="app_agreement">用户协议</string>
     <string name="app_agreement_content">"1. 本软件专为学习 Android 开发使用，不会收集任何用户数据。"
     "严禁利用本软件侵犯他人隐私权或者用于游戏牟利，如软件使用者不能遵守此规定， 请立即删除。"
@@ -147,4 +147,16 @@
     <string name="update_ignore">忽略一次</string>
     <string name="update_time">更新时间：</string>
     <string name="update_commit">提交信息：</string>
+    <!-- Tianwaitian UI v1: home-only labels do not imply consumer compatibility. -->
+    <string name="twt_tagline">探索坐标之外</string>
+    <string name="twt_home_overline">星座视界  ·  位置探索</string>
+    <string name="twt_home_target_unselected">尚未选择新目标位置</string>
+    <string name="twt_home_idle">首页未启动模拟</string>
+    <string name="twt_home_requested">首页已请求启动 · 第三方采用未验证</string>
+    <string name="twt_home_action_start">启动模拟</string>
+    <string name="twt_home_action_stop">停止模拟</string>
+    <string name="twt_home_action_update">更新模拟目标位置</string>
+    <string name="twt_home_new_map">地图与路线</string>
+    <string name="twt_home_diagnostics">诊断中心</string>
+    <string name="twt_home_coordinate_hint">目标坐标为 GCJ-02 · 左下角按钮控制模拟</string>
 </resources>
