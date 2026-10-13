@@ -22,6 +22,9 @@ public final class LabHubActivity extends AppCompatActivity {
     private static final int GROUP_COUNT = 4;
     private static final String PREFLIGHT_EXPANDED_KEY = "lab_hub_preflight_expanded";
     private final boolean[] expanded = new boolean[GROUP_COUNT];
+    private final MaterialButton[] groupToggles = new MaterialButton[GROUP_COUNT];
+    private final LinearLayout[] groupBodies = new LinearLayout[GROUP_COUNT];
+    private MaterialButton collapseAdvancedButton;
     private TextView readinessTitle;
     private TextView readinessDetail;
     private LabTimedSupportCopy timedSupportCopy;
@@ -40,6 +43,14 @@ public final class LabHubActivity extends AppCompatActivity {
                         Math.min(previous.length, GROUP_COUNT));
             }
             preflightExpanded = savedInstanceState.getBoolean(PREFLIGHT_EXPANDED_KEY, false);
+            // Previous builds allowed every tool group open at once. Normalize
+            // restored state for the new single-open accordion.
+            boolean oneOpen = preflightExpanded;
+            for (int i = 0; i < GROUP_COUNT; i++) {
+                if (!expanded[i]) continue;
+                if (oneOpen) expanded[i] = false;
+                else oneOpen = true;
+            }
         }
         buildUi();
     }
@@ -136,8 +147,12 @@ public final class LabHubActivity extends AppCompatActivity {
         root.addView(GoGoUi.sectionTitle(this, "高级研究工具"),
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.muted(this,
-                "专项对照、微信实验和兼容研究都还在；默认收起减少干扰。"),
+                "专项对照、微信实验和兼容研究都保留在这里；一次只展开一个分类。"),
                 GoGoUi.matchWrap());
+        collapseAdvancedButton = GoGoUi.secondaryButton(this,
+                "收起全部高级工具", v -> collapseAllAdvanced());
+        root.addView(collapseAdvancedButton, GoGoUi.matchWrap());
+        updateCollapseAdvancedButton();
         addGroup(root, 3, "专项实验与对照", new Entry[]{
                 new Entry("自动化诊断任务面板",
                         "定时被动缓存观察与诊断报告", LabAutoDiagnosticActivity.class),
@@ -198,9 +213,12 @@ public final class LabHubActivity extends AppCompatActivity {
         preflightPanel = experimentPreflight.view();
         setPreflightExpanded(preflightExpanded);
         preflightToggle.setOnClickListener(v -> {
-            preflightExpanded = !preflightExpanded;
+            boolean opening = !preflightExpanded;
+            if (opening) collapseAllAdvanced();
+            preflightExpanded = opening;
             setPreflightExpanded(preflightExpanded);
-            if (preflightExpanded) experimentPreflight.refresh();
+            updateCollapseAdvancedButton();
+            if (opening) experimentPreflight.refresh();
         });
         root.addView(preflightToggle, GoGoUi.matchWrap());
         root.addView(preflightPanel, GoGoUi.matchWrap());
@@ -234,10 +252,15 @@ public final class LabHubActivity extends AppCompatActivity {
         LinearLayout contents = new LinearLayout(this);
         contents.setOrientation(LinearLayout.VERTICAL);
         MaterialButton toggle = GoGoUi.secondaryButton(this, "", v -> {});
+        groupToggles[index] = toggle;
+        groupBodies[index] = contents;
         setGroupExpanded(toggle, contents, title, entries.length, expanded[index]);
         toggle.setOnClickListener(v -> {
-            expanded[index] = !expanded[index];
+            boolean opening = !expanded[index];
+            if (opening) collapseAllAdvanced();
+            expanded[index] = opening;
             setGroupExpanded(toggle, contents, title, entries.length, expanded[index]);
+            updateCollapseAdvancedButton();
         });
         root.addView(toggle, GoGoUi.matchWrap());
 
@@ -248,6 +271,35 @@ public final class LabHubActivity extends AppCompatActivity {
             contents.addView(GoGoUi.gap(this, 8));
         }
         root.addView(contents, GoGoUi.matchWrap());
+    }
+
+    private void collapseAllAdvanced() {
+        for (int i = 0; i < GROUP_COUNT; i++) {
+            expanded[i] = false;
+            if (groupToggles[i] != null && groupBodies[i] != null) {
+                String currentLabel = groupToggles[i].getText().toString();
+                // Keep the original title and count from each control itself.
+                String title = currentLabel.replaceFirst("^[▴▾] (展开|收起) ", "");
+                int sep = title.lastIndexOf(" · ");
+                int count = 0;
+                if (sep > 0) {
+                    try { count = Integer.parseInt(title.substring(sep + 3).replace(" 项", "")); }
+                    catch (NumberFormatException ignored) {}
+                    title = title.substring(0, sep);
+                }
+                setGroupExpanded(groupToggles[i], groupBodies[i], title, count, false);
+            }
+        }
+        preflightExpanded = false;
+        setPreflightExpanded(false);
+        updateCollapseAdvancedButton();
+    }
+
+    private void updateCollapseAdvancedButton() {
+        if (collapseAdvancedButton == null) return;
+        boolean anyOpen = preflightExpanded;
+        for (boolean open : expanded) anyOpen |= open;
+        collapseAdvancedButton.setVisibility(anyOpen ? View.VISIBLE : View.GONE);
     }
 
     private void setGroupExpanded(MaterialButton button, LinearLayout contents,
