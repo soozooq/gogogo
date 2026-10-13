@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Stable lookup for primary navigation to reselect on resumed Activity. -->
+    <item name="twt_bottom_navigation" type="id" />
+</resources>
