@@ -183,5 +183,8 @@
     <color name="twt_map_control_surface">#F8FAFF</color>
     <color name="twt_map_control_stroke">#C6D4E9</color>
     <color name="twt_map_control_ink">#233E75</color>
+    <!-- Search result overlays must match light-theme foreground ink. -->
+    <color name="twt_search_overlay_surface">#F5FFFFFF</color>
+    <color name="twt_search_divider">#D8E1EF</color>
     <!-- Tianwaitian brand tokens -->
 </resources>
