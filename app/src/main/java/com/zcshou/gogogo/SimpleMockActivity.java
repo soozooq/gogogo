@@ -140,7 +140,8 @@ public class SimpleMockActivity extends AppCompatActivity {
                             longitudeInput.setText(Double.toString(selected.longitude));
                             latitudeInput.setText(Double.toString(selected.latitude));
                             TianwaitianSelectedTarget.save(this,
-                                    selected.longitude, selected.latitude, "地图选点");
+                                    selected.longitude, selected.latitude,
+                                    data.getStringExtra(LabMapActivity.EXTRA_RESULT_LABEL));
                             showHomeStatus(ServiceGo.sRunning
                                             ? "已从地图填入坐标 · 当前运行的模拟未改变；点击「开始模拟」才会应用"
                                             : "已从地图填入坐标 · 尚未启动模拟",
