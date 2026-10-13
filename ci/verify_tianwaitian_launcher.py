@@ -280,3 +280,33 @@ check("LabCrossAppReadableSummary.summarize" in cross_app
 check("ServiceGo" not in cross_app, "UI simplification must not touch the mock engine")
 print("Tianwaitian cross-app compact mode PASS: three-step flow, "
       "readable evidence summary and preserved raw diagnostics.")
+
+# The Android 13 device exposed a real bug: picking Beijing in the console
+# left the launcher map at its hardcoded Myawaddy start location. A shared
+# selection store must be written at explicit selection boundaries and read
+# both after launcher process recreation and after returning from other tabs.
+target_store = (base / "TianwaitianSelectedTarget.java").read_text(encoding="utf-8")
+console = (base / "SimpleMockActivity.java").read_text(encoding="utf-8")
+map_tools = (base / "LabMapActivity.java").read_text(encoding="utf-8")
+check("SharedPreferences" in target_store
+      and 'PREFS = "twt_selected_target_v1"' in target_store
+      and "LabHomeCoordinates.parse" in target_store
+      and "ServiceGo" not in target_store.split("public final class", 1)[1],
+      "selected target must be persisted and strictly separate from ServiceGo")
+check("TianwaitianSelectedTarget.read(this)" in home
+      and "TianwaitianSelectedTarget.save(" in home
+      and "syncSelectedTarget();" in home
+      and "applySelectedTarget(target, changed)" in home,
+      "launcher must persist and rehydrate chosen map target")
+check("EXTRA_PREFILL_LABEL" in home
+      and "TianwaitianSelectedTarget.save(" in console
+      and "TianwaitianSelectedTarget.Target shared" in console
+      and "selected.longitude, selected.latitude, place" in console,
+      "console picker must synchronize selected Beijing label and WGS-84 coordinates")
+check("TianwaitianSelectedTarget.save(" in map_tools,
+      "map tools should preserve explicit city selections across Activities")
+check("已选目标 · " in home
+      and "未自动改变正在运行的模拟" in home,
+      "map must visibly distinguish selected destination from active simulation")
+print("Tianwaitian selected-target persistence checks PASS: Beijing across "
+      "home/console/map tools, Activity restore, mock publishing still explicit.")
