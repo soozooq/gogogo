@@ -29,8 +29,8 @@ android {
         minSdkVersion 27
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 35
-        versionCode 2400071
-        versionName '2.4.3-tianwaitian-home' // https://semver.org/lang/zh-CN/
+        versionCode 2400072
+        versionName '2.4.4-tianwaitian-bottom-nav' // https://semver.org/lang/zh-CN/
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += ['zh', 'zh-rCN', 'en', 'en-rUS']
         ndk {
