@@ -37,7 +37,7 @@ import java.util.concurrent.Executors;
 
 /**
  * User-triggered privacy *audit*, not fingerprint evasion.
- * Local snapshot is passive. Optional external checks use only GoGoGo's
+ * Local snapshot is passive. Optional external checks use only 天外天's
  * default VPN network and never keep, display, log or upload the returned IP.
  */
 public final class LabPrivacyAuditActivity extends AppCompatActivity {
@@ -69,15 +69,14 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
         GoGoUi.applyScreenBackground(scroll);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(GoGoUi.dp(this, 18), GoGoUi.dp(this, 22),
-                GoGoUi.dp(this, 18), GoGoUi.dp(this, 32));
+        root.setPadding(GoGoUi.dp(this, 18), GoGoUi.dp(this, 12),
+                GoGoUi.dp(this, 18), GoGoUi.dp(this, 24));
         scroll.addView(root);
 
-        root.addView(GoGoUi.eyebrow(this, "PRIVACY  /  NETWORK AUDIT"), GoGoUi.matchWrap());
-        root.addView(GoGoUi.gap(this, 8));
-        root.addView(GoGoUi.heroTitle(this, "网络与定位隐私体检"), GoGoUi.matchWrap());
+        root.addView(GoGoUi.brandStrip(this), GoGoUi.matchWrap());
+        root.addView(GoGoUi.heroTitle(this, "环境体检"), GoGoUi.matchWrap());
         root.addView(GoGoUi.subtitle(this,
-                "只读检查 VPN、网络协议、DNS、时区 · 可选联网出口检测"),
+                "网络与定位隐私检查 · 本机只读快照与自愿联网验证"),
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 14));
 
@@ -85,7 +84,7 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
         LinearLayout body = GoGoUi.cardContent(this);
         card.addView(body);
         body.addView(GoGoUi.sectionTitle(this, "本机只读快照"), GoGoUi.matchWrap());
-        body.addView(GoGoUi.muted(this, "仅检查 GoGoGo 自己的默认网络；"
+        body.addView(GoGoUi.muted(this, "仅检查 天外天 自己的默认网络；"
                 + "不调用定位 API、不修改系统设置、不读取 SIM 号码。"), GoGoUi.matchWrap());
         local = GoGoUi.muted(this, "等待检查…");
         local.setTextIsSelectable(true);
@@ -105,7 +104,7 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
                         + " 发起 HTTPS 请求，后者会核对两个公网出口 IP 的国家。"
                         + " 这些服务会看到请求的公网出口 IP，ipwho.is 会收到两个出口地址。"
                         + " 本应用只保留连通性及国家代码，不保存或复制 IP 地址。"
-                        + " 仅测试 GoGoGo，不代表 Claude、微信或浏览器使用同一出口。"),
+                        + " 仅测试 天外天，不代表 Claude、微信或浏览器使用同一出口。"),
                 GoGoUi.matchWrap());
         status = GoGoUi.muted(this, "尚未开始联网检测");
         probeBody.addView(GoGoUi.gap(this, 8));
@@ -119,7 +118,7 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
                         .setTitle("进行第三方出口测试？")
                         .setMessage("ipify 会看到请求出口 IP；ipwho.is 会收到"
                                 + " IPv4/IPv6 出口地址用于归属国家查询。"
-                                + "仅在 GoGoGo 默认网络确认 VPN 时执行，"
+                                + "仅在 天外天 默认网络确认 VPN 时执行，"
                                 + "不保存 IP，也不能检查 Claude 或浏览器是否分流。")
                         .setNegativeButton("取消", (d, w) -> {})
                         .setPositiveButton("同意并检测", (d, w) -> startProbes())
@@ -132,7 +131,7 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
         browserCard.addView(browserBody);
         browserBody.addView(GoGoUi.sectionTitle(this, "浏览器专项检查"), GoGoUi.matchWrap());
         browserBody.addView(GoGoUi.muted(this,
-                "GoGoGo 无法直接读取 Chrome、Claude App 或其它浏览器内部的"
+                "天外天 无法直接读取 Chrome、Claude App 或其它浏览器内部的"
                         + " WebRTC/DNS 结果。以下检查必须在你实际使用的浏览器里打开。"
                         + " 第三方测试页能看到浏览器的公网 IP；是否打开完全由你决定。"),
                 GoGoUi.matchWrap());
@@ -162,7 +161,7 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
                             (android.content.ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
                     if (clipboard != null) clipboard.setPrimaryClip(
                             android.content.ClipData.newPlainText(
-                                    "GoGoGo privacy audit", report));
+                                    "天外天 privacy audit", report));
                     Toast.makeText(this, "已复制不含公网 IP / SIM / 真实 GPS 的报告",
                             Toast.LENGTH_SHORT).show();
                 }), GoGoUi.matchWrap());
@@ -181,7 +180,7 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("打开第三方检测网站")
                 .setMessage("网站会看到你在浏览器中的出口 IP，"
-                        + "可能收集浏览器指纹。GoGoGo 不会读取或上传它的结果。")
+                        + "可能收集浏览器指纹。天外天 不会读取或上传它的结果。")
                 .setNegativeButton("取消", (d, w) -> {})
                 .setPositiveButton("继续", (d, w) -> {
                     try {
@@ -201,7 +200,7 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
         NetworkCapabilities caps = connectivity == null || network == null
                 ? null : connectivity.getNetworkCapabilities(network);
         boolean vpn = caps != null && caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN);
-        sb.append("GoGoGo 默认网络：")
+        sb.append("天外天 默认网络：")
                 .append(LabPrivacyAuditRules.vpnState(network != null, vpn))
                 .append("\n");
 
@@ -263,7 +262,7 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
                 : manager.getNetworkCapabilities(current);
         if (current == null || caps == null
                 || !caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN)) {
-            latestExternal = "未执行：GoGoGo 的默认网络未确认 VPN。"
+            latestExternal = "未执行：天外天 的默认网络未确认 VPN。"
                     + "建议先检查 VPN 分流/默认连接，防止测试意外使用非 VPN 出口。";
             external.setText(latestExternal);
             status.setText("联网测试已安全跳过");
@@ -362,7 +361,7 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
                 .replaceAll("手机语言/地区设置：[^\\n]*", "手机语言/地区设置：[已脱敏]");
         String egress = latestExternal == null ? "NOT_TESTED" : latestExternal;
         report = "GOGOGO_PRIVACY_AUDIT_V1\n"
-                + "scope=GoGoGo-default-network-only\n"
+                + "scope=天外天-default-network-only\n"
                 + "network_snapshot=READ_ONLY\n"
                 + sanitized + "\nEXTERNAL_OPTIONAL\n" + egress
                 + "\nWEBRTC=NOT_VERIFIED_FOR_EXTERNAL_BROWSER\n"
