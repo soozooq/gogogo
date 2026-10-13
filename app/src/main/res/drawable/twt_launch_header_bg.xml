@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original code-drawn Tianwaitian constellation gradient; no external artwork. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="0"
+        android:startColor="#243C8C"
+        android:centerColor="#4444A8"
+        android:endColor="#6D41A8" />
+    <corners android:radius="22dp" />
+</shape>
