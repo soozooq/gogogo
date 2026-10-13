@@ -58,6 +58,11 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
         refreshLocal();
     }
 
+    @Override protected void onResume() {
+        super.onResume();
+        TianwaitianBottomNav.syncSelection(this, TianwaitianBottomNav.Tab.AUDIT);
+    }
+
     private void createUi() {
         ScrollView scroll = new ScrollView(this);
         scroll.setFillViewport(true);
