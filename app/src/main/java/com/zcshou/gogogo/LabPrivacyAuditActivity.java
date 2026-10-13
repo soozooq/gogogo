@@ -169,6 +169,7 @@ public final class LabPrivacyAuditActivity extends AppCompatActivity {
         root.addView(GoGoUi.gap(this, 14));
         root.addView(footer, GoGoUi.matchWrap());
         setContentView(scroll);
+        TianwaitianBottomNav.attach(this, TianwaitianBottomNav.Tab.AUDIT);
     }
 
     private void confirmExternalPage(String url) {
