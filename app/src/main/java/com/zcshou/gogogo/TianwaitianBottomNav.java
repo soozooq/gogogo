@@ -63,6 +63,7 @@ public final class TianwaitianBottomNav {
                 ViewGroup.LayoutParams.MATCH_PARENT, GoGoUi.dp(activity, 1)));
 
         BottomNavigationView nav = new BottomNavigationView(activity);
+        nav.setId(R.id.twt_bottom_navigation);
         nav.inflateMenu(R.menu.twt_bottom_nav);
         nav.setBackgroundColor(GoGoUi.color(activity, R.color.gogogo_surface));
         nav.setElevation(GoGoUi.dp(activity, 8));
@@ -77,7 +78,10 @@ public final class TianwaitianBottomNav {
                         GoGoUi.color(activity, R.color.gogogo_text_muted)});
         nav.setItemIconTintList(tint);
         nav.setItemTextColor(tint);
-        nav.getMenu().findItem(selected.menuId).setChecked(true);
+        // Do not set MenuItem.checked alone: NavigationBarView tracks its own
+        // selectedItemId internally. Divergence caused the one-tab-off purple
+        // highlight seen on the actual device screenshots.
+        nav.setSelectedItemId(selected.menuId);
         nav.setOnItemSelectedListener(item -> {
             if (item.getItemId() == selected.menuId) return true;
             for (Tab candidate : Tab.values()) {
@@ -85,7 +89,10 @@ public final class TianwaitianBottomNav {
                     Intent intent = new Intent(activity, candidate.destination);
                     intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                     activity.startActivity(intent);
-                    return true;
+                    // Never let the outgoing screen select the destination tab
+                    // while its old content is still visible during transition.
+                    // The incoming (or reordered) Activity owns that selection.
+                    return false;
                 }
             }
             return false;
@@ -94,5 +101,14 @@ public final class TianwaitianBottomNav {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         host.addView(shell, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+    }
+
+    /** Refresh internal presenter selection after reordering an existing tab. */
+    public static void syncSelection(AppCompatActivity activity, Tab current) {
+        BottomNavigationView nav = activity.findViewById(R.id.twt_bottom_navigation);
+        if (nav == null) return;
+        if (nav.getSelectedItemId() != current.menuId) {
+            nav.setSelectedItemId(current.menuId);
+        }
     }
 }
