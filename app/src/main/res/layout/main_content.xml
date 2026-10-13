@@ -75,7 +75,23 @@
                             android:text="@string/twt_home_overline"
                             android:textColor="@color/twt_purple"
                             android:textSize="12sp"
-                            android:textStyle="bold" />
+                            android:textStyle="bold"
+                            android:singleLine="true"
+                            android:ellipsize="end" />
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/twt_home_toggle"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:minWidth="48dp"
+                            android:minHeight="48dp"
+                            android:layout_marginStart="4dp"
+                            android:text="⌃"
+                            android:textSize="18sp"
+                            android:textAllCaps="false"
+                            android:textColor="@color/gogogo_primary"
+                            android:contentDescription="@string/twt_home_toggle_hide"
+                            app:backgroundTint="@color/gogogo_surface_alt"
+                            app:cornerRadius="12dp" />
                     </LinearLayout>
                     <TextView
                         android:id="@+id/twt_home_state"
@@ -86,6 +102,13 @@
                         android:textSize="11sp"
                         android:textColor="@color/gogogo_text_muted" />
                 </LinearLayout>
+
+                <!-- Only the optional details collapse on compact screens; state remains visible. -->
+                <LinearLayout
+                    android:id="@+id/twt_home_details"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/twt_home_target"
@@ -106,6 +129,7 @@
                     android:textSize="11sp" />
 
                 <LinearLayout
+                    android:id="@+id/twt_home_actions"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="11dp"
@@ -133,6 +157,18 @@
                         android:textColor="@color/gogogo_text"
                         app:cornerRadius="12dp"
                         app:backgroundTint="@color/gogogo_surface_alt" />
+                </LinearLayout>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/twt_open_places"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="4dp"
+                    android:contentDescription="@string/twt_home_places"
+                    android:text="@string/twt_home_places"
+                    android:textAllCaps="false"
+                    android:textColor="@color/gogogo_primary"
+                    app:cornerRadius="12dp"
+                    app:backgroundTint="@color/gogogo_surface_alt" />
                 </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
