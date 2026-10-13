@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original generic constellation ornament for the home card.
+     Decorative only: NOT the final app logo or a claim of trademark exclusivity. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp"
+    android:height="28dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@color/twt_purple"
+        android:strokeWidth="1.7"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M4,23 L11,12 L19,18 L28,6 M11,12 L20,7 M19,18 L27,25" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@color/twt_cyan"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round"
+        android:pathData="M4,20.7 L4,25.3 M1.7,23 L6.3,23 M11,9.5 L11,14.5 M8.5,12 L13.5,12 M19,15.7 L19,20.3 M16.7,18 L21.3,18 M28,3.7 L28,8.3 M25.7,6 L30.3,6 M27,22.7 L27,27.3 M24.7,25 L29.3,25" />
+</vector>
