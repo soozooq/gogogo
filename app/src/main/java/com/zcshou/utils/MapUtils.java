@@ -26,6 +26,9 @@ public class MapUtils {
 
     // WGS84 → GCJ02
     public static double[] wgs2gcj02(double lng, double lat) {
+        // GCJ-02 offsets only apply within the approximate China footprint.
+        // Outside it, international coordinates must remain unchanged.
+        if (!ChinaGcjRegion.contains(lng, lat)) return new double[] {lng, lat};
         double dlat = transformLat(lng - 105.0, lat - 35.0);
         double dlng = transformLon(lng - 105.0, lat - 35.0);
         double radlat = lat / 180.0 * pi;
@@ -84,6 +87,7 @@ public class MapUtils {
     }
 
     public static double[] gcj02towgs84(double lng, double lat) {
+        if (!ChinaGcjRegion.contains(lng, lat)) return new double[] {lng, lat};
         double dlat = transformLat(lng - 105.0, lat - 35.0);
         double dlng = transformLon(lng - 105.0, lat - 35.0);
         double radlat = lat / 180.0 * pi;
