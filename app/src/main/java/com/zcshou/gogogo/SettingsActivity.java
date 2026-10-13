@@ -53,6 +53,12 @@ public class SettingsActivity extends BaseActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        TianwaitianBottomNav.syncSelection(this, TianwaitianBottomNav.Tab.SETTINGS);
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
 
