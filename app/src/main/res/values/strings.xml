@@ -152,6 +152,7 @@
     <string name="twt_settings_caption">偏好设置 · 地图与模拟参数</string>
     <string name="twt_home_overline">星座视界  ·  位置探索</string>
     <string name="twt_home_target_unselected">尚未选择新目标位置</string>
+    <string name="twt_home_compact_no_target">尚无新目标 · 展开后可进入地图和地点库</string>
     <string name="twt_home_idle">首页未启动模拟</string>
     <string name="twt_home_requested">首页已请求启动 · 第三方采用未验证</string>
     <string name="twt_home_action_start">启动模拟</string>
