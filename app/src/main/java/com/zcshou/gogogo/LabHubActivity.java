@@ -70,6 +70,9 @@ public final class LabHubActivity extends AppCompatActivity {
         root.addView(GoGoUi.subtitle(this,
                 "先查前置条件，再看真实位置消费者；深入排障和研究工具按需展开。"
                         + "打开这里不会启动模拟。"), GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 10));
+        root.addView(GoGoUi.eyebrow(this, "只读总览  ·  快速检查  ·  深入排障"),
+                GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 14));
 
         // One glance at the same read-only prerequisites used by Lab 31.
@@ -98,7 +101,7 @@ public final class LabHubActivity extends AppCompatActivity {
         root.addView(experimentPreflight.view(), GoGoUi.matchWrap());
 
         root.addView(GoGoUi.gap(this, 18));
-        root.addView(GoGoUi.sectionTitle(this, "先用这两个工具"),
+        root.addView(GoGoUi.sectionTitle(this, "常用定位检查"),
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.navigationTile(this, "基础快检与综合报告",
                 "检查授权和运行标记，保存基准或对比异常清理历史",
