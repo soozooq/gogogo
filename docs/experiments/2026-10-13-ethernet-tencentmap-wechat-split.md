@@ -77,3 +77,33 @@
 - 版本基线：记录生成时最新 UI 预览 **天外天 2.4.10**，这次实验取证实际发生在升级前的旧 UI 上；切勿将本轮成功归功于新三步界面。
 
 **留存方式**：仓库保留这份脱敏实验结论；天外天设备本地保留原始总日志；此对话中用户已经提供两轮完整脱敏文本，可作为未来复核的原始参照。
+
+## 第三阶段：2026-10-13 22:25–22:26 重复验证（用户再次提供双应用日志）
+
+这次是**新的两轮**（与前文 21:51–21:53 两轮不同），数据来自用户于 22:24 后的同步实验记录；原始脱敏总日志仍在聊天记录及本机 `cross_app_location_evidence` 里，不把经纬度和实际居住位置复制进仓库。
+
+### 实验 3：腾讯地图 App
+
+- 22:25:18.710 开始；22:25:18.757 请求启动；22:25:41.156 采集 AFTER；22:25:49.923 保存人工观察。
+- BEFORE GPS 80ms、NETWORK 30ms、GMS_LAST 143ms；三者全部 `mock=YES`、`mock_target_distance=LT_1KM`。
+- AFTER GPS 77ms、NETWORK 29ms、GMS_LAST 512ms；三者全部 `mock=YES`、`mock_target_distance=LT_1KM`。
+- 人工观察：腾讯地图的蓝点和附近地点都在当前模拟目标地区。
+
+### 实验 4：微信「发送位置」
+
+- 22:26:10.495 开始；22:26:10.520 请求启动；22:26:39.428 采集 AFTER；22:26:42.970 保存人工观察。
+- BEFORE GPS 41ms、NETWORK 66ms、GMS_LAST 201ms；三者全部 `mock=YES`、`mock_target_distance=LT_1KM`。
+- AFTER GPS 74ms、NETWORK 21ms、GMS_LAST 423ms；三者全部 `mock=YES`、`mock_target_distance=LT_1KM`。
+- 人工观察：微信蓝点和附近地点均在国内实际地区。
+
+### 两轮网络条件和重要限制
+
+- 两轮 BEFORE/AFTER 一致：`app_default_network=VPN+ETHERNET`；`visible_network_count_by_transport=CELLULAR:0,WIFI:0,ETHERNET:2,VPN:1`；`wifi_radio_switch=false`；`airplane_mode=1`。
+- `default_sim_iso=US`、`sim_mccmnc=46002`、`registered_network_iso=UNKNOWN`、`READ_PHONE_STATE_NOT_GRANTED` 与前两轮一致；仍不能用这些字段证明微信确切位置来源。
+- **新增 UI 问题**：同晚用户报告“在天外天选了北京，但星空地图首页仍展示缅甸妙瓦底默认目标（98.508950,16.689140）”。仓库排查发现早期版本首页、控制台和地图工具之间缺乏统一选点持久化；改动单独在后续版本处理。
+- **因此特别注意**：日志字段 `mock_target_distance=LT_1KM` 是对天外天当前记录的**模拟目标参考值**的距离，不是“北京”的证据；`mock_status_and_route=NOT_AUTO_VERIFIED`，而且没有原始经纬度。不能用这两轮证明模拟确实已经切到北京或当前微信地点为北京。
+- 复现结论与前两轮一致：公开 GPS/NETWORK/GMS 缓存持续返回模拟目标附近，腾讯地图跟随而微信仍显示国内真实地区。继续保持 **“第三方实际定位来源未知”**，不能归因为某个具体微信 SDK、缓存策略或检测机制。
+
+### 代码跟进：选点不同步与真实模拟状态分离
+
+在 `TianwaitianHomeActivity`、`SimpleMockActivity`、`LabMapActivity` 中通过 `TianwaitianSelectedTarget` 共享一个显式选定的 WGS-84 目标（本地 `SharedPreferences`），使选中北京之后地图与控制台不再回退到默认妙瓦底。该记录是**用户选中的 UI 目标**，绝不等同于正在运行的 `ServiceGo` 位置；选择目标本身不会发起或修改模拟。需新 APK 和真机截图验收。
