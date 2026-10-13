@@ -1,12 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Original Tianwaitian constellation logo.
+     All important strokes remain inside Android adaptive-icon safe zone. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-  <group android:scaleX="0.10546875"
-      android:scaleY="0.10546875">
-    <path
-        android:pathData="M849.17 0c97.4 0 174.83 77.42 174.83 174.83v674.34c0 97.4-77.42 174.83-174.83 174.83L174.83 1024c-97.4 0-174.83-77.42-174.83-174.83L0 174.83c0-97.4 77.42-174.83 174.83-174.83h674.34zM514.5 249.76h-5c-114.89 2.5-209.8 94.91-209.8 207.3v7.49c2.5 67.43 42.46 144.86 104.9 224.78 24.98 29.97 49.95 57.44 77.42 82.42l14.99 12.49 9.99 7.49 7.49 7.49 7.49-7.49c34.97-32.47 69.93-67.43 99.9-102.4 64.94-77.42 102.4-154.85 104.9-224.78v-7.49c0-112.39-92.41-204.8-207.3-207.3h-5zM514.5 349.66c59.94 0 107.4 47.45 107.4 107.4s-47.45 107.4-107.4 107.4-107.4-47.45-107.4-107.4 47.45-107.4 107.4-107.4zM514.5 394.61c-34.97 0-59.94 27.47-59.94 59.94s27.47 59.94 59.94 59.94c34.97 0 59.94-27.47 59.94-59.94s-27.47-59.94-59.94-59.94z"
-        android:fillColor="#FC9637"/>
-  </group>
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="@android:color/transparent"
+        android:strokeColor="#53D6F6" android:strokeAlpha="0.42"
+        android:strokeWidth="1.6"
+        android:pathData="M25,59 C26,40 39,27 57,25 C68,24 77,31 81,40" />
+    <path android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF" android:strokeWidth="3.5"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M30,74 L43,47 L56,62 L77,32 M43,47 L61,39 M56,62 L73,77"/>
+    <path android:fillColor="@android:color/transparent"
+        android:strokeColor="#63E4FA" android:strokeWidth="2.8"
+        android:strokeLineCap="round"
+        android:pathData="M30,68 L30,80 M24,74 L36,74 M43,41 L43,53 M37,47 L49,47 M56,56 L56,68 M50,62 L62,62 M77,26 L77,38 M71,32 L83,32 M73,71 L73,83 M67,77 L79,77 M61,34 L61,44 M56,39 L66,39"/>
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M28,74 a2,2 0,1 0,4 0 a2,2 0,1 0,-4 0 M41,47 a2,2 0,1 0,4 0 a2,2 0,1 0,-4 0 M54,62 a2,2 0,1 0,4 0 a2,2 0,1 0,-4 0 M75,32 a2,2 0,1 0,4 0 a2,2 0,1 0,-4 0"/>
+    <path android:fillColor="#F8D995"
+        android:pathData="M61,29 L62,35 L68,36 L62,37 L61,43 L60,37 L54,36 L60,35 Z" />
 </vector>
