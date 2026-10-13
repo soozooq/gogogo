@@ -20,6 +20,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
@@ -43,6 +45,22 @@ public final class TianwaitianSearchActivity extends AppCompatActivity {
     private MaterialButton onlineButton;
     private boolean searching;
     private long queryRevision;
+
+    private final ActivityResultLauncher<Intent> presetPicker =
+            registerForActivityResult(
+                    new ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        if (result.getResultCode() != Activity.RESULT_OK
+                                || result.getData() == null) return;
+                        Intent point = result.getData();
+                        if (!point.hasExtra(LabPlacePickerActivity.EXTRA_LONGITUDE)
+                                || !point.hasExtra(LabPlacePickerActivity.EXTRA_LATITUDE)) return;
+                        deliverResult(point.getStringExtra(LabPlacePickerActivity.EXTRA_LABEL),
+                                point.getDoubleExtra(LabPlacePickerActivity.EXTRA_LONGITUDE,
+                                        Double.NaN),
+                                point.getDoubleExtra(LabPlacePickerActivity.EXTRA_LATITUDE,
+                                        Double.NaN));
+                    });
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
@@ -242,7 +260,7 @@ public final class TianwaitianSearchActivity extends AppCompatActivity {
         offlineResults.addView(GoGoUi.gap(this, 5));
         offlineResults.addView(GoGoUi.secondaryButton(this,
                 "查看完整地点库 · " + LabLocationPresets.size() + " 个预设",
-                v -> startActivity(new Intent(this, LabPlacePickerActivity.class))),
+                v -> presetPicker.launch(new Intent(this, LabPlacePickerActivity.class))),
                 GoGoUi.matchWrap());
     }
 
