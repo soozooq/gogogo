@@ -206,3 +206,51 @@ check(len(countries) == 193 and countries.issubset(indexed),
       "missing country Pinyin A-Z index: " + repr(sorted(countries - indexed)))
 print("Tianwaitian icon/country regression checks PASS: "
       "10 legacy PNGs, 2 adaptive XMLs, themed monochrome, 263 locations.")
+
+# Unified search: the launcher field must open an internal explicit-submit
+# screen, results are passed back to the map and NEVER start mock injection.
+search_ui = (base / "TianwaitianSearchActivity.java").read_text(encoding="utf-8")
+geocoder = (base / "TianwaitianGeocoder.java").read_text(encoding="utf-8")
+query_parser = (base / "TianwaitianSearchQuery.java").read_text(encoding="utf-8")
+check("unifiedSearch.launch(" in home
+      and "new Intent(this, TianwaitianSearchActivity.class)" in home,
+      "map launcher missing new unified search field")
+check("registerForActivityResult(" in home
+      and "data.getStringExtra(LabPlacePickerActivity.EXTRA_LABEL)" in home,
+      "searched coordinates must be returned to the map without launching mock")
+check(".TianwaitianSearchActivity" in activity_names,
+      "unified search Activity must be declared in AndroidManifest")
+check("new ActivityResultContracts.StartActivityForResult()" in search_ui
+      and "presetPicker.launch(" in search_ui,
+      "full offline place catalog must return a valid selected point")
+check("queryField.addTextChangedListener" in search_ui
+      and "renderOffline(s.toString())" in search_ui,
+      "offline suggestions must be local and immediate")
+watcher = search_ui.split("queryField.addTextChangedListener", 1)[1].split(
+    "queryField.setOnEditorActionListener", 1)[0]
+check("TianwaitianGeocoder.search" not in watcher
+      and "startOnlineSearch()" not in watcher,
+      "Nominatim autocomplete/online typing requests are prohibited")
+check("TianwaitianGeocoder.search" in search_ui
+      and 'GoGoUi.primaryButton(this, "搜索全球地图（联网）"' in search_ui,
+      "online geocoding must be accessible only via explicit submission")
+check("EXTRA_LONGITUDE" in search_ui and "setResult(Activity.RESULT_OK" in search_ui
+      and "ServiceGo" not in search_ui,
+      "search results should fill WGS-84 target, not start mock simulation")
+check("1200" in geocoder and "RATE_LOCK" in geocoder
+      and "User-Agent" in geocoder and "Accept-Language" in geocoder,
+      "geocoder must identify requests and limit request frequency")
+check('7L * 24 * 60 * 60 * 1000' in geocoder
+      and "MAX_CACHE_ENTRIES" in geocoder and "clearCache" in geocoder,
+      "geocoder must avoid redundant repeated calls and offer cache clearing")
+check("DEFAULT_ENDPOINT" in geocoder and "setEndpoint" in geocoder
+      and '"https".equalsIgnoreCase' in geocoder,
+      "geocoding provider must be switchable to a trusted HTTPS service")
+check("OpenStreetMap contributors" in search_ui
+      and "openstreetmap.org/copyright" in search_ui,
+      "search results must provide visible map-data attribution")
+check("LabHomeCoordinates.parse" in query_parser
+      and "coordinatesOrNull" in query_parser,
+      "typed coordinates must use the same strict boundary as home")
+print("Tianwaitian unified search checks PASS: offline/coordinates/local callback, "
+      "explicit online queries, cache, switchable HTTPS provider and attribution.")
