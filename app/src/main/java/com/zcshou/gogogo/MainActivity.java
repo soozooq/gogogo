@@ -771,10 +771,14 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
                 startActivity(new Intent(this, LabHubActivity.class)));
         findViewById(R.id.twt_open_places).setOnClickListener(v ->
                 twtPlacePickerLauncher.launch(new Intent(this, LabPlacePickerActivity.class)));
-        findViewById(R.id.twt_home_toggle).setOnClickListener(v -> {
+        View.OnClickListener expandHomeDetails = v -> {
             twtHomeExpanded = !twtHomeExpanded;
             updateTwtHomeLayout();
-        });
+        };
+        findViewById(R.id.twt_home_toggle).setOnClickListener(expandHomeDetails);
+        // Compact target invites a tap; make the entire summary actionable.
+        View compactTarget = findViewById(R.id.twt_home_compact_target);
+        compactTarget.setOnClickListener(expandHomeDetails);
         updateTwtHomeLayout();
         refreshTianwaitianHome();
     }
