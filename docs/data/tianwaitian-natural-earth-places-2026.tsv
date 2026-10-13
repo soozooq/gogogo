@@ -1,0 +1,114 @@
+# Tianwaitian offline coordinate additions (2026-10-13)
+# UTF-8 pipe-separated: Natural Earth ADM0NAME | Chinese country | ISO 3166-1 alpha-2 | Natural Earth NAME | Chinese city
+# Source: Natural Earth 1:110m populated places (public domain)
+# https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_populated_places.geojson
+# https://www.naturalearthdata.com/about/terms-of-use/
+# Approximate city-center points, NOT precise GPS/geocoded POIs. The original 157 entries remain untouched and first.
+# Group A: countries not yet represented; Group B: additional cities already represented.
+Afghanistan|阿富汗|AF|Kabul|喀布尔
+Albania|阿尔巴尼亚|AL|Tirana|地拉那
+Andorra|安道尔|AD|Andorra|安道尔城
+Antigua and Barbuda|安提瓜和巴布达|AG|Saint John's|圣约翰
+Bahrain|巴林|BH|Manama|麦纳麦
+Barbados|巴巴多斯|BB|Bridgetown|布里奇敦
+Belize|伯利兹|BZ|Belmopan|贝尔莫潘
+Benin|贝宁|BJ|Porto-Novo|波多诺伏
+Bosnia and Herzegovina|波斯尼亚和黑塞哥维那|BA|Sarajevo|萨拉热窝
+Botswana|博茨瓦纳|BW|Gaborone|哈博罗内
+Burkina Faso|布基纳法索|BF|Ouagadougou|瓦加杜古
+Burundi|布隆迪|BI|Bujumbura|布琼布拉
+Cameroon|喀麦隆|CM|Yaoundé|雅温得
+Cape Verde|佛得角|CV|Praia|普拉亚
+Central African Republic|中非共和国|CF|Bangui|班吉
+Chad|乍得|TD|N'Djamena|恩贾梅纳
+Comoros|科摩罗|KM|Moroni|莫罗尼
+Congo (Brazzaville)|刚果共和国|CG|Brazzaville|布拉柴维尔
+Congo (Kinshasa)|刚果民主共和国|CD|Kinshasa|金沙萨
+Cyprus|塞浦路斯|CY|Nicosia|尼科西亚
+Djibouti|吉布提|DJ|Djibouti|吉布提市
+Dominica|多米尼克|DM|Roseau|罗索
+El Salvador|萨尔瓦多|SV|San Salvador|圣萨尔瓦多
+Equatorial Guinea|赤道几内亚|GQ|Malabo|马拉博
+Eritrea|厄立特里亚|ER|Asmara|阿斯马拉
+Estonia|爱沙尼亚|EE|Tallinn|塔林
+Federated States of Micronesia|密克罗尼西亚联邦|FM|Palikir|帕利基尔
+Gabon|加蓬|GA|Libreville|利伯维尔
+Grenada|格林纳达|GD|Saint George's|圣乔治
+Guinea|几内亚|GN|Conakry|科纳克里
+Guinea Bissau|几内亚比绍|GW|Bissau|比绍
+Guyana|圭亚那|GY|Georgetown|乔治敦
+Haiti|海地|HT|Port-au-Prince|太子港
+Honduras|洪都拉斯|HN|Tegucigalpa|特古西加尔巴
+Kiribati|基里巴斯|KI|Tarawa|塔拉瓦
+Latvia|拉脱维亚|LV|Riga|里加
+Lebanon|黎巴嫩|LB|Beirut|贝鲁特
+Lesotho|莱索托|LS|Maseru|马塞卢
+Liberia|利比里亚|LR|Monrovia|蒙罗维亚
+Libya|利比亚|LY|Tripoli|的黎波里
+Liechtenstein|列支敦士登|LI|Vaduz|瓦杜兹
+Lithuania|立陶宛|LT|Vilnius|维尔纽斯
+Malawi|马拉维|MW|Lilongwe|利隆圭
+Mali|马里|ML|Bamako|巴马科
+Malta|马耳他|MT|Valletta|瓦莱塔
+Marshall Islands|马绍尔群岛|MH|Majuro|马朱罗
+Mauritania|毛里塔尼亚|MR|Nouakchott|努瓦克肖特
+Mauritius|毛里求斯|MU|Port Louis|路易港
+Moldova|摩尔多瓦|MD|Chișinău|基希讷乌
+Monaco|摩纳哥|MC|Monaco|摩纳哥城
+Montenegro|黑山|ME|Podgorica|波德戈里察
+Mozambique|莫桑比克|MZ|Maputo|马普托
+Namibia|纳米比亚|NA|Windhoek|温得和克
+Nicaragua|尼加拉瓜|NI|Managua|马那瓜
+Niger|尼日尔|NE|Niamey|尼亚美
+North Korea|朝鲜|KP|Pyongyang|平壤
+North Macedonia|北马其顿|MK|Skopje|斯科普里
+Palau|帕劳|PW|Melekeok|梅莱凯奥克
+Saint Kitts and Nevis|圣基茨和尼维斯|KN|Basseterre|巴斯特尔
+Saint Lucia|圣卢西亚|LC|Castries|卡斯特里
+Saint Vincent and the Grenadines|圣文森特和格林纳丁斯|VC|Kingstown|金斯敦
+Samoa|萨摩亚|WS|Apia|阿皮亚
+San Marino|圣马力诺|SM|San Marino|圣马力诺城
+Sao Tome and Principe|圣多美和普林西比|ST|São Tomé|圣多美
+Seychelles|塞舌尔|SC|Victoria|维多利亚
+Sierra Leone|塞拉利昂|SL|Freetown|弗里敦
+Slovakia|斯洛伐克|SK|Bratislava|布拉迪斯拉发
+Slovenia|斯洛文尼亚|SI|Ljubljana|卢布尔雅那
+Solomon Islands|所罗门群岛|SB|Honiara|霍尼亚拉
+Somalia|索马里|SO|Mogadishu|摩加迪沙
+South Sudan|南苏丹|SS|Juba|朱巴
+Sudan|苏丹|SD|Khartoum|喀土穆
+Suriname|苏里南|SR|Paramaribo|帕拉马里博
+Syria|叙利亚|SY|Damascus|大马士革
+The Bahamas|巴哈马|BS|Nassau|拿骚
+The Gambia|冈比亚|GM|Banjul|班珠尔
+Togo|多哥|TG|Lomé|洛美
+Tonga|汤加|TO|Nuku'alofa|努库阿洛法
+Trinidad and Tobago|特立尼达和多巴哥|TT|Port-of-Spain|西班牙港
+Tuvalu|图瓦卢|TV|Funafuti|富纳富提
+Vanuatu|瓦努阿图|VU|Port Vila|维拉港
+Vatican|梵蒂冈|VA|Vatican City|梵蒂冈城
+Yemen|也门|YE|Sanaa|萨那
+eSwatini|埃斯瓦蒂尼|SZ|Mbabane|姆巴巴内
+# Extra cities
+Benin|贝宁|BJ|Cotonou|科托努
+eSwatini|埃斯瓦蒂尼|SZ|Lobamba|洛班巴
+India|印度|IN|Kolkata|加尔各答
+United States of America|美国|US|Denver|丹佛
+United States of America|美国|US|Houston|休斯敦
+United States of America|美国|US|Atlanta|亚特兰大
+Mexico|墨西哥|MX|Monterrey|蒙特雷
+South Africa|南非|ZA|Bloemfontein|布隆方丹
+South Africa|南非|ZA|Pretoria|比勒陀利亚
+Switzerland|瑞士|CH|Bern|伯尔尼
+Switzerland|瑞士|CH|Geneva|日内瓦
+Netherlands|荷兰|NL|The Hague|海牙
+Turkey|土耳其|TR|Ankara|安卡拉
+Chile|智利|CL|Valparaíso|瓦尔帕莱索
+Sri Lanka|斯里兰卡|LK|Sri Jayawardenepura Kotte|斯里贾亚瓦德纳普拉科特
+Morocco|摩洛哥|MA|Casablanca|卡萨布兰卡
+Malaysia|马来西亚|MY|Putrajaya|布城
+Myanmar|缅甸|MM|Naypyidaw|内比都
+China|中国|CN|Ürümqi|乌鲁木齐
+Philippines|菲律宾|PH|Baguio|碧瑶
+Ivory Coast|科特迪瓦|CI|Yamoussoukro|亚穆苏克罗
+Tanzania|坦桑尼亚|TZ|Dodoma|多多马
