@@ -42,6 +42,43 @@ public final class GoGoUi {
         view.setBackgroundColor(color(view.getContext(), R.color.gogogo_bg));
     }
 
+    /**
+     * Lightweight brand signature for user-facing pages. Reuses the app's
+     * vector motif (not a registered/unique trademark or a launcher icon).
+     */
+    public static LinearLayout brandStrip(Context context) {
+        LinearLayout strip = row(context);
+        strip.setGravity(Gravity.CENTER_VERTICAL);
+        strip.setPadding(0, dp(context, 2), 0, dp(context, 6));
+
+        ImageView motif = new ImageView(context);
+        motif.setImageResource(R.drawable.twt_constellation_motif);
+        motif.setContentDescription(null);
+        motif.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        strip.addView(motif, new LinearLayout.LayoutParams(dp(context, 30), dp(context, 30)));
+
+        LinearLayout words = new LinearLayout(context);
+        words.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams wordLp =
+                new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        wordLp.setMargins(dp(context, 9), 0, 0, 0);
+
+        TextView brand = new TextView(context);
+        brand.setText(R.string.app_name);
+        brand.setTextSize(16);
+        brand.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        brand.setTextColor(color(context, R.color.gogogo_text));
+        words.addView(brand, matchWrap());
+
+        TextView tagline = new TextView(context);
+        tagline.setText(R.string.twt_tagline);
+        tagline.setTextSize(11);
+        tagline.setTextColor(color(context, R.color.gogogo_text_muted));
+        words.addView(tagline, matchWrap());
+        strip.addView(words, wordLp);
+        return strip;
+    }
+
     /** Compact context label shared by home and research navigation screens. */
     public static TextView eyebrow(Context context, String text) {
         TextView view = new TextView(context);
