@@ -22,6 +22,15 @@ public final class LabResponsiveUiPolicy {
         return screenHeightDp >= 600;
     }
 
+    /**
+     * Maximum expanded details height. Keep a meaningful portion of a short
+     * screen free for the Tencent map and original floating mock button.
+     * The caller only clamps when content actually exceeds this limit.
+     */
+    public static int tianwaitianHomeDetailsMaxHeightDp(int screenHeightDp) {
+        return Math.max(100, Math.min(300, screenHeightDp - 260));
+    }
+
     /** Stack secondary controls when a clipped label or large font is likely. */
     public static boolean stackTianwaitianHomeActions(int cardWidthDp, float fontScale) {
         return cardWidthDp < 230 || fontScale >= 1.30f;
