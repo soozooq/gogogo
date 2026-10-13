@@ -206,10 +206,35 @@ public class SimpleMockActivity extends AppCompatActivity {
                 latitudeInput.setText(savedInstanceState.getString(HOME_LATITUDE_TEXT, ""));
             }
         }
+        // Selected coordinates from the real map launcher only populate fields.
+        // This must never start or change the running mock service.
+        if (savedInstanceState == null) acceptHomeLauncherCoordinates(getIntent());
         ensureLocationPermission();
         // Detailed diagnostics can involve asynchronous GMS and radio reads.
         // Never run them just because the app was launched.
         if (homeToolsExpanded) refreshDiagnostics();
+    }
+
+    private void acceptHomeLauncherCoordinates(Intent intent) {
+        if (intent == null
+                || !intent.hasExtra(TianwaitianHomeActivity.EXTRA_PREFILL_LONGITUDE)
+                || !intent.hasExtra(TianwaitianHomeActivity.EXTRA_PREFILL_LATITUDE)) return;
+        try {
+            LabHomeCoordinates.Point point = LabHomeCoordinates.parse(
+                    Double.toString(intent.getDoubleExtra(
+                            TianwaitianHomeActivity.EXTRA_PREFILL_LONGITUDE, Double.NaN)),
+                    Double.toString(intent.getDoubleExtra(
+                            TianwaitianHomeActivity.EXTRA_PREFILL_LATITUDE, Double.NaN)));
+            longitudeInput.setText(Double.toString(point.longitude));
+            latitudeInput.setText(Double.toString(point.latitude));
+            showHomeStatus(ServiceGo.sRunning
+                    ? "天外天选点已填入 · 原模拟保持不变，点击开始才应用新坐标"
+                    : "天外天选点已填入 · 尚未启动模拟",
+                    GoGoUi.StatusTone.INFO);
+        } catch (IllegalArgumentException invalid) {
+            Toast.makeText(this, "天外天选点无效，已使用原输入值",
+                    Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
@@ -271,15 +296,17 @@ public class SimpleMockActivity extends AppCompatActivity {
         root.setPadding(pad, GoGoUi.dp(this, 22), pad, GoGoUi.dp(this, 28));
         scroll.addView(root);
 
-        root.addView(GoGoUi.eyebrow(this, "LOCATION  /  PREVIEW"),
+        root.addView(GoGoUi.brandStrip(this), GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 6));
+        root.addView(GoGoUi.eyebrow(this, "SIMULATION  /  CONSOLE"),
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 8));
-        TextView title = GoGoUi.heroTitle(this, "GoGoGo");
+        TextView title = GoGoUi.heroTitle(this, "模拟控制台");
         root.addView(title, GoGoUi.matchWrap());
 
         TextView subtitle = GoGoUi.subtitle(
                 this,
-                "快速选点 · 清楚地启动与停止 · 深入实验时再展开工具");
+                "天外天 · VPN、Shizuku 与模拟控制 · 返回即可回到星空地图");
         root.addView(subtitle, GoGoUi.matchWrap());
 
         // Primary location card
