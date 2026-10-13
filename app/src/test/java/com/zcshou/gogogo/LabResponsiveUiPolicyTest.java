@@ -34,6 +34,13 @@ public final class LabResponsiveUiPolicyTest {
         }
     }
 
+    @Test public void shortPlacePickerAvoidsOverlongHeaders() {
+        assertTrue(LabResponsiveUiPolicy.tianwaitianCompactPlacePicker(320));
+        assertTrue(LabResponsiveUiPolicy.tianwaitianCompactPlacePicker(599));
+        assertFalse(LabResponsiveUiPolicy.tianwaitianCompactPlacePicker(600));
+        assertFalse(LabResponsiveUiPolicy.tianwaitianCompactPlacePicker(900));
+    }
+
     @Test public void missingWidthFailsSafe() {
         assertTrue(LabResponsiveUiPolicy.stackHomeActions(0, 1f));
     }
