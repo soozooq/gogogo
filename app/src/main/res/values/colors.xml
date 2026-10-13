@@ -179,5 +179,9 @@
     <color name="twt_purple">#6545B6</color>
     <color name="twt_cyan">#006D83</color>
     <color name="twt_gold">#8A5A12</color>
+    <!-- Light map controls in both themes; map tiles may be pale even in dark mode. -->
+    <color name="twt_map_control_surface">#F8FAFF</color>
+    <color name="twt_map_control_stroke">#C6D4E9</color>
+    <color name="twt_map_control_ink">#233E75</color>
     <!-- Tianwaitian brand tokens -->
 </resources>
