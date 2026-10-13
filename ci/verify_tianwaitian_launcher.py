@@ -151,3 +151,49 @@ check("if (opening) collapseAllAdvanced();" in hub
       "diagnostic advanced accordion or collapse-all is missing")
 print("Tianwaitian streamlined layout checks PASS: map retains space, "
       "simulation controls preserved, advanced views de-duplicated.")
+
+# The desktop launcher icon must not silently regress to the inherited orange
+# GoGoGo pin. Verify standard/round densities AND modern adaptive/themed icons.
+from struct import unpack
+app_icon = application.get(ANDROID + "icon")
+app_round_icon = application.get(ANDROID + "roundIcon")
+check(app_icon == "@mipmap/ic_launcher" and
+      app_round_icon == "@mipmap/ic_launcher_round",
+      "manifest must point at both Tianwaitian launcher icon resources")
+for name in ("ic_launcher", "ic_launcher_round"):
+    xml = ET.parse(ROOT / ("app/src/main/res/mipmap-anydpi-v26/" + name + ".xml"))
+    drawables = {elem.tag: elem.get(ANDROID + "drawable") for elem in xml.getroot()}
+    check(drawables.get("foreground") == "@drawable/ic_launcher_foreground" and
+          drawables.get("background") == "@drawable/ic_launcher_background" and
+          drawables.get("monochrome") == "@drawable/ic_launcher_monochrome",
+          name + " must include new foreground, gradient and monochrome")
+    for density, dimension in (("mdpi", 48), ("hdpi", 72),
+                               ("xhdpi", 96), ("xxhdpi", 144),
+                               ("xxxhdpi", 192)):
+        image = ROOT / ("app/src/main/res/mipmap-" + density + "/" + name + ".png")
+        data = image.read_bytes()
+        check(len(data) > 1000 and data[:8] ==
+              bytes([137, 80, 78, 71, 13, 10, 26, 10]),
+              str(image) + " missing or not valid PNG signature")
+        check(unpack(">II", data[16:24]) == (dimension, dimension),
+              str(image) + " incorrect density/dimensions")
+foreground = (ROOT / "app/src/main/res/drawable/ic_launcher_foreground.xml"
+              ).read_text(encoding="utf-8")
+check("#FC9637" not in foreground and "M30,74 L43,47" in foreground,
+      "old orange-pin foreground reintroduced")
+check((ROOT / "app/src/main/res/drawable/ic_launcher_monochrome.xml").exists(),
+      "Android 13 themed icon missing")
+
+# Country/city expansion is additive, with documented source and preserved
+# default coordinates. Unit tests also check uniqueness and flag availability.
+source = (ROOT / "docs/data/tianwaitian-natural-earth-places-2026.tsv"
+          ).read_text(encoding="utf-8")
+new_places = [ln for ln in source.splitlines() if ln.strip() and not ln.startswith("#")]
+check(len(new_places) == 106, "Natural Earth expansion should have 106 points")
+presets_java = (base / "LabLocationPresets.java").read_text(encoding="utf-8")
+check(presets_java.count("points.add(new Preset(") == 263,
+      "expected 263 offline city presets")
+check("缅甸 · 妙瓦底（默认）" in presets_java,
+      "original default Myawaddy position must be preserved")
+print("Tianwaitian icon/country regression checks PASS: "
+      "10 legacy PNGs, 2 adaptive XMLs, themed monochrome, 263 locations.")
