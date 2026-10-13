@@ -17,6 +17,15 @@ public final class LabResponsiveUiPolicy {
         return Math.min(356, Math.max(120, screenWidthDp - 124));
     }
 
+    /**
+     * The real MapLibre launcher has short four-character action labels; unlike
+     * the old verbose control panel, a 320dp+ viewport can accommodate two
+     * side-by-side actions while still giving each a comfortable touch target.
+     */
+    public static boolean stackTianwaitianLauncherActions(int screenWidthDp, float fontScale) {
+        return screenWidthDp < 320 || fontScale >= 1.35f;
+    }
+
     /** A landscape/short phone must expose the map instead of filling it with cards. */
     public static boolean tianwaitianHomeDetailsDefaultExpanded(int screenHeightDp) {
         return screenHeightDp >= 600;
