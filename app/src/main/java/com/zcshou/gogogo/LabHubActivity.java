@@ -24,6 +24,8 @@ public final class LabHubActivity extends AppCompatActivity {
     private final boolean[] expanded = new boolean[GROUP_COUNT];
     private final MaterialButton[] groupToggles = new MaterialButton[GROUP_COUNT];
     private final LinearLayout[] groupBodies = new LinearLayout[GROUP_COUNT];
+    private final String[] groupTitles = new String[GROUP_COUNT];
+    private final int[] groupCounts = new int[GROUP_COUNT];
     private MaterialButton collapseAdvancedButton;
     private TextView readinessTitle;
     private TextView readinessDetail;
@@ -254,6 +256,8 @@ public final class LabHubActivity extends AppCompatActivity {
         MaterialButton toggle = GoGoUi.secondaryButton(this, "", v -> {});
         groupToggles[index] = toggle;
         groupBodies[index] = contents;
+        groupTitles[index] = title;
+        groupCounts[index] = entries.length;
         setGroupExpanded(toggle, contents, title, entries.length, expanded[index]);
         toggle.setOnClickListener(v -> {
             boolean opening = !expanded[index];
@@ -277,17 +281,8 @@ public final class LabHubActivity extends AppCompatActivity {
         for (int i = 0; i < GROUP_COUNT; i++) {
             expanded[i] = false;
             if (groupToggles[i] != null && groupBodies[i] != null) {
-                String currentLabel = groupToggles[i].getText().toString();
-                // Keep the original title and count from each control itself.
-                String title = currentLabel.replaceFirst("^[▴▾] (展开|收起) ", "");
-                int sep = title.lastIndexOf(" · ");
-                int count = 0;
-                if (sep > 0) {
-                    try { count = Integer.parseInt(title.substring(sep + 3).replace(" 项", "")); }
-                    catch (NumberFormatException ignored) {}
-                    title = title.substring(0, sep);
-                }
-                setGroupExpanded(groupToggles[i], groupBodies[i], title, count, false);
+                setGroupExpanded(groupToggles[i], groupBodies[i],
+                        groupTitles[i], groupCounts[i], false);
             }
         }
         preflightExpanded = false;
