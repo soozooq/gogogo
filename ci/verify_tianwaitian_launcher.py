@@ -82,5 +82,32 @@ check("全球地点库" in home and "模拟控制" in home,
 settings = (base / "SettingsActivity.java").read_text(encoding="utf-8")
 check("SimpleMockActivity.class" in settings and "Shizuku" in settings,
       "settings must retain a direct route to VPN and Shizuku controls")
+
+# Real device regression: a MenuItem's checked bit is not sufficient for
+# Material NavigationBarView; its internal selectedItemId must also be reset.
+check("nav.setSelectedItemId(selected.menuId)" in nav_source,
+      "initial active tab must synchronize NavigationBarView selectedItemId")
+check("nav.setSelectedItemId(current.menuId)" in nav_source,
+      "resumed/reordered tabs must synchronize selectedItemId")
+check("return false;" in nav_source.split("activity.startActivity(intent);", 1)[1],
+      "outgoing tab must not briefly highlight its destination")
+for cls, tab in [
+        ("TianwaitianHomeActivity", "LOCATION"),
+        ("LabHubActivity", "DIAGNOSTICS"),
+        ("LabPrivacyAuditActivity", "AUDIT"),
+        ("SettingsActivity", "SETTINGS")]:
+    src = (base / (cls + ".java")).read_text(encoding="utf-8")
+    check("TianwaitianBottomNav.syncSelection(this, TianwaitianBottomNav.Tab." + tab + ")" in src,
+          cls + " must refresh its active tab when resumed")
+check("stackTianwaitianLauncherActions" in home,
+      "compact map launcher must use its own short-action sizing policy")
+for activity in activities:
+    if activity.get(ANDROID + "name") == ".SettingsActivity":
+        check(activity.get(ANDROID + "theme") == "@style/AppTheme.NoActionBar",
+              "Settings primary tab must not reintroduce the legacy blue ActionBar")
+        break
+else:
+    check(False, "SettingsActivity is missing from the manifest")
+
 print("Tianwaitian shared bottom navigation PASS: four pages, ordered tabs, "
       "back-safe switching, existing advanced controls available.")
