@@ -751,6 +751,8 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
     private void initGoBtn() {
         mButtonStart = findViewById(R.id.faBtnStart);
         mButtonStart.setOnClickListener(this::doGoLocation);
+        // Text caption is an alternative hit target for the SAME legacy action.
+        findViewById(R.id.twt_fab_label).setOnClickListener(v -> mButtonStart.performClick());
     }
 
     /** Tianwaitian home UI only: existing map, service, and mock paths are unchanged. */
@@ -856,6 +858,9 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
                     : mMarkLatLngMap == null ? R.string.twt_home_action_stop
                     : R.string.twt_home_action_update;
             mButtonStart.setContentDescription(getString(actionText));
+            TextView actionLabel = findViewById(R.id.twt_fab_label);
+            actionLabel.setText(actionText);
+            actionLabel.setContentDescription(getString(actionText));
         }
     }
 
