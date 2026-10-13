@@ -21,4 +21,7 @@
     <color name="twt_purple">#B5A0FF</color>
     <color name="twt_cyan">#72E8E6</color>
     <color name="twt_gold">#F2CE8A</color>
+    <!-- Night search overlay: avoid white scrims beneath white search text. -->
+    <color name="twt_search_overlay_surface">#F51D2944</color>
+    <color name="twt_search_divider">#30405F</color>
 </resources>
