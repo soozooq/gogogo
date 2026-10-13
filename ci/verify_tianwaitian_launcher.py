@@ -46,7 +46,10 @@ check("new Intent(this, SimpleMockActivity.class)" in home,
       "no route from map launcher to simulation console")
 check("EXTRA_PREFILL_LONGITUDE" in console and "EXTRA_PREFILL_LATITUDE" in console,
       "console is not wired to selected map coordinates")
-check("savedInstanceState == null) acceptHomeLauncherCoordinates" in console,
+check("if (savedInstanceState == null) {" in console
+      and "acceptHomeLauncherCoordinates(getIntent())" in console
+      and "outState.putString(HOME_LONGITUDE_TEXT" in console
+      and "outState.putString(HOME_LATITUDE_TEXT" in console,
       "console may overwrite in-progress edits after rotation")
 print("Tianwaitian launcher static verification PASS: "
       "single MapLibre home, console and diagnostics accessible.")
