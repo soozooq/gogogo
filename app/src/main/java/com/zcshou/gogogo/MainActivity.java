@@ -159,6 +159,7 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        toolbar.setSubtitle(R.string.twt_tagline);
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
