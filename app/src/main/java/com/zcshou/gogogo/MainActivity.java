@@ -138,6 +138,8 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
     private ServiceGo.ServiceGoBinder mServiceBinder;
     private ServiceConnection mConnection;
     private FloatingActionButton mButtonStart;
+    private static final String TWT_HOME_EXPANDED_KEY = "twt.home.expanded";
+    private boolean twtHomeExpanded = true;
 
     // MapLibre returns WGS-84; the legacy Tencent home map shows GCJ-02.
     // Use Activity Result instead of a fire-and-forget map Activity so
@@ -155,14 +157,21 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
                                 LabMapActivity.EXTRA_RESULT_LATITUDE, Double.NaN);
                         if (!Double.isFinite(wgsLongitude) || !Double.isFinite(wgsLatitude)
                                 || Math.abs(wgsLatitude) > 90 || Math.abs(wgsLongitude) > 180) return;
-                        double[] gcj = MapUtils.wgs2gcj02(wgsLongitude, wgsLatitude);
-                        mMarkLatLngMap = new LatLng(gcj[1], gcj[0]);
-                        mMarkName = "地图选点";
-                        markMap();
-                        mTencentMap.animateCamera(
-                                CameraUpdateFactory.newLatLng(mMarkLatLngMap));
-                        Snackbar.make(mButtonStart,
-                                "已填入首页（尚未启动新的模拟）", Snackbar.LENGTH_SHORT).show();
+                        applyTwtHomeSelection(wgsLongitude, wgsLatitude, "地图选点");
+                    });
+
+    // Offline preset picker: only set a target on the home map, never start mock mode.
+    private final ActivityResultLauncher<Intent> twtPlacePickerLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        if (result.getResultCode() != RESULT_OK || result.getData() == null) return;
+                        Intent data = result.getData();
+                        if (!data.hasExtra(LabPlacePickerActivity.EXTRA_LONGITUDE)
+                                || !data.hasExtra(LabPlacePickerActivity.EXTRA_LATITUDE)) return;
+                        applyTwtHomeSelection(
+                                data.getDoubleExtra(LabPlacePickerActivity.EXTRA_LONGITUDE, Double.NaN),
+                                data.getDoubleExtra(LabPlacePickerActivity.EXTRA_LATITUDE, Double.NaN),
+                                data.getStringExtra(LabPlacePickerActivity.EXTRA_LABEL));
                     });
     /*============================== 历史记录 相关 ==============================*/
     private SQLiteDatabase mLocationHistoryDB;
@@ -183,6 +192,11 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Landscape/short devices keep the map usable until the user expands details.
+        int screenHeightDp = getResources().getConfiguration().screenHeightDp;
+        twtHomeExpanded = savedInstanceState != null
+                ? savedInstanceState.getBoolean(TWT_HOME_EXPANDED_KEY, screenHeightDp >= 600)
+                : screenHeightDp >= 600;
         setContentView(R.layout.activity_main);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -230,6 +244,12 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
         initUpdateVersion();
 
         checkUpdateVersion(false);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putBoolean(TWT_HOME_EXPANDED_KEY, twtHomeExpanded);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -744,7 +764,50 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
         });
         findViewById(R.id.twt_open_diagnostics).setOnClickListener(v ->
                 startActivity(new Intent(this, LabHubActivity.class)));
+        findViewById(R.id.twt_open_places).setOnClickListener(v ->
+                twtPlacePickerLauncher.launch(new Intent(this, LabPlacePickerActivity.class)));
+        findViewById(R.id.twt_home_toggle).setOnClickListener(v -> {
+            twtHomeExpanded = !twtHomeExpanded;
+            updateTwtHomeLayout();
+        });
+        updateTwtHomeLayout();
         refreshTianwaitianHome();
+    }
+
+    /** Keep the star card clear of the existing map toolbar and usable in landscape. */
+    private void updateTwtHomeLayout() {
+        View card = findViewById(R.id.twt_home_card);
+        android.widget.FrameLayout.LayoutParams lp =
+                (android.widget.FrameLayout.LayoutParams) card.getLayoutParams();
+        int widthDp = getResources().getConfiguration().screenWidthDp;
+        // Map buttons on the right reserve 108dp; never make the overlay wider
+        // than 356dp on tablets/landscape, or more than the available column.
+        int availableDp = Math.max(120, widthDp - 124);
+        lp.width = GoGoUi.dp(this, Math.min(356, availableDp));
+        card.setLayoutParams(lp);
+
+        findViewById(R.id.twt_home_details).setVisibility(
+                twtHomeExpanded ? View.VISIBLE : View.GONE);
+        com.google.android.material.button.MaterialButton toggle =
+                findViewById(R.id.twt_home_toggle);
+        toggle.setText(twtHomeExpanded ? "⌃" : "⌄");
+        toggle.setContentDescription(getString(twtHomeExpanded
+                ? R.string.twt_home_toggle_hide : R.string.twt_home_toggle_show));
+    }
+
+    /** WGS-84 preset and map results -> old Tencent GCJ-02 display; never publish. */
+    private void applyTwtHomeSelection(double wgsLongitude, double wgsLatitude,
+                                       String label) {
+        if (!Double.isFinite(wgsLongitude) || !Double.isFinite(wgsLatitude)
+                || Math.abs(wgsLongitude) > 180.0 || Math.abs(wgsLatitude) > 90.0
+                || mTencentMap == null) return;
+        double[] gcj = MapUtils.wgs2gcj02(wgsLongitude, wgsLatitude);
+        mMarkLatLngMap = new LatLng(gcj[1], gcj[0]);
+        mMarkName = label == null || label.trim().isEmpty() ? "地图选点" : label.trim();
+        markMap();
+        mTencentMap.animateCamera(CameraUpdateFactory.newLatLng(mMarkLatLngMap));
+        Snackbar.make(mButtonStart, R.string.twt_home_selected_no_start,
+                Snackbar.LENGTH_SHORT).show();
     }
 
     /** Local MainActivity state only; do not claim that GMS or WeChat adopted this location. */
