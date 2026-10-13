@@ -77,6 +77,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       
+      - name: Verify Tianwaitian launcher
+        run: python3 ci/verify_tianwaitian_launcher.py
+
       # 启动构建
       - name: Build with Gradle
         shell: bash
