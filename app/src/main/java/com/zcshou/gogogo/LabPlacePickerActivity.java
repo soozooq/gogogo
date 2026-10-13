@@ -117,6 +117,8 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
         root.addView(GoGoUi.backButton(this, v -> finish()), GoGoUi.matchWrap());
         root.addView(GoGoUi.brandStrip(this), GoGoUi.matchWrap());
         root.addView(GoGoUi.heroTitle(this, "探索地点"), GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 5));
+        root.addView(GoGoUi.eyebrow(this, "GLOBAL ATLAS  ·  天外天"), GoGoUi.matchWrap());
         root.addView(GoGoUi.subtitle(this,
                 "查找国家与城市，或从收藏里选点。只填入目标坐标，不会自动启动模拟。"),
                 GoGoUi.matchWrap());
