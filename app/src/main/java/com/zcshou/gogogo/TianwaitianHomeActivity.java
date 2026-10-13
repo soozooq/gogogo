@@ -325,6 +325,9 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
             LabHomeCoordinates.Point p = LabHomeCoordinates.parse(
                     Double.toString(longitude), Double.toString(latitude));
             selectPoint(new LatLng(p.latitude, p.longitude), label, moveCamera);
+            Toast.makeText(this,
+                    "已选择：" + selectedLabel + " · 未自动改变正在运行的模拟",
+                    Toast.LENGTH_SHORT).show();
         } catch (IllegalArgumentException invalid) {
             Toast.makeText(this, "坐标无效，已保持原位置", Toast.LENGTH_SHORT).show();
         }
@@ -367,7 +370,7 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
                     "WGS-84  经度 %.6f  ·  纬度 %.6f",
                     selectedPoint.getLongitude(), selectedPoint.getLatitude()));
         }
-        if (labelView != null) labelView.setText(selectedLabel);
+        if (labelView != null) labelView.setText("已选目标 · " + selectedLabel);
     }
 
     private void updateMarker() {
