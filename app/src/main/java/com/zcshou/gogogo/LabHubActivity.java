@@ -46,6 +46,7 @@ public final class LabHubActivity extends AppCompatActivity {
 
     @Override protected void onResume() {
         super.onResume();
+        TianwaitianBottomNav.syncSelection(this, TianwaitianBottomNav.Tab.DIAGNOSTICS);
         refreshReadiness();
         if (experimentPreflight != null && preflightExpanded) experimentPreflight.refresh();
     }
