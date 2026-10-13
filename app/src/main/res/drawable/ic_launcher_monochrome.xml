@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 13 themed monochrome icon: system applies the user's theme tint. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF" android:strokeWidth="3.7"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M30,74 L43,47 L56,62 L77,32 M43,47 L61,39 M56,62 L73,77"/>
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M30,69 L30,79 M25,74 L35,74 M43,42 L43,52 M38,47 L48,47 M56,57 L56,67 M51,62 L61,62 M77,27 L77,37 M72,32 L82,32 M73,72 L73,82 M68,77 L78,77 M61,33 L61,45 M55,39 L67,39"/>
+</vector>
