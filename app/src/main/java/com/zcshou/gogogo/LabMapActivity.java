@@ -72,6 +72,7 @@ public class LabMapActivity extends AppCompatActivity {
     // Explicit map-to-home result. Merely navigating back never changes home.
     public static final String EXTRA_RESULT_LATITUDE = "gogogo.map.resultLatitude";
     public static final String EXTRA_RESULT_LONGITUDE = "gogogo.map.resultLongitude";
+    public static final String EXTRA_RESULT_LABEL = "gogogo.map.resultLabel";
     private static final String STATE_SELECTED_LAT = "gogogo.map.selected.lat";
     private static final String STATE_SELECTED_LNG = "gogogo.map.selected.lng";
     private static final String STATE_STYLE = "gogogo.map.style";
@@ -990,11 +991,17 @@ public class LabMapActivity extends AppCompatActivity {
             LabHomeCoordinates.Point checked = LabHomeCoordinates.parse(
                     Double.toString(selectedPoint.getLongitude()),
                     Double.toString(selectedPoint.getLatitude()));
+            TianwaitianSelectedTarget.Target previously =
+                    TianwaitianSelectedTarget.read(this);
+            String label = previously != null
+                    && Double.compare(previously.longitude, checked.longitude) == 0
+                    && Double.compare(previously.latitude, checked.latitude) == 0
+                    ? previously.label : "地图选点";
+            TianwaitianSelectedTarget.save(this, checked.longitude, checked.latitude, label);
             Intent result = new Intent();
             result.putExtra(EXTRA_RESULT_LONGITUDE, checked.longitude);
             result.putExtra(EXTRA_RESULT_LATITUDE, checked.latitude);
-            TianwaitianSelectedTarget.save(this,
-                    checked.longitude, checked.latitude, "地图选点");
+            result.putExtra(EXTRA_RESULT_LABEL, label);
             setResult(Activity.RESULT_OK, result);
             finish();
         } catch (IllegalArgumentException invalid) {
