@@ -50,3 +50,37 @@ check("savedInstanceState == null) acceptHomeLauncherCoordinates" in console,
       "console may overwrite in-progress edits after rotation")
 print("Tianwaitian launcher static verification PASS: "
       "single MapLibre home, console and diagnostics accessible.")
+
+# The primary bottom navigation must be REAL, shared, and ordered as designed.
+tab_menu = ET.parse(ROOT / "app/src/main/res/menu/twt_bottom_nav.xml").getroot()
+tab_ids = [item.get(ANDROID + "id") for item in tab_menu.findall("item")]
+expected_tabs = [
+    "@+id/twt_tab_location",
+    "@+id/twt_tab_diagnostics",
+    "@+id/twt_tab_audit",
+    "@+id/twt_tab_settings",
+]
+check(tab_ids == expected_tabs,
+      "bottom tab order changed or destination missing: " + repr(tab_ids))
+nav_source = (base / "TianwaitianBottomNav.java").read_text(encoding="utf-8")
+check("BottomNavigationView" in nav_source and "LABEL_VISIBILITY_LABELED" in nav_source,
+      "bottom navigation must be a native four-item labeled control")
+check("FLAG_ACTIVITY_REORDER_TO_FRONT" in nav_source,
+      "tab navigation must not stack duplicate activity instances")
+check("host.removeView(page)" in nav_source and "shell.addView(page" in nav_source,
+      "bottom navigation must reserve real viewport space, not overlay the map")
+for cls, tab in [
+        ("TianwaitianHomeActivity", "LOCATION"),
+        ("LabHubActivity", "DIAGNOSTICS"),
+        ("LabPrivacyAuditActivity", "AUDIT"),
+        ("SettingsActivity", "SETTINGS")]:
+    src = (base / (cls + ".java")).read_text(encoding="utf-8")
+    check("TianwaitianBottomNav.attach(this, TianwaitianBottomNav.Tab." + tab + ")" in src,
+          cls + " is missing its fixed bottom navigation")
+check("全球地点库" in home and "模拟控制" in home,
+      "home must retain its primary location-specific actions")
+settings = (base / "SettingsActivity.java").read_text(encoding="utf-8")
+check("SimpleMockActivity.class" in settings and "Shizuku" in settings,
+      "settings must retain a direct route to VPN and Shizuku controls")
+print("Tianwaitian shared bottom navigation PASS: four pages, ordered tabs, "
+      "back-safe switching, existing advanced controls available.")
