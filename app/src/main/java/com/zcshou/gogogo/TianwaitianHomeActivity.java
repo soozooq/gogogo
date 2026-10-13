@@ -44,6 +44,7 @@ import java.util.Locale;
 public final class TianwaitianHomeActivity extends AppCompatActivity {
     public static final String EXTRA_PREFILL_LONGITUDE = "twt.home.prefill.longitude";
     public static final String EXTRA_PREFILL_LATITUDE = "twt.home.prefill.latitude";
+    public static final String EXTRA_PREFILL_LABEL = "twt.home.prefill.label";
 
     private static final String MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
     private static final String STATE_LONGITUDE = "twt.home.target.longitude";
@@ -120,6 +121,14 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
             } catch (IllegalArgumentException ignored) {
                 // Invalid restored coordinates must not prevent a fresh home screen.
             }
+        }
+        // Saved UI state is only a fallback. The shared selected-target store is
+        // authoritative because the console or a picker may have been used
+        // while this map Activity was stopped/recreated by Android.
+        TianwaitianSelectedTarget.Target selected = TianwaitianSelectedTarget.read(this);
+        if (selected != null) {
+            selectedPoint = new LatLng(selected.latitude, selected.longitude);
+            selectedLabel = selected.label;
         }
         MapLibre.getInstance(this);
         buildUi(state);
@@ -322,12 +331,33 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
     }
 
     private void selectPoint(LatLng point, String label, boolean moveCamera) {
-        selectedPoint = point;
-        selectedLabel = label == null || label.trim().isEmpty() ? "地图选点" : label.trim();
+        // Only explicit user map taps / picker/search callbacks reach here.
+        // Persist the selection for tabs and Activity recreation; do NOT
+        // publish it to ServiceGo until the user starts simulation.
+        TianwaitianSelectedTarget.Target stored = TianwaitianSelectedTarget.save(
+                this, point.getLongitude(), point.getLatitude(), label);
+        applySelectedTarget(stored, moveCamera);
+    }
+
+    private void applySelectedTarget(TianwaitianSelectedTarget.Target target,
+                                     boolean moveCamera) {
+        selectedPoint = new LatLng(target.latitude, target.longitude);
+        selectedLabel = target.label;
         updateTargetText();
         updateMarker();
         if (moveCamera && map != null) {
-            map.animateCamera(CameraUpdateFactory.newLatLngZoom(point, 12.2));
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(selectedPoint, 12.2));
+        }
+    }
+
+    private void syncSelectedTarget() {
+        TianwaitianSelectedTarget.Target target = TianwaitianSelectedTarget.read(this);
+        if (target == null) return;
+        boolean changed = selectedPoint == null
+                || Double.compare(selectedPoint.getLongitude(), target.longitude) != 0
+                || Double.compare(selectedPoint.getLatitude(), target.latitude) != 0;
+        if (changed || !target.label.equals(selectedLabel)) {
+            applySelectedTarget(target, changed);
         }
     }
 
@@ -362,6 +392,7 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
         Intent intent = new Intent(this, SimpleMockActivity.class);
         intent.putExtra(EXTRA_PREFILL_LONGITUDE, selectedPoint.getLongitude());
         intent.putExtra(EXTRA_PREFILL_LATITUDE, selectedPoint.getLatitude());
+        intent.putExtra(EXTRA_PREFILL_LABEL, selectedLabel);
         startActivity(intent);
     }
 
@@ -373,6 +404,7 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
     @Override protected void onResume() {
         super.onResume();
         TianwaitianBottomNav.syncSelection(this, TianwaitianBottomNav.Tab.LOCATION);
+        syncSelectedTarget();
         if (mapView != null) mapView.onResume();
     }
 
