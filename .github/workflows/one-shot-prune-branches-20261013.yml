@@ -1,0 +1,85 @@
+name: One-shot audited GoGoGo branch cleanup
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-prune-branches-20261013.yml'
+permissions:
+  contents: write
+jobs:
+  prune:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Prune only recorded unchanged old branch refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, sys, urllib.request, urllib.error, urllib.parse
+          repo = os.environ["GITHUB_REPOSITORY"]
+          if repo != "soozooq/gogogo":
+              raise SystemExit("Unexpected repository; refusing deletion.")
+          with open("docs/maintenance/branch-prune-snapshot-20261013.json", encoding="utf-8") as f:
+              plan = json.load(f)
+          candidates = plan["delete_only_if_head_sha_matches"]
+          preserve = set(plan["keep"])
+          if len(candidates) != 81 or "main" not in preserve:
+              raise SystemExit("Manifest mismatch; refusing deletion.")
+          token = os.environ["GH_TOKEN"]
+          def api(method, path):
+              url = "https://api.github.com/repos/" + repo + "/" + path
+              req = urllib.request.Request(url, method=method, headers={
+                  "Authorization": "Bearer " + token,
+                  "Accept": "application/vnd.github+json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "User-Agent": "GoGoGo-one-time-branch-audit"
+              })
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  body = response.read()
+                  return json.loads(body) if body else None
+          open_prs = api("GET", "pulls?state=open&per_page=100")
+          if len(open_prs) >= 100:
+              raise SystemExit("Open PR page may be incomplete; refuse deletion.")
+          in_use = set(p["head"]["ref"] for p in open_prs if p["head"]["repo"]["full_name"] == repo)
+          archive_branch = plan["archive_branch"]
+          archive_ref = api("GET", "git/ref/" + urllib.parse.quote("heads/" + archive_branch, safe="/"))
+          if archive_ref["object"]["sha"] != plan["archive_commit"]:
+              raise SystemExit("Archive ref changed; refuse deletion.")
+          removed, skipped, failed = [], [], []
+          for row in candidates:
+              name, expected = row["branch"], row["sha"]
+              if name in preserve or name in in_use or name == archive_branch:
+                  skipped.append((name, "protected or active"))
+                  continue
+              refname = urllib.parse.quote("heads/" + name, safe="/")
+              try:
+                  observed = api("GET", "git/ref/" + refname)["object"]["sha"]
+                  if observed != expected:
+                      skipped.append((name, "head moved"))
+                      continue
+                  api("DELETE", "git/refs/" + refname)
+                  removed.append(name)
+                  print("DELETED", name, flush=True)
+              except urllib.error.HTTPError as e:
+                  if e.code == 404:
+                      skipped.append((name, "already absent"))
+                  else:
+                      failed.append((name, str(e.code)))
+                      print("ERROR", name, e.code, flush=True)
+                      if e.code in (401, 403):
+                          break
+              except Exception as e:
+                  failed.append((name, type(e).__name__))
+          print("PRUNE_TOTAL", len(candidates), "DELETED", len(removed),
+                "SKIPPED", len(skipped), "FAILED", len(failed), flush=True)
+          for name, reason in skipped:
+              print("SKIPPED", name, reason, flush=True)
+          for name, reason in failed:
+              print("FAILED", name, reason, flush=True)
+          if failed:
+              raise SystemExit(1)
+          PY
