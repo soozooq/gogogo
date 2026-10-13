@@ -19,6 +19,7 @@ public class SettingsActivity extends BaseActivity {
         getWindow().setStatusBarColor(getResources().getColor(R.color.colorPrimary, this.getTheme()));
 
         setContentView(R.layout.activity_settings);
+        TianwaitianBottomNav.attach(this, TianwaitianBottomNav.Tab.SETTINGS);
         
         if (savedInstanceState == null) {
             getSupportFragmentManager()
