@@ -812,8 +812,26 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
             child.setLayoutParams(buttonLp);
         }
 
-        findViewById(R.id.twt_home_details).setVisibility(
-                twtHomeExpanded ? View.VISIBLE : View.GONE);
+        // The optional card body scrolls on short screens instead of covering
+        // the entire map. Reset to wrap-content before each expanded measurement.
+        final View details = findViewById(R.id.twt_home_details);
+        ViewGroup.LayoutParams detailLp = details.getLayoutParams();
+        detailLp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+        details.setLayoutParams(detailLp);
+        details.setVisibility(twtHomeExpanded ? View.VISIBLE : View.GONE);
+        if (twtHomeExpanded) {
+            final int maxHeightPx = GoGoUi.dp(this,
+                    LabResponsiveUiPolicy.tianwaitianHomeDetailsMaxHeightDp(
+                            getResources().getConfiguration().screenHeightDp));
+            details.post(() -> {
+                if (isFinishing() || !twtHomeExpanded
+                        || details.getVisibility() != View.VISIBLE
+                        || details.getHeight() <= maxHeightPx) return;
+                ViewGroup.LayoutParams current = details.getLayoutParams();
+                current.height = maxHeightPx;
+                details.setLayoutParams(current);
+            });
+        }
         com.google.android.material.button.MaterialButton toggle =
                 findViewById(R.id.twt_home_toggle);
         toggle.setText(twtHomeExpanded ? "⌃" : "⌄");
