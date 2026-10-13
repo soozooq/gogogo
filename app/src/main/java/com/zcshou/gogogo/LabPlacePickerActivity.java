@@ -118,14 +118,18 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
         root.addView(GoGoUi.brandStrip(this), GoGoUi.matchWrap());
         root.addView(GoGoUi.heroTitle(this, "探索地点"), GoGoUi.matchWrap());
         root.addView(GoGoUi.subtitle(this,
-                "国旗代表国家，点击右侧 ＋ 展开城市；可搜索、选点和收藏。选点不会自动启动模拟。"),
+                "查找国家与城市，或从收藏里选点。只填入目标坐标，不会自动启动模拟。"),
+                GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 10));
+        root.addView(GoGoUi.eyebrow(this,
+                "全球离线地点  ·  " + LabLocationPresets.size() + " 个坐标"),
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 12));
 
         LinearLayout searchRow = GoGoUi.row(this);
         searchField = new EditText(this);
         searchField.setSingleLine(true);
-        searchField.setHint("搜索国家或城市");
+        searchField.setHint("搜索国家、城市或收藏");
         searchField.setInputType(android.text.InputType.TYPE_CLASS_TEXT);
         searchField.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
         GoGoUi.styleInput(searchField);
@@ -186,6 +190,7 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
         alphabetScroll = new ScrollView(this);
         alphabetScroll.setFillViewport(false);
         alphabetScroll.setVerticalScrollBarEnabled(false);
+        alphabetScroll.setBackground(GoGoUi.card(this).getBackground());
         alphabetScroll.setContentDescription("按国家拼音首字母快速跳转");
         alphabetScroll.addView(alphabetColumn);
         listWithIndex.addView(alphabetScroll, new LinearLayout.LayoutParams(
