@@ -70,15 +70,16 @@ public final class LabHubActivity extends AppCompatActivity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         int pad = GoGoUi.dp(this, 18);
-        root.setPadding(pad, pad, pad, GoGoUi.dp(this, 28));
+        root.setPadding(pad, GoGoUi.dp(this, 12), pad, GoGoUi.dp(this, 24));
         scroll.addView(root);
 
-        root.addView(GoGoUi.backButton(this, v -> finish()), GoGoUi.matchWrap());
+        // This is a primary tab, not a secondary detail screen. Bottom nav
+        // owns the top-level navigation; no redundant "Back" row is needed.
         root.addView(GoGoUi.brandStrip(this), GoGoUi.matchWrap());
         root.addView(GoGoUi.heroTitle(this, "诊断中心"), GoGoUi.matchWrap());
         root.addView(GoGoUi.subtitle(this,
-                "先查前置条件，再看真实位置消费者；深入排障和研究工具按需展开。"
-                        + "打开这里不会启动模拟。"), GoGoUi.matchWrap());
+                "设备快检、被动位置观察与高级研究。进入本页不会启动模拟。"),
+                GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 10));
         root.addView(GoGoUi.eyebrow(this, "只读总览  ·  快速检查  ·  深入排障"),
                 GoGoUi.matchWrap());
