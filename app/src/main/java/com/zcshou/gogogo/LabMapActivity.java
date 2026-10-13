@@ -261,12 +261,12 @@ public class LabMapActivity extends AppCompatActivity {
 
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
-        TextView title = GoGoUi.sectionTitle(this, "地图实验室");
+        TextView title = GoGoUi.sectionTitle(this, "地图与路线");
         title.setTextSize(19);
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title, GoGoUi.matchWrap());
         titleBlock.addView(
-                GoGoUi.muted(this, "位置 · 路线 · 漫游 · 回放"),
+                GoGoUi.muted(this, "天外天 · 选点 / 漫游 / 回放"),
                 GoGoUi.matchWrap());
         appBar.addView(titleBlock, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
