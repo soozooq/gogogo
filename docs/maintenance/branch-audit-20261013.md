@@ -29,3 +29,14 @@
 ## 非本轮范围
 
 不改 GoGoGo 的定位注入、微信兼容性、GMS/腾讯请求策略或 VPN 开关逻辑。微信主号/分身此前仍未采用模拟坐标，不能因合并或删分支而更改 E5 验收结论。当前仓库含公开旧签名材料，旧测试签名不适合生产公开发布。
+
+## 清理执行记录（2026-10-13）
+
+- 删除前：**87 个远程分支**（最初盘点 85 个 + 维护/统一归档分支各 1）。
+- 一次性 [GitHub Actions 清理任务 #1](https://github.com/soozooq/gogogo/actions/runs/38332222401) 结果：`PRUNE_TOTAL 81 DELETED 81 SKIPPED 0 FAILED 0`，Job SUCCESS。
+- 删除后：**6 个分支**：`main`、`backup/main-before-labs-20261009`、`x8-compat`、`fix/x8-modern-amap`、`fix/amap-modern-android`、`archive/pruned-branches-20261013`。
+- 统一归档分支顶端提交 `debe8cddb2b2f1a1f585096e6a36f673bc1a9ca8`；通过 7 个合成多父提交保留原 81 个旧分支 HEAD 的 Git 历史引用。归档不是功能开发主线，**不要合并回 main**。
+- 精确清理快照：`docs/maintenance/branch-prune-snapshot-20261013.json`，包含已删分支名与当时 HEAD SHA，可用于未来按 SHA 寻找历史版本。
+- 一次性清理 workflow `.github/workflows/one-shot-prune-branches-20261013.yml` 已在任务完成后从 main 删除，不保留未来自动删分支任务。
+- 本次唯一遗漏的研究文档 `docs/research/2026-10-08-wechat-location-compatibility-round2.md` 已经通过 [PR #54](https://github.com/soozooq/gogogo/pull/54) 原样归档到 main。
+- 删除旧分支不意味着抹掉 closed PR、GitHub Actions 或已归档历史；更不意味着 81 个旧版本的每个差异均适合重新加到最新 Android App。
