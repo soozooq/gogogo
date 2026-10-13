@@ -146,19 +146,22 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
         TextView title = new TextView(this);
         title.setText(R.string.app_name);
         title.setTextColor(Color.WHITE);
-        title.setTextSize(23);
+        title.setTextSize(21);
         title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         words.addView(title);
         TextView tagline = new TextView(this);
         tagline.setText("探索坐标之外  ·  星座视界");
         tagline.setTextColor(0xFFE0E8FF);
-        tagline.setTextSize(12);
+        tagline.setTextSize(11);
         words.addView(tagline);
         brand.addView(words, wordLayout);
-        MaterialButton tools = GoGoUi.textButton(this, "更多", v -> openMapTools());
+        MaterialButton tools = GoGoUi.textButton(this, "⋯", v -> openMapTools());
         tools.setTextColor(Color.WHITE);
+        tools.setTextSize(22);
+        tools.setSingleLine(true);
+        tools.setContentDescription("打开地图工具");
         brand.addView(tools, new LinearLayout.LayoutParams(
-                dp(65), ViewGroup.LayoutParams.WRAP_CONTENT));
+                dp(48), ViewGroup.LayoutParams.WRAP_CONTENT));
         brandCard.addView(brand);
 
         FrameLayout.LayoutParams top = new FrameLayout.LayoutParams(
@@ -168,15 +171,15 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
 
         // Bottom glass-like command deck, using semantic DayNight surface colors.
         MaterialCardView deck = GoGoUi.card(this);
-        deck.setRadius(dp(24));
+        deck.setRadius(dp(19));
         deck.setCardElevation(dp(8));
         LinearLayout content = GoGoUi.cardContent(this);
-        content.setPadding(dp(16), dp(12), dp(16), dp(14));
+        content.setPadding(dp(14), dp(11), dp(14), dp(11));
 
         labelView = GoGoUi.sectionTitle(this, selectedLabel);
         labelView.setSingleLine(true);
         labelView.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        labelView.setTextSize(17);
+        labelView.setTextSize(16);
         content.addView(labelView, GoGoUi.matchWrap());
 
         targetView = GoGoUi.muted(this, "");
@@ -185,43 +188,33 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
         content.addView(targetView, GoGoUi.matchWrap());
         updateTargetText();
 
-        content.addView(GoGoUi.gap(this, 9));
+        content.addView(GoGoUi.gap(this, 5));
         TextView note = GoGoUi.muted(this,
-                "点击地图选点 · 选点不会自动启动或更改正在运行的模拟");
+                "点按地图选点 · 不会自动启动模拟");
         note.setTextSize(11);
         content.addView(note, GoGoUi.matchWrap());
-        content.addView(GoGoUi.gap(this, 9));
+        content.addView(GoGoUi.gap(this, 8));
 
+        // The native bottom navigation owns Diagnostics, Audit and Settings.
+        // Keep only the two location-specific actions in this lightweight deck.
         MaterialButton console = GoGoUi.primaryButton(this,
-                "进入模拟控制台", v -> openSimulationConsole());
-        content.addView(console, GoGoUi.matchWrap());
-        content.addView(GoGoUi.gap(this, 7));
-
+                "模拟控制", v -> openSimulationConsole());
+        MaterialButton places = GoGoUi.secondaryButton(this,
+                "全球地点库", v -> placePicker.launch(
+                        new Intent(this, LabPlacePickerActivity.class)));
         boolean stack = LabResponsiveUiPolicy.stackHomeActions(
                 getResources().getConfiguration().screenWidthDp,
                 getResources().getConfiguration().fontScale);
-        MaterialButton places = GoGoUi.secondaryButton(this, "全球地点库",
-                v -> placePicker.launch(new Intent(this, LabPlacePickerActivity.class)));
-        MaterialButton mapTools = GoGoUi.secondaryButton(this, "地图与路线",
-                v -> openMapTools());
-        MaterialButton diag = GoGoUi.secondaryButton(this, "诊断中心",
-                v -> startActivity(new Intent(this, LabHubActivity.class)));
         if (stack) {
-            LinearLayout shortcuts = GoGoUi.row(this);
-            shortcuts.addView(places, GoGoUi.weighted());
-            GoGoUi.addHorizontalGap(this, shortcuts, 6);
-            shortcuts.addView(mapTools, GoGoUi.weighted());
-            content.addView(shortcuts, GoGoUi.matchWrap());
+            content.addView(console, GoGoUi.matchWrap());
             content.addView(GoGoUi.gap(this, 5));
-            content.addView(diag, GoGoUi.matchWrap());
+            content.addView(places, GoGoUi.matchWrap());
         } else {
-            LinearLayout shortcuts = GoGoUi.row(this);
-            shortcuts.addView(places, GoGoUi.weighted());
-            GoGoUi.addHorizontalGap(this, shortcuts, 5);
-            shortcuts.addView(mapTools, GoGoUi.weighted());
-            GoGoUi.addHorizontalGap(this, shortcuts, 5);
-            shortcuts.addView(diag, GoGoUi.weighted());
-            content.addView(shortcuts, GoGoUi.matchWrap());
+            LinearLayout locationActions = GoGoUi.row(this);
+            locationActions.addView(console, GoGoUi.weighted());
+            GoGoUi.addHorizontalGap(this, locationActions, 8);
+            locationActions.addView(places, GoGoUi.weighted());
+            content.addView(locationActions, GoGoUi.matchWrap());
         }
 
         ScrollView deckScroll = new ScrollView(this);
@@ -229,16 +222,17 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
         deckScroll.setVerticalScrollBarEnabled(false);
         deckScroll.addView(content);
         int screenHeight = getResources().getConfiguration().screenHeightDp;
-        int maxDeckHeight = Math.max(150, screenHeight - 155);
+        int maxDeckHeight = Math.max(145, screenHeight - 215);
         FrameLayout.LayoutParams bottom = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 screenHeight < 540 ? dp(maxDeckHeight) : ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.BOTTOM);
-        bottom.setMargins(dp(14), 0, dp(14), dp(18));
+        bottom.setMargins(dp(14), 0, dp(14), dp(10));
         deck.addView(deckScroll);
         root.addView(deck, bottom);
 
         setContentView(root);
+        TianwaitianBottomNav.attach(this, TianwaitianBottomNav.Tab.LOCATION);
 
         mapView.getMapAsync(mapLibreMap -> {
             map = mapLibreMap;
