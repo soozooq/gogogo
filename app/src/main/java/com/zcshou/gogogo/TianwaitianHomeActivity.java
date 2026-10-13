@@ -130,6 +130,7 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
 
         LinearLayout brand = new LinearLayout(this);
         brand.setGravity(Gravity.CENTER_VERTICAL);
+        brand.setBackgroundResource(R.drawable.twt_launch_header_bg);
         brand.setPadding(dp(15), dp(12), dp(15), dp(12));
         ImageView emblem = new ImageView(this);
         emblem.setImageResource(R.drawable.twt_constellation_motif);
