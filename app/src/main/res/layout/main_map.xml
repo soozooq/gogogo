@@ -21,12 +21,14 @@
 
         <RadioGroup
             android:id="@+id/RadioGroupMapType"
-            android:layout_width="90dp"
+            android:layout_width="100dp"
             android:layout_height="wrap_content"
+            android:background="@drawable/twt_map_control_bg"
+            android:padding="5dp"
             android:layout_alignParentEnd="true"
             android:layout_alignParentTop="true"
-            android:layout_marginEnd="5dp"
-            android:layout_marginTop="4dip"
+            android:layout_marginEnd="8dp"
+            android:layout_marginTop="8dp"
             android:orientation="vertical">
 
             <RadioButton
@@ -37,7 +39,8 @@
                 android:checked="true"
                 android:minHeight="48dp"
                 android:text="@string/map_pic_normal"
-                android:textColor="#00796B" />
+                android:textColor="@color/twt_map_control_ink"
+                android:buttonTint="@color/twt_map_control_ink" />
 
             <RadioButton
                 android:id="@+id/mapSatellite"
@@ -46,60 +49,81 @@
                 android:layout_weight="1"
                 android:minHeight="48dp"
                 android:text="@string/map_pic_sate"
-                android:textColor="#00796B" />
+                android:textColor="@color/twt_map_control_ink"
+                android:buttonTint="@color/twt_map_control_ink" />
         </RadioGroup>
 
-        <ImageButton
-            android:id="@+id/cur_position"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+        <!-- Scrollable vertical rail: no hard-coded absolute offsets or overlapping 48dp targets. -->
+        <ScrollView
+            android:layout_width="64dp"
+            android:layout_height="match_parent"
             android:layout_alignParentEnd="true"
-            android:layout_marginTop="350dp"
-            android:layout_marginEnd="10dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/cur_position"
-            android:theme="@style/RippleWhite"
-            app:srcCompat="@drawable/ic_home_position"
-            app:tint="@color/colorAccent" />
+            android:layout_alignParentBottom="true"
+            android:layout_below="@id/RadioGroupMapType"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="4dp"
+            android:layout_marginBottom="22dp"
+            android:fillViewport="false"
+            android:clipToPadding="false"
+            android:scrollbars="none">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="4dp"
+                android:paddingBottom="8dp">
 
-        <ImageButton
-            android:id="@+id/zoom_in"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_alignParentEnd="true"
-            android:layout_marginTop="383dp"
-            android:layout_marginEnd="10dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/zoom_in"
-            android:theme="@style/RippleWhite"
-            app:srcCompat="@drawable/ic_zoom_in"
-            app:tint="@color/colorAccent" />
+                <ImageButton
+                    android:id="@+id/input_pos"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/twt_map_control_bg"
+                    android:contentDescription="@string/input_button"
+                    app:srcCompat="@drawable/ic_input"
+                    app:tint="@color/twt_map_control_ink" />
 
-        <ImageButton
-            android:id="@+id/zoom_out"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_alignParentEnd="true"
-            android:layout_marginTop="416dp"
-            android:layout_marginEnd="10dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/zoom_out"
-            android:theme="@style/RippleWhite"
-            app:srcCompat="@drawable/ic_zoom_out"
-            app:tint="@color/colorAccent" />
+                <ImageButton
+                    android:id="@+id/cur_position"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/twt_map_control_bg"
+                    android:contentDescription="@string/cur_position"
+                    app:srcCompat="@drawable/ic_home_position"
+                    app:tint="@color/twt_map_control_ink" />
 
-        <ImageButton
-            android:id="@+id/input_pos"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_alignParentEnd="true"
-            android:layout_marginTop="240dp"
-            android:layout_marginEnd="10dp"
-            android:background="?android:attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/input_button"
-            android:theme="@style/RippleWhite"
-            app:srcCompat="@drawable/ic_input"
-            app:tint="@color/colorAccent" />
+                <ImageButton
+                    android:id="@+id/zoom_in"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/twt_map_control_bg"
+                    android:contentDescription="@string/zoom_in"
+                    app:srcCompat="@drawable/ic_zoom_in"
+                    app:tint="@color/twt_map_control_ink" />
+
+                <ImageButton
+                    android:id="@+id/zoom_out"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/twt_map_control_bg"
+                    android:contentDescription="@string/zoom_out"
+                    app:srcCompat="@drawable/ic_zoom_out"
+                    app:tint="@color/twt_map_control_ink" />
+            </LinearLayout>
+        </ScrollView>
+
+
+
+
+
+
 
 
         <TextView

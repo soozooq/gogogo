@@ -1,19 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Lab 29: consistent dark tokens, retaining every light-theme resource name. -->
-    <color name="gogogo_bg">#0B1220</color>
-    <color name="gogogo_surface">#162233</color>
-    <color name="gogogo_surface_alt">#16342F</color>
-    <color name="gogogo_primary">#36D5C6</color>
-    <color name="gogogo_primary_dark">#5EEAD4</color>
-    <color name="gogogo_on_primary">#062322</color>
-    <color name="gogogo_primary_soft">#153D3A</color>
-    <color name="gogogo_accent">#5EEAD4</color>
-    <color name="gogogo_text">#F1F5F9</color>
-    <color name="gogogo_text_muted">#B8C7D9</color>
-    <color name="gogogo_border">#3A4B60</color>
-    <color name="gogogo_success">#4ADE80</color>
-    <color name="gogogo_warning">#FBBF24</color>
-    <color name="gogogo_danger">#F87171</color>
-    <color name="gogogo_info">#60A5FA</color>
+    <color name="gogogo_bg">#0B1124</color>
+    <color name="gogogo_surface">#141D33</color>
+    <color name="gogogo_surface_alt">#1D2944</color>
+    <color name="gogogo_primary">#79B8FF</color>
+    <color name="gogogo_primary_dark">#B4D1FF</color>
+    <color name="gogogo_on_primary">#091528</color>
+    <color name="gogogo_primary_soft">#26365F</color>
+    <color name="gogogo_accent">#B5A0FF</color>
+    <color name="gogogo_text">#EDF3FF</color>
+    <color name="gogogo_text_muted">#B1C0D7</color>
+    <color name="gogogo_border">#30405F</color>
+    <color name="gogogo_success">#56D5A5</color>
+    <color name="gogogo_warning">#F9C77B</color>
+    <color name="gogogo_danger">#FF8F99</color>
+    <color name="gogogo_info">#79B8FF</color>
+    <!-- Tianwaitian v1: brand auxiliaries and legacy app bar. -->
+    <color name="twt_appbar_bg">#1C2A4A</color>
+    <color name="twt_purple">#B5A0FF</color>
+    <color name="twt_cyan">#72E8E6</color>
+    <color name="twt_gold">#F2CE8A</color>
 </resources>

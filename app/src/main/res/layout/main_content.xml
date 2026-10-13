@@ -19,7 +19,7 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                android:background="@color/colorPrimary"
+                android:background="@color/twt_appbar_bg"
                 app:popupTheme="@style/AppTheme.PopupOverlay" />
 
         </com.google.android.material.appbar.AppBarLayout>
@@ -30,6 +30,113 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="?attr/actionBarSize" />
 
+        <!-- Tianwaitian v1: lightweight brand / target summary over the existing map.
+             Simulation remains controlled by the original FAB; no duplicate start action. -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/twt_home_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="108dp"
+            android:layout_marginTop="68dp"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="3dp"
+            app:cardBackgroundColor="@color/gogogo_surface"
+            app:strokeColor="@color/gogogo_border"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center_vertical">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:layout_marginEnd="6dp"
+                            android:contentDescription="@null"
+                            app:srcCompat="@drawable/twt_constellation_motif" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/twt_home_overline"
+                            android:textColor="@color/twt_purple"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/twt_home_state"
+                        android:layout_marginTop="4dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/twt_home_idle"
+                        android:textSize="11sp"
+                        android:textColor="@color/gogogo_text_muted" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/twt_home_target"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="9dp"
+                    android:text="@string/twt_home_target_unselected"
+                    android:textColor="@color/gogogo_text"
+                    android:textStyle="bold"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:text="@string/twt_home_coordinate_hint"
+                    android:textColor="@color/gogogo_text_muted"
+                    android:textSize="11sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="11dp"
+                    android:orientation="horizontal">
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/twt_open_map"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:contentDescription="@string/twt_home_new_map"
+                        android:text="@string/twt_home_new_map"
+                        android:textAllCaps="false"
+                        android:textColor="@color/gogogo_on_primary"
+                        app:cornerRadius="12dp"
+                        app:backgroundTint="@color/gogogo_primary" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/twt_open_diagnostics"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:contentDescription="@string/twt_home_diagnostics"
+                        android:text="@string/twt_home_diagnostics"
+                        android:textAllCaps="false"
+                        android:textColor="@color/gogogo_text"
+                        app:cornerRadius="12dp"
+                        app:backgroundTint="@color/gogogo_surface_alt" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/faBtnStart"
             android:layout_width="wrap_content"
@@ -37,9 +144,11 @@
             android:layout_gravity="bottom|start"
             android:layout_marginStart="30dp"
             android:layout_marginBottom="80dp"
-            android:contentDescription="@null"
+            android:contentDescription="@string/twt_home_action_start"
             app:elevation="6dp"
             app:pressedTranslationZ="12dp"
+            app:backgroundTint="@color/gogogo_primary"
+            app:tint="@color/gogogo_on_primary"
             app:srcCompat="@drawable/ic_position" />
 
         <LinearLayout

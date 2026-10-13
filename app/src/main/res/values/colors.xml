@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#ff008577</color>
-    <color name="colorPrimaryDark">#ff008577</color>
-    <color name="colorAccent">#ff00897B</color>
+    <color name="colorPrimary">#FF253D88</color>
+    <color name="colorPrimaryDark">#FF253D88</color>
+    <color name="colorAccent">#FF315AC4</color>
 
     <color name="white">#ffffff</color> <!-- 白色 -->
     <color name="ivory">#fffff0</color> <!-- 象牙色 -->
@@ -159,19 +159,29 @@
     <color name="eggplant">#663D4E</color>
 
     <!-- GoGoGo semantic UI palette -->
-    <color name="gogogo_bg">#F5F7FA</color>
-    <color name="gogogo_surface">#FFFFFFFF</color>
-    <color name="gogogo_surface_alt">#F0FDFA</color>
-    <color name="gogogo_primary">#0F766E</color>
-    <color name="gogogo_primary_dark">#115E59</color>
-    <color name="gogogo_on_primary">#FFFFFFFF</color>
-    <color name="gogogo_primary_soft">#CCFBF1</color>
-    <color name="gogogo_accent">#14B8A6</color>
-    <color name="gogogo_text">#0F172A</color>
-    <color name="gogogo_text_muted">#64748B</color>
-    <color name="gogogo_border">#E2E8F0</color>
-    <color name="gogogo_success">#16A34A</color>
-    <color name="gogogo_warning">#D97706</color>
-    <color name="gogogo_danger">#DC2626</color>
-    <color name="gogogo_info">#2563EB</color>
+    <color name="gogogo_bg">#F5F7FC</color>
+    <color name="gogogo_surface">#FFFFFF</color>
+    <color name="gogogo_surface_alt">#EBF0FB</color>
+    <color name="gogogo_primary">#315AC4</color>
+    <color name="gogogo_primary_dark">#274697</color>
+    <color name="gogogo_on_primary">#FFFFFF</color>
+    <color name="gogogo_primary_soft">#E5EDFF</color>
+    <color name="gogogo_accent">#6545B6</color>
+    <color name="gogogo_text">#14213D</color>
+    <color name="gogogo_text_muted">#53627B</color>
+    <color name="gogogo_border">#D8E1EF</color>
+    <color name="gogogo_success">#176A49</color>
+    <color name="gogogo_warning">#865000</color>
+    <color name="gogogo_danger">#B92E44</color>
+    <color name="gogogo_info">#315AC4</color>
+    <!-- Tianwaitian v1: brand auxiliaries and legacy app bar. -->
+    <color name="twt_appbar_bg">#253D88</color>
+    <color name="twt_purple">#6545B6</color>
+    <color name="twt_cyan">#006D83</color>
+    <color name="twt_gold">#8A5A12</color>
+    <!-- Light map controls in both themes; map tiles may be pale even in dark mode. -->
+    <color name="twt_map_control_surface">#F8FAFF</color>
+    <color name="twt_map_control_stroke">#C6D4E9</color>
+    <color name="twt_map_control_ink">#233E75</color>
+    <!-- Tianwaitian brand tokens -->
 </resources>
