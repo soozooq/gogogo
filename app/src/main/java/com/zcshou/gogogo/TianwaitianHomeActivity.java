@@ -76,6 +76,23 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
                                 data.getStringExtra(LabPlacePickerActivity.EXTRA_LABEL), true);
                     });
 
+    private final ActivityResultLauncher<Intent> unifiedSearch =
+            registerForActivityResult(
+                    new ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        if (result.getResultCode() != Activity.RESULT_OK
+                                || result.getData() == null) return;
+                        Intent data = result.getData();
+                        if (!data.hasExtra(LabPlacePickerActivity.EXTRA_LONGITUDE)
+                                || !data.hasExtra(LabPlacePickerActivity.EXTRA_LATITUDE)) return;
+                        acceptCoordinates(
+                                data.getDoubleExtra(LabPlacePickerActivity.EXTRA_LONGITUDE,
+                                        Double.NaN),
+                                data.getDoubleExtra(LabPlacePickerActivity.EXTRA_LATITUDE,
+                                        Double.NaN),
+                                data.getStringExtra(LabPlacePickerActivity.EXTRA_LABEL), true);
+                    });
+
     private final ActivityResultLauncher<Intent> mapPicker =
             registerForActivityResult(
                     new ActivityResultContracts.StartActivityForResult(),
@@ -164,10 +181,54 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
                 dp(44), ViewGroup.LayoutParams.WRAP_CONTENT));
         brandCard.addView(brand);
 
+        // Compact map search surface sits UNDER the original constellation
+        // brand, not in the bottom control deck. No network call happens here.
+        LinearLayout topStack = new LinearLayout(this);
+        topStack.setOrientation(LinearLayout.VERTICAL);
+        topStack.addView(brandCard, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        MaterialCardView searchCard = GoGoUi.card(this);
+        searchCard.setRadius(dp(16));
+        searchCard.setCardElevation(dp(4));
+        searchCard.setContentDescription("搜索城市、地址或经纬度，打开统一搜索页面");
+        LinearLayout searchRow = new LinearLayout(this);
+        searchRow.setGravity(Gravity.CENTER_VERTICAL);
+        searchRow.setPadding(dp(16), dp(6), dp(12), dp(6));
+        TextView searchIcon = new TextView(this);
+        searchIcon.setText("⌕");
+        searchIcon.setTextSize(28);
+        searchIcon.setTextColor(GoGoUi.color(this, R.color.twt_nav_selected));
+        searchRow.addView(searchIcon, new LinearLayout.LayoutParams(dp(30),
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+        TextView searchHint = new TextView(this);
+        searchHint.setText("搜索城市、街道、建筑或经纬度");
+        searchHint.setSingleLine(true);
+        searchHint.setEllipsize(android.text.TextUtils.TruncateAt.END);
+        searchHint.setTextSize(14);
+        searchHint.setTextColor(GoGoUi.color(this, R.color.gogogo_text_muted));
+        searchRow.addView(searchHint, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        TextView arrow = new TextView(this);
+        arrow.setText("›");
+        arrow.setTextSize(22);
+        arrow.setTextColor(GoGoUi.color(this, R.color.twt_nav_selected));
+        searchRow.addView(arrow);
+        searchCard.addView(searchRow);
+        searchCard.setClickable(true);
+        searchCard.setFocusable(true);
+        searchCard.setOnClickListener(v -> unifiedSearch.launch(
+                new Intent(this, TianwaitianSearchActivity.class)));
+        LinearLayout.LayoutParams searchLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        searchLp.topMargin = dp(9);
+        topStack.addView(searchCard, searchLp);
+
         FrameLayout.LayoutParams top = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.TOP);
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP);
         top.setMargins(dp(12), dp(10), dp(12), 0);
-        root.addView(brandCard, top);
+        root.addView(topStack, top);
 
         // Bottom glass-like command deck, using semantic DayNight surface colors.
         MaterialCardView deck = GoGoUi.card(this);
