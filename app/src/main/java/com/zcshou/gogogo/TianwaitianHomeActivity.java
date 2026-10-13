@@ -106,7 +106,7 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
                         acceptCoordinates(
                                 data.getDoubleExtra(LabMapActivity.EXTRA_RESULT_LONGITUDE, Double.NaN),
                                 data.getDoubleExtra(LabMapActivity.EXTRA_RESULT_LATITUDE, Double.NaN),
-                                "地图选点", true);
+                                data.getStringExtra(LabMapActivity.EXTRA_RESULT_LABEL), true);
                     });
 
     @Override protected void onCreate(Bundle state) {
