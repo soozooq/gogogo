@@ -139,6 +139,8 @@ public class SimpleMockActivity extends AppCompatActivity {
                                             LabMapActivity.EXTRA_RESULT_LATITUDE, Double.NaN)));
                             longitudeInput.setText(Double.toString(selected.longitude));
                             latitudeInput.setText(Double.toString(selected.latitude));
+                            TianwaitianSelectedTarget.save(this,
+                                    selected.longitude, selected.latitude, "地图选点");
                             showHomeStatus(ServiceGo.sRunning
                                             ? "已从地图填入坐标 · 当前运行的模拟未改变；点击「开始模拟」才会应用"
                                             : "已从地图填入坐标 · 尚未启动模拟",
@@ -171,6 +173,8 @@ public class SimpleMockActivity extends AppCompatActivity {
                             longitudeInput.setText(Double.toString(selected.longitude));
                             latitudeInput.setText(Double.toString(selected.latitude));
                             String place = data.getStringExtra(LabPlacePickerActivity.EXTRA_LABEL);
+                            TianwaitianSelectedTarget.save(this,
+                                    selected.longitude, selected.latitude, place);
                             Toast.makeText(this, "已填入：" + (place == null ? "所选地点" : place)
                                     + " · 未自动模拟", Toast.LENGTH_SHORT).show();
                         } catch (IllegalArgumentException ignored) {
@@ -211,9 +215,17 @@ public class SimpleMockActivity extends AppCompatActivity {
                 latitudeInput.setText(savedInstanceState.getString(HOME_LATITUDE_TEXT, ""));
             }
         }
-        // Selected coordinates from the real map launcher only populate fields.
-        // This must never start or change the running mock service.
-        if (savedInstanceState == null) acceptHomeLauncherCoordinates(getIntent());
+        // When opened directly from Settings, use the last selected global
+        // target instead of silently reverting the controls to Myawaddy.
+        // Text currently being edited has higher priority on rotation.
+        if (savedInstanceState == null) {
+            TianwaitianSelectedTarget.Target shared = TianwaitianSelectedTarget.read(this);
+            if (shared != null) {
+                longitudeInput.setText(Double.toString(shared.longitude));
+                latitudeInput.setText(Double.toString(shared.latitude));
+            }
+            acceptHomeLauncherCoordinates(getIntent());
+        }
         ensureLocationPermission();
         // Detailed diagnostics can involve asynchronous GMS and radio reads.
         // Never run them just because the app was launched.
@@ -232,6 +244,10 @@ public class SimpleMockActivity extends AppCompatActivity {
                             TianwaitianHomeActivity.EXTRA_PREFILL_LATITUDE, Double.NaN)));
             longitudeInput.setText(Double.toString(point.longitude));
             latitudeInput.setText(Double.toString(point.latitude));
+            // Explicit navigation from the map is a confirmed selected target,
+            // not a request to publish a new mock coordinate.
+            TianwaitianSelectedTarget.save(this, point.longitude, point.latitude,
+                    intent.getStringExtra(TianwaitianHomeActivity.EXTRA_PREFILL_LABEL));
             showHomeStatus(ServiceGo.sRunning
                     ? "天外天选点已填入 · 原模拟保持不变，点击开始才应用新坐标"
                     : "天外天选点已填入 · 尚未启动模拟",
@@ -1146,6 +1162,15 @@ public class SimpleMockActivity extends AppCompatActivity {
         // Diagnostic-only reference for comparing later cached fixes.
         // Record only the user's requested mock target, never any real location.
         LabSupportLog.rememberRequestedTarget(this, lng, lat);
+        // A successful user-initiated publish request may update the selected
+        // UI target; it must never happen just because a picker was opened.
+        TianwaitianSelectedTarget.Target existing =
+                TianwaitianSelectedTarget.read(this);
+        String label = existing != null
+                && Double.compare(existing.longitude, lng) == 0
+                && Double.compare(existing.latitude, lat) == 0
+                ? existing.label : "手动输入坐标";
+        TianwaitianSelectedTarget.save(this, lng, lat, label);
         beginServiceStatusObservation(LabHomeServiceStatus.Request.START);
 
         String wifiWarning = "";
