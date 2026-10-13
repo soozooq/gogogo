@@ -18,6 +18,22 @@ public final class LabResponsiveUiPolicyTest {
         assertFalse(LabResponsiveUiPolicy.stackHomeActions(420, 1.29f));
     }
 
+    @Test public void expandedDetailsDoNotFillShortPhones() {
+        assertTrue(LabResponsiveUiPolicy.tianwaitianHomeDetailsMaxHeightDp(320) <= 110);
+        assertTrue(LabResponsiveUiPolicy.tianwaitianHomeDetailsMaxHeightDp(480) <= 240);
+        assertTrue(LabResponsiveUiPolicy.tianwaitianHomeDetailsMaxHeightDp(800) <= 300);
+        assertTrue(LabResponsiveUiPolicy.tianwaitianHomeDetailsMaxHeightDp(1800) <= 300);
+        assertTrue(LabResponsiveUiPolicy.tianwaitianHomeDetailsMaxHeightDp(0) >= 100);
+    }
+
+    @Test public void homeCardAlwaysLeavesRoomForMapControls() {
+        for (int width : new int[] {320, 360, 390, 480, 720, 1200}) {
+            int card = LabResponsiveUiPolicy.tianwaitianHomeCardWidthDp(width);
+            assertTrue(card <= 356);
+            assertTrue(card + 124 <= width);
+        }
+    }
+
     @Test public void missingWidthFailsSafe() {
         assertTrue(LabResponsiveUiPolicy.stackHomeActions(0, 1f));
     }
