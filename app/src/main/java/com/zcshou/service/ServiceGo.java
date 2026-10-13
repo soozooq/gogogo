@@ -43,6 +43,7 @@ import com.zcshou.gogogo.MainActivity;
 import com.zcshou.gogogo.LabPolicyEngine;
 import com.zcshou.gogogo.LabProviderReliabilityController;
 import com.zcshou.gogogo.LabGmsPublishEvidence;
+import com.zcshou.gogogo.LabGmsPublishGate;
 import com.zcshou.gogogo.LabPublishPerformanceEvidence;
 import com.zcshou.gogogo.LabServiceLifecycleJournal;
 import com.zcshou.gogogo.LabServiceTeardownSequence;
@@ -59,6 +60,10 @@ import com.zcshou.gogogo.LabAttitudeHeadingEngine;
 import com.zcshou.gogogo.LabHeadingTraceRecorder;
 import com.zcshou.gogogo.R;
 import com.zcshou.gogogo.SimpleMockActivity;
+import com.zcshou.gogogo.LabVpnExitSync;
+import com.zcshou.gogogo.LabVpnSystemTimeZone;
+import com.zcshou.gogogo.LabVpnGeoPolicy;
+import com.zcshou.gogogo.LabSupportLog;
 import com.zcshou.joystick.JoyStick;
 
 public class ServiceGo extends Service {
@@ -87,6 +92,8 @@ public class ServiceGo extends Service {
     public static final String ACTION_RECORD_STOP = "com.soozooq.gogogo.action.RECORD_STOP";
     public static final String ACTION_RECORD_CLEAR = "com.soozooq.gogogo.action.RECORD_CLEAR";
     public static final String ACTION_SCENARIO_RESET = "com.soozooq.gogogo.action.SCENARIO_RESET";
+    public static final String ACTION_VPN_SYNC_CONFIG = "com.soozooq.gogogo.action.VPN_SYNC_CONFIG";
+    public static final String ACTION_VPN_SYNC_REFRESH = "com.soozooq.gogogo.action.VPN_SYNC_REFRESH";
 
     public static final String EXTRA_ROUTE_LATS = "ROUTE_LATS";
     public static final String EXTRA_ROUTE_LNGS = "ROUTE_LNGS";
@@ -222,6 +229,7 @@ public class ServiceGo extends Service {
     // The dispatch count means a Task was returned, NOT that delivery succeeded.
     private volatile long mGmsFusedDispatchCount = 0L;
     private final LabGmsPublishEvidence mGmsPublishEvidence = new LabGmsPublishEvidence();
+    private final LabGmsPublishGate mGmsPublishGate = new LabGmsPublishGate();
     // Lab 52: evidence only; does not adjust the 33ms sleep or mock providers.
     private final LabPublishPerformanceEvidence mPublishPerformanceEvidence =
             new LabPublishPerformanceEvidence();
@@ -258,6 +266,8 @@ public class ServiceGo extends Service {
     // Read by the location HandlerThread and written during main-thread teardown.
     private volatile boolean isStop = false;
     private PowerManager.WakeLock mWakeLock;
+    private LabVpnExitSync mVpnExitSync;
+    private LabVpnSystemTimeZone mVpnSystemTimeZone;
 
     // 手机朝向：直接从系统方向传感器读取，避免高德在 Mock 模式下不再更新自身罗盘。
     private SensorManager mSensorManager;
@@ -360,6 +370,33 @@ public class ServiceGo extends Service {
         if (mProviderReliability != null) {
             mProviderReliability.startMonitoring();
         }
+        // Owned by the existing foreground mock service: no second background service.
+        // Only opts in when user deliberately enables VPN geo-follow.
+        mVpnSystemTimeZone = new LabVpnSystemTimeZone(this);
+        mVpnExitSync = new LabVpnExitSync(this, this::applyVpnExitCoordinate,
+                zoneId -> {
+                    if (mVpnSystemTimeZone != null) mVpnSystemTimeZone.onTarget(zoneId);
+                });
+        mVpnExitSync.startOrStopFromConfig();
+        mVpnSystemTimeZone.refresh();
+    }
+
+    private boolean applyVpnExitCoordinate(double latitude, double longitude) {
+        if (!LabVpnGeoPolicy.canApply(LabVpnExitSync.enabled(this), true,
+                !mRouteActive && !mRoamActive && !mReplayActive && !isStop,
+                LabVpnGeoPolicy.valid(latitude, longitude, "vpn"))) return false;
+        // Same fixed backend/provider pipeline as a manual target, no new injection path.
+        mCurLat = latitude;
+        mCurLng = longitude;
+        mCurAlt = DEFAULT_ALT;
+        mSpeed = 0.0;
+        mProvenanceSource = "VPN_EGRESS_IP_GEO";
+        activateSimulationBackend("FIXED");
+        recordProvenance("VPN_EGRESS", "approximate city target updated with user opt-in");
+        persistCurrentLocation(getSharedPreferences("mock_location_state", MODE_PRIVATE));
+        LabSupportLog.rememberRequestedTarget(this, longitude, latitude);
+        if (mJoyStick != null) mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+        return true;
     }
 
     private void initHeadingSensor() {
@@ -705,6 +742,16 @@ public class ServiceGo extends Service {
         android.content.SharedPreferences state =
                 getSharedPreferences("mock_location_state", MODE_PRIVATE);
 
+        if (intent != null && ACTION_VPN_SYNC_CONFIG.equals(intent.getAction())) {
+            if (mVpnExitSync != null) mVpnExitSync.startOrStopFromConfig();
+            if (mVpnSystemTimeZone != null) mVpnSystemTimeZone.refresh();
+            return START_STICKY; // never reset coordinates from a settings-only intent
+        }
+        if (intent != null && ACTION_VPN_SYNC_REFRESH.equals(intent.getAction())) {
+            if (mVpnExitSync != null) mVpnExitSync.manualRefresh();
+            return START_STICKY;
+        }
+
         if (intent != null && ACTION_SCENARIO_RESET.equals(intent.getAction())) {
             mScenarioStep = 0L;
             recordProvenance("SCENARIO", "replay reset to tick 0");
@@ -944,6 +991,12 @@ public class ServiceGo extends Service {
             activateSimulationBackend("FIXED");
             recordProvenance("MANUAL", "position selected");
             persistCurrentLocation(state);
+            LabVpnExitSync.markManualTargetPending(this);
+            // With the optional toggle enabled, resolve an up-to-date VPN target
+            // after this explicit manual start (without creating a second service).
+            if (mVpnExitSync != null && LabVpnExitSync.enabled(this)) {
+                mVpnExitSync.onManualPositionSelected();
+            }
         } else {
             if (restoreRouteCheckpoint()) {
                 if (mJoyStick != null) {
@@ -1155,8 +1208,17 @@ public class ServiceGo extends Service {
 
     @Override
     public void onDestroy() {
+        if (mVpnSystemTimeZone != null) {
+            mVpnSystemTimeZone.close();
+            mVpnSystemTimeZone = null;
+        }
+        if (mVpnExitSync != null) {
+            mVpnExitSync.stop();
+            mVpnExitSync = null;
+        }
         mFusedShutdownRequested = true;
         isStop = true;
+        mGmsPublishGate.close(); // Old Tasks may return after ServiceGo teardown.
         sRunning = false;
         // A failed route checkpoint must never skip provider/GMS teardown.
         if (mRouteActive) {
@@ -2363,7 +2425,12 @@ public class ServiceGo extends Service {
 
     @SuppressLint("MissingPermission")
     private void setLocationFusedClient() {
-        if (!mPolicyPublish || mFusedClient == null || !mFusedMockEnabled) return;
+        if (!mPolicyPublish || isStop || mFusedClient == null || !mFusedMockEnabled) return;
+        // This 33-ms tick may outrun Google Play services' Binder/Task queue.
+        // Never submit another FLP mock fix before the previous Task finishes.
+        // Framework GPS/NETWORK/FUSED still publish every eligible tick.
+        long token = mGmsPublishGate.begin(SystemClock.elapsedRealtime());
+        if (token == 0L) return;
         try {
             Location loc = new Location("fused");
             loc.setAccuracy(Math.max(1.0f, mPublishedAccuracy));
@@ -2391,6 +2458,7 @@ public class ServiceGo extends Service {
                 publishTask.addOnCompleteListener(Runnable::run, result -> {
                     boolean succeeded = result.isSuccessful();
                     long completedElapsed = SystemClock.elapsedRealtime();
+                    mGmsPublishGate.complete(token, succeeded, completedElapsed);
                     mGmsPublishEvidence.onTaskCompleted(succeeded);
                     mPublishPerformanceEvidence.onTaskFinished(succeeded,
                             taskReturnedElapsed, completedElapsed);
@@ -2400,11 +2468,13 @@ public class ServiceGo extends Service {
                 });
             } catch (RuntimeException observerError) {
                 // A returned Task without a registered observer is UNKNOWN, not failed.
+                mGmsPublishGate.complete(token, false, SystemClock.elapsedRealtime());
                 mGmsPublishEvidence.onCallbackUnavailable();
                 mPublishPerformanceEvidence.onCallbackUnavailable();
             }
         } catch (Throwable t) {
             // Do not log every tick; report synchronous failures as separate evidence.
+            mGmsPublishGate.complete(token, false, SystemClock.elapsedRealtime());
             mGmsPublishEvidence.onSynchronousFailure();
         }
     }
@@ -2604,6 +2674,11 @@ public class ServiceGo extends Service {
         public long getNetworkPublishCount() { return mNetworkPublishCount; }
         public long getFusedProviderPublishCount() { return mFusedProviderPublishCount; }
         public long getGmsFusedDispatchCount() { return mGmsFusedDispatchCount; }
+        public long getGmsFusedAcceptedCount() { return mGmsPublishGate.succeeded(); }
+        public long getGmsFusedFailedCount() { return mGmsPublishGate.failed(); }
+        public long getGmsFusedBackpressureCount() { return mGmsPublishGate.coalesced(); }
+        public long getGmsFusedPendingAgeMs() { return mGmsPublishGate.pendingAgeMs(SystemClock.elapsedRealtime()); }
+        public long getGmsFusedLastAcceptedAgeMs() { return mGmsPublishGate.lastSuccessAgeMs(SystemClock.elapsedRealtime()); }
         public LabGmsPublishEvidence.Snapshot getGmsPublishEvidenceSnapshot() {
             return mGmsPublishEvidence.snapshot();
         }
