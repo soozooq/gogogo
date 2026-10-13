@@ -187,6 +187,28 @@
             app:tint="@color/gogogo_on_primary"
             app:srcCompat="@drawable/ic_position" />
 
+        <!-- Visible caption mirrors the existing FAB's actual local action.
+             It delegates clicks to that FAB; there is no second mock handler. -->
+        <TextView
+            android:id="@+id/twt_fab_label"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:minWidth="92dp"
+            android:layout_gravity="bottom|start"
+            android:layout_marginStart="96dp"
+            android:layout_marginEnd="84dp"
+            android:layout_marginBottom="84dp"
+            android:background="@drawable/twt_fab_label_bg"
+            android:gravity="center"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:text="@string/twt_home_action_start"
+            android:textColor="@color/gogogo_text"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:focusable="true" />
+
         <LinearLayout
             android:id="@+id/search_linear"
             android:layout_width="match_parent"
