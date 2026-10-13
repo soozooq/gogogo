@@ -20,6 +20,23 @@ public class SettingsActivity extends BaseActivity {
 
         setContentView(R.layout.activity_settings);
         TianwaitianBottomNav.attach(this, TianwaitianBottomNav.Tab.SETTINGS);
+        // Dedicated entry for the advanced VPN / timezone / Shizuku controls.
+        // The full legacy control panel is preserved as a secondary screen.
+        android.widget.LinearLayout settingsColumn =
+                (android.widget.LinearLayout) findViewById(R.id.settings).getParent();
+        com.google.android.material.card.MaterialCardView vpnEntry =
+                GoGoUi.navigationTile(this, R.drawable.twt_nav_settings,
+                        "VPN 与模拟高级控制",
+                        "坐标锁定 · VPN 跟随 · 系统时区 · Shizuku",
+                        v -> startActivity(new android.content.Intent(
+                                this, SimpleMockActivity.class)));
+        android.widget.LinearLayout.LayoutParams vpnEntryLp =
+                new android.widget.LinearLayout.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+        vpnEntryLp.setMargins(GoGoUi.dp(this, 16), 0,
+                GoGoUi.dp(this, 16), GoGoUi.dp(this, 8));
+        settingsColumn.addView(vpnEntry, 1, vpnEntryLp);
         
         if (savedInstanceState == null) {
             getSupportFragmentManager()
