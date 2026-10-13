@@ -16,7 +16,19 @@ public class SettingsActivity extends BaseActivity {
          * 1. 除了 WelcomeActivity 之外的所有 Activity 均继承 BaseActivity
          * 2. WelcomeActivity 单独处理，其他 Activity 手动填充 StatusBar
          * */
-        getWindow().setStatusBarColor(getResources().getColor(R.color.colorPrimary, this.getTheme()));
+        // Settings is now a true primary tab, matching the light/ink status
+        // bar used by the other three Tianwaitian destinations.
+        getWindow().setStatusBarColor(
+                getResources().getColor(R.color.gogogo_bg, this.getTheme()));
+        boolean darkTheme = (getResources().getConfiguration().uiMode
+                & android.content.res.Configuration.UI_MODE_NIGHT_MASK)
+                == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+        android.view.View decor = getWindow().getDecorView();
+        int statusFlags = decor.getSystemUiVisibility();
+        statusFlags = darkTheme
+                ? statusFlags & ~android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                : statusFlags | android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+        decor.setSystemUiVisibility(statusFlags);
 
         setContentView(R.layout.activity_settings);
         TianwaitianBottomNav.attach(this, TianwaitianBottomNav.Tab.SETTINGS);
