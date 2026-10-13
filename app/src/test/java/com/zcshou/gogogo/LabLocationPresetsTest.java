@@ -32,6 +32,19 @@ public class LabLocationPresetsTest {
         }
     }
 
+    @Test public void naturalEarthExtensionKeepsOriginalIndicesAndHasBroadCoverage() {
+        assertEquals(263, LabLocationPresets.size());
+        assertEquals("缅甸 · 妙瓦底（默认）", LabLocationPresets.get(0).name);
+        assertEquals("巴西 · 里约热内卢", LabLocationPresets.get(16).name);
+        assertEquals("中国 · 上海", LabLocationPresets.get(17).name);
+        assertEquals("阿富汗 · 喀布尔", LabLocationPresets.get(157).name);
+        assertEquals("坦桑尼亚 · 多多马", LabLocationPresets.get(262).name);
+        assertEquals("梵蒂冈", LabPlaceCountries.countryOf("梵蒂冈 · 梵蒂冈城"));
+        assertEquals("朝鲜", LabPlaceCountries.countryOf("朝鲜 · 平壤"));
+        assertEquals("马绍尔群岛",
+                LabPlaceCountries.countryOf("马绍尔群岛 · 马朱罗"));
+    }
+
     @Test public void spansMoreThanOneHundredCountriesWithStableOriginalList() {
         Set<String> countries = new HashSet<>();
         for (int i = 0; i < LabLocationPresets.size(); i++) {
