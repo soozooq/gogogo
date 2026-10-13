@@ -19,20 +19,27 @@ import com.google.android.material.button.MaterialButton;
  */
 public final class LabHubActivity extends AppCompatActivity {
     private static final String EXPANDED_STATE = "lab_hub_expanded";
-    private static final int GROUP_COUNT = 3;
+    private static final int GROUP_COUNT = 4;
+    private static final String PREFLIGHT_EXPANDED_KEY = "lab_hub_preflight_expanded";
     private final boolean[] expanded = new boolean[GROUP_COUNT];
     private TextView readinessTitle;
     private TextView readinessDetail;
     private LabTimedSupportCopy timedSupportCopy;
     private LabExperimentPreflight experimentPreflight;
+    private boolean preflightExpanded;
+    private View preflightPanel;
+    private MaterialButton preflightToggle;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (savedInstanceState != null) {
             boolean[] previous = savedInstanceState.getBooleanArray(EXPANDED_STATE);
-            if (previous != null && previous.length == GROUP_COUNT) {
-                System.arraycopy(previous, 0, expanded, 0, GROUP_COUNT);
+            if (previous != null) {
+                // Migrate the previous three saved groups when the fourth was added.
+                System.arraycopy(previous, 0, expanded, 0,
+                        Math.min(previous.length, GROUP_COUNT));
             }
+            preflightExpanded = savedInstanceState.getBoolean(PREFLIGHT_EXPANDED_KEY, false);
         }
         buildUi();
     }
@@ -40,7 +47,7 @@ public final class LabHubActivity extends AppCompatActivity {
     @Override protected void onResume() {
         super.onResume();
         refreshReadiness();
-        if (experimentPreflight != null) experimentPreflight.refresh();
+        if (experimentPreflight != null && preflightExpanded) experimentPreflight.refresh();
     }
 
     @Override protected void onDestroy() {
@@ -51,6 +58,7 @@ public final class LabHubActivity extends AppCompatActivity {
 
     @Override protected void onSaveInstanceState(Bundle outState) {
         outState.putBooleanArray(EXPANDED_STATE, expanded.clone());
+        outState.putBoolean(PREFLIGHT_EXPANDED_KEY, preflightExpanded);
         super.onSaveInstanceState(outState);
     }
 
@@ -86,38 +94,35 @@ public final class LabHubActivity extends AppCompatActivity {
         overviewBody.addView(readinessTitle, GoGoUi.matchWrap());
         readinessDetail = GoGoUi.muted(this, "不验证微信、GMS 缓存或 Provider 清理。");
         overviewBody.addView(readinessDetail, GoGoUi.matchWrap());
+        overviewBody.addView(GoGoUi.gap(this, 8));
+        overviewBody.addView(GoGoUi.secondaryButton(this, "刷新设备状态",
+                v -> refreshReadiness()), GoGoUi.matchWrap());
         root.addView(overview, GoGoUi.matchWrap());
 
         root.addView(GoGoUi.gap(this, 12));
-        root.addView(GoGoUi.navigationTile(this, "自动化诊断任务面板",
-                "一键只读基础排障 · 0/10/30/60 秒自动被动缓存观察 · 报告复制",
-                v -> open(LabAutoDiagnosticActivity.class)), GoGoUi.matchWrap());
-        root.addView(GoGoUi.gap(this, 10));
-        root.addView(GoGoUi.navigationTile(this, "跨应用定位来源对照",
-                "抖音 / 高德 / 微信 / 腾讯地图 · 前后被动快照与人工观察总日志",
-                v -> open(LabCrossAppLocationActivity.class)), GoGoUi.matchWrap());
-        root.addView(GoGoUi.gap(this, 12));
-        experimentPreflight = new LabExperimentPreflight(this);
-        root.addView(experimentPreflight.view(), GoGoUi.matchWrap());
-
-        root.addView(GoGoUi.gap(this, 18));
-        root.addView(GoGoUi.sectionTitle(this, "常用定位检查"),
+        root.addView(GoGoUi.sectionTitle(this, "先做这两项"),
                 GoGoUi.matchWrap());
+        root.addView(GoGoUi.muted(this,
+                "只读检查不会启动新的模拟；主动定位观察需要你另外选择。"),
+                GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 8));
         root.addView(GoGoUi.navigationTile(this, "基础快检与综合报告",
                 "检查授权和运行标记，保存基准或对比异常清理历史",
                 v -> open(LabQuickCheckActivity.class)), GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 8));
-        root.addView(GoGoUi.navigationTile(this, "Consumer Matrix",
-                "对照 Android / GMS 的定位回调与新鲜度；不自动启动模拟",
-                v -> open(ConsumerLocationProbeActivity.class)), GoGoUi.matchWrap());
-        root.addView(GoGoUi.gap(this, 8));
-        root.addView(GoGoUi.navigationTile(this, "被动快照（无定位请求）",
-                "只读 GPS / NETWORK / GMS 缓存，不触发新鲜定位或持续订阅",
+        root.addView(GoGoUi.navigationTile(this, "被动快照 · 不请求新定位",
+                "先看 GPS / NETWORK / GMS 的已有缓存；不主动获取位置",
                 v -> {
                     Intent intent = new Intent(this, ConsumerLocationProbeActivity.class);
                     intent.putExtra(ConsumerLocationProbeActivity.EXTRA_PASSIVE_MODE, true);
                     startActivity(intent);
                 }), GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 16));
+        root.addView(GoGoUi.sectionTitle(this, "需要时再深入"),
+                GoGoUi.matchWrap());
+        root.addView(GoGoUi.navigationTile(this, "跨来源主动对照 · Consumer Matrix",
+                "此工具会主动请求位置回调；不启动模拟，但可能刷新缓存",
+                v -> open(ConsumerLocationProbeActivity.class)), GoGoUi.matchWrap());
 
         root.addView(GoGoUi.gap(this, 10));
         root.addView(GoGoUi.primaryButton(this, "📋 复制最近诊断日志（发给 GPT）",
@@ -126,11 +131,18 @@ public final class LabHubActivity extends AppCompatActivity {
         root.addView(GoGoUi.gap(this, 10));
         root.addView(timedSupportCopy.view(), GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 20));
-        root.addView(GoGoUi.sectionTitle(this, "按需展开其他工具"),
+        root.addView(GoGoUi.sectionTitle(this, "高级研究工具"),
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.muted(this,
-                "把日常检查留在顶部；原有高级实验保留在下面，点击分类展开。"),
+                "专项对照、微信实验和兼容研究都还在；默认收起减少干扰。"),
                 GoGoUi.matchWrap());
+        addGroup(root, 3, "专项实验与对照", new Entry[]{
+                new Entry("自动化诊断任务面板",
+                        "定时被动缓存观察与诊断报告", LabAutoDiagnosticActivity.class),
+                new Entry("跨应用定位来源对照",
+                        "第三方应用人工观察与快照汇总", LabCrossAppLocationActivity.class)
+        });
+        addPreflightSection(root);
 
         addGroup(root, 0, "恢复与兼容", new Entry[]{
                 new Entry("异常退出与恢复取证", "历史 Provider 与 GMS 清理记录",
@@ -169,6 +181,36 @@ public final class LabHubActivity extends AppCompatActivity {
                         + "真实第三方位置兼容性必须用设备实测确认。"),
                 GoGoUi.matchWrap());
         setContentView(scroll);
+    }
+
+    /**
+     * The WeChat/Shizuku experiment panel contains specialist controls and
+     * potentially slow read-only inspection. Keep it collapsed by default.
+     * Opening this section never issues a force-stop or starts mock publishing.
+     */
+    private void addPreflightSection(LinearLayout root) {
+        root.addView(GoGoUi.gap(this, 10));
+        preflightToggle = GoGoUi.secondaryButton(this, "", v -> {});
+        experimentPreflight = new LabExperimentPreflight(this);
+        preflightPanel = experimentPreflight.view();
+        setPreflightExpanded(preflightExpanded);
+        preflightToggle.setOnClickListener(v -> {
+            preflightExpanded = !preflightExpanded;
+            setPreflightExpanded(preflightExpanded);
+            if (preflightExpanded) experimentPreflight.refresh();
+        });
+        root.addView(preflightToggle, GoGoUi.matchWrap());
+        root.addView(preflightPanel, GoGoUi.matchWrap());
+    }
+
+    private void setPreflightExpanded(boolean show) {
+        if (preflightPanel == null || preflightToggle == null) return;
+        preflightPanel.setVisibility(show ? View.VISIBLE : View.GONE);
+        preflightToggle.setText(show ? "▴ 收起微信实验前置检查"
+                : "▾ 展开微信实验前置检查");
+        preflightToggle.setContentDescription(show
+                ? "微信实验前置检查已展开，点击收起"
+                : "微信实验前置检查已收起，点击展开");
     }
 
     private void refreshReadiness() {
