@@ -156,7 +156,7 @@
     <string name="twt_home_action_start">启动模拟</string>
     <string name="twt_home_action_stop">停止模拟</string>
     <string name="twt_home_action_update">更新模拟目标位置</string>
-    <string name="twt_home_new_map">地图与路线</string>
-    <string name="twt_home_diagnostics">诊断中心</string>
+    <string name="twt_home_new_map">地图</string>
+    <string name="twt_home_diagnostics">诊断</string>
     <string name="twt_home_coordinate_hint">目标坐标为 GCJ-02 · 左下角按钮控制模拟</string>
 </resources>
