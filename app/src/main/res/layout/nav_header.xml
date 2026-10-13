@@ -12,11 +12,12 @@
 
     <ImageView
         android:id="@+id/app_icon"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="30dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="22dp"
         android:contentDescription="@null"
-        app:srcCompat="@mipmap/ic_launcher_round" />
+        app:srcCompat="@drawable/twt_constellation_motif"
+        app:tint="@android:color/white" />
 
     <LinearLayout
         android:layout_width="match_parent"
