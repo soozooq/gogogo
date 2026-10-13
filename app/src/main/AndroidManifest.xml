@@ -258,7 +258,8 @@
         <activity
             android:name=".SettingsActivity"
             android:label="@string/app_settings"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
             android:name=".HistoryActivity"
