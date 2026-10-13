@@ -78,6 +78,9 @@ jobs:
           printf 'MAPS_API_KEY=DUMMY\n' >> local.properties
           chmod +x gradlew
 
+      - name: Verify Tianwaitian launcher
+        run: python3 ci/verify_tianwaitian_launcher.py
+
       - name: Build debug APK
         shell: bash
         run: |
