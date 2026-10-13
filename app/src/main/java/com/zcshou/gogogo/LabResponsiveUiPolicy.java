@@ -31,6 +31,11 @@ public final class LabResponsiveUiPolicy {
         return Math.max(100, Math.min(300, screenHeightDp - 260));
     }
 
+    /** Remove nonessential explanatory blocks on landscape/short picker screens. */
+    public static boolean tianwaitianCompactPlacePicker(int screenHeightDp) {
+        return screenHeightDp < 600;
+    }
+
     /** Stack secondary controls when a clipped label or large font is likely. */
     public static boolean stackTianwaitianHomeActions(int cardWidthDp, float fontScale) {
         return cardWidthDp < 230 || fontScale >= 1.30f;
