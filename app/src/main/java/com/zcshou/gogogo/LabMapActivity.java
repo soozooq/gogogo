@@ -248,7 +248,7 @@ public class LabMapActivity extends AppCompatActivity {
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(pad, GoGoUi.dp(this, 10), pad, pad);
+        root.setPadding(pad, GoGoUi.dp(this, 6), pad, GoGoUi.dp(this, 8));
         GoGoUi.applyScreenBackground(root);
 
         // Compact app bar: map first, tools second.
@@ -256,18 +256,18 @@ public class LabMapActivity extends AppCompatActivity {
         com.google.android.material.button.MaterialButton backButton =
                 GoGoUi.textButton(this, "←", v -> finish());
         LinearLayout.LayoutParams backLp = new LinearLayout.LayoutParams(
-                GoGoUi.dp(this, 52), ViewGroup.LayoutParams.WRAP_CONTENT);
+                GoGoUi.dp(this, 42), ViewGroup.LayoutParams.WRAP_CONTENT);
         appBar.addView(backButton, backLp);
 
         LinearLayout titleBlock = new LinearLayout(this);
         titleBlock.setOrientation(LinearLayout.VERTICAL);
         TextView title = GoGoUi.sectionTitle(this, "地图与路线");
-        title.setTextSize(19);
+        title.setTextSize(17);
         title.setPadding(0, 0, 0, 0);
         titleBlock.addView(title, GoGoUi.matchWrap());
-        titleBlock.addView(
-                GoGoUi.muted(this, "天外天 · 选点 / 漫游 / 回放"),
-                GoGoUi.matchWrap());
+        TextView caption = GoGoUi.muted(this, "点选位置 · 路线 / 漫游");
+        caption.setTextSize(11);
+        titleBlock.addView(caption, GoGoUi.matchWrap());
         appBar.addView(titleBlock, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
@@ -281,89 +281,81 @@ public class LabMapActivity extends AppCompatActivity {
         statusView = GoGoUi.muted(
                 this,
                 "点地图选择位置 · 工具菜单可快捷跳转国家 / 城市");
-        statusView.setPadding(GoGoUi.dp(this, 4), GoGoUi.dp(this, 6),
-                GoGoUi.dp(this, 4), GoGoUi.dp(this, 6));
+        statusView.setPadding(GoGoUi.dp(this, 4), GoGoUi.dp(this, 3),
+                GoGoUi.dp(this, 4), GoGoUi.dp(this, 3));
+        statusView.setSingleLine(true);
+        statusView.setEllipsize(android.text.TextUtils.TruncateAt.END);
         root.addView(statusView, GoGoUi.matchWrap());
 
         mapView = new MapView(this);
         mapView.onCreate(savedInstanceState);
         LinearLayout.LayoutParams mapLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
-        mapLp.setMargins(0, GoGoUi.dp(this, 4), 0, GoGoUi.dp(this, 10));
+        mapLp.setMargins(0, GoGoUi.dp(this, 3), 0, GoGoUi.dp(this, 7));
         root.addView(mapView, mapLp);
 
-        // Bottom command deck.
+        // Minimal command deck: the map is the main feature. Live telemetry,
+        // heading, follow, motion labs and diagnostics are reachable from
+        // the top "工具" menu and never fill the viewport by default.
         com.google.android.material.card.MaterialCardView controlCard = GoGoUi.card(this);
         LinearLayout control = GoGoUi.cardContent(this);
         controlCard.addView(control);
-        control.setPadding(
-                GoGoUi.dp(this, 14),
-                GoGoUi.dp(this, 12),
-                GoGoUi.dp(this, 14),
-                GoGoUi.dp(this, 12));
+        control.setPadding(GoGoUi.dp(this, 12), GoGoUi.dp(this, 9),
+                GoGoUi.dp(this, 12), GoGoUi.dp(this, 9));
 
-        liveView = GoGoUi.muted(this, "Service 未运行");
+        // The original live service text is still updated every 500ms but is
+        // detached from the map layout. Users may view a snapshot on demand.
+        liveView = GoGoUi.muted(this, "模拟未运行");
         liveView.setTextIsSelectable(true);
-        control.addView(liveView, GoGoUi.matchWrap());
-
-        routeProgress = new ProgressBar(
-                this, null, android.R.attr.progressBarStyleHorizontal);
-        routeProgress.setMax(1000);
-        routeProgress.setProgress(0);
-        LinearLayout.LayoutParams progressLp = GoGoUi.matchWrap();
-        progressLp.setMargins(0, GoGoUi.dp(this, 8), 0, 0);
-        control.addView(routeProgress, progressLp);
+        followButton = GoGoUi.textButton(this, followMock ? "跟随·开" : "跟随·关",
+                v -> toggleFollow());
+        headingFollowButton = GoGoUi.textButton(this,
+                followHeading ? "朝向·开" : "朝向·关", v -> toggleHeadingFollow());
 
         routeView = GoGoUi.muted(this, "路线：未导入");
-        routeView.setPadding(0, GoGoUi.dp(this, 4), 0, 0);
+        routeView.setTextSize(12);
+        routeView.setMaxLines(2);
+        routeView.setEllipsize(android.text.TextUtils.TruncateAt.END);
         control.addView(routeView, GoGoUi.matchWrap());
-        // An imported route may have survived a configuration change in
-        // the ViewModel even though the MapView itself has been recreated.
         updateRouteView();
 
-        control.addView(GoGoUi.gap(this, 10));
+        routeProgress = new ProgressBar(this, null,
+                android.R.attr.progressBarStyleHorizontal);
+        routeProgress.setMax(1000);
+        routeProgress.setProgress(0);
+        routeProgress.setVisibility(android.view.View.GONE);
+        LinearLayout.LayoutParams progressLp = GoGoUi.matchWrap();
+        progressLp.setMargins(0, GoGoUi.dp(this, 3), 0, GoGoUi.dp(this, 3));
+        control.addView(routeProgress, progressLp);
 
-        // Keep the primary simulation action full width; two-column controls
-        // wrap labels on compact displays instead of squeezing four into one row.
-        control.addView(GoGoUi.primaryButton(this, "模拟这里",
-                v -> simulateSelected()), GoGoUi.matchWrap());
         control.addView(GoGoUi.gap(this, 6));
-        control.addView(GoGoUi.secondaryButton(this, "填入首页（不启动模拟）",
-                v -> returnSelectedToHome()), GoGoUi.matchWrap());
-        control.addView(GoGoUi.gap(this, 6));
+        com.google.android.material.button.MaterialButton apply =
+                GoGoUi.primaryButton(this, "模拟这里", v -> simulateSelected());
+        com.google.android.material.button.MaterialButton home =
+                GoGoUi.secondaryButton(this, "填入首页", v -> returnSelectedToHome());
+        boolean stackMapActions = LabResponsiveUiPolicy.stackTianwaitianLauncherActions(
+                getResources().getConfiguration().screenWidthDp,
+                getResources().getConfiguration().fontScale);
+        if (stackMapActions) {
+            control.addView(apply, GoGoUi.matchWrap());
+            control.addView(GoGoUi.gap(this, 5));
+            control.addView(home, GoGoUi.matchWrap());
+        } else {
+            LinearLayout primaryActions = GoGoUi.row(this);
+            primaryActions.addView(apply, GoGoUi.weighted());
+            GoGoUi.addHorizontalGap(this, primaryActions, 8);
+            primaryActions.addView(home, GoGoUi.weighted());
+            control.addView(primaryActions, GoGoUi.matchWrap());
+        }
+        control.addView(GoGoUi.gap(this, 5));
 
         LinearLayout routeActions = GoGoUi.row(this);
-        routeActions.addView(
-                GoGoUi.secondaryButton(this, "路线设置", v -> showRoutePanel()),
-                GoGoUi.weighted());
+        routeActions.addView(GoGoUi.secondaryButton(this, "路线设置",
+                v -> showRoutePanel()), GoGoUi.weighted());
         GoGoUi.addHorizontalGap(this, routeActions, 8);
-        routeActions.addView(
-                GoGoUi.secondaryButton(this, "漫游设置", v -> showRoamPanel()),
-                GoGoUi.weighted());
+        routeActions.addView(GoGoUi.secondaryButton(this, "漫游设置",
+                v -> showRoamPanel()), GoGoUi.weighted());
         control.addView(routeActions, GoGoUi.matchWrap());
-
-        LinearLayout followRow = GoGoUi.row(this);
-        followButton = GoGoUi.textButton(this,
-                followMock ? "跟随·开" : "跟随·关", v -> toggleFollow());
-        followRow.addView(followButton, GoGoUi.weighted());
-        GoGoUi.addHorizontalGap(this, followRow, 8);
-        headingFollowButton =
-                GoGoUi.textButton(this,
-                        followHeading ? "朝向·开" : "朝向·关",
-                        v -> toggleHeadingFollow());
-        followRow.addView(headingFollowButton, GoGoUi.weighted());
-        control.addView(followRow, GoGoUi.matchWrap());
-
-        LinearLayout moreRow = GoGoUi.row(this);
-        moreRow.addView(
-                GoGoUi.textButton(this, "运动工具", v -> showMotionPanel()),
-                GoGoUi.weighted());
-        GoGoUi.addHorizontalGap(this, moreRow, 8);
-        moreRow.addView(
-                GoGoUi.textButton(this, "实验与诊断", v ->
-                        startActivity(new Intent(this, LabHubActivity.class))),
-                GoGoUi.weighted());
-        control.addView(moreRow, GoGoUi.matchWrap());
 
         root.addView(controlCard, GoGoUi.matchWrap());
         setContentView(root);
@@ -400,7 +392,11 @@ public class LabMapActivity extends AppCompatActivity {
                 "离线地图管理",
                 "🌏 搜索国家 / 城市 · 收藏",
                 "查看位置来源链",
-                "清空位置来源链"
+                "清空位置来源链",
+                "跟随模拟位置 · 切换",
+                "跟随地图朝向 · 切换",
+                "查看实时原始数据",
+                "运动与传感器工具"
         };
 
         new AlertDialog.Builder(this)
@@ -439,6 +435,25 @@ public class LabMapActivity extends AppCompatActivity {
                             break;
                         case 10:
                             clearProvenanceTimeline();
+                            break;
+                        case 11:
+                            toggleFollow();
+                            Toast.makeText(this, followMock ? "已开启位置跟随" : "已关闭位置跟随",
+                                    Toast.LENGTH_SHORT).show();
+                            break;
+                        case 12:
+                            toggleHeadingFollow();
+                            Toast.makeText(this, followHeading ? "已开启朝向跟随" : "已关闭朝向跟随",
+                                    Toast.LENGTH_SHORT).show();
+                            break;
+                        case 13:
+                            new AlertDialog.Builder(this)
+                                    .setTitle("实时原始数据 · 只读")
+                                    .setMessage(liveView.getText())
+                                    .setPositiveButton("关闭", null).show();
+                            break;
+                        case 14:
+                            showMotionPanel();
                             break;
                         default:
                             break;
@@ -789,6 +804,7 @@ public class LabMapActivity extends AppCompatActivity {
             liveView.setText("实时状态：Service 未连接"
                     + (ServiceGo.sRunning ? "（正在重连）" : "（未运行）"));
             routeProgress.setProgress(0);
+            routeProgress.setVisibility(android.view.View.GONE);
             return;
         }
 
@@ -803,6 +819,8 @@ public class LabMapActivity extends AppCompatActivity {
             boolean replay = binder.isReplayActive();
             boolean recording = binder.isTrackRecording();
             int trackPoints = binder.getTrackPointCount();
+            routeProgress.setVisibility((route || replay)
+                    ? android.view.View.VISIBLE : android.view.View.GONE);
 
             StringBuilder sb = new StringBuilder();
             sb.append(String.format(Locale.US,
