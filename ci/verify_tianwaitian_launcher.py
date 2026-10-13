@@ -254,3 +254,29 @@ check("LabHomeCoordinates.parse" in query_parser
       "typed coordinates must use the same strict boundary as home")
 print("Tianwaitian unified search checks PASS: offline/coordinates/local callback, "
       "explicit online queries, cache, switchable HTTPS provider and attribution.")
+
+# A real vivo test surfaced excessive technical UI in the cross-app evidence
+# tool. The ordinary workflow must show three steps and a cautious Chinese
+# summary while preserving the opt-in expert form and historical raw logs.
+cross_app = (base / "LabCrossAppLocationActivity.java").read_text(encoding="utf-8")
+readable = (base / "LabCrossAppReadableSummary.java").read_text(encoding="utf-8")
+check("三步完成一次对比" in cross_app
+      and "startQuickRound()" in cross_app
+      and "saveQuickObservation()" in cross_app,
+      "cross-app quick comparison must have the 3-step workflow")
+check("advancedPanel.addView(card" in cross_app
+      and "advancedExpanded" in cross_app
+      and 'passive("BEFORE")' in cross_app
+      and 'passive("AFTER")' in cross_app,
+      "advanced controls and before/after passive evidence must be preserved")
+check("rawLogExpanded" in cross_app
+      and "reportView.setVisibility" in cross_app
+      and 'getString(KEY_LOG' in cross_app,
+      "technical logs must be preserved but folded by default")
+check("LabCrossAppReadableSummary.summarize" in cross_app
+      and "不能据此断言" in readable
+      and "微信实际使用的定位来源仍未知" in readable,
+      "readable outcome must avoid unproved WeChat SDK or cache attribution")
+check("ServiceGo" not in cross_app, "UI simplification must not touch the mock engine")
+print("Tianwaitian cross-app compact mode PASS: three-step flow, "
+      "readable evidence summary and preserved raw diagnostics.")
