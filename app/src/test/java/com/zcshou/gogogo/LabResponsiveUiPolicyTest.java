@@ -18,6 +18,15 @@ public final class LabResponsiveUiPolicyTest {
         assertFalse(LabResponsiveUiPolicy.stackHomeActions(420, 1.29f));
     }
 
+    @Test public void constellationLauncherKeepsTwoButtonsOnOrdinaryPhones() {
+        assertFalse(LabResponsiveUiPolicy.stackTianwaitianLauncherActions(320, 1.0f));
+        assertFalse(LabResponsiveUiPolicy.stackTianwaitianLauncherActions(360, 1.0f));
+        assertFalse(LabResponsiveUiPolicy.stackTianwaitianLauncherActions(393, 1.2f));
+        assertTrue(LabResponsiveUiPolicy.stackTianwaitianLauncherActions(319, 1.0f));
+        assertTrue(LabResponsiveUiPolicy.stackTianwaitianLauncherActions(400, 1.35f));
+        assertTrue(LabResponsiveUiPolicy.stackTianwaitianLauncherActions(0, 1.0f));
+    }
+
     @Test public void expandedDetailsDoNotFillShortPhones() {
         assertTrue(LabResponsiveUiPolicy.tianwaitianHomeDetailsMaxHeightDp(320) <= 110);
         assertTrue(LabResponsiveUiPolicy.tianwaitianHomeDetailsMaxHeightDp(480) <= 240);
