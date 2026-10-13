@@ -26,8 +26,8 @@ public class LabPlaceCountriesTest {
             countries.add(country);
             cities.put(country, cities.containsKey(country) ? cities.get(country) + 1 : 1);
         }
-        assertEquals(109, countries.size());
-        assertEquals(157, LabLocationPresets.size());
+        assertEquals(193, countries.size());
+        assertEquals(263, LabLocationPresets.size());
         assertTrue(cities.get("中国") >= 9);
         assertTrue(cities.get("日本") >= 4);
     }
