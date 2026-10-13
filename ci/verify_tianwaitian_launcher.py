@@ -195,5 +195,14 @@ check(presets_java.count("points.add(new Preset(") == 263,
       "expected 263 offline city presets")
 check("缅甸 · 妙瓦底（默认）" in presets_java,
       "original default Myawaddy position must be preserved")
+# Every new country must also be indexable by its Chinese Hanyu Pinyin
+# initial, otherwise the offline A-Z country rail silently drops its groups.
+import re
+labels = re.findall(r'points\.add\(new Preset\("([^"]+)"', presets_java)
+countries = {label.split(" · ", 1)[0] for label in labels}
+index_source = (base / "LabPlaceAlphabet.java").read_text(encoding="utf-8")
+indexed = set(re.findall(r'values\.put\("([^"]+)", "[a-z]+"\)', index_source))
+check(len(countries) == 193 and countries.issubset(indexed),
+      "missing country Pinyin A-Z index: " + repr(sorted(countries - indexed)))
 print("Tianwaitian icon/country regression checks PASS: "
       "10 legacy PNGs, 2 adaptive XMLs, themed monochrome, 263 locations.")
