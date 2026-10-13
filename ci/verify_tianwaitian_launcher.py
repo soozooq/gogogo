@@ -308,6 +308,10 @@ check("EXTRA_PREFILL_LABEL" in home
       "console picker must synchronize selected Beijing label and WGS-84 coordinates")
 check("TianwaitianSelectedTarget.save(" in map_tools,
       "map tools should preserve explicit city selections across Activities")
+check("pauseMockCameraFollowForManualSelection();" in map_tools
+      and "followMock = false;" in map_tools
+      and "followHeading = false;" in map_tools,
+      "manually selected Beijing must not be hidden by previous live mock camera follow")
 check("已选目标 · " in home
       and "未自动改变正在运行的模拟" in home,
       "map must visibly distinguish selected destination from active simulation")
