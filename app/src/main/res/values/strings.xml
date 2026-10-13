@@ -149,6 +149,7 @@
     <string name="update_commit">提交信息：</string>
     <!-- Tianwaitian UI v1: home-only labels do not imply consumer compatibility. -->
     <string name="twt_tagline">探索坐标之外</string>
+    <string name="twt_settings_caption">偏好设置 · 地图与模拟参数</string>
     <string name="twt_home_overline">星座视界  ·  位置探索</string>
     <string name="twt_home_target_unselected">尚未选择新目标位置</string>
     <string name="twt_home_idle">首页未启动模拟</string>
