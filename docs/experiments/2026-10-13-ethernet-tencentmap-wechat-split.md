@@ -1,6 +1,6 @@
-# 天外天 · 2026-10-13 晚间以太网定位差异（待验证）
+# 天外天 · 2026-10-13 晚间以太网定位差异（双应用被动对照已完成）
 
-## 用户新提供的截图观察
+## 第一阶段：用户截图观察（21:00 前，未同步采集系统缓存）
 
 - 用户表示本次已使用**以太网**，并在 GoGoGo / 天外天模拟场景下对比腾讯地图与微信的定位。
 - 腾讯地图 App 截图中，**蓝色定位点**显示于北美太平洋西岸一带，底图上可见美国西海岸地形。具体经纬度、系统 GNSS 缓存与是否每次按了“定位”刷新**没有同步日志**。
@@ -35,3 +35,45 @@
 这是一份**观察结果记录和下一步取证方案**，不是定位兼容修复成功声明。当前不修改注入频率、Provider 或 GMS 参数，不增加 Shizuku 权限，不自动强停、清缓存、删除微信数据或干预 vivo 分身。旧方案和数据可用于下一次重复对照。
 
 相关资料：`docs/cellular-ethernet-vs-location-evidence-20261012.md` 与 `docs/cross-app-location-evidence-20261012.md`。
+
+## 第二阶段：2026-10-13 21:51–21:53 正式被动对照结果（已完成）
+
+以下来自用户直接提供的两轮 `CROSS_APP_ROUND` 脱敏文本日志，不是推测或仅凭截图。为保护隐私，本文件只保留关键证据字段与大致区域，**不保存真实地址、用户帐号或精确经纬度**。原始完整日志仍由用户设备 `cross_app_location_evidence/total_log` 的 SharedPreferences 保存，除非用户自行清空应用数据或在实验页执行清空操作。
+
+### 实验 1：腾讯地图 App
+
+- `CROSS_APP_ROUND` 开始：**21:51:29.560**；点击外部应用：21:51:35.505；返回天外天并拍摄 AFTER：**21:51:59.659**；人工结果保存：**21:52:36.847**。
+- 网络 BEFORE/AFTER 一致：`app_default_network=VPN+ETHERNET`；可见 transport 计数为 `CELLULAR:0,WIFI:0,ETHERNET:2,VPN:1`；`wifi_radio_switch=false`；`airplane_mode=1`；`cellular_data_state=DISCONNECTED`。VPN underlay/其他 App 路由 `UNKNOWN`。
+- BEFORE：GPS `fixAge=29ms mock=YES LT_1KM`，NETWORK `51ms mock=YES LT_1KM`，GMS_LAST `51ms mock=YES LT_1KM`。
+- AFTER：GPS `73ms mock=YES LT_1KM`，NETWORK `51ms mock=YES LT_1KM`，GMS_LAST `259ms mock=YES LT_1KM`。
+- 人工观察：`蓝点和附近地点均为 GoGoGo 模拟目标地区`；`opened_by_user=true`；这是用户见到的 App 界面，不是读取到了腾讯地图的内部 SDK 调用路径。
+
+### 实验 2：微信「发送位置」
+
+- `CROSS_APP_ROUND` 开始：**21:52:47.644**；点击外部应用：21:52:50.138；返回天外天并拍摄 AFTER：**21:53:16.141**；人工结果保存：**21:53:34.626**。
+- 网络 BEFORE/AFTER 同为 `VPN+ETHERNET`，且 CELLULAR/WIFI 可见 transport 均为 0、以太网 2、VPN 1；Wi-Fi 关闭、飞行模式开启；第三方 App 实际路由未验证。
+- BEFORE：GPS `fixAge=17ms mock=YES LT_1KM`，NETWORK `35ms mock=YES LT_1KM`，GMS_LAST `52ms mock=YES LT_1KM`。
+- AFTER：GPS `91ms mock=YES LT_1KM`，NETWORK `26ms mock=YES LT_1KM`，GMS_LAST `183ms mock=YES LT_1KM`。
+- 人工观察：`蓝点和附近地点均为国内实际地区`；`opened_by_user=true`；未证明微信内部读取了哪个位置来源。
+
+### 网络及 SIM 旁证的边界
+
+- 用户设备对天外天报告的默认网络为 VPN+ETHERNET，说明**本 App**当时走该默认通道；`vpn_underlay=UNKNOWN`、`other_app_routes=UNKNOWN`，不代表所有 App 都一定经过同一个 VPN 出口。
+- `default_sim_iso=US` 而 `sim_mccmnc=46002`，程序标记 `INCONSISTENT_SIM_ISO_US_MCC_CN`。它只是配置字段不一致，**不能据此识别真实地理位置，也不能单独作为微信定位原因**。没有读取手机号、IMSI 或 ICCID。
+- `registered_network_iso/mccmnc/operator=UNKNOWN`，`READ_PHONE_STATE` 未授予，故不能用这轮数据确认或排除蜂窝注册证据。飞行模式/移动数据开关状态亦不等价于所有无线电完全断电。
+
+### 可以确定的结论
+
+1. 两轮中，**天外天有权限读取的 GPS、NETWORK、GMS_LAST 公共末次缓存**在 BEFORE 与 AFTER 都很新，均 `mock=YES` 且距模拟目标 `LT_1KM`。
+2. 腾讯地图 App 的用户可见蓝点和附近地点跟随模拟目标；微信「发送位置」用户可见蓝点和附近地点没有跟随，仍为国内地区。
+3. 因此该异常**不能简单归因为 GPS/NETWORK/GMS 公共缓存没有写入模拟坐标**。但不能推断微信一定读取了某一个公共缓存，也不能证明微信用了独立 SDK、服务端地理编码、Wi-Fi/蜂窝定位、旧缓存或模拟检测中的任一单独路径。
+4. 两个 App 的可见 UI 与本 App 的公共缓存来源没有一对一读取证据，缺少第三方 App 内部日志和分支路由证据；现阶段只能表述为**跨应用消费结果不一致**，并不构成微信绕过机制已查明或已修复。
+
+### 对下一阶段工作的指导
+
+- **不要重复本次已稳定的条件**：VPN+ETHERNET、Wi-Fi 关、飞行模式开、同目标持续模拟，三条公共缓存前后均模拟。
+- 下一阶段优先做能够区分微信内部缓存、系统返回值与第三方请求差异的**只读、可重复**对照；先给出能证伪的假设，再决定改哪一层。
+- 不建议只凭本次截图盲调 `ServiceGo` 注入频率、清空微信数据、干预应用分身、强停微信或宣称“腾讯地图用的 SDK 就是微信用的 SDK”。
+- 版本基线：记录生成时最新 UI 预览 **天外天 2.4.10**，这次实验取证实际发生在升级前的旧 UI 上；切勿将本轮成功归功于新三步界面。
+
+**留存方式**：仓库保留这份脱敏实验结论；天外天设备本地保留原始总日志；此对话中用户已经提供两轮完整脱敏文本，可作为未来复核的原始参照。
