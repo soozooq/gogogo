@@ -65,8 +65,8 @@ public final class LabHubActivity extends AppCompatActivity {
         scroll.addView(root);
 
         root.addView(GoGoUi.backButton(this, v -> finish()), GoGoUi.matchWrap());
-        root.addView(GoGoUi.eyebrow(this, "TOOLS  /  DIAGNOSTICS"), GoGoUi.matchWrap());
-        root.addView(GoGoUi.heroTitle(this, "实验与诊断"), GoGoUi.matchWrap());
+        root.addView(GoGoUi.brandStrip(this), GoGoUi.matchWrap());
+        root.addView(GoGoUi.heroTitle(this, "诊断中心"), GoGoUi.matchWrap());
         root.addView(GoGoUi.subtitle(this,
                 "先查前置条件，再看真实位置消费者；深入排障和研究工具按需展开。"
                         + "打开这里不会启动模拟。"), GoGoUi.matchWrap());
