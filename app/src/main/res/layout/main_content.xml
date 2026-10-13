@@ -57,13 +57,26 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:gravity="center_vertical">
-                    <TextView
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/twt_home_overline"
-                        android:textColor="@color/twt_purple"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+                        <ImageView
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:layout_marginEnd="6dp"
+                            android:contentDescription="@null"
+                            app:srcCompat="@drawable/twt_constellation_motif" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/twt_home_overline"
+                            android:textColor="@color/twt_purple"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
                     <TextView
                         android:id="@+id/twt_home_state"
                         android:layout_marginTop="4dp"
