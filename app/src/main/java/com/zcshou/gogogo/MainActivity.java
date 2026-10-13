@@ -42,6 +42,8 @@ import android.widget.SimpleAdapter;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.SearchView;
@@ -136,6 +138,32 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
     private ServiceGo.ServiceGoBinder mServiceBinder;
     private ServiceConnection mConnection;
     private FloatingActionButton mButtonStart;
+
+    // MapLibre returns WGS-84; the legacy Tencent home map shows GCJ-02.
+    // Use Activity Result instead of a fire-and-forget map Activity so
+    // “填入首页” always has an actual receiver.
+    private final ActivityResultLauncher<Intent> twtMapSelectionLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        if (result.getResultCode() != RESULT_OK || result.getData() == null) return;
+                        Intent data = result.getData();
+                        if (!data.hasExtra(LabMapActivity.EXTRA_RESULT_LONGITUDE)
+                                || !data.hasExtra(LabMapActivity.EXTRA_RESULT_LATITUDE)) return;
+                        double wgsLongitude = data.getDoubleExtra(
+                                LabMapActivity.EXTRA_RESULT_LONGITUDE, Double.NaN);
+                        double wgsLatitude = data.getDoubleExtra(
+                                LabMapActivity.EXTRA_RESULT_LATITUDE, Double.NaN);
+                        if (!Double.isFinite(wgsLongitude) || !Double.isFinite(wgsLatitude)
+                                || Math.abs(wgsLatitude) > 90 || Math.abs(wgsLongitude) > 180) return;
+                        double[] gcj = MapUtils.wgs2gcj02(wgsLongitude, wgsLatitude);
+                        mMarkLatLngMap = new LatLng(gcj[1], gcj[0]);
+                        mMarkName = "地图选点";
+                        markMap();
+                        mTencentMap.animateCamera(
+                                CameraUpdateFactory.newLatLng(mMarkLatLngMap));
+                        Snackbar.make(mButtonStart,
+                                "已填入首页（尚未启动新的模拟）", Snackbar.LENGTH_SHORT).show();
+                    });
     /*============================== 历史记录 相关 ==============================*/
     private SQLiteDatabase mLocationHistoryDB;
     private SQLiteDatabase mSearchHistoryDB;
@@ -704,8 +732,16 @@ public class MainActivity extends BaseActivity implements SensorEventListener {
 
     /** Tianwaitian home UI only: existing map, service, and mock paths are unchanged. */
     private void initTianwaitianHome() {
-        findViewById(R.id.twt_open_map).setOnClickListener(v ->
-                startActivity(new Intent(this, LabMapActivity.class)));
+        findViewById(R.id.twt_open_map).setOnClickListener(v -> {
+            Intent mapIntent = new Intent(this, LabMapActivity.class);
+            if (mMarkLatLngMap != null) {
+                double[] wgs = MapUtils.gcj02towgs84(
+                        mMarkLatLngMap.longitude, mMarkLatLngMap.latitude);
+                mapIntent.putExtra(LabMapActivity.EXTRA_START_LONGITUDE, wgs[0]);
+                mapIntent.putExtra(LabMapActivity.EXTRA_START_LATITUDE, wgs[1]);
+            }
+            twtMapSelectionLauncher.launch(mapIntent);
+        });
         findViewById(R.id.twt_open_diagnostics).setOnClickListener(v ->
                 startActivity(new Intent(this, LabHubActivity.class)));
         refreshTianwaitianHome();
