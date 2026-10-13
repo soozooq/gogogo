@@ -1,0 +1,341 @@
+{
+  "schema": "GOGOGO_BRANCH_PRUNE_V1",
+  "captured_at": "2026-10-13",
+  "repo": "soozooq/gogogo",
+  "archive_branch": "archive/pruned-branches-20261013",
+  "archive_commit": "debe8cddb2b2f1a1f585096e6a36f673bc1a9ca8",
+  "keep": [
+    "main",
+    "backup/main-before-labs-20261009",
+    "x8-compat",
+    "fix/x8-modern-amap",
+    "fix/amap-modern-android",
+    "archive/pruned-branches-20261013"
+  ],
+  "delete_only_if_head_sha_matches": [
+    {
+      "branch": "docs/gogogo-handoff-20261011",
+      "sha": "0ac9d8e1df09ce7b154605732ca4e3b4adb0bd3c"
+    },
+    {
+      "branch": "docs/gogogo-main-handoff-20261009",
+      "sha": "82fbf40441067f8bea510cea8d27a8e169e7942c"
+    },
+    {
+      "branch": "feat/auto-diagnostics-panel-20261011",
+      "sha": "4906f64ae0257f064be2c191c02d55d99e6ddc86"
+    },
+    {
+      "branch": "feat/cellular-ethernet-evidence-20261012",
+      "sha": "bd9e7ee2a92a9c7d5c4fb9e90ce2553416db4926"
+    },
+    {
+      "branch": "feat/cross-app-location-evidence-20261012",
+      "sha": "13e6933ada22601d5875ac0982df65577eab7833"
+    },
+    {
+      "branch": "feat/gogogo-auto-lab18",
+      "sha": "441d5131813a4abc872e47ae501d79bca685528c"
+    },
+    {
+      "branch": "feat/gogogo-consumer-lab16",
+      "sha": "4fdd64ccf5291b5fa52fe17e0eefdc8dabce9686"
+    },
+    {
+      "branch": "feat/gogogo-country-presets-lab26",
+      "sha": "0406aea6047187ad5fba81c14f770da2ef6905b8"
+    },
+    {
+      "branch": "feat/gogogo-heading-lab14",
+      "sha": "5a65bbd8c87a25e31d88cec65ef441273f5b741d"
+    },
+    {
+      "branch": "feat/gogogo-heading-lab15",
+      "sha": "2e244244360cf6dbd200b70de48ab575e8de207c"
+    },
+    {
+      "branch": "feat/gogogo-lab28-research-ui",
+      "sha": "4c99b0d2eaf73f8eaed0a19129a017b86b34abf0"
+    },
+    {
+      "branch": "feat/gogogo-lab29-theme-responsive",
+      "sha": "a813b7ba20501b1a598507b13484624e669059d8"
+    },
+    {
+      "branch": "feat/gogogo-lab30-fix-age",
+      "sha": "8dba4166a3deb3e490a2762df83b5a09fc11d063"
+    },
+    {
+      "branch": "feat/gogogo-lab31-quick-check",
+      "sha": "87af12e60c92e8b4e7ba88f6b7a00a09cf00ea15"
+    },
+    {
+      "branch": "feat/gogogo-lab32-recovery-triage",
+      "sha": "5b1ee3ed7e1acd3a32f643ad174f0c78881dbc28"
+    },
+    {
+      "branch": "feat/gogogo-lab33-unified-triage",
+      "sha": "1300774aba8756f21665b2fef398fd1a55794b23"
+    },
+    {
+      "branch": "feat/gogogo-lab34-evidence-time-window",
+      "sha": "5d6c7e5290007e475f35af4ae72c396653c2f0d4"
+    },
+    {
+      "branch": "feat/gogogo-lab35-gms-callback-order",
+      "sha": "955026a4b903f340af7114d9d9002da46a234707"
+    },
+    {
+      "branch": "feat/gogogo-lab38-diagnostics-hub-ui",
+      "sha": "c14ede51524d5e6049b025b4ad74f03f70c0f5b0"
+    },
+    {
+      "branch": "feat/gogogo-lab39-home-lazy-diagnostics",
+      "sha": "6bf0a82500a9dc93fc6ccff1579d34f3197ffd9e"
+    },
+    {
+      "branch": "feat/gogogo-lab40-map-return-service-feedback",
+      "sha": "50c00ed733d154a0c536c1db5165b985149931f3"
+    },
+    {
+      "branch": "feat/gogogo-lab42-searchable-global-presets",
+      "sha": "905507bc91b0c55e48d9437eb36e5264c3448f04"
+    },
+    {
+      "branch": "feat/gogogo-lab43-flag-country-folders",
+      "sha": "07914305718a7be023a9f76a4c33983d90b66876"
+    },
+    {
+      "branch": "feat/gogogo-lab45-pinyin-alpha-index",
+      "sha": "b40d64a15a738d13c856141b3041a8e70437e8a3"
+    },
+    {
+      "branch": "feat/gogogo-lab46-alphabet-scrub-feedback",
+      "sha": "99116ff038c977ab730086b3d8a3dbae63b4f849"
+    },
+    {
+      "branch": "feat/gogogo-lab-phase1",
+      "sha": "78ecef8b5502380288122dd03e1b9ad1710f6f35"
+    },
+    {
+      "branch": "feat/gogogo-lab-phase2",
+      "sha": "2ceeb2a18207d7c93eb93098e2e2db44625eee51"
+    },
+    {
+      "branch": "feat/gogogo-lab-phase3",
+      "sha": "24cef4ac53bdcb409e06245f26c34ace2ecf9ea6"
+    },
+    {
+      "branch": "feat/gogogo-lab-phase4",
+      "sha": "117742f8d79497ab7088643c0d4ebe484f94879a"
+    },
+    {
+      "branch": "feat/gogogo-lab-phase5",
+      "sha": "7513b507e8c3607b2e5db2535e76034eebba4058"
+    },
+    {
+      "branch": "feat/gogogo-lab-phase6",
+      "sha": "0491f2e83b52fbc31cfa144669f620dc8df08a66"
+    },
+    {
+      "branch": "feat/gogogo-lab-phase7",
+      "sha": "d459d86ccfca14f702c0c09bdd5a98cc6d6ac912"
+    },
+    {
+      "branch": "feat/gogogo-lab-phase8",
+      "sha": "fa7573cc23b699a70ed90d2e25f049afc9ddc603"
+    },
+    {
+      "branch": "feat/gogogo-lab-phase9",
+      "sha": "93827f4cb1faaa05a41b293d91730d52a89805a0"
+    },
+    {
+      "branch": "feat/gogogo-lab-phase10",
+      "sha": "d18ffa36943384939989c484c4df9f683d30d96b"
+    },
+    {
+      "branch": "feat/gogogo-lab-phase11",
+      "sha": "14fdf7bf15f7d29ca0bd47e222619cbfb3621e02"
+    },
+    {
+      "branch": "feat/gogogo-lab-phase12",
+      "sha": "348bfbb04325389dd3b2097c8e63e00353a274aa"
+    },
+    {
+      "branch": "feat/gogogo-lab-phase13",
+      "sha": "6e536fba42f64dba50881ff87dcacb3efee3e483"
+    },
+    {
+      "branch": "feat/gogogo-lifecycle-lab23",
+      "sha": "6f445fd97406b9adc5ee64e444aff12b8adaafac"
+    },
+    {
+      "branch": "feat/gogogo-provider-evidence-lab25",
+      "sha": "a30328bf87387cc1cb27f1fabb95d241fbb50178"
+    },
+    {
+      "branch": "feat/gogogo-reliability-lab20",
+      "sha": "7801fa8cbc06ae281f1bb7f9bf1e01eca37b5f3a"
+    },
+    {
+      "branch": "feat/gogogo-replay-lab22",
+      "sha": "8a6987ed997d68985a075f4ed646d2a1fe8a8a4c"
+    },
+    {
+      "branch": "feat/gogogo-session-lab17-1",
+      "sha": "1e712c757f77d250f2e25581d14223182294f956"
+    },
+    {
+      "branch": "feat/gogogo-session-lab17-2-1",
+      "sha": "0ce6b9809491154bdc5864d7122469018f960ef9"
+    },
+    {
+      "branch": "feat/gogogo-session-lab17-2",
+      "sha": "413fa562bebd22c03e77e017b2ee8cc0aa45809e"
+    },
+    {
+      "branch": "feat/gogogo-session-lab17-3",
+      "sha": "ac7ee43cc16452dcefc33e33a1acc42641f52763"
+    },
+    {
+      "branch": "feat/gogogo-session-lab17",
+      "sha": "2d44d1bf21c9dd29678729b719b7f6051e4bd695"
+    },
+    {
+      "branch": "feat/gogogo-simulation-lab21",
+      "sha": "ea8120abe35e790c6ffb637ee6a48031bc767a34"
+    },
+    {
+      "branch": "feat/gogogo-survival-lab19",
+      "sha": "1cae667f57e73fa051b3dd2d91fe704ce03415e9"
+    },
+    {
+      "branch": "feat/gogogo-tencent-probe-lab24",
+      "sha": "11ccde455b6a5050821f826f23b2ec34c1cd4cbc"
+    },
+    {
+      "branch": "feat/gogogo-ui-hub-lab27",
+      "sha": "de8a90096c654f83b51cc78927d25bbc1d1f52d8"
+    },
+    {
+      "branch": "feat/gogogo-ui-refresh",
+      "sha": "f69a648f4e2e895277aac81a0b8c9a3b301aa568"
+    },
+    {
+      "branch": "feat/meituan-location-service-evidence-20261012",
+      "sha": "1aa812caf9144d4bac619703f22a6841a2e18b08"
+    },
+    {
+      "branch": "feat/one-tap-diagnostic-copy",
+      "sha": "d11cae4048c638b7a17cb4d34571b49341497ddf"
+    },
+    {
+      "branch": "feat/privacy-network-audit-20261012",
+      "sha": "1186b13a7a873d6f0c5e9c44b303e23c84d056ee"
+    },
+    {
+      "branch": "feat/sim-card-attribution-20261012",
+      "sha": "1be17d1b32b9a8aff9aad254f39b6624583c596b"
+    },
+    {
+      "branch": "feat/vpn-ip-location-follow-20261011",
+      "sha": "2a19087697390af614028a3412b40d48a5952124"
+    },
+    {
+      "branch": "feat/vpn-location-freeze-20261011",
+      "sha": "bd26f65f77b6d591153c94d4d71a4a4a7d5eca75"
+    },
+    {
+      "branch": "feat/vpn-timezone-follow-20261011",
+      "sha": "f36ad24eed02141bed5dad583a849f82d968f134"
+    },
+    {
+      "branch": "feat/workflow-orchestrator-20261011",
+      "sha": "bb3ca0c6fd1ca2a057793189e1093b952c7c5ab5"
+    },
+    {
+      "branch": "feature/lab48-gms-task-evidence-20261012",
+      "sha": "8e111ef53210bba0f9be72a3470dc97a0bde47da"
+    },
+    {
+      "branch": "feature/lab49-location-evidence-timeline-20261012",
+      "sha": "904ecf68ae0e0c4b7369da9fb8b66bad7d7b05e0"
+    },
+    {
+      "branch": "feature/lab50-wechat-clone-readonly-20261012",
+      "sha": "34b26126a51174bbde8de557d6ce1221d1aeafe7"
+    },
+    {
+      "branch": "feature/lab51-tencent-cache-poi-matrix-20261012",
+      "sha": "898c9183e4ff2001eff8bbc0a9344b806b3c561e"
+    },
+    {
+      "branch": "feature/lab52-gms-cadence-observatory-20261012",
+      "sha": "4ed2314091685b510fa23a0253e98c1179476c68"
+    },
+    {
+      "branch": "feature/lab-preflight-wechat-clone-20261011",
+      "sha": "15f6c962a417a1c1b825fdc115598f914a83c839"
+    },
+    {
+      "branch": "feature/passive-snapshot-cache-probe",
+      "sha": "a34cf700c67e4fdcf71f38994b95809df6ddf49e"
+    },
+    {
+      "branch": "feature/timed-diagnostic-copy-20261011",
+      "sha": "b80b3b6dbace00034e11b3f74bd5202ac8303cb8"
+    },
+    {
+      "branch": "fix/gms-fused-publish-backpressure-20261012",
+      "sha": "dcfee481932a7bf4ca284c761f1f26accfff33c4"
+    },
+    {
+      "branch": "fix/gogogo-lab36-stale-gms-retry",
+      "sha": "893e2f93ba3169619c4c7a9715b4dc68b9cefac7"
+    },
+    {
+      "branch": "fix/gogogo-lab37-shutdown-ownership",
+      "sha": "1a6141d5ed1ca550e308a355cfb438f31c534564"
+    },
+    {
+      "branch": "fix/gogogo-lab41-rotation-state",
+      "sha": "13a4c943a2b3db5ad6caafea794fa83930b2e05e"
+    },
+    {
+      "branch": "fix/home-country-wechat-process-20261011",
+      "sha": "79a3dbee3a43b15ce00baee67c28bb3988e87851"
+    },
+    {
+      "branch": "fix/home-vpn-country-label-20261011",
+      "sha": "a46cacc847e0cc01ed5a122af918af990d4122c7"
+    },
+    {
+      "branch": "integration/gogogo-labs-main-20261009",
+      "sha": "8288ae6a29f28f64f9ef7f77acaef77c41b588af"
+    },
+    {
+      "branch": "integration/labs48-52-rc1-20261013",
+      "sha": "b7c1d35b2fd04b7c633e95da181b01f2553fa604"
+    },
+    {
+      "branch": "integration/vpn-follow-and-labs48-52-20261013",
+      "sha": "d62f45f993901b02d73083d30ec38e40b9f2beb7"
+    },
+    {
+      "branch": "maintenance/branch-audit-20261013",
+      "sha": "83cca4dd62bc94f7cf14edb15e9bb30819a56398"
+    },
+    {
+      "branch": "perf/gogogo-lab44-place-picker-polish",
+      "sha": "d32edac68c14cf4acbaa0edbc79742c9c61f2a05"
+    },
+    {
+      "branch": "release/2.4.0-rc2-integrated-20261013",
+      "sha": "4c779300964c26b81dccf65ed891c559032908b5"
+    },
+    {
+      "branch": "research/wechat-location-20261008",
+      "sha": "da7ea69a5a8ee7662f2ce4fe995932ceee3b04f7"
+    }
+  ]
+}
