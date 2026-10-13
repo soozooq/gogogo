@@ -111,3 +111,43 @@ else:
 
 print("Tianwaitian shared bottom navigation PASS: four pages, ordered tabs, "
       "back-safe switching, existing advanced controls available.")
+
+# Map screen hierarchy: raw telemetry may still be read for debugging, but
+# must not be a giant always-visible widget covering the actual map viewport.
+map_ui = (base / "LabMapActivity.java").read_text(encoding="utf-8")
+check("MapView(this)" in map_ui, "MapLibre route map must remain available")
+check("0, 1f" in map_ui, "the map must retain weighted free space")
+deck_start = map_ui.index("// Minimal command deck")
+deck_end = map_ui.index("root.addView(controlCard", deck_start)
+deck_code = map_ui[deck_start:deck_end]
+check("control.addView(liveView" not in deck_code,
+      "raw per-tick logs must not consume the default map deck")
+check("liveView.setText(sb.toString())" in map_ui
+      and "查看实时原始数据" in map_ui,
+      "raw telemetry must remain available on demand")
+check("模拟这里" in deck_code and "填入首页" in deck_code
+      and "路线设置" in deck_code and "漫游设置" in deck_code,
+      "must retain map mock, selection and motion controls")
+
+# The simulation console retains its unique controls but does not duplicate
+# the app's primary map, diagnostics or network-audit navigation destinations.
+check('GoGoUi.sectionTitle(this, "常用入口")' not in console,
+      "sim console must not duplicate the four primary tabs")
+check("VPN_DETAILS_EXPANDED" in console
+      and "vpnDetailsPanel.addView(vpnSyncToggle" in console
+      and "vpnDetailsPanel.addView(vpnFreezeToggle" in console
+      and "vpnDetailsPanel.addView(systemTimeZoneToggle" in console,
+      "VPN/lock/Shizuku settings must remain reachable behind disclosure")
+check("LabSimAttributionActivity.class" in console,
+      "non-primary SIM attribution utility must remain accessible")
+check("LabSupportLog.copy(this," not in console,
+      "diagnostic export must live in Diagnostics, not every screen")
+
+# A single-open accordion prevents every diagnostics group displaying at once.
+hub = (base / "LabHubActivity.java").read_text(encoding="utf-8")
+check("if (opening) collapseAllAdvanced();" in hub
+      and "收起全部高级工具" in hub
+      and "groupTitles[i], groupCounts[i], false" in hub,
+      "diagnostic advanced accordion or collapse-all is missing")
+print("Tianwaitian streamlined layout checks PASS: map retains space, "
+      "simulation controls preserved, advanced views de-duplicated.")
