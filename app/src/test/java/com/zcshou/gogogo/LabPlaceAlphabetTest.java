@@ -13,7 +13,7 @@ import java.util.Set;
 import static org.junit.Assert.*;
 
 public class LabPlaceAlphabetTest {
-    @Test public void all109PresetCountriesHaveExplicitPinyinAndLetter() {
+    @Test public void all193PresetCountriesHaveExplicitPinyinAndLetter() {
         Set<String> countries = new HashSet<>();
         for (int i = 0; i < LabLocationPresets.size(); i++) {
             String country = LabPlaceCountries.countryOf(
@@ -25,7 +25,7 @@ public class LabPlaceAlphabetTest {
                     LabPlaceAlphabet.initialOf(country).matches("[A-Z]"));
             countries.add(country);
         }
-        assertEquals(109, countries.size());
+        assertEquals(193, countries.size());
     }
 
     @Test public void commonCountryNamesJumpToExpectedLetters() {
