@@ -114,24 +114,32 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
                 | WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 
+        // Short landscape phones need the actual list, not a screenful of
+        // explanatory headers. Preserve branding, back and both filter tabs.
+        boolean compactHeader = LabResponsiveUiPolicy.tianwaitianCompactPlacePicker(
+                getResources().getConfiguration().screenHeightDp);
         root.addView(GoGoUi.backButton(this, v -> finish()), GoGoUi.matchWrap());
-        root.addView(GoGoUi.brandStrip(this), GoGoUi.matchWrap());
+        if (!compactHeader) root.addView(GoGoUi.brandStrip(this), GoGoUi.matchWrap());
         root.addView(GoGoUi.heroTitle(this, "探索地点"), GoGoUi.matchWrap());
-        root.addView(GoGoUi.gap(this, 5));
-        root.addView(GoGoUi.eyebrow(this, "GLOBAL ATLAS  ·  天外天"), GoGoUi.matchWrap());
-        root.addView(GoGoUi.subtitle(this,
-                "查找国家与城市，或从收藏里选点。只填入目标坐标，不会自动启动模拟。"),
-                GoGoUi.matchWrap());
-        root.addView(GoGoUi.gap(this, 10));
-        root.addView(GoGoUi.eyebrow(this,
-                "全球离线地点  ·  " + LabLocationPresets.size() + " 个坐标"),
-                GoGoUi.matchWrap());
-        root.addView(GoGoUi.gap(this, 12));
+        root.addView(GoGoUi.gap(this, compactHeader ? 2 : 5));
+        root.addView(GoGoUi.eyebrow(this, compactHeader
+                ? "天外天 · " + LabLocationPresets.size() + " 个离线坐标"
+                : "GLOBAL ATLAS  ·  天外天"), GoGoUi.matchWrap());
+        if (!compactHeader) {
+            root.addView(GoGoUi.subtitle(this,
+                    "查找国家与城市，或从收藏里选点。只填入目标坐标，不会自动启动模拟。"),
+                    GoGoUi.matchWrap());
+            root.addView(GoGoUi.gap(this, 10));
+            root.addView(GoGoUi.eyebrow(this,
+                    "全球离线地点  ·  " + LabLocationPresets.size() + " 个坐标"),
+                    GoGoUi.matchWrap());
+        }
+        root.addView(GoGoUi.gap(this, compactHeader ? 6 : 12));
 
         LinearLayout searchRow = GoGoUi.row(this);
         searchField = new EditText(this);
         searchField.setSingleLine(true);
-        searchField.setHint("搜索国家、城市或收藏");
+        searchField.setHint("搜索国家或城市");
         searchField.setInputType(android.text.InputType.TYPE_CLASS_TEXT);
         searchField.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
         GoGoUi.styleInput(searchField);
@@ -224,6 +232,7 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
 
     private void switchTab(boolean onlyFavorites) {
         favoritesOnly = onlyFavorites;
+        searchField.setHint(onlyFavorites ? "搜索我的收藏" : "搜索国家或城市");
         searchCollapsedCountries.clear();
         refreshResults();
         if (resultsList != null) resultsList.setSelection(0);
