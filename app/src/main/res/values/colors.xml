@@ -177,6 +177,7 @@
     <!-- Tianwaitian v1: brand auxiliaries and legacy app bar. -->
     <color name="twt_appbar_bg">#253D88</color>
     <color name="twt_purple">#6545B6</color>
+    <color name="twt_nav_selected">#6545B6</color>
     <color name="twt_cyan">#006D83</color>
     <color name="twt_gold">#8A5A12</color>
     <!-- Light map controls in both themes; map tiles may be pale even in dark mode. -->
