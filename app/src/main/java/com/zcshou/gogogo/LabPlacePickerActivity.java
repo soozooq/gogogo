@@ -115,9 +115,8 @@ public final class LabPlacePickerActivity extends AppCompatActivity {
                 | WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 
         root.addView(GoGoUi.backButton(this, v -> finish()), GoGoUi.matchWrap());
-        root.addView(GoGoUi.eyebrow(this, "PLACES  /  OFFLINE SEARCH"),
-                GoGoUi.matchWrap());
-        root.addView(GoGoUi.heroTitle(this, "国家与城市"), GoGoUi.matchWrap());
+        root.addView(GoGoUi.brandStrip(this), GoGoUi.matchWrap());
+        root.addView(GoGoUi.heroTitle(this, "探索地点"), GoGoUi.matchWrap());
         root.addView(GoGoUi.subtitle(this,
                 "国旗代表国家，点击右侧 ＋ 展开城市；可搜索、选点和收藏。选点不会自动启动模拟。"),
                 GoGoUi.matchWrap());
