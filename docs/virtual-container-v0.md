@@ -1,5 +1,21 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## V0 一键诊断 + V1 生命周期桥（2026-10-17 开发中）
+
+**核心交互原则：一个按钮完成五项、最后只复制一份日志。**
+
+- V0 页面新增「一键诊断 V0 五项（自动生成总报告）」。调度器 `VirtualContainerV0OneClickDiagnostic` 严格串行运行五个既有实验：① ClassLoader/文件；② Binder；③ A/B 双进程；④独立 APK DEX；⑤独立 APK 双子进程。每项独立超时（15/9/14/22/25 秒）、记录 PASS/FAIL/TIMEOUT、清理 IPC 绑定；失败仍会继续执行其余实验。
+- 自动诊断期间禁止复制可能不完整的报告；结束后保存一份总报告在本 App 的私有首选项，重新进入诊断页仍可复制。主动停止时未运行项标记 SKIP，不会误报 5/5 PASS。
+- 原五个按钮保留为可选单项复测；上方原始 2.4.14 Android 13 的 V0 五项 PASS 记录继续作为基准。
+- 独立 fixture APK 新增纯 Java `GuestLifecycleV1` 生命周期状态机（六项 JUnit 测试）。
+- 新增非导出的宿主 `VirtualContainerV1ProxyActivity`。真实 Android 生命周期回调发生在该宿主代理 Activity 上，再顺序转发给从受控 APK 装载的 `GuestLifecycleV1.onEvent()`。用户可打开系统设置并返回，核对 onPause/onStop/onRestart/onStart/onResume，随后退出验证 onDestroy；界面显示 HOST/GUEST 时间线与 APK SHA-256。
+- V0 的一次复制操作会附加最近一次 V1 保存的生命周期报告（附录包含自己的开始时间），不必分别复制五次再复制 V1。
+- **重要限制**：该 V1 实验只是宿主代理与受控 APK 对象的生命周期桥；不是系统 ActivityManager 直接启动未安装 APK 中的真实 Activity，也没有独立 UID、虚拟 PackageManager、组件代理或微信兼容结果。
+- CI 中新增 V0 批处理和 V1 组件的静态约束、fixture JUnit 测试、构建 APK Manifest 代理页面断言。新版本必须通过 Build Check + Preview，接着由 Android 13 真机实际重复一键 V0 五项并验收 V1 流程，才能宣称通过。
+
+**下一次真机验收**：先执行 V0「一键诊断」等五项结束，再进入「V1：打开受控 APK 生命周期代理页」，点击“打开系统设置”并返回，最后点击“完成并退出”。回到 V0 页面只点一次「一键复制总报告」，直接将整份日志发来。
+
+---
 ## 2026-10-17 Android 13 ARM64 真机验收记录（V0 已通过）
 
 > 此节是之后收到的**真实手机运行反馈**，优先级高于文档下方开发阶段的“尚未真机验证”历史陈述。结果由用户从天外天 V0 页面复制；属于该次测试的观察，不自动代表所有机型、所有 Android 版本或完整第三方 App 容器能力。
