@@ -8,6 +8,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
 import android.provider.Settings;
+import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -24,11 +26,8 @@ import java.util.Date;
 import java.util.Locale;
 
 /**
- * V1 first step: REAL Android lifecycle on this registered host proxy Activity,
- * forwarded to an auditable object loaded from the SEPARATE trusted fixture APK.
- *
- * The guest is NOT an Android Activity. No uninstalled Activity is launched
- * by ActivityManager, and no guest privileges or identities are virtualized.
+ * Real HOST Activity + UI/lifecycle bridge from the self-authored standalone
+ * fixture APK. Android does NOT start an uninstalled guest Activity here.
  */
 public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
     public static final String PREFS = "twt_v1_lifecycle";
@@ -36,16 +35,32 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
 
     private static final String GUEST_CLASS =
             "com.soozooq.tianwaitian.fixture.GuestLifecycleV1";
+    private static final String GUEST_UI_CLASS =
+            "com.soozooq.tianwaitian.fixture.GuestUiV1";
+    private static final String KEY_STARTED = "twt_v1_started";
+    private static final String KEY_HISTORY = "twt_v1_history";
+    private static final String KEY_CLICKS = "twt_v1_clicks";
+    private static final String KEY_RECREATES = "twt_v1_recreates";
+
     private final ArrayList<String> pending = new ArrayList<>();
-    private final StringBuilder events = new StringBuilder(1600);
+    private final StringBuilder events = new StringBuilder(2400);
     private String startedAt;
     private TextView status;
     private TextView report;
+    private FrameLayout guestFrame;
     private ContainerV0TrustedGuest fixture;
     private Object lifecycle;
     private Method guestEvent;
     private Method guestSnapshot;
+    private Object guestUi;
+    private Method guestClicks;
+    private Method guestUiSnapshot;
+    private Method guestDispose;
+    private int restoredClicks;
+    private int recreates;
+    private boolean restoreVerified;
     private boolean loaded;
+    private boolean viewCreated;
     private boolean destroyed;
     private String digest = "(未加载)";
     private String error = "";
@@ -54,6 +69,15 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
         super.onCreate(state);
         startedAt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
                 .format(new Date());
+        if (state != null) {
+            startedAt = state.getString(KEY_STARTED, startedAt);
+            String previous = state.getString(KEY_HISTORY, "");
+            if (previous.length() > 0) events.append(previous);
+            restoredClicks = state.getInt(KEY_CLICKS, 0);
+            recreates = state.getInt(KEY_RECREATES, 0) + 1;
+            events.append("HOST instance recreated; savedClicks=")
+                    .append(restoredClicks).append('\n');
+        }
 
         ScrollView scroll = new ScrollView(this);
         GoGoUi.applyScreenBackground(scroll);
@@ -63,35 +87,39 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
         root.setPadding(p, p, p, p);
         scroll.addView(root);
         GoGoUi.addLabHeader(root, "SYSTEMS / CONTAINER V1",
-                "受控 APK 生命周期代理",
-                "宿主 Activity 接收真实系统回调 → 独立 APK 对象记录事件",
+                "受控 APK 的 UI / 生命周期桥",
+                "独立 APK 自己创建 Android View · 宿主代理负责显示",
                 v -> finish());
         root.addView(GoGoUi.muted(this,
-                "此页是天外天注册的代理 Activity，并非直接启动未安装 APK 的 Activity。"
-                        + "退出后会将完整报告保留给 V0 页的「复制总报告」。"),
+                "点击下方深色区域内的按钮：它的 View 与事件处理器来自独立测试 APK。"
+                        + "页面属于天外天宿主，不代表系统直接启动了未安装 APK 的 Activity。"),
                 GoGoUi.matchWrap());
-        status = GoGoUi.muted(this, "正在装载受控 APK 生命周期对象…");
+        status = GoGoUi.muted(this, "正在装载独立 APK 的 UI 与生命周期对象…");
         root.addView(status, GoGoUi.matchWrap());
+        guestFrame = new FrameLayout(this);
+        root.addView(guestFrame, GoGoUi.matchWrap());
+
         root.addView(GoGoUi.secondaryButton(this,
-                "打开系统设置，再返回本页（测试暂停/恢复）", v -> {
+                "测试后台恢复：打开系统设置，再返回", v -> {
                     try {
                         startActivity(new Intent(Settings.ACTION_SETTINGS));
                     } catch (RuntimeException failure) {
-                        error = "无法打开系统设置：" + failure.getClass().getSimpleName();
+                        error = "FAIL：打开系统设置 · " + failure.getClass().getSimpleName();
                         updateReport();
                     }
                 }), GoGoUi.matchWrap());
         root.addView(GoGoUi.secondaryButton(this,
-                "完成并退出（记录 onDestroy）", v -> finish()),
+                "测试界面重建：保留点击数重新加载", v -> recreate()),
                 GoGoUi.matchWrap());
-        root.addView(GoGoUi.secondaryButton(this, "复制当前生命周期报告", v -> {
-            ClipboardManager cm = (ClipboardManager)
-                    getSystemService(Context.CLIPBOARD_SERVICE);
-            if (cm != null) {
-                cm.setPrimaryClip(ClipData.newPlainText("Tianwaitian V1", buildReport()));
-                Toast.makeText(this, "生命周期报告已复制", Toast.LENGTH_SHORT).show();
-            }
-        }), GoGoUi.matchWrap());
+        root.addView(GoGoUi.secondaryButton(this, "刷新当前 UI 与生命周期报告",
+                v -> updateReport()), GoGoUi.matchWrap());
+        root.addView(GoGoUi.secondaryButton(this,
+                "完成并退出（记录 guest View 清理与 onDestroy）", v -> finish()),
+                GoGoUi.matchWrap());
+        root.addView(GoGoUi.muted(this,
+                "只需回 V0 页复制一次「总报告」，此页日志会自动作为附录。"),
+                GoGoUi.matchWrap());
+
         report = GoGoUi.reportPanel(this);
         root.addView(report, GoGoUi.matchWrap());
         setContentView(scroll);
@@ -106,17 +134,23 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
             Object bridge = null;
             Method eventMethod = null;
             Method snapshotMethod = null;
+            Class<?> uiClass = null;
             String failure = null;
             try {
                 candidate = ContainerV0TrustedGuest.open(context);
-                Class<?> cls = Class.forName(GUEST_CLASS, true,
-                        candidate.getGuestClass().getClassLoader());
-                if (cls.getClassLoader() != candidate.getGuestClass().getClassLoader()) {
-                    throw new SecurityException("V1 guest object is not from fixture DEX");
+                ClassLoader loader = candidate.getGuestClass().getClassLoader();
+                Class<?> cls = Class.forName(GUEST_CLASS, true, loader);
+                uiClass = Class.forName(GUEST_UI_CLASS, true, loader);
+                if (cls.getClassLoader() != loader || uiClass.getClassLoader() != loader) {
+                    throw new SecurityException("V1 classes must come from the guest APK DEX");
                 }
                 bridge = cls.getDeclaredConstructor().newInstance();
                 eventMethod = cls.getMethod("onEvent", String.class);
                 snapshotMethod = cls.getMethod("snapshot");
+                uiClass.getMethod("createView");
+                uiClass.getMethod("getClickCount");
+                uiClass.getMethod("snapshot");
+                uiClass.getMethod("dispose");
             } catch (Throwable caught) {
                 failure = caught.getClass().getSimpleName()
                         + (caught.getMessage() == null ? "" : " · " + caught.getMessage());
@@ -125,6 +159,7 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
             final Object readyBridge = bridge;
             final Method readyEvent = eventMethod;
             final Method readySnapshot = snapshotMethod;
+            final Class<?> readyUiClass = uiClass;
             final String readyFailure = failure;
             runOnUiThread(() -> {
                 if (destroyed || isDestroyed()) {
@@ -132,21 +167,54 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
                     return;
                 }
                 if (readyFailure != null) {
-                    error = "FAIL：加载独立 APK 生命周期对象失败 · " + readyFailure;
+                    error = "FAIL：装载独立 APK UI/生命周期类 · " + readyFailure;
                     if (readyGuest != null) readyGuest.close();
                 } else {
-                    fixture = readyGuest;
-                    lifecycle = readyBridge;
-                    guestEvent = readyEvent;
-                    guestSnapshot = readySnapshot;
-                    digest = readyGuest.getSha256();
-                    loaded = true;
-                    for (String event : pending) dispatchGuest(event);
+                    try {
+                        fixture = readyGuest;
+                        lifecycle = readyBridge;
+                        guestEvent = readyEvent;
+                        guestSnapshot = readySnapshot;
+                        digest = readyGuest.getSha256();
+                        loaded = true;
+                        for (String event : pending) dispatchGuest(event);
+                        // View creation MUST happen on Android's main/UI thread.
+                        guestUi = readyUiClass.getConstructor(Context.class, int.class)
+                                .newInstance(this, restoredClicks);
+                        guestClicks = readyUiClass.getMethod("getClickCount");
+                        guestUiSnapshot = readyUiClass.getMethod("snapshot");
+                        guestDispose = readyUiClass.getMethod("dispose");
+                        View guestView = (View) readyUiClass.getMethod("createView")
+                                .invoke(guestUi);
+                        guestFrame.addView(guestView);
+                        viewCreated = guestView.getClass().getClassLoader() != null
+                                || guestView.getParent() == guestFrame;
+                        restoreVerified = clickCount() == restoredClicks;
+                        events.append("GUEST VIEW created by fixture DEX, restoredClicks=")
+                                .append(restoredClicks)
+                                .append(", verified=").append(restoreVerified).append('\n');
+                    } catch (Throwable failure) {
+                        error = "FAIL：guest UI 构建/嵌入 · "
+                                + failure.getClass().getSimpleName()
+                                + (failure.getMessage() == null ? "" : " · " + failure.getMessage());
+                        events.append(error).append('\n');
+                    }
                 }
                 pending.clear();
                 updateReport();
+                persist();
             });
         }, "twt-v1-load-guest").start();
+    }
+
+    private int clickCount() {
+        if (guestUi == null || guestClicks == null) return restoredClicks;
+        try {
+            return (Integer) guestClicks.invoke(guestUi);
+        } catch (Throwable failure) {
+            error = "FAIL：读取 guest 点击数 · " + failure.getClass().getSimpleName();
+            return restoredClicks;
+        }
     }
 
     private void forward(String event) {
@@ -171,42 +239,64 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
     }
 
     private String buildReport() {
-        StringBuilder out = new StringBuilder(2700);
-        out.append("天外天 / V1 受控 APK 生命周期代理诊断\n")
+        StringBuilder out = new StringBuilder(3600);
+        out.append("天外天 / V1 独立 APK UI + 生命周期桥诊断\n")
                 .append("开始时间：").append(startedAt).append('\n')
                 .append("Android API=").append(Build.VERSION.SDK_INT)
                 .append("；宿主 PID=").append(Process.myPid())
                 .append("；UID=").append(Process.myUid()).append('\n')
                 .append("受控 APK SHA-256：").append(digest).append('\n')
-                .append("转发完成：").append(loaded).append('\n');
+                .append("生命周期桥加载：").append(loaded).append('\n')
+                .append("独立 APK 创建 View：").append(viewCreated).append('\n')
+                .append("guest 点击数：").append(clickCount()).append('\n')
+                .append("Activity 重建次数：").append(recreates).append('\n')
+                .append("状态恢复一致：").append(restoreVerified).append('\n');
         if (!error.isEmpty()) out.append(error).append('\n');
-        out.append("生命周期时间线：\n").append(events);
+        out.append("HOST / GUEST 生命周期时间线：\n").append(events);
         if (loaded && guestSnapshot != null) {
             try {
                 out.append("\n来自独立 APK 的生命周期快照：\n")
                         .append(guestSnapshot.invoke(lifecycle)).append('\n');
             } catch (Throwable t) {
-                out.append("\nFAIL：guest snapshot ").append(t.getClass().getSimpleName()).append('\n');
+                out.append("\nFAIL：guest lifecycle snapshot ")
+                        .append(t.getClass().getSimpleName()).append('\n');
             }
-        } else {
-            out.append("\n独立 APK 尚未装载完成；不可将回调记录视为 PASS。\n");
         }
-        out.append("\n限制：实际 Android Activity 属于天外天，"
-                + "guest 只是动态装载的受控生命周期对象；仍共享同一 UID。\n");
+        if (guestUi != null && guestUiSnapshot != null) {
+            try {
+                out.append("\n来自独立 APK 的 UI 快照：\n")
+                        .append(guestUiSnapshot.invoke(guestUi)).append('\n');
+            } catch (Throwable t) {
+                out.append("\nFAIL：guest UI snapshot ")
+                        .append(t.getClass().getSimpleName()).append('\n');
+            }
+        }
+        out.append("\n边界：View 创建逻辑位于受控 APK，Android Activity、Context、")
+                .append("UID 与权限仍然属于天外天宿主。\n");
         return out.toString();
     }
 
     private void updateReport() {
         if (report == null) return;
-        status.setText(!error.isEmpty() ? "生命周期实验存在失败，请复制完整报告"
-                : loaded ? "独立 APK 生命周期桥已连接，切换后台后返回可观察回调"
-                : "等待独立 APK 载入…");
+        status.setText(!error.isEmpty() ? "实验有失败，请回 V0 一次复制总报告"
+                : viewCreated ? "受控 APK 的 View 已显示。请测试点击、后台与重建"
+                : "等待独立 APK 装载/创建 View…");
         report.setText(buildReport());
     }
 
     private void persist() {
         if (startedAt != null) getSharedPreferences(PREFS, MODE_PRIVATE)
                 .edit().putString(LAST_RESULT, buildReport()).apply();
+    }
+
+    @Override protected void onSaveInstanceState(Bundle outState) {
+        events.append("HOST onSaveInstanceState clicks=").append(clickCount()).append('\n');
+        outState.putString(KEY_STARTED, startedAt);
+        outState.putString(KEY_HISTORY, events.toString());
+        outState.putInt(KEY_CLICKS, clickCount());
+        outState.putInt(KEY_RECREATES, recreates);
+        persist();
+        super.onSaveInstanceState(outState);
     }
 
     @Override protected void onStart() { super.onStart(); forward("onStart"); }
@@ -217,6 +307,16 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
 
     @Override protected void onDestroy() {
         forward("onDestroy");
+        if (guestUi != null && guestDispose != null) {
+            try {
+                guestDispose.invoke(guestUi);
+                events.append("GUEST VIEW disposed=true\n");
+            } catch (Throwable failure) {
+                error = "FAIL：guest View dispose · "
+                        + failure.getClass().getSimpleName();
+                events.append(error).append('\n');
+            }
+        }
         persist();
         destroyed = true;
         if (fixture != null) {
