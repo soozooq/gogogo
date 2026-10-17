@@ -187,8 +187,7 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
                         View guestView = (View) readyUiClass.getMethod("createView")
                                 .invoke(guestUi);
                         guestFrame.addView(guestView);
-                        viewCreated = guestView.getClass().getClassLoader() != null
-                                || guestView.getParent() == guestFrame;
+                        viewCreated = guestView.getParent() == guestFrame;
                         restoreVerified = clickCount() == restoredClicks;
                         events.append("GUEST VIEW created by fixture DEX, restoredClicks=")
                                 .append(restoredClicks)
@@ -250,7 +249,11 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
                 .append("独立 APK 创建 View：").append(viewCreated).append('\n')
                 .append("guest 点击数：").append(clickCount()).append('\n')
                 .append("Activity 重建次数：").append(recreates).append('\n')
-                .append("状态恢复一致：").append(restoreVerified).append('\n');
+                .append("状态恢复一致：")
+                .append(recreates > 0 ? String.valueOf(restoreVerified)
+                        : "未测试（请点击界面重建）").append('\n')
+                .append("后台恢复观察：")
+                .append(events.indexOf("HOST onRestart") >= 0).append('\n');
         if (!error.isEmpty()) out.append(error).append('\n');
         out.append("HOST / GUEST 生命周期时间线：\n").append(events);
         if (loaded && guestSnapshot != null) {
@@ -273,6 +276,15 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
         }
         out.append("\n边界：View 创建逻辑位于受控 APK，Android Activity、Context、")
                 .append("UID 与权限仍然属于天外天宿主。\n");
+        if (destroyed) {
+            boolean ok = error.isEmpty() && viewCreated && clickCount() > 0
+                    && recreates > 0 && restoreVerified
+                    && events.indexOf("HOST onRestart") >= 0
+                    && events.indexOf("GUEST VIEW disposed=true") >= 0;
+            out.append("\nV1 UI 交互/重建/清理联合验收：")
+                    .append(ok ? "PASS" : "INCOMPLETE/FAIL（请核对各项证据）")
+                    .append('\n');
+        }
         return out.toString();
     }
 
@@ -317,8 +329,8 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
                 events.append(error).append('\n');
             }
         }
-        persist();
         destroyed = true;
+        persist();
         if (fixture != null) {
             fixture.close();
             fixture = null;
