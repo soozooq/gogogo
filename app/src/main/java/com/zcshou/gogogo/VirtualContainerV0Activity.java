@@ -36,6 +36,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
     private MaterialButton ipcButton;
     private MaterialButton stateButton;
     private MaterialButton fixtureButton;
+    private MaterialButton guestProcessButton;
     private VirtualContainerV0TwoSlotProbe stateProbe;
     private ServiceConnection ipcConnection;
     private boolean ipcBound;
@@ -68,6 +69,9 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
         fixtureButton = GoGoUi.secondaryButton(this,
                 "验证独立 APK 的 DEX 加载与执行", v -> runFixtureProbe());
         root.addView(fixtureButton, GoGoUi.matchWrap());
+        guestProcessButton = GoGoUi.secondaryButton(this,
+                "验证独立 APK 在双进程执行", v -> runRemoteGuestProbe());
+        root.addView(guestProcessButton, GoGoUi.matchWrap());
         report = GoGoUi.reportPanel(this);
         report.setText("尚未运行。这只是虚拟容器的第一项底层验收，不等于微信兼容成功。");
         root.addView(report, GoGoUi.matchWrap());
@@ -111,6 +115,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
         ipcButton.setEnabled(enabled);
         stateButton.setEnabled(enabled);
         fixtureButton.setEnabled(enabled);
+        guestProcessButton.setEnabled(enabled);
     }
 
     private void runFixtureProbe() {
@@ -136,14 +141,24 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
     }
 
     private void runTwoSlotProbe() {
+        runTwoSlot(false);
+    }
+
+    private void runRemoteGuestProbe() {
+        runTwoSlot(true);
+    }
+
+    private void runTwoSlot(boolean guestMode) {
         setExperimentButtonsEnabled(false);
-        report.setText("正在保持 A/B 两个进程连接并执行 A → B → A → B 验证…");
+        report.setText(guestMode
+                ? "正在两个子进程分别加载受控 APK，再执行 A → B → A → B 验证…"
+                : "正在保持 A/B 两个进程连接并执行 A → B → A → B 验证…");
         stateProbe = new VirtualContainerV0TwoSlotProbe(getApplicationContext(), result -> {
             stateProbe = null;
             if (isFinishing() || isDestroyed()) return;
             report.setText(result);
             setExperimentButtonsEnabled(true);
-        });
+        }, guestMode);
         stateProbe.start();
     }
 
