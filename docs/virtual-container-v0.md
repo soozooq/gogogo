@@ -65,3 +65,14 @@
 - **回归**：`VirtualContainerV0GuestDigestVerdictTest` 共四项；另有 `ci/verify_container_fixture_contract.py` 做静态安全边界检查，现已加入 main 的 Build Check / Build Preview APK 两条工作流。
 - **限制**：动态加载方法调用并不等于系统正式启动另一 APK 的 `Application` / `Activity`；Android PackageManager 与 ActivityManager 等组件代理仍未实现。未经过 Android 构建/真机测试前不声称已成功。
 - **下一步**：尽快取得主分支完整 CI 和 Android 13 真机 PASS/FAIL，先修当前阶段的实际失败，再决定是否推进可审计的受控 guest Activity 代理实现。**不要在没有 CI/真机结果时把阶段推进等同于兼容性完成**。
+
+
+## 2026-10-17：CI 前真实性核验
+
+本轮停止继续叠加未经真机验证的功能，优先排查最新版本构建与实测。
+
+- 已修复 `VirtualContainerV0TwoSlotProbe` 对远端 `KEY_ERROR` 的错误归因：现在报告 A/B 进程、执行阶段和最长 200 字的失败原因，避免所有动态装载失败都显示为“远端拒绝测试标记”。
+- 本地 JDK 21 `javac --release 11` / `java` 对与仓库对应的四个纯 Java 源类（`GuestEntry`、`VirtualContainerV0GuestDigestVerdict`、`VirtualContainerV0IpcVerdict`、`VirtualContainerV0TwoSlotVerdict`）进行等效逻辑烟测：13/13 断言通过。此测试是 Java 层逻辑检查，**不是** Android Gradle 构建、运行时 DEX 加载、Binder 或手机实验。
+- GitHub Actions 最新查询仍只有 10 月 14 日旧构建的成功记录。GitHub 的自动化令牌在部分场景中可能抑制二次触发，但未确认当前连接器的凭证类型；不要未经核实就将没有新构建归因为“Actions 被禁用”。
+- **验收唯一下一步**：在 `https://github.com/soozooq/gogogo/actions/workflows/build-release.yml` 为 `main` 手动执行 Build Preview APK。必须看到提交 SHA、任务真实运行、产物内置 `assets/twt-fixture-v0.apk` 的打包检查和单元测试；之后才允许安装新版 `2.4.14-tianwaitian-guest-ipc` 做五项 V0 验收。
+- 不要直接给已有定位模拟用户部署未经构建验证的调试成果，更不要把五项 V0 PASS 当成微信定位成功。
