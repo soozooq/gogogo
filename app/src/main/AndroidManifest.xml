@@ -193,6 +193,11 @@
             android:name=".virtualv0.VirtualContainerV0IpcService"
             android:exported="false"
             android:process=":virtualv0" />
+        <!-- Slot B has a different PID but the same app UID as slot A. -->
+        <service
+            android:name=".virtualv0.VirtualContainerV0IpcServiceB"
+            android:exported="false"
+            android:process=":virtualv0b" />
 
         <activity
             android:name=".VirtualContainerV0Activity"
