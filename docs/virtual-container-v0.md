@@ -1,5 +1,17 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-17 — 2.4.20 双工作流构建验收通过（V2 待 Android 真机）
+
+- 版本：`2.4.20-tianwaitian-intent-v2`，`versionCode 2400088`，宿主 applicationId 原样保留 `com.soozooq.gogogo.test`。**构建时的代码 HEAD** 是 `c2601c1ecc56f5ea20e2422ce3ab84ba740b1691`。
+- [Build Preview APK #39042874543](https://github.com/soozooq/gogogo/actions/runs/39042874543) **success**：静态组件/安全合约、V0 纯 Java 烟测、fixture V2 JUnit、宿主 JVM 测试、Debug APK 编译、APK Manifest/嵌套 guest Manifest/资源验收通过。
+- [Build Check #39042874544](https://github.com/soozooq/gogogo/actions/runs/39042874544) **success**：完整 Gradle Build、Release 相关任务与 Lint 均通过。
+- 从本次唯一最新产物 `gogogo-unified-labs-preview` artifact ID `12104234900` 提取了**真实 ARM64 APK**：文件名 `Go_2.4.20-tianwaitian-intent-v2_arm64-v8a_debug.apk`，字节数 `40336854`，宿主 APK SHA-256 `4ef5e4b20951b8a26e67e99b398ca3abd137e184eeaa126d3840f59850e13e84`。
+- 主 APK 的嵌套资产 `assets/twt-fixture-v0.apk` SHA-256 为 `3ccec41fd8a57f18dc393c6173d9cde9069fa7931859fbd23027895810e74ca2`，其中确实包含 `classes.dex`、`classes2.dex`、`resources.arsc`、`AndroidManifest.xml`，`GuestV2Route`、`GuestV2DeclaredActivity` 类名存在于独立 guest DEX，主/guest ZIP CRC 检查通过。
+- **真机 V2 测试尚未完成**：云端 PASS 只证明代码可以编译、合约/产物检查通过；仍不能声明宿主 V2 显式 Intent 往返或者 Archive Activity 解析在用户 Android 13 上实际成功。
+
+**下一步手机验收**：原位升级 2.4.20 → V0 页面 → V2 组件 Intent 代理实验 → 点击“一键运行 V2 组件 / Intent 往返” → 看到 V2 报告 → 返回 V0，按一次 V0 五项回归 → 最后点**一次“复制总报告”**，V2 附录会自动进入总日志。出现 FAIL 直接复制，无需重复测试。V1 2.4.19 的通过记录保留为历史基准，不要求盲目反复测试。
+
+---
 ## 2026-10-17 — V2 第一阶段：受控 APK Manifest 与 Intent 代理（2.4.20，待真机）
 
 > 上一阶段 2.4.19 已获得 Android 13 V0 5/5、V1 自有资源/UI/恢复/清理 PASS，完整证据仍保留在下方。本次不是重新修复 V1，而是独立的 V2 新实验。
