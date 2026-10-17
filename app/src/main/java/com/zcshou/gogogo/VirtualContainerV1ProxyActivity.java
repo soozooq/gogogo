@@ -4,6 +4,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
@@ -18,6 +19,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.zcshou.gogogo.virtualv0.ContainerV0TrustedGuest;
+import com.zcshou.gogogo.virtualv0.ContainerV1GuestResources;
 
 import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
@@ -49,6 +51,7 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
     private TextView report;
     private FrameLayout guestFrame;
     private ContainerV0TrustedGuest fixture;
+    private ContainerV1GuestResources resourceScope;
     private Object lifecycle;
     private Method guestEvent;
     private Method guestSnapshot;
@@ -56,6 +59,9 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
     private Method guestClicks;
     private Method guestUiSnapshot;
     private Method guestDispose;
+    private Method guestResourceEvidence;
+    private boolean guestResourcesVerified;
+    private String resourceEvidence = "(not loaded)";
     private int restoredClicks;
     private int recreates;
     private boolean restoreVerified;
@@ -148,6 +154,8 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
                 eventMethod = cls.getMethod("onEvent", String.class);
                 snapshotMethod = cls.getMethod("snapshot");
                 uiClass.getMethod("createView");
+                uiClass.getMethod("resourcesVerified");
+                uiClass.getMethod("getResourceEvidence");
                 uiClass.getMethod("getClickCount");
                 uiClass.getMethod("snapshot");
                 uiClass.getMethod("dispose");
@@ -179,15 +187,27 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
                         loaded = true;
                         for (String event : pending) dispatchGuest(event);
                         // View creation MUST happen on Android's main/UI thread.
-                        guestUi = readyUiClass.getConstructor(Context.class, int.class)
-                                .newInstance(this, restoredClicks);
+                        // Public Android 11+ ResourcesProvider / ResourcesLoader.
+                        // Only the verified, bundled guest APK is accepted.
+                        resourceScope = ContainerV1GuestResources.open(this, readyGuest);
+                        Resources ownResources = resourceScope.getResources();
+                        guestUi = readyUiClass.getConstructor(
+                                Context.class, Resources.class, int.class)
+                                .newInstance(this, ownResources, restoredClicks);
                         guestClicks = readyUiClass.getMethod("getClickCount");
                         guestUiSnapshot = readyUiClass.getMethod("snapshot");
                         guestDispose = readyUiClass.getMethod("dispose");
+                        guestResourceEvidence = readyUiClass.getMethod("getResourceEvidence");
+                        Method resourceCheck = readyUiClass.getMethod("resourcesVerified");
                         View guestView = (View) readyUiClass.getMethod("createView")
                                 .invoke(guestUi);
                         guestFrame.addView(guestView);
                         viewCreated = guestView.getParent() == guestFrame;
+                        guestResourcesVerified = (Boolean) resourceCheck.invoke(guestUi);
+                        resourceEvidence = (String) guestResourceEvidence.invoke(guestUi);
+                        if (!guestResourcesVerified) {
+                            throw new SecurityException("guest resource XML not verified");
+                        }
                         restoreVerified = clickCount() == restoredClicks;
                         events.append("GUEST VIEW created by fixture DEX, restoredClicks=")
                                 .append(restoredClicks)
@@ -247,6 +267,8 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
                 .append("受控 APK SHA-256：").append(digest).append('\n')
                 .append("生命周期桥加载：").append(loaded).append('\n')
                 .append("独立 APK 创建 View：").append(viewCreated).append('\n')
+                .append("独立 APK 自有资源验证：").append(guestResourcesVerified).append('\n')
+                .append("资源来源：").append(resourceEvidence).append('\n')
                 .append("guest 点击数：").append(clickCount()).append('\n')
                 .append("Activity 重建次数：").append(recreates).append('\n')
                 .append("状态恢复一致：")
@@ -277,7 +299,8 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
         out.append("\n边界：View 创建逻辑位于受控 APK，Android Activity、Context、")
                 .append("UID 与权限仍然属于天外天宿主。\n");
         if (destroyed) {
-            boolean ok = error.isEmpty() && viewCreated && clickCount() > 0
+            boolean ok = error.isEmpty() && viewCreated && guestResourcesVerified
+                    && clickCount() > 0
                     && recreates > 0 && restoreVerified
                     && events.indexOf("HOST onRestart") >= 0
                     && events.indexOf("GUEST VIEW disposed=true") >= 0;
@@ -330,7 +353,20 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
             }
         }
         destroyed = true;
+        // Capture the guest snapshot while APK resources are still available.
         persist();
+        if (guestFrame != null) guestFrame.removeAllViews();
+        if (resourceScope != null) {
+            try {
+                resourceScope.close();
+            } catch (RuntimeException failure) {
+                error = "FAIL：guest ResourcesLoader 清理 · "
+                        + failure.getClass().getSimpleName();
+                events.append(error).append('\n');
+                persist();
+            }
+            resourceScope = null;
+        }
         if (fixture != null) {
             fixture.close();
             fixture = null;
