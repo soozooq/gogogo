@@ -142,11 +142,12 @@ tasks.matching {
     dependsOn 'stageContainerV0Fixture'
 }
 
-// AGP's release Lint model reads the generated asset directory directly.
-// It does not propagate a TaskProvider sourceDir's builtBy relationship here.
-// Declare the exact producer dependency to satisfy Gradle 8.13 validation.
+// AGP 8.12 Lint analysis/model tasks inspect the generated asset directory
+// directly, but do not consistently inherit the sourceDir TaskProvider dependency.
+// Every app Lint task must wait for the fixture staging task (Gradle 8.13 validation).
+// This keeps release/debug Lint enabled instead of skipping failed checks.
 tasks.matching {
-    it.name == 'generateReleaseLintVitalReportModel'
+    it.name.contains('Lint') || it.name.startsWith('lint')
 }.configureEach {
     dependsOn 'stageContainerV0Fixture'
 }
