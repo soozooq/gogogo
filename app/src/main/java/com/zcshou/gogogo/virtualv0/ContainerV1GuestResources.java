@@ -42,13 +42,15 @@ public final class ContainerV1GuestResources implements AutoCloseable {
         try {
             loader.addProvider(provider);
             Resources host = context.getResources();
-            // A detached Resources instance avoids changing the installed app's
-            // global Resources; guest APK entries have precedence in this instance.
-            // This constructor is deprecated for normal apps; V1 deliberately tests
-            // the public resources-loader APIs in this bounded fixture.
+            // Both standalone application APKs normally compile resource IDs
+            // under 0x7f. Never put the fixture on top of the host APK resource
+            // table: names can collide even if we only modify a local Resources.
+            // Begin with framework-only assets (0x01) and attach the guest
+            // provider (0x7f) to a separate Resources instance.
+            // This deprecated public constructor is restricted to V1 research.
             @SuppressWarnings("deprecation")
-            Resources isolated = new Resources(
-                    host.getAssets(), host.getDisplayMetrics(), host.getConfiguration());
+            Resources isolated = new Resources(Resources.getSystem().getAssets(),
+                    host.getDisplayMetrics(), host.getConfiguration());
             isolated.addLoaders(loader);
             if (isolated == host) {
                 throw new SecurityException("cannot isolate guest resources from host");
