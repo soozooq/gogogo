@@ -95,6 +95,7 @@ jobs:
           exit 0
 
       - name: Verify the BUILT APK opens Tianwaitian
+        id: verify_apk
         if: env.BUILD_EXIT_CODE == '0'
         shell: bash
         run: |
@@ -111,6 +112,7 @@ jobs:
           grep -F "VirtualContainerV0IpcServiceB" ci/v0-manifest.txt
           unzip -p "$APK" assets/twt-fixture-v0.apk > ci/embedded-v0-fixture.apk
           test -s ci/embedded-v0-fixture.apk
+          unzip -t ci/embedded-v0-fixture.apk > ci/v0-fixture-zip-test.txt
           "$AAPT" dump badging ci/embedded-v0-fixture.apk | tee ci/v0-fixture-badging.txt
           grep -F "package: name='com.soozooq.tianwaitian.fixture'" ci/v0-fixture-badging.txt
           unzip -l ci/embedded-v0-fixture.apk | grep -F "classes.dex"
@@ -128,12 +130,15 @@ jobs:
             ci/v0-manifest.txt
             ci/v0-fixture-badging.txt
             ci/v0-fixture-sha256.txt
+            ci/v0-fixture-zip-test.txt
             app/build/test-results/testDebugUnitTest/
             containerFixture/build/test-results/testDebugUnitTest/
           if-no-files-found: ignore
 
       - name: Upload APK
-        if: env.BUILD_EXIT_CODE == '0'
+        # A compiled APK is not a deliverable until the installed package,
+        # launcher, private V0 services and embedded guest fixture all verify.
+        if: env.BUILD_EXIT_CODE == '0' && steps.verify_apk.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: gogogo-unified-labs-preview
