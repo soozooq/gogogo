@@ -25,6 +25,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 import com.zcshou.gogogo.virtualv0.ContainerV0Probe;
 import com.zcshou.gogogo.virtualv0.VirtualContainerV0IpcService;
+import com.zcshou.gogogo.virtualv0.VirtualContainerV0IpcVerdict;
 
 /** Explicit, offline, own-APK-only feasibility experiment. */
 public final class VirtualContainerV0Activity extends AppCompatActivity {
@@ -107,7 +108,8 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
             int remoteUid = values.getInt(VirtualContainerV0IpcService.KEY_UID, -1);
             boolean distinctProcess = remotePid > 0 && remotePid != Process.myPid();
             boolean sameUid = remoteUid == Process.myUid();
-            finishIpc((distinctProcess && sameUid ? "PASS" : "FAIL")
+            finishIpc((VirtualContainerV0IpcVerdict.passed(Process.myPid(),
+                    Process.myUid(), remotePid, remoteUid) ? "PASS" : "FAIL")
                     + "：Binder 消息往返\\n"
                     + "宿主 PID=" + Process.myPid() + "；远端 PID=" + remotePid + "\\n"
                     + "宿主 UID=" + Process.myUid() + "；远端 UID=" + remoteUid + "\\n"
