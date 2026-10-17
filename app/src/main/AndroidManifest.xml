@@ -209,6 +209,16 @@
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
 
+        <!-- V2: only registered HOST Activities, never installs/starts guest component. -->
+        <activity
+            android:name=".VirtualContainerV2Activity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".VirtualContainerV2ProxyActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
+
         <activity
             android:name=".IsolatedCapsuleLabActivity"
             android:exported="false"
