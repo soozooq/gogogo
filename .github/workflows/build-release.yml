@@ -124,3 +124,43 @@ jobs:
       - name: Mark build failed
         if: env.BUILD_EXIT_CODE != '0'
         run: exit 1
+
+  # Manual only, pinned upstream engine reference; not a Tianwaitian integration.
+  build-blackbox-reference:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feat/tianwaitian-container-v0-20261017' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout fixed upstream NewBlackbox revision
+        uses: actions/checkout@v4
+        with:
+          repository: ALEX5402/NewBlackbox
+          ref: 89b59836c66f173756a4ae258cf379a957649820
+          path: blackbox-source
+          persist-credentials: false
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Prepare Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install pinned NDK
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager --install "ndk;29.0.13846066" "platforms;android-35"
+      - name: Build separate upstream ARM64 debug APK
+        working-directory: blackbox-source
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --no-daemon --stacktrace
+      - name: Save standalone ARM64 reference for controlled testing
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: NewBlackbox-ARM64-REFERENCE-UNVERIFIED
+          path: blackbox-source/app/build/outputs/apk/debug/*arm64-v8a*.apk
+          if-no-files-found: error
+          retention-days: 7

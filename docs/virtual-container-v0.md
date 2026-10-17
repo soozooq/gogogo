@@ -38,3 +38,9 @@ GitHub Actions 入口：如果自动 push/PR 没有产生工作流运行记录�
 `Build Preview APK` 的 **Run workflow**，选择 `feat/tianwaitian-container-v0-20261017`。
 本分支的 `Tianwaitian Container V0 Preview` 只在该工作流被 GitHub 注册后
 才能从 Actions 面板手动分派；代码提交成功并不等于 APK 已编译。
+
+## 独立真实容器引擎构建（需要手动触发）
+
+现有 `Build Preview APK` 工作流在本 PR 分支上增加仅手动触发的第二项构建。它使用固定的上游 NewBlackbox commit `89b59836c66f173756a4ae258cf379a957649820`，JDK 21、NDK `29.0.13846066`，尝试编译真实虚拟化引擎的独立 ARM64 debug APK；不会将其源码混进天外天本体。
+
+在 GitHub Actions 进入已注册的 `Build Preview APK`，选择本分支并 Run workflow。产物名称 `NewBlackbox-ARM64-REFERENCE-UNVERIFIED`，**未做安全审计、未做真机验证，请勿登录真实微信或导入隐私数据**。没有真实 Actions 运行与 artifact 前，不能宣称 APK 构建成功。
