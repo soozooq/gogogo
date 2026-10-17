@@ -1,5 +1,15 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2.4.16 编译验收（2026-10-17）
+
+- 源码版本：`2.4.16-tianwaitian-guest-ui`，`versionCode 2400084`，代码对应 commit `ac0cf5d4b6c17110656b3551fd660ae851674246`。
+- [Build Preview APK #39026571048](https://github.com/soozooq/gogogo/actions/runs/39026571048)：**success**；fixture JVM tests、host JVM tests、assembleDebug 和内嵌 APK/Manifest 内容检查通过，产物 `gogogo-unified-labs-preview`。
+- [Build Check #39026571039](https://github.com/soozooq/gogogo/actions/runs/39026571039)：**success**；完整 Gradle 构建与 Lint 检查通过。
+- 下载后的宿主 APK 解包测试通过（约 40.3MB），嵌入 `assets/twt-fixture-v0.apk`；独立 fixture APK 解包完整，在其 `classes2.dex` 检查到 `GuestEntry`、`GuestLifecycleV1` 和 `GuestUiV1`。
+- 2026-10-17 第一次预览尝试 [#39026407064](https://github.com/soozooq/gogogo/actions/runs/39026407064) 因 Java 嵌套回调中异常参数 `failure` 重名编译失败；此问题已在 `ac0cf5d4` 修复，后续双工作流成功。
+- **状态**：仅 Android 云端构建通过，尚无 2.4.16 真机 UI 点击、重建恢复与清理的观测数据；不得声称新 UI 交互已在手机验收成功。
+
+---
 ## 2026-10-17 — V1 第二阶段：独立 APK 的原生 View 与点击/重建实验（2.4.16，待真机）
 
 - 保持宿主唯一应用包名 `com.soozooq.gogogo.test`、原用户数据、签名与定位功能。此阶段只修改受控测试 APK 与 V1 诊断页面，不增加定位权限或引入第三方 APK 安装。
