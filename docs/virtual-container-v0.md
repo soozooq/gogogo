@@ -1,5 +1,36 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-17 Android 13 ARM64 真机验收记录（V0 已通过）
+
+> 此节是之后收到的**真实手机运行反馈**，优先级高于文档下方开发阶段的“尚未真机验证”历史陈述。结果由用户从天外天 V0 页面复制；属于该次测试的观察，不自动代表所有机型、所有 Android 版本或完整第三方 App 容器能力。
+
+**验收配置与产物**
+
+- 天外天主程序：`2.4.14-tianwaitian-guest-ipc`，`versionCode 2400082`，应用包名保持 `com.soozooq.gogogo.test`。
+- 构建基准：`main` 提交 `049bf8b128a522c443dde3598991bdfa41dd8160`；[Build Preview APK #39008433771](https://github.com/soozooq/gogogo/actions/runs/39008433771) 与 [Build Check #39008433927](https://github.com/soozooq/gogogo/actions/runs/39008433927) 均已完成且成功。
+- 真机环境：Android API 33（Android 13），用户实际使用的 ARM64 手机。测试时宿主 PID=`12440`，UID=`10441`；PID 是当次运行快照，后续会变化。
+- **验收结果：5/5 PASS**（所有五个按钮均为用户真实运行并复制的日志）：
+
+| V0 按钮 | 实测证据 | 结论 |
+| --- | --- | --- |
+| A → B → A 同名类双 ClassLoader / 私有目录 | A loader=`172384739`、B loader=`173869024`；两个 Class 不同；A→B→A 后 B 文件数据不变 | PASS |
+| Messenger/Binder 跨进程 | 宿主 PID=`12440`，远端 PID=`15723`；两者 UID=`10441` | PASS |
+| 双子进程 A→B→A→B 状态隔离 | A PID=`15723`、B PID=`15773`，与宿主均不同；同 UID=`10441`；两份标记保留均为 true | PASS |
+| 从独立测试 APK 装载 DEX 并反射执行 | APK package=`com.soozooq.tianwaitian.fixture`；两份 Class 不同，A→B→A 静态标记互不串线 | PASS |
+| 独立 APK 在两个 Android 子进程执行 | A PID=`15723`、B PID=`15773`；两个标记保留 true；远端 APK SHA-256 与上项一致 | PASS |
+
+**已验证的受控测试 APK SHA-256：** `97366bc45fe92c6d346141fc0d0743b7baab7e862c8283466cb4ece46a805ef7`
+
+**结论边界**
+
+1. 同名类双加载器实例、两个不同 Android 进程、跨进程通信、受控独立 APK 的 DEX 方法执行已经在本次 Android 13 手机上得到肯定结果。
+2. A/B 的文件目录属于**同一宿主应用的数据空间**；A/B 进程也具有**同一 Linux UID=`10441`**，不构成 Android 独立应用沙箱。观察到标记不串线不等于权限与数据真正隔离。
+3. 该测试 APK 当前没有在 Manifest 注册 `Activity` / `Service` 等组件，也没有运行其 Android `Application` / `Activity` 生命周期。它是受控代码载荷，并非第三方 APK 的安装、启动或完整应用托管。
+4. **没有任何微信/抖音/QQ 的新定位实测结果**；不得用 V0 的 5/5 PASS 声称这些应用已能跟随模拟位置。
+5. 下一里程碑应聚焦单独构建的、可信测试 APK 的 **UI 与受控生命周期桥接**：先在宿主注册的代理 Activity 中接收可审计的 `onCreate/onStart/onResume/onPause/onStop/onDestroy` 对照，并检验屏幕显示、暂停恢复与状态清理；**不能宣称宿主代理等同于 Android 系统直接启动未安装 APK 的真实 Activity**。保留 V0 作为回归基准，代码仍只维护 `main`。
+
+---
+
 2026-10-17 解冻后开发。主线统一使用 `soozooq/gogogo` 的 `main`，不再长期维护独立容器 APK 或 V0 专属构建工作流。历史 PR #57 仅作开发记录。
 
 ## 已实现（源码能力，不代表真机通过）
