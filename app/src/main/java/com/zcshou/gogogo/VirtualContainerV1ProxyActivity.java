@@ -192,10 +192,10 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
                         events.append("GUEST VIEW created by fixture DEX, restoredClicks=")
                                 .append(restoredClicks)
                                 .append(", verified=").append(restoreVerified).append('\n');
-                    } catch (Throwable failure) {
+                    } catch (Throwable uiFailure) {
                         error = "FAIL：guest UI 构建/嵌入 · "
-                                + failure.getClass().getSimpleName()
-                                + (failure.getMessage() == null ? "" : " · " + failure.getMessage());
+                                + uiFailure.getClass().getSimpleName()
+                                + (uiFailure.getMessage() == null ? "" : " · " + uiFailure.getMessage());
                         events.append(error).append('\n');
                     }
                 }
