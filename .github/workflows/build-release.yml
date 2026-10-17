@@ -81,6 +81,9 @@ jobs:
       - name: Verify Tianwaitian launcher
         run: python3 ci/verify_tianwaitian_launcher.py
 
+      - name: Verify embedded fixture and isolated IPC contract
+        run: python3 ci/verify_container_fixture_contract.py
+
       - name: Test independent fixture, run application JVM tests and build debug APK
         shell: bash
         run: |
