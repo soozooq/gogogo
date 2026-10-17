@@ -1,5 +1,14 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2.4.18 云端构建复查通过（2026-10-17）
+
+- 用户 2.4.17 真机失败的最小复现与诊断记录详见下一节；2.4.18 是针对性**待真机确认修复候选**，不得宣称资源 XML 显示已经被手机证实。
+- 已在 `main` 提交修复源码，版本号 `2.4.18-tianwaitian-guest-res-fix`，`versionCode 2400086`，构建 head SHA `a8271634c9d56b498d87acdfb9863fbcd38fc498`。公开完整日志：[Build Preview APK #39035358285](https://github.com/soozooq/gogogo/actions/runs/39035358285) **success**；[Build Check #39035358262](https://github.com/soozooq/gogogo/actions/runs/39035358262) **success**。
+- 真正提取了新 SHA 的 Actions Artifact `gogogo-unified-labs-preview`（ID `12101872014`），其中唯一 ARM64 debug APK 完整，大小 `40336118` 字节，SHA-256 `78126a9705a77400cca91b7ff4281606ade5a110b27542ceeee18f5ab87e3ea3`。包内资产 `assets/twt-fixture-v0.apk` 的 SHA-256 `15f0191bd6058d1a6cdb3a7a83dad113167a48cd65fd18fb99b980e45bfd51cf`，`resources.arsc`、`res/layout/guest_panel.xml`、`res/drawable/guest_mark.xml` 均存在，两个 ZIP CRC 检查通过。
+- 修复：Loader `clearProviders()` 再 close Provider；实验资源以 framework-only Assets 为基底而不混用宿主与 guest 同为 `0x7f` 的 app 资源；布局 Inflate 上下文使用 guest-scoped inflater；V1 日志展开反射 root-cause 并显示资源阶段；仅真实 view 存在时写 `GUEST VIEW disposed=true`。CI 静态契约阻止上述修复退化。
+- **下一次真机只做一个 V1 打开即可先判断修复是否成功**：若没有出现独立 APK 资源布局，则退出 V1，返回 V0 复制一次总报告（包括 V1 附录），查具体 stage、cause 链，毋须重复跑多次；若能显示才测点击、返回、重建、退出，再补跑 V0 五项一次作为回归验收。此安排降低用户重复操作。
+
+---
 ## 2026-10-17 2.4.17 真机故障与 2.4.18 修复候选（尚未通过真机）
 
 **Android 13 / API 33 实测**：2026-10-17 21:02 的用户一键总报告。V0 五项 5/5 PASS，应用包 `com.soozooq.gogogo.test`、主 PID `3364`、UID `10441`，两个子进程 PID `6013` 和 `6049`；受控 fixture APK SHA-256 `46a4196adb330499c32fff21837d7da6e2883c2df9508f307a8b1f1f548581f4`（与本版构建校验一致）。**V1 资源布局实验 FAIL**，界面并未出现；严禁以 CI success 宣称 V1 通过。
