@@ -1,5 +1,19 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-17 — V1 第二阶段：独立 APK 的原生 View 与点击/重建实验（2.4.16，待真机）
+
+- 保持宿主唯一应用包名 `com.soozooq.gogogo.test`、原用户数据、签名与定位功能。此阶段只修改受控测试 APK 与 V1 诊断页面，不增加定位权限或引入第三方 APK 安装。
+- 新增独立构建的 `containerFixture/.../GuestUiV1.java`：在 **fixture 自己的 DEX** 中创建 Android `LinearLayout`、`TextView`、`Button`，设置原生 `OnClickListener`，按钮每次被点击就更新 guest 的计数器与 guest 自己的日志；对应五个 JVM 单元测试验证持久化计数参数约束。
+- 天外天已注册的 `VirtualContainerV1ProxyActivity` 使用 `ContainerV0TrustedGuest` 从**嵌套的独立 APK** 装载 `GuestUiV1`，主线程反射执行 `createView()`，把返回的真实 Android `View` 放入宿主 `FrameLayout`。必须检查 `GuestUiV1` 的 `ClassLoader` 实际属于单独 guest DEX。
+- 可点击“测试后台恢复：打开系统设置，再返回”，记录 Android 前后台真实生命周期；可点击“测试界面重建：保留点击数重新加载”，由系统真实执行 `Activity.recreate()`，在 `onSaveInstanceState` 保存点击数及会话痕迹，新宿主实例重新构造 guest View、校验恢复数；退出调用 guest `dispose()` 并写入一次复制报告。
+- V1 报告追加 `独立 APK 创建 View`、`guest 点击数`、`Activity 重建次数`、`状态恢复一致`、`后台恢复观察`、`GUEST VIEW disposed` 和 `V1 UI 交互/重建/清理联合验收` 字段。只有用户实际执行点击、后台、重建、退出，且观察条件满足时才可能 PASS。
+- V0 原来的“一键诊断 5/5、最后只复制一次日志”不变。V0 复制总报告时仍会自动附上最近 V1 的时间戳日志。
+- **不应夸大**：这里确实运行了独立测试 APK 内定义的原生 Android View **创建代码和点击处理器**；但 UI 使用的是宿主 Context、宿主进程/UID，仍没有 Android PackageManager/ActivityManager 组件虚拟化，也没有直接运行未安装的 APK Activity，未验证微信定位。
+- GitHub Build Preview APK 与 Build Check、Android 13 真机反馈均必须按新提交重新验收，不沿用 2.4.15 的 PASS。
+
+**真机执行步骤：** 更新 2.4.16 → 进入 V0，运行一次五项自动诊断 → 打开 V1 → 在深色 guest 界面点按钮至少 2 次 → 打开系统设置并返回 → 点击“测试界面重建”，确认 guest 点击数还在 → 再点 guest 按钮 1 次 → 完成退出 → 回 V0 **只复制一次总报告**。
+
+---
 ## 2026-10-17 2.4.15 真机一键联合验收（V0 + V1）
 
 > 用户提供完整「一次复制」报告，测试时间 17:24（设备本地时间）；以下为实测观察，不是构建期模拟或对未安装第三方应用的证明。此前 2.4.14 验收记录保持不变。
