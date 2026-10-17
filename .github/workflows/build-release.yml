@@ -81,11 +81,11 @@ jobs:
       - name: Verify Tianwaitian launcher
         run: python3 ci/verify_tianwaitian_launcher.py
 
-      - name: Run V0 and application JVM regressions, then build debug APK
+      - name: Test independent fixture, run application JVM tests and build debug APK
         shell: bash
         run: |
           set +e
-          ./gradlew --no-daemon :app:testDebugUnitTest :app:assembleDebug --stacktrace 2>&1 | tee ci/latest-build.txt
+          ./gradlew --no-daemon :containerFixture:testDebugUnitTest :app:testDebugUnitTest :app:assembleDebug --stacktrace 2>&1 | tee ci/latest-build.txt
           code=${PIPESTATUS[0]}
           echo "exit=$code" >> ci/diagnostic.txt
           echo "BUILD_EXIT_CODE=$code" >> "$GITHUB_ENV"
@@ -106,6 +106,12 @@ jobs:
           "$AAPT" dump xmltree "$APK" AndroidManifest.xml > ci/v0-manifest.txt
           grep -F "VirtualContainerV0Activity" ci/v0-manifest.txt
           grep -F "VirtualContainerV0IpcServiceB" ci/v0-manifest.txt
+          unzip -p "$APK" assets/twt-fixture-v0.apk > ci/embedded-v0-fixture.apk
+          test -s ci/embedded-v0-fixture.apk
+          "$AAPT" dump badging ci/embedded-v0-fixture.apk | tee ci/v0-fixture-badging.txt
+          grep -F "package: name='com.soozooq.tianwaitian.fixture'" ci/v0-fixture-badging.txt
+          unzip -l ci/embedded-v0-fixture.apk | grep -F "classes.dex"
+          sha256sum ci/embedded-v0-fixture.apk | tee ci/v0-fixture-sha256.txt
 
       - name: Upload diagnostics
         if: always()
@@ -117,7 +123,10 @@ jobs:
             ci/latest-build.txt
             ci/apk-badging.txt
             ci/v0-manifest.txt
+            ci/v0-fixture-badging.txt
+            ci/v0-fixture-sha256.txt
             app/build/test-results/testDebugUnitTest/
+            containerFixture/build/test-results/testDebugUnitTest/
           if-no-files-found: ignore
 
       - name: Upload APK
