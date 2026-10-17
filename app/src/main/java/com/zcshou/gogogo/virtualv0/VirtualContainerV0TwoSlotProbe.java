@@ -140,7 +140,13 @@ public final class VirtualContainerV0TwoSlotProbe {
         }
         Bundle data = message.getData();
         if (data.containsKey(VirtualContainerV0IpcService.KEY_ERROR)) {
-            finish("FAIL：远端拒绝测试标记");
+            // Preserve a bounded, actionable reason rather than masking every
+            // guest load/DEX/manifest failure as an "invalid marker".
+            String reason = data.getString(VirtualContainerV0IpcService.KEY_ERROR);
+            if (reason == null || reason.isEmpty()) reason = "unknown remote failure";
+            if (reason.length() > 200) reason = reason.substring(0, 200) + "…";
+            finish("FAIL：进程 " + ((stage == 0 || stage == 2) ? "A" : "B")
+                    + " 阶段 " + stage + " 执行失败 · " + reason);
             return;
         }
         int pid = data.getInt(VirtualContainerV0IpcService.KEY_PID, -1);
