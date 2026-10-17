@@ -85,3 +85,15 @@
 - 修复 `build-release.yml` 的 APK 上传判断：编译通过只是必要条件，只有 `verify_apk` 步骤（包名、启动页、V0 组件、内置 fixture APK 的 ZIP 完整性、包名、DEX、SHA-256）真正成功才上传 APK；验证失败会保留诊断但不得把未验收 APK 当作成功产物。
 - 已确认本轮主线没有 Android SDK 构建环境；容器编译与 Android 13 真机测试尚未执行。不要以 JVM PASS 替代这两项验收。
 - 如果持续没有新 Actions 运行，排查提交身份对事件触发的影响、仓库 Actions 设置与手动 workflow_dispatch；目前未能确认具体原因。后续应优先取得真实 CI 日志，而不是继续叠加未经验证的虚拟化功能。
+
+
+## 2026-10-17 CI 自动触发阻碍：有证据的排查结果
+
+当前无法从 ChatGPT 已连接的 GitHub 操作中直接调用 GitHub Actions `workflow_dispatch`，只有仓库代码提交、评论等部分操作与工作流查询权限。2026-10-17 现场查到：
+
+- 主分支最新包含 V0 v2.4.14 的代码，但 GitHub Actions 列表中最新一次已确认的执行仍是 2026-10-14 的旧 SHA `d49ddeb1`（Build Check / Build Preview APK 以前均成功）。
+- 试验性地给现有 `Build Preview APK` 增加了 **仅限 `soozooq` 本人、PR #57、精确评论正文 `/twt-v0-build-main`** 的 `issue_comment` 触发条件，然后通过连接器成功创建评论 ID `6229810186`。随后查询 `event=issue_comment` 仍是 **0 条运行记录**，也没有新的整体运行。这说明该次连接器评论未成功派生 Actions 构建，**不能推断 GitHub Actions 被禁用**。
+- 该试验性触发逻辑已立即撤回，`Build Preview APK` 恢复原有的 `workflow_dispatch`、`push` 与 `pull_request` 事件；避免永久留下无法证明有用的触发条件。PR #57 旧讨论中的触发评论只是实验历史，不是构建结果。
+- GitHub 官方文档指出：仓库内 `GITHUB_TOKEN` 所触发的大多数事件不会新建工作流（`workflow_dispatch` 与 `repository_dispatch` 除外）；**但当前 GitHub 连接器实际使用的令牌类型未核实，不能直接归因**。
+- 下一步的确定动作是登录有仓库写权限的 GitHub 网页，在 `https://github.com/soozooq/gogogo/actions/workflows/build-release.yml` 选择 `main` 手动运行一次；若页面显示 `Enable workflow`，先核实并启用。此动作须在用户已登录的浏览器或可操作云浏览器中完成。
+- 新运行出现后先取得 Run ID 和 `head_sha` 并核对 v2.4.14 代码；随后抓取失败 job 日志或 APK artifact，再进行有针对性的修复。不得拿旧 SHA 的成功构建证明新 V0 可运行。
