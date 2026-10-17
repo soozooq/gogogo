@@ -70,7 +70,9 @@ public final class ContainerV1GuestResources implements AutoCloseable {
         closed = true;
         // Only this private resource instance was modified. Close after guest View
         // was detached / disposed; do not mutate or close any host Resources.
-        resources.removeLoaders(loader);
-        provider.close();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            resources.removeLoaders(loader);
+            provider.close();
+        }
     }
 }
