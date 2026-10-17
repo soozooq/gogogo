@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="guest_panel_title">独立 APK 的资源布局已经加载</string>
+    <string name="guest_tap_button">点击由 Guest APK 处理</string>
+    <string name="guest_resource_marker">TWT_GUEST_ONLY_2_4_17</string>
+    <string name="guest_image_description">来自独立 APK 的资源图案</string>
+</resources>
