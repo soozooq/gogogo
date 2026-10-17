@@ -55,7 +55,12 @@ public final class ContainerV1GuestResources implements AutoCloseable {
             }
             return new ContainerV1GuestResources(isolated, loader, provider);
         } catch (Exception | Error failure) {
-            try { provider.close(); } catch (Exception ignored) {}
+            try {
+                loader.clearProviders();
+                provider.close();
+            } catch (RuntimeException cleanupFailure) {
+                failure.addSuppressed(cleanupFailure);
+            }
             throw failure;
         }
     }
@@ -71,7 +76,11 @@ public final class ContainerV1GuestResources implements AutoCloseable {
         // Only this private resource instance was modified. Close after guest View
         // was detached / disposed; do not mutate or close any host Resources.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // Removing a loader from Resources does NOT release its provider
+            // reference. ResourcesProvider.close() otherwise throws:
+            // IllegalStateException: used by 1 ResourcesLoader instances.
             resources.removeLoaders(loader);
+            loader.clearProviders();
             provider.close();
         }
     }
