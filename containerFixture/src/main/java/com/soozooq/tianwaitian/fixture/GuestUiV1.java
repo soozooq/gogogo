@@ -30,6 +30,7 @@ public final class GuestUiV1 {
     private boolean disposed;
     private boolean resourcesVerified;
     private String resourceEvidence = "(not loaded)";
+    private String currentStage = "not started";
 
     public GuestUiV1(Context context, Resources resources, int restoredClicks) {
         if (context == null || resources == null) throw new IllegalArgumentException("context/resources");
@@ -39,57 +40,87 @@ public final class GuestUiV1 {
     }
 
     public View createView() {
-        if (disposed || panel != null) throw new IllegalStateException("guest UI already created/disposed");
-        // Resource IDs in an independent APK often share numeric values with the
-        // host (0x7f...). They MUST resolve from our guest-specific Resources.
-        String resourcePackage = guestResources.getResourcePackageName(R.string.guest_panel_title);
-        String marker = guestResources.getString(R.string.guest_resource_marker);
-        String title = guestResources.getString(R.string.guest_panel_title);
-        String buttonText = guestResources.getString(R.string.guest_tap_button);
-        String layoutName = guestResources.getResourceEntryName(R.layout.guest_panel);
-        Drawable graphic = guestResources.getDrawable(R.drawable.guest_mark, null);
-        if (!PACKAGE.equals(resourcePackage) || !MARKER.equals(marker)
-                || !title.contains("独立 APK") || graphic == null
-                || !"guest_panel".equals(layoutName)) {
-            throw new SecurityException("wrong package/resource source: " + resourcePackage
-                    + " marker=" + marker + " layout=" + layoutName);
+        if (disposed || panel != null) {
+            throw new IllegalStateException("guest UI already created/disposed");
         }
-
-        // LayoutInflater must resolve @string/@drawable/@color IDs against the
-        // guest APK, not the host Context's resource table.
-        ContextThemeWrapper guestViewContext = new ContextThemeWrapper(
-                hostContext, android.R.style.Theme_Material_Light_NoActionBar) {
-            @Override public Resources getResources() { return guestResources; }
-            @Override public AssetManager getAssets() { return guestResources.getAssets(); }
-        };
-        panel = LayoutInflater.from(guestViewContext)
-                .inflate(R.layout.guest_panel, null, false);
-        TextView heading = panel.findViewById(R.id.guest_heading);
-        ImageView image = panel.findViewById(R.id.guest_image);
-        counter = panel.findViewById(R.id.guest_counter);
-        Button button = panel.findViewById(R.id.guest_action);
-        if (heading == null || image == null || counter == null || button == null
-                || !title.contentEquals(heading.getText())
-                || !buttonText.contentEquals(button.getText())
-                || image.getDrawable() == null) {
-            throw new IllegalStateException("guest resource XML did not inflate correctly");
-        }
-        button.setOnClickListener(v -> {
-            if (disposed) return;
-            clicks++;
-            if (clickTrace.length() < 1000) {
-                clickTrace.append("GUEST CLICK #").append(clicks).append('\n');
+        try {
+            currentStage = "guest resource package-name lookup";
+            // IDs in a second APK can share the same 0x7f namespace as the
+            // host. Each lookup must resolve through the separate Resources.
+            String resourcePackage = guestResources.getResourcePackageName(
+                    R.string.guest_panel_title);
+            currentStage = "guest marker string";
+            String marker = guestResources.getString(R.string.guest_resource_marker);
+            currentStage = "guest title string";
+            String title = guestResources.getString(R.string.guest_panel_title);
+            currentStage = "guest button string";
+            String buttonText = guestResources.getString(R.string.guest_tap_button);
+            currentStage = "guest XML layout-name lookup";
+            String layoutName = guestResources.getResourceEntryName(R.layout.guest_panel);
+            currentStage = "guest drawable load";
+            Drawable graphic = guestResources.getDrawable(R.drawable.guest_mark, null);
+            currentStage = "guest resource identity check";
+            if (!PACKAGE.equals(resourcePackage) || !MARKER.equals(marker)
+                    || !title.contains("独立 APK") || graphic == null
+                    || !"guest_panel".equals(layoutName)) {
+                throw new SecurityException("resource mismatch: package="
+                        + resourcePackage + " marker=" + marker
+                        + " layout=" + layoutName);
             }
+
+            currentStage = "construct scoped guest View context";
+            ContextThemeWrapper guestViewContext = new ContextThemeWrapper(
+                    hostContext, android.R.style.Theme_Material_Light_NoActionBar) {
+                @Override public Resources getResources() { return guestResources; }
+                @Override public AssetManager getAssets() { return guestResources.getAssets(); }
+                @Override public Object getSystemService(String name) {
+                    if (Context.LAYOUT_INFLATER_SERVICE.equals(name)) {
+                        return LayoutInflater.from(hostContext).cloneInContext(this);
+                    }
+                    return super.getSystemService(name);
+                }
+            };
+            currentStage = "inflate guest_panel.xml";
+            panel = LayoutInflater.from(guestViewContext)
+                    .inflate(R.layout.guest_panel, null, false);
+            currentStage = "find guest views";
+            TextView heading = panel.findViewById(R.id.guest_heading);
+            ImageView image = panel.findViewById(R.id.guest_image);
+            counter = panel.findViewById(R.id.guest_counter);
+            Button button = panel.findViewById(R.id.guest_action);
+            currentStage = "validate inflated strings and drawable";
+            if (heading == null || image == null || counter == null || button == null
+                    || !title.contentEquals(heading.getText())
+                    || !buttonText.contentEquals(button.getText())
+                    || image.getDrawable() == null) {
+                throw new IllegalStateException("guest XML did not inflate expected views");
+            }
+            currentStage = "wire guest button listener";
+            button.setOnClickListener(v -> {
+                if (disposed) return;
+                clicks++;
+                if (clickTrace.length() < 1000) {
+                    clickTrace.append("GUEST CLICK #").append(clicks).append('\n');
+                }
+                refresh();
+            });
             refresh();
-        });
-        refresh();
-        resourcesVerified = true;
-        resourceEvidence = "resourcePackage=" + resourcePackage
-                + "；marker=" + marker
-                + "；layout=" + layoutName
-                + "；title=" + title
-                + "；drawable=" + image.getDrawable().getClass().getSimpleName();
-        return panel;
+            resourcesVerified = true;
+            resourceEvidence = "resourcePackage=" + resourcePackage
+                    + "；marker=" + marker
+                    + "；layout=" + layoutName
+                    + "；title=" + title
+                    + "；drawable=" + image.getDrawable().getClass().getSimpleName();
+            currentStage = "complete";
+            return panel;
+        } catch (RuntimeException error) {
+            // Reflective invocation throws InvocationTargetException at the
+            // host boundary. Preserve the meaningful resource stage here.
+            throw new IllegalStateException("fixture guest UI stage=" + currentStage
+                    + "; cause=" + error.getClass().getSimpleName()
+                    + (error.getMessage() == null ? "" : "; detail=" + error.getMessage()),
+                    error);
+        }
     }
 
     public boolean resourcesVerified() { return resourcesVerified; }
@@ -101,6 +132,7 @@ public final class GuestUiV1 {
                 + "；disposed=" + disposed
                 + "；guestResourcesVerified=" + resourcesVerified
                 + "；guestViewClass=" + GuestUiV1.class.getName()
+                + "；stage=" + currentStage
                 + "\n" + resourceEvidence + "\n" + clickTrace;
     }
 
