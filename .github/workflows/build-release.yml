@@ -114,9 +114,13 @@ jobs:
           grep -F "VirtualContainerV0Activity" ci/v0-manifest.txt
           grep -F "VirtualContainerV0IpcServiceB" ci/v0-manifest.txt
           grep -F "VirtualContainerV1ProxyActivity" ci/v0-manifest.txt
+          grep -F "VirtualContainerV2Activity" ci/v0-manifest.txt
+          grep -F "VirtualContainerV2ProxyActivity" ci/v0-manifest.txt
           unzip -p "$APK" assets/twt-fixture-v0.apk > ci/embedded-v0-fixture.apk
           test -s ci/embedded-v0-fixture.apk
           unzip -t ci/embedded-v0-fixture.apk > ci/v0-fixture-zip-test.txt
+          "$AAPT" dump xmltree ci/embedded-v0-fixture.apk AndroidManifest.xml > ci/v2-fixture-manifest.txt
+          grep -F "GuestV2DeclaredActivity" ci/v2-fixture-manifest.txt
           "$AAPT" dump badging ci/embedded-v0-fixture.apk | tee ci/v0-fixture-badging.txt
           grep -F "package: name='com.soozooq.tianwaitian.fixture'" ci/v0-fixture-badging.txt
           # Verify the separate fixture APK (not host R) contains real compiled
@@ -142,6 +146,7 @@ jobs:
             ci/v0-fixture-sha256.txt
             ci/v0-fixture-zip-test.txt
             ci/v1-fixture-resources.txt
+            ci/v2-fixture-manifest.txt
             app/build/test-results/testDebugUnitTest/
             containerFixture/build/test-results/testDebugUnitTest/
           if-no-files-found: ignore
