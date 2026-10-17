@@ -188,6 +188,12 @@
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
 
+        <!-- Dedicated test IPC process; same app UID, distinct PID, not a guest sandbox. -->
+        <service
+            android:name=".virtualv0.VirtualContainerV0IpcService"
+            android:exported="false"
+            android:process=":virtualv0" />
+
         <activity
             android:name=".VirtualContainerV0Activity"
             android:exported="false"
