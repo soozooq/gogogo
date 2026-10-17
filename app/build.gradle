@@ -72,6 +72,8 @@ android {
     sourceSets {
         main {
             aidl.srcDirs = ['src/main/aidl']
+            // Built from a separate APK module and bundled only as a trusted V0 fixture.
+            assets.srcDir("$buildDir/generated/containerV0Assets")
         }
     }
 
@@ -114,6 +116,28 @@ android {
         }
     }
 }
+
+
+/**
+ * The guest is a complete independently compiled APK, not another class
+ * already compiled into Tianwaitian's host classes.dex. The APK is included
+ * as a build-generated private asset, never installed as a second application.
+ */
+tasks.register('stageContainerV0Fixture', Copy) {
+    dependsOn ':containerFixture:assembleDebug'
+    from(project(':containerFixture').layout.buildDirectory.dir('outputs/apk/debug')) {
+        include '*-debug.apk'
+        rename { String ignored -> 'twt-fixture-v0.apk' }
+    }
+    into(layout.buildDirectory.dir('generated/containerV0Assets'))
+}
+
+tasks.matching {
+    it.name == 'mergeDebugAssets' || it.name == 'mergeReleaseAssets'
+}.configureEach {
+    dependsOn 'stageContainerV0Fixture'
+}
+
 
 dependencies {
     // GoGoGo Lab: active open-source GPU map renderer.
