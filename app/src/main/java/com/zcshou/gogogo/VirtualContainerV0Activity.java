@@ -1,6 +1,10 @@
 package com.zcshou.gogogo;
 
 import android.os.Bundle;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
+import android.widget.Toast;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -37,6 +41,14 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
         report = GoGoUi.reportPanel(this);
         report.setText("尚未运行。这只是虚拟容器的第一项底层验收，不等于微信兼容成功。");
         root.addView(report, GoGoUi.matchWrap());
+        root.addView(GoGoUi.secondaryButton(this, "复制 V0 实验结果", v -> {
+            ClipboardManager clipboard =
+                    (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+            if (clipboard != null) {
+                clipboard.setPrimaryClip(ClipData.newPlainText("Container V0", report.getText()));
+                Toast.makeText(this, "已复制实验结果", Toast.LENGTH_SHORT).show();
+            }
+        }), GoGoUi.matchWrap());
         root.addView(GoGoUi.muted(this,
                 "注意：不同 ClassLoader / 不同私有目录不构成独立 Linux UID。"),
                 GoGoUi.matchWrap());

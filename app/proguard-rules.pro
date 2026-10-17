@@ -40,3 +40,6 @@
 # Tencent Location SDK references an optional OPPO/ColorOS platform-only class.
 # It is absent from ordinary Android SDK jars. Keep all other R8 checks enabled.
 -dontwarn com.oplus.os.OplusBuild
+
+# The V0 controlled payload is reflectively resolved inside two guest DexClassLoaders.
+-keep class com.zcshou.gogogo.virtualv0.GuestPayload { *; }

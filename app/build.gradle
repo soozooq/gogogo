@@ -59,6 +59,9 @@ android {
             multiDexEnabled = true
         }
         debug {
+            // V0 is a side-by-side experimental app; never overwrite the stable app.
+            applicationIdSuffix ".container.v0"
+            versionNameSuffix "-container-v0"
             signingConfig = signingConfigs.debug
         }
     }

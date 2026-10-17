@@ -26,3 +26,15 @@ V0 两个实例仍在同一个 Android Linux UID 和宿主进程中。
 - 下一阶段：在安全审查/许可证审查后，以 NewBlackbox 源码为容器候选，
   引入真正的 guest Application/Activity 生命周期与进程身份隔离。
   只有真机通过后，才进入腾讯 SDK/微信功能验证。
+
+## 首次构建安全措施（补充）
+
+仅 V0 分支的 debug 包使用 `applicationIdSuffix ".container.v0"` 和独立版本名后缀。
+**不得覆盖手机上已有的天外天应用及其数据。** 新包安装后与原版并存。
+报告页增加一键复制，可直接回传 PASS/FAIL、Android API、PID、宿主 UID。
+已为动态加载目标类增加 R8 keep 规则，防止以后 release 混淆去除测试载荷。
+
+GitHub Actions 入口：如果自动 push/PR 没有产生工作流运行记录，使用仓库默认
+`Build Preview APK` 的 **Run workflow**，选择 `feat/tianwaitian-container-v0-20261017`。
+本分支的 `Tianwaitian Container V0 Preview` 只在该工作流被 GitHub 注册后
+才能从 Actions 面板手动分派；代码提交成功并不等于 APK 已编译。

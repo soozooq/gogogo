@@ -2,6 +2,7 @@ package com.zcshou.gogogo.virtualv0;
 
 import android.content.Context;
 import android.os.Process;
+import android.os.Build;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
@@ -73,7 +74,9 @@ public final class ContainerV0Probe {
                 + "B loader: " + System.identityHashCode(loaderB) + "\n"
                 + "PASS：A → B → A 写入后，B 数据不变\n"
                 + "PASS：两个应用私有测试目录互不串线\n"
+                + "Android API：" + Build.VERSION.SDK_INT + "\n"
                 + "当前 PID：" + Process.myPid() + "\n"
+                + "宿主 UID：" + Process.myUid() + "（A/B 相同）\n"
                 + "限制：仍共享同一 UID、宿主进程和权限；"
                 + "尚非可安装/启动第三方 APK 的完整虚拟容器。";
     }
