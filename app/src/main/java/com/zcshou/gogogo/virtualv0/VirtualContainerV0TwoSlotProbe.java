@@ -49,7 +49,8 @@ public final class VirtualContainerV0TwoSlotProbe {
     private String observedB;
     private String guestShaA;
     private String guestShaB;
-    private final Runnable timeout = () -> finish("FAIL：A/B 双进程验证超时（10 秒）");
+    private final Runnable timeout = () -> finish("FAIL：A/B 双进程验证超时（"
+            + (guestMode ? 20 : 10) + " 秒）");
 
     public VirtualContainerV0TwoSlotProbe(Context context, Callback callback) {
         this(context, callback, false);
