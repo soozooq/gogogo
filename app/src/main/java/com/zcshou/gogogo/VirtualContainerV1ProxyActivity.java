@@ -22,6 +22,7 @@ import com.zcshou.gogogo.virtualv0.ContainerV0TrustedGuest;
 import com.zcshou.gogogo.virtualv0.ContainerV1GuestResources;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -160,8 +161,7 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
                 uiClass.getMethod("snapshot");
                 uiClass.getMethod("dispose");
             } catch (Throwable caught) {
-                failure = caught.getClass().getSimpleName()
-                        + (caught.getMessage() == null ? "" : " · " + caught.getMessage());
+                failure = describeFailure(caught);
             }
             final ContainerV0TrustedGuest readyGuest = candidate;
             final Object readyBridge = bridge;
@@ -213,9 +213,7 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
                                 .append(restoredClicks)
                                 .append(", verified=").append(restoreVerified).append('\n');
                     } catch (Throwable uiFailure) {
-                        error = "FAIL：guest UI 构建/嵌入 · "
-                                + uiFailure.getClass().getSimpleName()
-                                + (uiFailure.getMessage() == null ? "" : " · " + uiFailure.getMessage());
+                        error = "FAIL：guest UI 构建/嵌入 · " + describeFailure(uiFailure);
                         events.append(error).append('\n');
                     }
                 }
@@ -224,6 +222,37 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
                 persist();
             });
         }, "twt-v1-load-guest").start();
+    }
+
+    /**
+     * Reflection must not conceal the actual exception from user reports.
+     * Include bounded causal types + messages and the relevant guest frame.
+     */
+    private static String describeFailure(Throwable failure) {
+        StringBuilder out = new StringBuilder();
+        Throwable cursor = failure;
+        for (int depth = 0; cursor != null && depth < 5; depth++) {
+            if (depth > 0) out.append(" <- ");
+            out.append(cursor.getClass().getSimpleName());
+            String message = cursor.getMessage();
+            if (message != null && !message.isEmpty()) {
+                out.append(": ").append(message, 0, Math.min(message.length(), 220));
+            }
+            for (StackTraceElement frame : cursor.getStackTrace()) {
+                String name = frame.getClassName();
+                if (name.contains("GuestUiV1") || name.contains("ContainerV1GuestResources")) {
+                    out.append(" @ ").append(frame.getClassName()).append(":")
+                            .append(frame.getLineNumber());
+                    break;
+                }
+            }
+            Throwable next = cursor instanceof InvocationTargetException
+                    ? ((InvocationTargetException) cursor).getTargetException()
+                    : cursor.getCause();
+            if (next == cursor) break;
+            cursor = next;
+        }
+        return out.toString();
     }
 
     private int clickCount() {
@@ -345,7 +374,9 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
         if (guestUi != null && guestDispose != null) {
             try {
                 guestDispose.invoke(guestUi);
-                events.append("GUEST VIEW disposed=true\n");
+                events.append(viewCreated
+                        ? "GUEST VIEW disposed=true\n"
+                        : "GUEST UI object disposed=true (viewCreated=false)\n");
             } catch (Throwable failure) {
                 error = "FAIL：guest View dispose · "
                         + failure.getClass().getSimpleName();
@@ -361,7 +392,7 @@ public final class VirtualContainerV1ProxyActivity extends AppCompatActivity {
                 resourceScope.close();
             } catch (RuntimeException failure) {
                 error = "FAIL：guest ResourcesLoader 清理 · "
-                        + failure.getClass().getSimpleName();
+                        + describeFailure(failure);
                 events.append(error).append('\n');
                 persist();
             }
