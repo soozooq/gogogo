@@ -25,6 +25,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.button.MaterialButton;
 import com.zcshou.gogogo.virtualv0.ContainerV0Probe;
 import com.zcshou.gogogo.virtualv0.ContainerV0ExternalApkProbe;
+import com.zcshou.gogogo.virtualv0.VirtualContainerV0OneClickDiagnostic;
 import com.zcshou.gogogo.virtualv0.VirtualContainerV0IpcService;
 import com.zcshou.gogogo.virtualv0.VirtualContainerV0IpcVerdict;
 import com.zcshou.gogogo.virtualv0.VirtualContainerV0TwoSlotProbe;
@@ -32,6 +33,10 @@ import com.zcshou.gogogo.virtualv0.VirtualContainerV0TwoSlotProbe;
 /** Explicit, offline, own-APK-only feasibility experiment. */
 public final class VirtualContainerV0Activity extends AppCompatActivity {
     private TextView report;
+    private MaterialButton autoButton;
+    private MaterialButton stopButton;
+    private MaterialButton copyButton;
+    private VirtualContainerV0OneClickDiagnostic autoDiagnostic;
     private MaterialButton button;
     private MaterialButton ipcButton;
     private MaterialButton stateButton;
@@ -59,7 +64,16 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
         root.addView(GoGoUi.muted(this,
                 "V0 只执行内置的受控测试代码与独立测试 APK；不触碰微信、不请求定位、不安装第二个应用。"),
                 GoGoUi.matchWrap());
-        button = GoGoUi.primaryButton(this, "运行 A → B → A 验证", v -> runProbe());
+        autoButton = GoGoUi.primaryButton(this,
+                "一键诊断 V0 五项（自动生成总报告）", v -> runOneClick());
+        root.addView(autoButton, GoGoUi.matchWrap());
+        stopButton = GoGoUi.secondaryButton(this, "停止一键诊断", v -> stopOneClick());
+        stopButton.setEnabled(false);
+        root.addView(stopButton, GoGoUi.matchWrap());
+        root.addView(GoGoUi.muted(this,
+                "下方五项仅供失败后单独复测；通常只需要上面一键诊断、最后复制一次。"),
+                GoGoUi.matchWrap());
+        button = GoGoUi.secondaryButton(this, "单项：A → B → A 验证", v -> runProbe());
         root.addView(button, GoGoUi.matchWrap());
         ipcButton = GoGoUi.secondaryButton(this, "验证跨进程 Binder 往返", v -> runIpcProbe());
         root.addView(ipcButton, GoGoUi.matchWrap());
@@ -73,20 +87,49 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
                 "验证独立 APK 在双进程执行", v -> runRemoteGuestProbe());
         root.addView(guestProcessButton, GoGoUi.matchWrap());
         report = GoGoUi.reportPanel(this);
-        report.setText("尚未运行。这只是虚拟容器的第一项底层验收，不等于微信兼容成功。");
+        String previous = getPreferences(MODE_PRIVATE).getString("v0_last_complete", "");
+        report.setText(previous.isEmpty()
+                ? "尚未运行。点击「一键诊断 V0 五项」，完成后只需复制一次总报告。"
+                : "上次完成的 V0 一键诊断报告（如需复测请重新运行）：\n" + previous);
         root.addView(report, GoGoUi.matchWrap());
-        root.addView(GoGoUi.secondaryButton(this, "复制 V0 实验结果", v -> {
+        copyButton = GoGoUi.secondaryButton(this, "一键复制总报告 / 单项结果", v -> {
             ClipboardManager clipboard =
                     (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
             if (clipboard != null) {
                 clipboard.setPrimaryClip(ClipData.newPlainText("Container V0", report.getText()));
                 Toast.makeText(this, "已复制实验结果", Toast.LENGTH_SHORT).show();
             }
-        }), GoGoUi.matchWrap());
+        });
+        root.addView(copyButton, GoGoUi.matchWrap());
         root.addView(GoGoUi.muted(this,
                 "注意：不同 ClassLoader / 不同私有目录不构成独立 Linux UID。"),
                 GoGoUi.matchWrap());
         setContentView(scroll);
+    }
+
+    private void runOneClick() {
+        if (autoDiagnostic != null) return;
+        setExperimentButtonsEnabled(false);
+        stopButton.setEnabled(true);
+        copyButton.setEnabled(false); // Do not copy a misleading partial report.
+        autoDiagnostic = new VirtualContainerV0OneClickDiagnostic(
+                getApplicationContext(), (fullReport, complete) -> {
+            if (isFinishing() || isDestroyed()) return;
+            report.setText(fullReport);
+            if (complete) {
+                getPreferences(MODE_PRIVATE).edit()
+                        .putString("v0_last_complete", fullReport).apply();
+                autoDiagnostic = null;
+                setExperimentButtonsEnabled(true);
+                stopButton.setEnabled(false);
+                copyButton.setEnabled(true);
+            }
+        });
+        autoDiagnostic.start();
+    }
+
+    private void stopOneClick() {
+        if (autoDiagnostic != null) autoDiagnostic.cancel();
     }
 
     private void runProbe() {
@@ -116,6 +159,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
         stateButton.setEnabled(enabled);
         fixtureButton.setEnabled(enabled);
         guestProcessButton.setEnabled(enabled);
+        autoButton.setEnabled(enabled);
     }
 
     private void runFixtureProbe() {
@@ -231,6 +275,10 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
     }
 
     @Override protected void onDestroy() {
+        if (autoDiagnostic != null) {
+            autoDiagnostic.cancel();
+            autoDiagnostic = null;
+        }
         if (stateProbe != null) {
             stateProbe.close();
             stateProbe = null;
