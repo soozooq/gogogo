@@ -1,5 +1,20 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-17 — V2 第一阶段：受控 APK Manifest 与 Intent 代理（2.4.20，待真机）
+
+> 上一阶段 2.4.19 已获得 Android 13 V0 5/5、V1 自有资源/UI/恢复/清理 PASS，完整证据仍保留在下方。本次不是重新修复 V1，而是独立的 V2 新实验。
+
+- `containerFixture` 改为在自身 Manifest **只声明一个不导出、无 intent-filter、无权限的 GuestV2DeclaredActivity**。此类确实存在于独立构建 APK 的 DEX，但**绝不调用 Android 系统直接启动它**，避免把组件声明误解为已安装的 Activity。
+- 增加无网络/定位能力的纯 Java `GuestV2Route.handle(action,payload)` 及五项 JVM 单测。只接受硬编码的 V2 合成 Intent action 和 1–40 字母数字/短横/下划线字符；拒绝未知 action、URL、空值与超长值。
+- 新增受控 APK 检查器 `ContainerV2ManifestRouteProbe`：使用 V0 的同一受信任 fixture loader，从内置只读 APK 读取 `PackageManager.getPackageArchiveInfo(GET_ACTIVITIES | GET_PERMISSIONS)`，要求**包名完全符合、恰好一个非导出 Activity、无请求权限、目标类及路由类均来自独立 DEX**；随后仅反射执行 `GuestV2Route.handle` 并核对返回值。
+- 新增天外天宿主的非导出 `VirtualContainerV2Activity`（控制页）及 `VirtualContainerV2ProxyActivity`（真正由系统启动的**宿主代理**）。用户在控制页点一次按钮，控制页发出显式 Intent，代理在异步线程检验并执行独立 APK 路由，使用 `setResult()` 回传信息；控制页校验 request nonce、响应、进程 PID/UID、SHA-256 和 Manifest 判定，才允许显示 PASS。
+- V0 原有一键五项与 V1 页面保持不变；V0 的一次复制现在**自动附上 V1 与最近一次 V2 报告**。无须多次逐项复制；若不运行 V2，就不会凭空把它标记 PASS。
+- CI 严格规定 fixture 只有这一个不导出的 Activity 且没有其他组件或权限，两个宿主 V2 页面都不导出；要求从实际宿主 APK Manifest 和嵌入 fixture APK Manifest 读到预期 Activity；既有 V0/V1 资源/UI、Gradle 和 Lint 回归继续执行。
+- **特别限制**：此处演示的是“从未安装的独立 APK *读组件声明* + 启动已注册的宿主代理 + 在宿主 UID 下执行已知 guest 处理函数”。不代表未安装 Guest Activity 的真实 Android 生命周期、独立应用进程/UID 或任意第三方 APK 可运行；不验证微信/抖音/QQ 的位置。
+
+**Android 13 真机步骤（只复制一次）**：升级 2.4.20 → 进入诊断中心的 Virtual Container V0 页面 → 点击 V2 控制页 → 点「一键运行 V2 组件 / Intent 往返」→ 等返回 PASS/FAIL → 回 V0 → 点「一键诊断 V0 五项」回归检查 → 最后**一次复制 V0 总报告**（自动带上最近 V1/V2 附录）。V1 的 2.4.19 成功记录可以保留为历史基准，不强迫重复打开 V1；如需要验证新 fixture 的 V1 UI，再补测。
+
+---
 ## 2026-10-17 22:04 — 2.4.19 真机 V1 资源和界面联合验收通过
 
 > 用户提交 Android 13（API 33）真机截图与 **一份**包含 V0 五项及 V1 附录的完整诊断报告。此节是 **实际设备运行证据**，优先于下方历史记录中的“2.4.19 待真机验证”，不代表所有 Android 机型或任意第三方 APK 可用。
