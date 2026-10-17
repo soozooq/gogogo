@@ -142,6 +142,15 @@ tasks.matching {
     dependsOn 'stageContainerV0Fixture'
 }
 
+// AGP's release Lint model reads the generated asset directory directly.
+// It does not propagate a TaskProvider sourceDir's builtBy relationship here.
+// Declare the exact producer dependency to satisfy Gradle 8.13 validation.
+tasks.matching {
+    it.name == 'generateReleaseLintVitalReportModel'
+}.configureEach {
+    dependsOn 'stageContainerV0Fixture'
+}
+
 
 dependencies {
     // GoGoGo Lab: active open-source GPU map renderer.
