@@ -1,0 +1,57 @@
+name: Tianwaitian Container V0 Preview
+
+on:
+  push:
+    branches:
+      - feat/tianwaitian-container-v0-20261017
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-container-v0:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Configure dummy map keys for offline container experiment
+        shell: bash
+        run: |
+          cat > local.properties <<'EOF'
+          TENCENT_MAP_KEY=DUMMY
+          MAPS_API_KEY=DUMMY
+          MAPS_SAFE_CODE=DUMMY
+          EOF
+
+      - name: Run Java unit tests and build Android debug APK
+        shell: bash
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:testDebugUnitTest :app:assembleDebug --no-daemon
+
+      - name: Save unit test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Container-V0-unit-tests
+          path: app/build/test-results/testDebugUnitTest/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Save phone-installable V0 debug APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tianwaitian-Container-V0-debug
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
