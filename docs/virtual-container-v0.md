@@ -44,3 +44,23 @@ GitHub Actions 入口：如果自动 push/PR 没有产生工作流运行记录�
 现有 `Build Preview APK` 工作流在本 PR 分支上增加仅手动触发的第二项构建。它使用固定的上游 NewBlackbox commit `89b59836c66f173756a4ae258cf379a957649820`，JDK 21、NDK `29.0.13846066`，尝试编译真实虚拟化引擎的独立 ARM64 debug APK；不会将其源码混进天外天本体。
 
 在 GitHub Actions 进入已注册的 `Build Preview APK`，选择本分支并 Run workflow。产物名称 `NewBlackbox-ARM64-REFERENCE-UNVERIFIED`，**未做安全审计、未做真机验证，请勿登录真实微信或导入隐私数据**。没有真实 Actions 运行与 artifact 前，不能宣称 APK 构建成功。
+
+
+## 2026-10-17 第二轮：真实 Android 跨进程 IPC 探针
+
+该分支另增加一个**不导出、不读位置**的 `:virtualv0` 测试 Service。
+用户手动点击「验证跨进程 Binder 往返」后，主进程使用
+Android Messenger/Binder 向独立进程发送一次消息，并接收远端 PID/UID。
+
+判定规则：主/远端 PID 均有效且不同；宿主与远端 UID 均有效且相同。
+错误、绑定失败、远端断开或超过 7 秒无回应会显示 FAIL。
+4 项 JVM 单元测试覆盖正常、相同 PID、不同 UID 和非法身份值。
+
+注意：这只是**真正的两个 Linux 进程**之间的 IPC 证据，不是
+**两个独立 Linux UID**，也不是第三方 APK 虚拟化成功。
+该实验不启动现有 ServiceGo、Shizuku 或任何定位通道。
+
+真机验收顺序：先测原 A → B → A；再运行跨进程 IPC 验证；
+重复两轮检查 PID 每次可能变化而 UID 保持一致。若出现 FAIL，
+先记录完整报告，不进入第三方应用安装/微信实验。
+CI 尚未实际执行通过，不能据此宣称已完成 Android 13 验收。
