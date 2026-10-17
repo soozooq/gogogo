@@ -1,5 +1,23 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-17 2.4.18 真机故障与 2.4.19 修复候选
+
+**新实际反馈**：Android 13（API 33），设备 2026-10-17 21:34 的截图与一键总报告。`com.soozooq.gogogo.test`、宿主 PID `12402`、UID `10441`、fixture APK SHA-256 `15f0191bd6058d1a6cdb3a7a83dad113167a48cd65fd18fb99b980e45bfd51cf`。V0 **5/5 PASS**。V1 **FAIL**：`生命周期桥加载=true`，`独立 APK 创建 View=false`、`独立 APK 自有资源验证=false`、`guest 点击数=0`。
+
+日志已明确解开反射异常：`GuestUiV1.createView()` 到 `stage=inflate guest_panel.xml` 时，XML 第 31 行的 `Button` 被 AppCompat 加载器创建，而 Guest Context 使用系统 `Theme_Material_Light_NoActionBar`。底层异常：`IllegalArgumentException: The style on this component requires your app theme to be Theme.AppCompat (or a descendant)`。此报错由这次手机日志直接支持，不再把它归因于资源哈希、包名或资源表冲突。
+
+- 资源 Provider 清理旧错误在 2.4.18 日志中**不再出现**；日志已经正确写出 `GUEST UI object disposed=true (viewCreated=false)`，避免 `View` 未创建却宣称清理了 View 的误报。
+- 因 `LayoutInflater.from(hostContext).cloneInContext(guestViewContext)` 继承宿主 AppCompat Activity 的 `Factory2`，短标签 `<Button>` 会变成 `AppCompatButton`；依赖 AppCompat 主题，而 Guest 实验刻意只采用 framework 主题。AndroidX 官方 `AppCompatViewInflater` 的 `switch(name)` 对 `Button`、`TextView`、`ImageView` 等短标签执行自动替换。
+
+**2.4.19 修复策略（尚未真机验证）：**
+
+1. 独立 APK 的 XML 布局中全部使用完整类名 `<android.widget.Button>`、`<android.widget.TextView>`、`<android.widget.ImageView>`，不触发 AppCompat 的短名称替换；它们仍然是 XML 打包资源，而非改为宿主硬编码界面。
+2. 复制 application Context 的系统 LayoutInflater 而不是 Activity 的 inflater，向 Guest 资源 Context `cloneInContext(this)`，避免宿主 Activity `Factory2` 的 AppCompat 主题要求；同时在运行时拒绝客体控件类被替换成 `androidx.appcompat.*`。
+3. 保留 2.4.18 的资源加载、清理、错误阶段与根因链日志、V0 五项和一次复制总报告；新增 CI 检查禁止 Guest XML 回退成短标签、禁止恢复 Activity inflater。
+
+**下一步验收**：两条 GitHub Actions 真正构建通过后再安装 2.4.19。在手机上先只打开 V1，看到独立 APK 的标题、粉紫色圆角图片和按钮才进行点击、后台、重建与退出，再回 V0 一次复制总日志。若仍失败，保持当前页面、退出并只复制 V1 报告；不要求连续试多轮。
+
+---
 ## 2.4.18 云端构建复查通过（2026-10-17）
 
 - 用户 2.4.17 真机失败的最小复现与诊断记录详见下一节；2.4.18 是针对性**待真机确认修复候选**，不得宣称资源 XML 显示已经被手机证实。
