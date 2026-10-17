@@ -100,5 +100,24 @@ fixture_v1 = (ROOT / "containerFixture/src/main/java/com/soozooq/tianwaitian/fix
 require("class GuestLifecycleV1" in fixture_v1 and "onEvent(String event)" in fixture_v1,
         "guest lifecycle state machine missing from separate APK")
 
+# V1 UI must be backed by code in the independently compiled fixture APK;
+# host proxy may only receive the View and attach it to a private container.
+fixture_ui = (ROOT / "containerFixture/src/main/java/com/soozooq/tianwaitian/fixture/GuestUiV1.java").read_text(encoding="utf-8")
+require("class GuestUiV1" in fixture_ui
+        and "View createView()" in fixture_ui
+        and "setOnClickListener" in fixture_ui
+        and "getClickCount()" in fixture_ui and "void dispose()" in fixture_ui,
+        "independently packaged interactive guest View contract missing")
+require("GuestUiV1" in v1 and "guestFrame.addView(guestView)" in v1,
+        "host proxy must render the actual returned guest View")
+require("onSaveInstanceState(Bundle outState)" in v1
+        and "KEY_CLICKS" in v1 and "recreate()" in v1
+        and "restoreVerified" in v1 and "guestDispose.invoke(guestUi)" in v1,
+        "guest UI recreation and cleanup evidence missing")
+require("VirtualContainerV0Activity" in screen
+        or "VirtualContainerV1ProxyActivity" in screen,
+        "V0/V1 navigation missing")
+
+
 print("V0/V1 static contract PASS: controlled APK, five-step one-click report, "
       "two private PIDs, trusted lifecycle proxy and stable main package.")
