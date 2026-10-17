@@ -1,5 +1,15 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2.4.19 双工作流通过、等待真机主题修复验收（2026-10-17）
+
+- 编译基准：`main` commit `f93f4ff9631d2dbb6c40b842d00a8905d539de35`；版本 `2.4.19-tianwaitian-guest-theme` / `versionCode 2400087` / `com.soozooq.gogogo.test`。
+- [Build Preview APK #39037389104](https://github.com/soozooq/gogogo/actions/runs/39037389104) **success**，静态契约、fixture JVM 单测、宿主 Java 编译、APK Manifest/嵌套资源打包验证成功。
+- [Build Check #39037389088](https://github.com/soozooq/gogogo/actions/runs/39037389088) **success**，完整 Gradle / Lint 通过；未关闭 Lint 或回退已有 V0 诊断。
+- 唯一 Actions APK 从 Artifact `gogogo-unified-labs-preview`（ID `12102717779`）提取，大小 `40336298` 字节，宿主 SHA-256 `4eb1746c5f9a8ccc361918caa4ea0c0a6e6ae7d55814986246a7726e3674ed6f`；内置独立测试 APK SHA-256 `c6dc44d6a335ee012710f8a1e566cc4bbe1e76804bcda9f7a6953fa07075f520`。宿主与独立 APK 的 ZIP CRC 均成功，内置资源表、guest XML 布局、圆角 Drawable 和 `GuestUiV1` / `GuestLifecycleV1` 均实际存在。
+- 本版只修 Guest XML 与 inflater 对 AppCompat Activity Factory2 的意外依赖：Guest XML 使用 `<android.widget.Button>` / `<android.widget.TextView>` / `<android.widget.ImageView>`；Inflater 从 application 而非 AppCompat Activity 获取，再 clone 到 guest 专用 Context；资源验证日志多报告 `buttonClass`，明确原生类来源。
+- **手机运行状态：待验收，不能据 CI success 断言 2.4.19 V1 PASS。** 用户只需进入 V1，若仍失败直接回 V0 一次复制总报告，无需再做无意义的重建或反复操作；显示成功再验证点击、后台、重建、退出，V0 一键 5/5 作为回归基准。
+
+---
 ## 2026-10-17 2.4.18 真机故障与 2.4.19 修复候选
 
 **新实际反馈**：Android 13（API 33），设备 2026-10-17 21:34 的截图与一键总报告。`com.soozooq.gogogo.test`、宿主 PID `12402`、UID `10441`、fixture APK SHA-256 `15f0191bd6058d1a6cdb3a7a83dad113167a48cd65fd18fb99b980e45bfd51cf`。V0 **5/5 PASS**。V1 **FAIL**：`生命周期桥加载=true`，`独立 APK 创建 View=false`、`独立 APK 自有资源验证=false`、`guest 点击数=0`。
