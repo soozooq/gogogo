@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Build-only fixture: no launcher, provider, service, receiver or permissions. -->
-    <application android:label="Tianwaitian V0 Test Fixture" android:hasCode="true" />
+    <!-- Build-only trusted fixture: NEVER installed separately by Tianwaitian.
+         The declared guest Activity is for archive manifest inspection ONLY. -->
+    <application android:label="Tianwaitian V2 Trusted Fixture" android:hasCode="true">
+        <activity
+            android:name=".GuestV2DeclaredActivity"
+            android:exported="false" />
+    </application>
 </manifest>
