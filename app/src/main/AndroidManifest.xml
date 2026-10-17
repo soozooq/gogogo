@@ -189,6 +189,11 @@
             android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
+            android:name=".VirtualContainerV0Activity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
             android:name=".IsolatedCapsuleLabActivity"
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />

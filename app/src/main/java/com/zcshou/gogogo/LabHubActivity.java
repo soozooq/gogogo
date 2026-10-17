@@ -191,7 +191,10 @@ public final class LabHubActivity extends AppCompatActivity {
                 new Entry("Cross Profile Observatory", "跨资料空间实验",
                         CrossProfileObservatoryActivity.class),
                 new Entry("Isolated Capsule", "隔离进程资源实验",
-                        IsolatedCapsuleLabActivity.class)
+                        IsolatedCapsuleLabActivity.class),
+                new Entry("Virtual Container V0",
+                        "同名 APK 双加载器与 A/B 文件验证",
+                        VirtualContainerV0Activity.class)
         });
 
         root.addView(GoGoUi.gap(this, 18));
