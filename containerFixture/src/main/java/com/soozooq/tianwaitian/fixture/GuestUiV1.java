@@ -75,7 +75,14 @@ public final class GuestUiV1 {
                 @Override public AssetManager getAssets() { return guestResources.getAssets(); }
                 @Override public Object getSystemService(String name) {
                     if (Context.LAYOUT_INFLATER_SERVICE.equals(name)) {
-                        return LayoutInflater.from(hostContext).cloneInContext(this);
+                        // Activity inflater has AppCompat's Factory2 installed.
+                        // That substitutes <Button> with AppCompatButton, which
+                        // requires Theme.AppCompat and breaks this deliberately
+                        // framework-themed, resource-isolated guest Context.
+                        // Clone the APPLICATION inflater (no AppCompat Activity
+                        // Factory2) so framework View constructors are used.
+                        return LayoutInflater.from(hostContext.getApplicationContext())
+                                .cloneInContext(this);
                     }
                     return super.getSystemService(name);
                 }
@@ -95,6 +102,12 @@ public final class GuestUiV1 {
                     || image.getDrawable() == null) {
                 throw new IllegalStateException("guest XML did not inflate expected views");
             }
+            // Do not count AppCompat widget inflation as a guest resource PASS:
+            // this diagnostic promises standalone Android framework widgets.
+            if (button.getClass().getName().startsWith("androidx.appcompat.")) {
+                throw new IllegalStateException("AppCompat View leaked into guest XML: "
+                        + button.getClass().getName());
+            }
             currentStage = "wire guest button listener";
             button.setOnClickListener(v -> {
                 if (disposed) return;
@@ -110,7 +123,8 @@ public final class GuestUiV1 {
                     + "；marker=" + marker
                     + "；layout=" + layoutName
                     + "；title=" + title
-                    + "；drawable=" + image.getDrawable().getClass().getSimpleName();
+                    + "；drawable=" + image.getDrawable().getClass().getSimpleName()
+                    + "；buttonClass=" + button.getClass().getName();
             currentStage = "complete";
             return panel;
         } catch (RuntimeException error) {
