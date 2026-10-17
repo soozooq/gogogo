@@ -36,6 +36,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
     private MaterialButton autoButton;
     private MaterialButton stopButton;
     private MaterialButton copyButton;
+    private MaterialButton v1Button;
     private VirtualContainerV0OneClickDiagnostic autoDiagnostic;
     private MaterialButton button;
     private MaterialButton ipcButton;
@@ -86,6 +87,10 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
         guestProcessButton = GoGoUi.secondaryButton(this,
                 "验证独立 APK 在双进程执行", v -> runRemoteGuestProbe());
         root.addView(guestProcessButton, GoGoUi.matchWrap());
+        v1Button = GoGoUi.secondaryButton(this,
+                "V1：打开受控 APK 生命周期代理页", v ->
+                        startActivity(new Intent(this, VirtualContainerV1ProxyActivity.class)));
+        root.addView(v1Button, GoGoUi.matchWrap());
         report = GoGoUi.reportPanel(this);
         String previous = getPreferences(MODE_PRIVATE).getString("v0_last_complete", "");
         report.setText(previous.isEmpty()
@@ -96,8 +101,14 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
             ClipboardManager clipboard =
                     (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
             if (clipboard != null) {
-                clipboard.setPrimaryClip(ClipData.newPlainText("Container V0", report.getText()));
-                Toast.makeText(this, "已复制实验结果", Toast.LENGTH_SHORT).show();
+                String all = report.getText().toString();
+                String v1 = getSharedPreferences(VirtualContainerV1ProxyActivity.PREFS,
+                        MODE_PRIVATE).getString(VirtualContainerV1ProxyActivity.LAST_RESULT, "");
+                if (!v1.isEmpty()) {
+                    all += "\n\n========== V1 生命周期实验附录（最近一次）==========\n" + v1;
+                }
+                clipboard.setPrimaryClip(ClipData.newPlainText("Tianwaitian V0+V1", all));
+                Toast.makeText(this, "总报告已复制（含可用的 V1 附录）", Toast.LENGTH_SHORT).show();
             }
         });
         root.addView(copyButton, GoGoUi.matchWrap());
@@ -160,6 +171,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
         fixtureButton.setEnabled(enabled);
         guestProcessButton.setEnabled(enabled);
         autoButton.setEnabled(enabled);
+        v1Button.setEnabled(enabled);
     }
 
     private void runFixtureProbe() {
