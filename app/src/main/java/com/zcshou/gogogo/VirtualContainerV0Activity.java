@@ -26,12 +26,15 @@ import com.google.android.material.button.MaterialButton;
 import com.zcshou.gogogo.virtualv0.ContainerV0Probe;
 import com.zcshou.gogogo.virtualv0.VirtualContainerV0IpcService;
 import com.zcshou.gogogo.virtualv0.VirtualContainerV0IpcVerdict;
+import com.zcshou.gogogo.virtualv0.VirtualContainerV0TwoSlotProbe;
 
 /** Explicit, offline, own-APK-only feasibility experiment. */
 public final class VirtualContainerV0Activity extends AppCompatActivity {
     private TextView report;
     private MaterialButton button;
     private MaterialButton ipcButton;
+    private MaterialButton stateButton;
+    private VirtualContainerV0TwoSlotProbe stateProbe;
     private ServiceConnection ipcConnection;
     private boolean ipcBound;
     private final Handler ipcHandler = new Handler(Looper.getMainLooper());
@@ -57,6 +60,9 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
         root.addView(button, GoGoUi.matchWrap());
         ipcButton = GoGoUi.secondaryButton(this, "验证跨进程 Binder 往返", v -> runIpcProbe());
         root.addView(ipcButton, GoGoUi.matchWrap());
+        stateButton = GoGoUi.secondaryButton(this,
+                "验证双进程 A/B 状态隔离", v -> runTwoSlotProbe());
+        root.addView(stateButton, GoGoUi.matchWrap());
         report = GoGoUi.reportPanel(this);
         report.setText("尚未运行。这只是虚拟容器的第一项底层验收，不等于微信兼容成功。");
         root.addView(report, GoGoUi.matchWrap());
@@ -77,6 +83,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
     private void runProbe() {
         button.setEnabled(false);
         ipcButton.setEnabled(false);
+        stateButton.setEnabled(false);
         report.setText("正在离线测试两份独立 DexClassLoader …");
         android.content.Context app = getApplicationContext();
         new Thread(() -> {
@@ -94,12 +101,30 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
                 report.setText(finalResult);
                 button.setEnabled(true);
                 ipcButton.setEnabled(true);
+                stateButton.setEnabled(true);
             });
         }, "virtual-container-v0").start();
     }
+    private void runTwoSlotProbe() {
+        button.setEnabled(false);
+        ipcButton.setEnabled(false);
+        stateButton.setEnabled(false);
+        report.setText("正在保持 A/B 两个进程连接并执行 A → B → A → B 验证…");
+        stateProbe = new VirtualContainerV0TwoSlotProbe(getApplicationContext(), result -> {
+            stateProbe = null;
+            if (isFinishing() || isDestroyed()) return;
+            report.setText(result);
+            button.setEnabled(true);
+            ipcButton.setEnabled(true);
+            stateButton.setEnabled(true);
+        });
+        stateProbe.start();
+    }
+
     private void runIpcProbe() {
         button.setEnabled(false);
         ipcButton.setEnabled(false);
+        stateButton.setEnabled(false);
         report.setText("正在验证独立 Android 进程的 Messenger/Binder 往返…");
         final Messenger receiver = new Messenger(new Handler(Looper.getMainLooper(), msg -> {
             if (msg.what != VirtualContainerV0IpcService.MSG_PONG) return false;
@@ -151,6 +176,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
             report.setText(result);
             button.setEnabled(true);
             ipcButton.setEnabled(true);
+            stateButton.setEnabled(true);
         }
         clearIpc();
     }
@@ -168,6 +194,10 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
     }
 
     @Override protected void onDestroy() {
+        if (stateProbe != null) {
+            stateProbe.close();
+            stateProbe = null;
+        }
         clearIpc();
         super.onDestroy();
     }
