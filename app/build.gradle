@@ -72,8 +72,7 @@ android {
     sourceSets {
         main {
             aidl.srcDirs = ['src/main/aidl']
-            // Built from a separate APK module and bundled only as a trusted V0 fixture.
-            assets.srcDir("$buildDir/generated/containerV0Assets")
+            // Build-generated V0 assets are attached below via their producing task.
         }
     }
 
@@ -131,6 +130,11 @@ tasks.register('stageContainerV0Fixture', Copy) {
     }
     into(layout.buildDirectory.dir('generated/containerV0Assets'))
 }
+
+// Register the Copy task itself as the asset source, NOT its raw output path.
+// This lets Gradle/AGP infer builtBy for merge, lint model and release tasks,
+// fixing implicit dependency validation in :app:generateReleaseLintVitalReportModel.
+android.sourceSets.main.assets.srcDir(tasks.named('stageContainerV0Fixture'))
 
 tasks.matching {
     it.name == 'mergeDebugAssets' || it.name == 'mergeReleaseAssets'
