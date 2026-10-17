@@ -26,7 +26,9 @@ public final class ContainerV0Probe {
         @Override protected Class<?> loadClass(String name, boolean resolve)
                 throws ClassNotFoundException {
             if (!CLASS_NAME.equals(name)) return super.loadClass(name, resolve);
-            synchronized (getClassLoadingLock(name)) {
+            // Android's public ClassLoader API does not expose getClassLoadingLock.
+            // Each GuestLoader has its own intrinsic lock, sufficient for this test.
+            synchronized (this) {
                 Class<?> clazz = findLoadedClass(name);
                 if (clazz == null) clazz = findClass(name); // Child-first for this one test class.
                 if (resolve) resolveClass(clazz);
