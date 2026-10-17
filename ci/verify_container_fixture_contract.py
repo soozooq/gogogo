@@ -136,6 +136,8 @@ resource_loader = (host_source / "ContainerV1GuestResources.java").read_text(enc
 require("ResourcesProvider.loadFromApk(fd)" in resource_loader
         and "new ResourcesLoader()" in resource_loader
         and "isolated.addLoaders(loader)" in resource_loader
+        and "Resources.getSystem().getAssets()" in resource_loader
+        and "host.getAssets()" not in resource_loader
         and "resources.removeLoaders(loader)" in resource_loader
         and "loader.clearProviders()" in resource_loader
         and resource_loader.index("loader.clearProviders();\n            provider.close()") > 0
