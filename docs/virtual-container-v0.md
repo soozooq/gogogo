@@ -1,5 +1,27 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-17 2.4.15 真机一键联合验收（V0 + V1）
+
+> 用户提供完整「一次复制」报告，测试时间 17:24（设备本地时间）；以下为实测观察，不是构建期模拟或对未安装第三方应用的证明。此前 2.4.14 验收记录保持不变。
+
+- 版本：`2.4.15-tianwaitian-oneclick-v1` / `versionCode 2400083`；基准主分支提交 `e4da2552cfb61a7b4b2bfa1dc998ab1fe108a5b1`。Build Preview APK [39015164634](https://github.com/soozooq/gogogo/actions/runs/39015164634) 与 Build Check [39015164642](https://github.com/soozooq/gogogo/actions/runs/39015164642) 均完成且成功。
+- 真机：Android API 33，应用包名 `com.soozooq.gogogo.test`；宿主 PID `28239`、UID `10441`。PID 是此次运行的瞬时标识，不应作为长期固定判据。
+- **V0 自动总诊断 5/5 PASS、FAIL/TIMEOUT=0，证明五项串行调度完成且可一次复制汇总：**
+  - 1/5 两份同名类 Class 不同：A loader `184921022`、B loader `246559775`，A→B→A 后 B 文件状态保留。
+  - 2/5 Binder：主 PID `28239` ↔ 远端 PID `16417`，UID 都是 `10441`。
+  - 3/5 双进程：A PID `16417`、B PID `16445`、宿主 PID `28239`；三者 PID 各不同但 UID 相同；两标记均保留 `true`。
+  - 4/5 单宿主的受控 APK DEX 装载与方法执行：两份 guest Class 不同、静态数据互不串线。
+  - 5/5 独立 APK 在 A/B 两个 Android 子进程分别运行，标记保留 `true`，报告远端 APK SHA-256。
+- **V1 首次受控生命周期桥真机验收：21/21 次 guest 事件转发成功，最终 `guestState=DESTROYED`，累计 `events=21`、`resumes=4`，未观察到 FAIL、错误状态转换或遗漏事件。**
+  - 宿主前期先记录 `HOST onCreate/onStart/onResume`，待异步 APK DEX 装载完成才集中回放成 `GUEST #1/#2/#3`，次序与设计一致，但不意味着 guest 在系统回调的同一时刻同步执行。
+  - 完整 guest 序列为 `onCreate→onStart→onResume`，接着 **3 轮** `onPause→onStop→onRestart→onStart→onResume`，最后 `onPause→onStop→onDestroy`；状态机最终 DESTROYED。
+  - V1 代理执行与宿主使用同一 PID `28239` 和 UID `10441`，只是把真实宿主 Activity 的系统事件反射转发到单独 fixture APK 的**普通 Java 对象**。
+- **本次 V0 和 V1 共用的受控 APK SHA-256：** `856b67659b02f032e9c50298661300b4473cd21f1ffac22aa46972fa9b40cf3e`。该值不同于 2.4.14 时的 `97366bc4...` 是允许的，因为新 APK 新增了 V1 状态机；关键是本次 V0 与 V1 哈希相同。
+- 用户仅复制一次 V0 总日志，即包含上述五项 V0 和 V1 的最近一次附录，**一键总诊断/一次复制需求在本次手机实测中成立**。
+
+**边界与下一步：** 本次并未验证 guest Android Activity 本身的创建、真实资源（layout、drawable）解析、guest View 的创建/触摸输入、配置更改时状态保存、独立 UID 或 Android PackageManager/ActivityManager 代理，也没有微信/抖音/QQ 定位测试。V1 下一里程碑建议实现**受控 guest APK 自己定义的可显示/可点击 View 契约**，由注册的宿主代理展示；对点击、前后台、旋转/重建、退出清理分别记录 PASS/FAIL。必须保留 V0 5/5 作为每版回归门槛，不能把代理 View 误称为系统原生启动未安装 APK 的 Activity。
+
+---
 ## V0 一键诊断 + V1 生命周期桥（2026-10-17 开发中）
 
 **核心交互原则：一个按钮完成五项、最后只复制一份日志。**
