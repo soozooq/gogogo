@@ -110,10 +110,10 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
             boolean sameUid = remoteUid == Process.myUid();
             finishIpc((VirtualContainerV0IpcVerdict.passed(Process.myPid(),
                     Process.myUid(), remotePid, remoteUid) ? "PASS" : "FAIL")
-                    + "：Binder 消息往返\\n"
-                    + "宿主 PID=" + Process.myPid() + "；远端 PID=" + remotePid + "\\n"
-                    + "宿主 UID=" + Process.myUid() + "；远端 UID=" + remoteUid + "\\n"
-                    + "不同 PID=" + distinctProcess + "；相同 UID=" + sameUid + "\\n"
+                    + "：Binder 消息往返\n"
+                    + "宿主 PID=" + Process.myPid() + "；远端 PID=" + remotePid + "\n"
+                    + "宿主 UID=" + Process.myUid() + "；远端 UID=" + remoteUid + "\n"
+                    + "不同 PID=" + distinctProcess + "；相同 UID=" + sameUid + "\n"
                     + "限制：仍为同包名、同 UID；不代表第三方 APK 虚拟化。");
             return true;
         }));
