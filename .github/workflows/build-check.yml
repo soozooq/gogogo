@@ -83,6 +83,9 @@ jobs:
       - name: Verify embedded fixture and isolated IPC contract
         run: python3 ci/verify_container_fixture_contract.py
 
+      - name: Compile and smoke-test pure V0 Java without Android SDK
+        run: bash ci/run_container_v0_jvm_smoke.sh
+
       # 启动构建
       - name: Build with Gradle
         shell: bash
