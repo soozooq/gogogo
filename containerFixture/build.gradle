@@ -1,0 +1,21 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.soozooq.tianwaitian.fixture'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.soozooq.tianwaitian.fixture'
+        minSdk 27
+        targetSdk 35
+        versionCode 1
+        versionName 'v0.1'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+}
