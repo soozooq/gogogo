@@ -1,5 +1,23 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-17 2.4.17 真机故障与 2.4.18 修复候选（尚未通过真机）
+
+**Android 13 / API 33 实测**：2026-10-17 21:02 的用户一键总报告。V0 五项 5/5 PASS，应用包 `com.soozooq.gogogo.test`、主 PID `3364`、UID `10441`，两个子进程 PID `6013` 和 `6049`；受控 fixture APK SHA-256 `46a4196adb330499c32fff21837d7da6e2883c2df9508f307a8b1f1f548581f4`（与本版构建校验一致）。**V1 资源布局实验 FAIL**，界面并未出现；严禁以 CI success 宣称 V1 通过。
+
+- V1 真机日志 `生命周期桥加载=true`、`独立 APK 创建 View=false`、`独立 APK 自有资源验证=false`、`guest 点击数=0`、`状态恢复一致=false`；实际错误 `FAIL：guest UI 构建/嵌入 · InvocationTargetException`，且在重建后再次出现。由此只能判断反射中的 guest 创建调用失败，**不能确认当时内部根因**。
+- 另有确切清理故障：`FAIL：guest ResourcesLoader 清理 · IllegalStateException`。官方 API 指出 ResourcesProvider 若仍被 ResourcesLoader 使用则 `close()` 会抛出 IllegalStateException；旧版先 `resources.removeLoaders(loader)` 却未调用 `loader.clearProviders()`，释放顺序不完整。
+- 旧版在 `viewCreated=false` 时仍显示 `GUEST VIEW disposed=true`，这仅证明 `GuestUiV1.dispose()` 被调用，并**不能证明实际 View 被创建和释放**；修复版区分 guest 对象清理与真实已创建 View 的释放。
+
+**2.4.18 修复候选**（源码自 `main` 提交）:
+
+1. 修正资源关闭顺序为 `Resources.removeLoaders(loader)` → `loader.clearProviders()` → `provider.close()`，保持 API >=30 的 guard，仍在主线程操作。
+2. 独立资源对象使用 `Resources.getSystem().getAssets()` 为基础，再附加 guest APK provider，避免将两个通常同为 `0x7f` 的宿主与 guest 资源表叠在一起；仍只用 Android 公共 API，**资源加载修复尚未经真机证明**。
+3. `GuestUiV1.createView` 在 package lookup、marker、string、drawable、layout inflate、控件验证等每一步记录 stage。宿主展开 `InvocationTargetException` 的 `getTargetException()/getCause()`，记录受控的异常类、最深层原因及相关代码位置，一次复制总日志即可定位。
+4. 增加 CI 静态约束：必须保留资源独立表、Loader/Provider 正确解绑与异常根因报告；V0 五项一键诊断逻辑未修改。
+
+**真机复测原则**：升级 2.4.18 后可先直接打开 V1，若出现失败，只需回 V0 点击一次复制总报告，并贴出含根因链的 V1 附录；不需要反复点“重建”和“系统设置”来试错。若 V1 页面正常显示，再运行已有点击/后台/重建/退出流程，并用 V0 五项作为回归检查。**没有数据时不要宣称修复已成功。**
+
+---
 ## 2.4.17 第三阶段云端构建验收（2026-10-17）
 
 - 本轮代码版本 `2.4.17-tianwaitian-guest-res` / versionCode `2400085` / 宿主应用 ID `com.soozooq.gogogo.test`。
