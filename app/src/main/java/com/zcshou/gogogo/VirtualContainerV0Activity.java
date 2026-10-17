@@ -56,7 +56,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
                 "Android 13 · 同名类加载 · 私有文件隔离",
                 v -> finish());
         root.addView(GoGoUi.muted(this,
-                "只从天外天自身 APK 加载可信测试类；不接触微信、不请求定位、不安装第三方应用。"),
+                "V0 只执行内置的受控测试代码与独立测试 APK；不触碰微信、不请求定位、不安装第二个应用。"),
                 GoGoUi.matchWrap());
         button = GoGoUi.primaryButton(this, "运行 A → B → A 验证", v -> runProbe());
         root.addView(button, GoGoUi.matchWrap());
@@ -124,7 +124,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
             } catch (Throwable failure) {
                 result = "FAIL：独立 APK 实验 · " + failure.getClass().getSimpleName()
                         + (failure.getMessage() == null ? "" : " · " + failure.getMessage())
-                        + "\\n请复制此结果，失败不代表虚拟容器功能已实现。";
+                        + "\n请复制此结果，失败不代表虚拟容器功能已实现。";
             }
             final String finalResult = result;
             runOnUiThread(() -> {
