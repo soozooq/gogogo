@@ -1,5 +1,20 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-17 22:04 — 2.4.19 真机 V1 资源和界面联合验收通过
+
+> 用户提交 Android 13（API 33）真机截图与 **一份**包含 V0 五项及 V1 附录的完整诊断报告。此节是 **实际设备运行证据**，优先于下方历史记录中的“2.4.19 待真机验证”，不代表所有 Android 机型或任意第三方 APK 可用。
+
+- 安装版本：`2.4.19-tianwaitian-guest-theme` / `versionCode 2400087` / 宿主包名 `com.soozooq.gogogo.test`；代码构建基准 `f93f4ff9631d2dbb6c40b842d00a8905d539de35`，Preview/Build Check 均为 success（见下方 CI 记录）。
+- 真机：宿主 PID `23965`，UID `10441`。V0 一键运行 **5/5 PASS、FAIL/TIMEOUT=0**，主机与 Binder 子进程 `26055`，第二个 A/B 子进程 `26087`；不同 PID，同一个 UID。ClassLoader A/B `205416889`、`148869630`，文件与静态状态互不串线。
+- 本次 **受控独立测试 APK SHA-256**：`c6dc44d6a335ee012710f8a1e566cc4bbe1e76804bcda9f7a6953fa07075f520`。V0 的 DEX/跨进程执行与 V1 资源报告都指向同一哈希，与 2.4.19 构建产物验证一致。
+- V1 真实结果：`生命周期桥加载=true`；`独立 APK 创建 View=true`；`独立 APK 自有资源验证=true`；资源包 `com.soozooq.tianwaitian.fixture`；marker `TWT_GUEST_ONLY_2_4_17`；XML 布局 `guest_panel`；title `独立 APK 的资源布局已经加载`；Drawable 是 `GradientDrawable`；`buttonClass=android.widget.Button`。截图中清楚可见深色面板、粉紫色圆角图案、字符串标题、计数与可点击按钮。
+- 重建前 `onSaveInstanceState clicks=3`；`HOST instance recreated; savedClicks=3`；新实例 `GUEST VIEW created by fixture DEX, restoredClicks=3, verified=true`；随后点击一次，最终 `guestViewClicks=4`；`Activity 重建次数=1`；`状态恢复一致=true`；`后台恢复观察=true`。
+- 最终 lifecycle `guestState=DESTROYED`、快照显示最新实例 `events=6`、`resumes=1`（重建后状态机重新开始，因此 **不是** 整个会话累计的事件数）。退出日志 `GUEST VIEW disposed=true`、`disposed=true`、`guestResourcesVerified=true`、`stage=complete`，末行 `V1 UI 交互/重建/清理联合验收：PASS`；无相关 FAIL。
+- **前两版根因与闭环**：2.4.17 resource+cleanup 失败；2.4.18 已修复 Provider 清理并暴露反射根因，证实是 AppCompat 主题替换 guest XML Button 导致 InflateException；2.4.19 采用全限定 `android.widget.Button` 与 application-context inflater，实测资源成功解析、View 正常创建和交互。现可把这一受控 fixture 的 V1 第三阶段标记为 **Android 13 真机 PASS**。
+
+**边界**：测试 APK 作为内嵌资产且由宿主在同进程、同 UID 上动态装载；Guest 的 XML、strings、drawable、View 构造与点击回调真实来自受控独立 APK，但仍由天外天已注册的 Activity 承载，并使用宿主 Context/UID/权限。未测试任意外部 APK 的 Android Manifest 组件发现、真实未安装 Guest Activity 的系统启动、虚拟 PackageManager、权限隔离或微信/QQ/抖音位置兼容。下一技术阶段可单独研究受控 APK 的组件元数据解析、显式生命周期/Intent 合约与可审计的代理，不要宣称已具备完整第三方应用托管能力。
+
+---
 ## 2.4.19 双工作流通过、等待真机主题修复验收（2026-10-17）
 
 - 编译基准：`main` commit `f93f4ff9631d2dbb6c40b842d00a8905d539de35`；版本 `2.4.19-tianwaitian-guest-theme` / `versionCode 2400087` / `com.soozooq.gogogo.test`。
