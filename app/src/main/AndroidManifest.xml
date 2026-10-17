@@ -203,6 +203,11 @@
             android:name=".VirtualContainerV0Activity"
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
+        <!-- V1: registered HOST proxy; delegates lifecycle messages into trusted fixture APK. -->
+        <activity
+            android:name=".VirtualContainerV1ProxyActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
             android:name=".IsolatedCapsuleLabActivity"
