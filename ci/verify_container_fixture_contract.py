@@ -117,6 +117,22 @@ require("onSaveInstanceState(Bundle outState)" in v1
 require("VirtualContainerV0Activity" in screen
         or "VirtualContainerV1ProxyActivity" in screen,
         "V0/V1 navigation missing")
+# API33 phone evidence (2026-10-17 21:34) proved that short XML <Button>
+# was upgraded to AppCompatButton by the HOST Activity LayoutInflater.Factory2,
+# which then rejected the deliberately framework-themed guest Context.
+# Never route this controlled APK's XML through an Activity AppCompat factory.
+guest_layout = (ROOT / "containerFixture/src/main/res/layout/guest_panel.xml").read_text(encoding="utf-8")
+for widget in ("Button", "TextView", "ImageView"):
+    require("<android.widget." + widget in guest_layout,
+            "fixture XML must use fully-qualified framework " + widget)
+require("<Button" not in guest_layout and "<TextView" not in guest_layout
+        and "<ImageView" not in guest_layout,
+        "AppCompat-inflatable shorthand XML widget was reintroduced")
+require("LayoutInflater.from(hostContext.getApplicationContext())" in fixture_ui
+        and "cloneInContext(this)" in fixture_ui
+        and "AppCompat View leaked into guest XML" in fixture_ui,
+        "guest inflater must not inherit host Activity AppCompat Factory2")
+
 # Separate resources must live inside the fixture module, not host res/.
 fixture_res = ROOT / "containerFixture/src/main/res"
 for rel in ["values/strings.xml", "values/colors.xml",
