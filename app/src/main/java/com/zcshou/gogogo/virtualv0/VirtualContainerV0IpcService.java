@@ -98,11 +98,15 @@ public class VirtualContainerV0IpcService extends Service {
     }
 
     @Override public void onDestroy() {
-        if (guest != null) {
-            guest.close();
-            guest = null;
-        }
         if (worker != null) {
+            // The loader is owned by the IPC worker. Close it on that same
+            // thread after previously queued Binder operations finish.
+            new Handler(worker.getLooper()).post(() -> {
+                if (guest != null) {
+                    guest.close();
+                    guest = null;
+                }
+            });
             worker.quitSafely();
             worker = null;
         }
