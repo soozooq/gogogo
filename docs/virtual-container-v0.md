@@ -1,5 +1,18 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-17 — V1 第三阶段：独立 APK 自有资源实验（2.4.17，待真机）
+
+- 目标：除了原来能从独立 APK 加载 Java 类、接收 Activity 生命周期并创建 View，现在还要验证独立 APK **实际打包的 `res/layout`、`res/drawable`、`res/values`** 能在天外天宿主页面上成功解析。此阶段仍只有一个宿主安装包，不安装第二个应用。
+- Android API 30+ 使用官方 `ResourcesProvider.loadFromApk(ParcelFileDescriptor)`、`ResourcesLoader.addProvider()`、`Resources.addLoaders()`，对宿主 Context 的配置建立**实验专用的独立 Resources 对象**，不修改全局宿主 `getResources()`。为保证先前仅 Android 13 的实际验收，低于 API 30 时明确报告不支持而不试图调用隐藏 API。
+- 资源输入只能是 `ContainerV0TrustedGuest` 已核验包名、`classes.dex`、APK SHA-256 的私有只读测试文件。`ContainerV1GuestResources` 用文件描述符加载该 APK 的资源并在退出时移除 loader；原来的可复用 classloader 与 V0 五项实验保持不变。
+- `containerFixture/src/main/res/` 增加 `guest_panel.xml`、`guest_mark.xml`、字符串和配色。单独编译的 `GuestUiV1` 类反射执行 `Resources.getString(R.string.guest_resource_marker)`、`getDrawable(R.drawable.guest_mark)` 和 `LayoutInflater.inflate(R.layout.guest_panel)`；校验资源包名必须为 `com.soozooq.tianwaitian.fixture`，并读取仅属于本次测试 APK 的固定 marker `TWT_GUEST_ONLY_2_4_17`。依赖 ResourcesLoader 的资源优先级处理同 0x7f 资源 ID 冲突，但**真机依然要验证能否成功**。
+- V1 的深色 guest 界面改成从它自己的 XML 布局创建，包含自己的标题、图案、点击按钮和计数器；Button 的监听器依然属于 guest APK。新增报告字段 `独立 APK 自有资源验证` 与 `资源来源`，失败不可报成功；保留上版点击、后台、重建、清理和单次总日志。
+- 构建门槛：`verify_container_fixture_contract.py` 检查独立资源文件与 API 30+ loader 的关键契约；Build Preview 在发放 APK 前用 `aapt dump resources` 检查 fixture APK 的 layout、drawable、string marker 是否真实打包；Build Check 同时跑完整 Gradle/Java 单测。
+- **边界**：这验证的是受控 APK 中的资源被加载到 host 进程的独立 Resources 对象，再由 proxy Activity 显示 guest View，既不是完整 Android 组件虚拟化，也不是独立 UID、权限系统、微信定位的成功依据。
+
+**下一次真机**：先 V0 一键 5 项 → 进入 V1，确认深色区域中能看到“独立 APK 的资源布局已经加载”的文字和粉紫色圆角图案 → 点击 guest 按钮几次 → 系统设置返回 → 点击界面重建 → 再点击 guest → 完成退出 → 回 V0 **只复制一次总报告**。检查 `独立 APK 自有资源验证=true`、`resourcePackage=...fixture`、`marker=TWT_GUEST_ONLY_2_4_17`、恢复数与清理结果。
+
+---
 ## 2026-10-17 2.4.16 真机 V0/V1 UI 联合验收（20:01）
 
 > 来自用户复制的一份真实 Android 13 运行总报告；**2.4.16 的 V0 5/5 与受控 V1 UI 点击/恢复/清理首次真机通过**。本记录取代下文原先「2.4.16 尚无真机数据」的阶段性描述，但保留它作为旧开发历史。
