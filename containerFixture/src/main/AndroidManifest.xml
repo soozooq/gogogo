@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Build-only fixture: no launcher, provider, service, receiver or permissions. -->
+    <application android:label="Tianwaitian V0 Test Fixture" android:hasCode="true" />
+</manifest>
