@@ -1,5 +1,23 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-17 2.4.16 真机 V0/V1 UI 联合验收（20:01）
+
+> 来自用户复制的一份真实 Android 13 运行总报告；**2.4.16 的 V0 5/5 与受控 V1 UI 点击/恢复/清理首次真机通过**。本记录取代下文原先「2.4.16 尚无真机数据」的阶段性描述，但保留它作为旧开发历史。
+
+- **版本和构建基准：** `2.4.16-tianwaitian-guest-ui` / `versionCode 2400084`；构建对应源提交 `ac0cf5d4b6c17110656b3551fd660ae851674246`。Build Preview APK [39026571048](https://github.com/soozooq/gogogo/actions/runs/39026571048) 和 Build Check [39026571039](https://github.com/soozooq/gogogo/actions/runs/39026571039) 已成功。
+- **真机快照：** 2026-10-17 20:01:33（V0）、20:01:37（V1），Android API 33；宿主包 `com.soozooq.gogogo.test`，PID `22670`，UID `10441`。PID 是该次临时标识。
+- **V0 一键诊断：5/5 PASS，0 FAIL/TIMEOUT**。ClassLoader A `117660859`、B `106014168`，A→B→A 文件数据保留；Binder 远端 PID `6292`、UID `10441`；双子进程 A PID `6292`、B PID `6377`，各与宿主 PID 不同，仍与宿主同 UID，双方标记保留 `true`；受控 APK 的单进程 DEX 装载/执行和跨 A/B 双进程运行均 PASS。
+- **V1 APK 自有 UI：** `生命周期桥加载=true`、`独立 APK 创建 View=true`、`guest 点击数=4`、`Activity 重建次数=1`、`状态恢复一致=true`、`后台恢复观察=true`，末尾 `V1 UI 交互/重建/清理联合验收：PASS`。
+- **重建的关键证据：** 重建前 `HOST onSaveInstanceState clicks=3`；重建后的新宿主实例写出 `savedClicks=3` 与 `GUEST VIEW created by fixture DEX, restoredClicks=3, verified=true`；随后再次点击，最终 `guestViewClicks=4`。这表明点击计数经宿主 `Bundle` 持久化并传回重新创建的 guest 对象，不代表原 guest View/Java 对象在重建后原封不动存活。
+- **退出清理：** 最后一个 guest 生命周期实例到达 `guestState=DESTROYED`，`events=16`、`resumes=3`，记录 `GUEST VIEW disposed=true`，最终 UI 快照 `guestViewClicks=4；disposed=true；guestViewClass=com.soozooq.tianwaitian.fixture.GuestUiV1`。日志中的历史 HOST/GUEST 生命周期串跨越重建前、后两个实例；不要把新实例的 16 次事件误当成整场会话事件总数。
+- **受控 fixture APK SHA-256：** `4ea4b07d66bceb587932fb1a90c23d0d6de85e1e7de6aeea5012f9242a547606`，V0 两处和 V1 一处完全一致。不同于 2.4.15 的哈希属正常版本差异，不能拿不同版本互相比对。
+- **一次复制的交互目标验证通过：** V0 五项 + V1 附录全在一份总日志中。旧五项仍保留作为后续构建的回归基准。
+
+**术语说明：** Host/宿主=天外天；Guest/客体=另外编译、由天外天加载的受控测试 APK 代码。在 V1 中深色区域的按钮由 guest 代码创建并处理点击；但 Android `Activity`、`Context`、进程和 UID 仍属于天外天。**此结果不是直接启动未安装第三方 APK 的真实 Activity，更不是独立 UID 权限沙箱、完整应用虚拟化或微信定位兼容通过。**
+
+**下一阶段候选：** 保留一键总诊断，在不引入任意 APK 或虚拟权限承诺的前提下研究受控 guest 资源访问（布局/图片）、配置更改及进程死亡恢复的可观察测试；每一项需要新一轮构建+真机证据。
+
+---
 ## 2.4.16 编译验收（2026-10-17）
 
 - 源码版本：`2.4.16-tianwaitian-guest-ui`，`versionCode 2400084`，代码对应 commit `ac0cf5d4b6c17110656b3551fd660ae851674246`。
