@@ -129,19 +129,24 @@ require(markers.get("guest_resource_marker") == "TWT_GUEST_ONLY_2_4_17",
 require("com.soozooq.tianwaitian.fixture" in fixture_ui
         and "guestResources.getString(R.string.guest_resource_marker)" in fixture_ui
         and "inflate(R.layout.guest_panel, null, false)" in fixture_ui
-        and "getDrawable(R.drawable.guest_mark" in fixture_ui,
+        and "getDrawable(R.drawable.guest_mark" in fixture_ui
+        and "fixture guest UI stage=" in fixture_ui,
         "guest must resolve own XML/string/drawable from scoped resource table")
 resource_loader = (host_source / "ContainerV1GuestResources.java").read_text(encoding="utf-8")
 require("ResourcesProvider.loadFromApk(fd)" in resource_loader
         and "new ResourcesLoader()" in resource_loader
         and "isolated.addLoaders(loader)" in resource_loader
         and "resources.removeLoaders(loader)" in resource_loader
+        and "loader.clearProviders()" in resource_loader
+        and resource_loader.index("loader.clearProviders();\n            provider.close()") > 0
         and "getVerifiedResourceApk()" in resource_loader,
         "missing API 30+ guest-only ResourcesLoader and cleanup")
 require("ContainerV1GuestResources.open(this, readyGuest)" in v1
         and "guestResourcesVerified" in v1
         and "guestResourceEvidence" in v1
-        and "resourceScope.close()" in v1,
+        and "resourceScope.close()" in v1
+        and "describeFailure(uiFailure)" in v1
+        and "viewCreated=false" in v1,
         "V1 resource verification, report or loader cleanup disconnected")
 
 
