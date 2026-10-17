@@ -76,3 +76,12 @@
 - GitHub Actions 最新查询仍只有 10 月 14 日旧构建的成功记录。GitHub 的自动化令牌在部分场景中可能抑制二次触发，但未确认当前连接器的凭证类型；不要未经核实就将没有新构建归因为“Actions 被禁用”。
 - **验收唯一下一步**：在 `https://github.com/soozooq/gogogo/actions/workflows/build-release.yml` 为 `main` 手动执行 Build Preview APK。必须看到提交 SHA、任务真实运行、产物内置 `assets/twt-fixture-v0.apk` 的打包检查和单元测试；之后才允许安装新版 `2.4.14-tianwaitian-guest-ipc` 做五项 V0 验收。
 - 不要直接给已有定位模拟用户部署未经构建验证的调试成果，更不要把五项 V0 PASS 当成微信定位成功。
+
+
+## 2026-10-17：可复用 JVM 预检及 APK 产物闸门
+
+- `ci/run_container_v0_jvm_smoke.sh` 是纯 JDK、零 Android SDK 依赖的 17 条断言预检：直接编译**仓库里的实际四个 Java 源文件**（fixture `GuestEntry`、GuestDigestVerdict、IpcVerdict、TwoSlotVerdict），使用 `javac --release 11`，临时目录自动清理。执行方式：`bash ci/run_container_v0_jvm_smoke.sh`。需要先在对应环境获得完整的仓库代码。
+- Build Preview APK 和 Build Check 均已加入该脚本作为 Android Gradle 前置检查。此前在当前受限执行环境中，用经过仓库核对、手动转录的相同四个 Java 类进行了真实的 JDK 21 / Java 11 目标版本编译与运行，得到 17/17 断言通过；**这并非仓库中脚本已经在 GitHub Actions 运行通过**。
+- 修复 `build-release.yml` 的 APK 上传判断：编译通过只是必要条件，只有 `verify_apk` 步骤（包名、启动页、V0 组件、内置 fixture APK 的 ZIP 完整性、包名、DEX、SHA-256）真正成功才上传 APK；验证失败会保留诊断但不得把未验收 APK 当作成功产物。
+- 已确认本轮主线没有 Android SDK 构建环境；容器编译与 Android 13 真机测试尚未执行。不要以 JVM PASS 替代这两项验收。
+- 如果持续没有新 Actions 运行，排查提交身份对事件触发的影响、仓库 Actions 设置与手动 workflow_dispatch；目前未能确认具体原因。后续应优先取得真实 CI 日志，而不是继续叠加未经验证的虚拟化功能。
