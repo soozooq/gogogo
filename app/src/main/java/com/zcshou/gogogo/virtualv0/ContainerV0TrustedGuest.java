@@ -91,6 +91,17 @@ public final class ContainerV0TrustedGuest implements AutoCloseable {
         return invoke(readMethod);
     }
 
+    /**
+     * Expose only the already-verified, app-private, read-only fixture for
+     * the controlled V1 Android 11+ ResourcesProvider experiment.
+     */
+    public File getVerifiedResourceApk() {
+        if (!temporaryApk.isFile() || temporaryApk.canWrite()) {
+            throw new SecurityException("guest APK no longer read-only");
+        }
+        return temporaryApk;
+    }
+
     public String getSha256() {
         return sha256;
     }
