@@ -117,6 +117,33 @@ require("onSaveInstanceState(Bundle outState)" in v1
 require("VirtualContainerV0Activity" in screen
         or "VirtualContainerV1ProxyActivity" in screen,
         "V0/V1 navigation missing")
+# Separate resources must live inside the fixture module, not host res/.
+fixture_res = ROOT / "containerFixture/src/main/res"
+for rel in ["values/strings.xml", "values/colors.xml",
+            "layout/guest_panel.xml", "drawable/guest_mark.xml"]:
+    require((fixture_res / rel).is_file(), "missing separate fixture resource: " + rel)
+strings = ET.parse(fixture_res / "values/strings.xml").getroot()
+markers = {item.get("name"): item.text for item in strings.findall("string")}
+require(markers.get("guest_resource_marker") == "TWT_GUEST_ONLY_2_4_17",
+        "missing explicit guest-only resource source marker")
+require("com.soozooq.tianwaitian.fixture" in fixture_ui
+        and "guestResources.getString(R.string.guest_resource_marker)" in fixture_ui
+        and "inflate(R.layout.guest_panel, null, false)" in fixture_ui
+        and "getDrawable(R.drawable.guest_mark" in fixture_ui,
+        "guest must resolve own XML/string/drawable from scoped resource table")
+resource_loader = (host_source / "ContainerV1GuestResources.java").read_text(encoding="utf-8")
+require("ResourcesProvider.loadFromApk(fd)" in resource_loader
+        and "new ResourcesLoader()" in resource_loader
+        and "isolated.addLoaders(loader)" in resource_loader
+        and "resources.removeLoaders(loader)" in resource_loader
+        and "getVerifiedResourceApk()" in resource_loader,
+        "missing API 30+ guest-only ResourcesLoader and cleanup")
+require("ContainerV1GuestResources.open(this, readyGuest)" in v1
+        and "guestResourcesVerified" in v1
+        and "guestResourceEvidence" in v1
+        and "resourceScope.close()" in v1,
+        "V1 resource verification, report or loader cleanup disconnected")
+
 
 
 print("V0/V1 static contract PASS: controlled APK, five-step one-click report, "
