@@ -119,6 +119,12 @@ jobs:
           unzip -t ci/embedded-v0-fixture.apk > ci/v0-fixture-zip-test.txt
           "$AAPT" dump badging ci/embedded-v0-fixture.apk | tee ci/v0-fixture-badging.txt
           grep -F "package: name='com.soozooq.tianwaitian.fixture'" ci/v0-fixture-badging.txt
+          # Verify the separate fixture APK (not host R) contains real compiled
+          # guest layout, drawable, string marker and button resources.
+          "$AAPT" dump resources ci/embedded-v0-fixture.apk > ci/v1-fixture-resources.txt
+          grep -F "layout/guest_panel" ci/v1-fixture-resources.txt
+          grep -F "drawable/guest_mark" ci/v1-fixture-resources.txt
+          grep -F "string/guest_resource_marker" ci/v1-fixture-resources.txt
           unzip -l ci/embedded-v0-fixture.apk | grep -F "classes.dex"
           sha256sum ci/embedded-v0-fixture.apk | tee ci/v0-fixture-sha256.txt
 
@@ -135,6 +141,7 @@ jobs:
             ci/v0-fixture-badging.txt
             ci/v0-fixture-sha256.txt
             ci/v0-fixture-zip-test.txt
+            ci/v1-fixture-resources.txt
             app/build/test-results/testDebugUnitTest/
             containerFixture/build/test-results/testDebugUnitTest/
           if-no-files-found: ignore
