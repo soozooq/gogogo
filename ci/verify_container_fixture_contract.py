@@ -72,6 +72,33 @@ require("验证独立 APK 在双进程执行" in screen,
 require("runRemoteGuestProbe()" in screen,
         "remote APK test button disconnected")
 require("ServiceGo" not in screen, "test page must not drive mock-location service")
+require("一键诊断 V0 五项" in screen and "runOneClick()" in screen,
+        "one-click diagnosis must remain the default route")
+require("v0_last_complete" in screen and "一键复制总报告" in screen,
+        "user must be able to copy a single persisted report")
+batch = (host_source / "VirtualContainerV0OneClickDiagnostic.java").read_text(encoding="utf-8")
+require("VirtualContainerV0TwoSlotProbe" in batch
+        and "ContainerV0ExternalApkProbe.run(app)" in batch
+        and "ContainerV0Probe.run(app)" in batch
+        and "TIMEOUTS_MS" in batch
+        and "cleanupConnections()" in batch,
+        "batch probe missing individual timeout/cleanup/one of five tests")
 
-print("V0 static contract PASS: controlled APK asset, separate child PIDs, "
-      "non-exported IPC, read-only loader, UI and stable main package.")
+v1name = ".VirtualContainerV1ProxyActivity"
+v1_activities = {item.get(ANDROID + "name"): item
+                 for item in app.findall("activity")}
+require(v1name in v1_activities and
+        v1_activities[v1name].get(ANDROID + "exported") == "false",
+        "V1 proxy must be declared and non-exported")
+v1 = (ROOT / "app/src/main/java/com/zcshou/gogogo/VirtualContainerV1ProxyActivity.java").read_text(encoding="utf-8")
+require("ContainerV0TrustedGuest.open(context)" in v1
+        and "GuestLifecycleV1" in v1
+        and 'forward("onPause")' in v1
+        and 'forward("onDestroy")' in v1,
+        "host proxy must forward real lifecycle events to own fixture APK")
+fixture_v1 = (ROOT / "containerFixture/src/main/java/com/soozooq/tianwaitian/fixture/GuestLifecycleV1.java").read_text(encoding="utf-8")
+require("class GuestLifecycleV1" in fixture_v1 and "onEvent(String event)" in fixture_v1,
+        "guest lifecycle state machine missing from separate APK")
+
+print("V0/V1 static contract PASS: controlled APK, five-step one-click report, "
+      "two private PIDs, trusted lifecycle proxy and stable main package.")
