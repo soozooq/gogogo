@@ -24,6 +24,10 @@ public class GoApplication extends Application {
     public void onCreate() {
         super.onCreate();
 
+        // Explicitly bound, test-only processes do not need map SDK, telemetry,
+        // location or the app's ordinary logging initialization.
+        if (isVirtualContainerTestProcess()) return;
+
         initXlog();
 
         // 腾讯地图 SDK 隐私合规 + 初始化
@@ -35,6 +39,12 @@ public class GoApplication extends Application {
         } catch (Exception e) {
             XLog.e("TencentMap init failed: " + e.getMessage());
         }
+    }
+
+    private static boolean isVirtualContainerTestProcess() {
+        if (android.os.Build.VERSION.SDK_INT < 28) return false;
+        String name = Application.getProcessName();
+        return name != null && (name.endsWith(":virtualv0") || name.endsWith(":virtualv0b"));
     }
 
     /**
