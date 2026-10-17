@@ -2,6 +2,10 @@ name: Build Preview APK
 
 on:
   workflow_dispatch:
+  # Owner-only one-off alternative when push events do not start a new CI run.
+  # issue_comment workflows use the default branch, never a PR head checkout.
+  issue_comment:
+    types: [created]
   # Build installable debug previews before merging UI/diagnostic labs.
   # This workflow uses read-only permissions and dummy public test keys.
   pull_request:
@@ -52,7 +56,13 @@ concurrency:
 
 jobs:
   build:
-    if: ${{ !contains(github.event.head_commit.message || '', '[skip ci]') }}
+    if: >-
+      ${{ !contains(github.event.head_commit.message || '', '[skip ci]')
+          && (github.event_name != 'issue_comment'
+              || (github.repository == 'soozooq/gogogo'
+                  && github.event.issue.number == 57
+                  && github.actor == 'soozooq'
+                  && github.event.comment.body == '/twt-v0-build-main')) }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
