@@ -24,6 +24,7 @@ public final class VirtualContainerV0TwoSlotProbe {
 
     private final Context app;
     private final Callback callback;
+    private final boolean guestMode;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Messenger response = new Messenger(new Handler(Looper.getMainLooper(), msg -> {
         receive(msg);
@@ -46,17 +47,25 @@ public final class VirtualContainerV0TwoSlotProbe {
     private int uidB = -1;
     private String observedA;
     private String observedB;
+    private String guestShaA;
+    private String guestShaB;
     private final Runnable timeout = () -> finish("FAIL：A/B 双进程验证超时（10 秒）");
 
     public VirtualContainerV0TwoSlotProbe(Context context, Callback callback) {
+        this(context, callback, false);
+    }
+
+    public VirtualContainerV0TwoSlotProbe(Context context, Callback callback,
+            boolean guestMode) {
         this.app = context.getApplicationContext();
         this.callback = callback;
+        this.guestMode = guestMode;
     }
 
     public void start() {
         if (started) throw new IllegalStateException("probe already started");
         started = true;
-        handler.postDelayed(timeout, 10000);
+        handler.postDelayed(timeout, guestMode ? 20000 : 10000);
         connectionA = connect(true);
         connectionB = connect(false);
         try {
@@ -99,8 +108,11 @@ public final class VirtualContainerV0TwoSlotProbe {
             return;
         }
         Message message = Message.obtain(null,
-                stage < 2 ? VirtualContainerV0IpcService.MSG_WRITE_MARKER
-                          : VirtualContainerV0IpcService.MSG_READ_MARKER);
+                guestMode
+                        ? (stage < 2 ? VirtualContainerV0IpcService.MSG_GUEST_WRITE
+                                : VirtualContainerV0IpcService.MSG_GUEST_READ)
+                        : (stage < 2 ? VirtualContainerV0IpcService.MSG_WRITE_MARKER
+                                : VirtualContainerV0IpcService.MSG_READ_MARKER));
         message.arg1 = stage;
         message.replyTo = response;
         if (stage < 2) {
@@ -118,8 +130,9 @@ public final class VirtualContainerV0TwoSlotProbe {
 
     private void receive(Message message) {
         if (finished) return;
-        if (message.what != VirtualContainerV0IpcService.MSG_STATE_RESULT
-                || message.arg1 != stage) {
+        int expectedResponse = guestMode ? VirtualContainerV0IpcService.MSG_GUEST_RESULT
+                : VirtualContainerV0IpcService.MSG_STATE_RESULT;
+        if (message.what != expectedResponse || message.arg1 != stage) {
             finish("FAIL：收到不匹配的阶段响应");
             return;
         }
@@ -131,6 +144,20 @@ public final class VirtualContainerV0TwoSlotProbe {
         int pid = data.getInt(VirtualContainerV0IpcService.KEY_PID, -1);
         int uid = data.getInt(VirtualContainerV0IpcService.KEY_UID, -1);
         String marker = data.getString(VirtualContainerV0IpcService.KEY_MARKER);
+        String sha = data.getString(VirtualContainerV0IpcService.KEY_GUEST_SHA256);
+        if (guestMode) {
+            if (!VirtualContainerV0GuestDigestVerdict.validDigest(sha)) {
+                finish("FAIL：远端未返回有效的独立 APK SHA-256");
+                return;
+            }
+            if (stage == 0) guestShaA = sha;
+            else if (stage == 1) guestShaB = sha;
+            else if ((stage == 2 && !sha.equals(guestShaA))
+                    || (stage == 3 && !sha.equals(guestShaB))) {
+                finish("FAIL：同一进程的 APK 哈希值发生变化");
+                return;
+            }
+        }
         if (stage == 0) {
             pidA = pid;
             uidA = uid;
@@ -165,11 +192,16 @@ public final class VirtualContainerV0TwoSlotProbe {
         }
         boolean pass = VirtualContainerV0TwoSlotVerdict.passed(
                 Process.myPid(), Process.myUid(), pidA, uidA, pidB, uidB,
-                markerA, observedA, markerB, observedB);
-        finish((pass ? "PASS" : "FAIL") + "：A → B → A → B 独立进程状态验证\n"
+                markerA, observedA, markerB, observedB)
+                && (!guestMode || VirtualContainerV0GuestDigestVerdict.passed(
+                        guestShaA, guestShaB));
+        finish((pass ? "PASS" : "FAIL") + (guestMode
+                ? "：独立 APK 在两个 Android 子进程运行\n"
+                : "：A → B → A → B 独立进程状态验证\n")
                 + "宿主 PID=" + Process.myPid() + "；UID=" + Process.myUid() + "\n"
                 + "A PID=" + pidA + "；UID=" + uidA + "；标记保留=" + markerA.equals(observedA) + "\n"
                 + "B PID=" + pidB + "；UID=" + uidB + "；标记保留=" + markerB.equals(observedB) + "\n"
+                + (guestMode ? "受控 APK SHA-256：" + guestShaA + "\n" : "")
                 + "注意：不同 PID、相同 UID，不是独立安装的第三方应用。");
     }
 
