@@ -29,8 +29,8 @@ android {
         minSdkVersion 27
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 35
-        versionCode 2400085
-        versionName '2.4.17-tianwaitian-guest-res' // https://semver.org/lang/zh-CN/
+        versionCode 2400086
+        versionName '2.4.18-tianwaitian-guest-res-fix' // https://semver.org/lang/zh-CN/
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += ['zh', 'zh-rCN', 'en', 'en-rUS']
         ndk {
