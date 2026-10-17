@@ -18,7 +18,17 @@ fixture_manifest = ET.parse(ROOT / "containerFixture/src/main/AndroidManifest.xm
 require(not fixture_manifest.findall("uses-permission"), "fixture unexpectedly asks for permission")
 fixture_app = fixture_manifest.find("application")
 require(fixture_app is not None, "no fixture application")
-require(len(list(fixture_app)) == 0, "fixture should not register Android components yet")
+# V2 fixture declares exactly ONE private Activity, for offline archive inspection;
+# no guest component may be exported, have an intent filter or be auto-started.
+fixture_children = list(fixture_app)
+require(len(fixture_children) == 1 and fixture_children[0].tag == "activity",
+        "V2 fixture must declare exactly one private Activity and no other components")
+guest_declared = fixture_children[0]
+require(guest_declared.get(ANDROID + "name") == ".GuestV2DeclaredActivity"
+        and guest_declared.get(ANDROID + "exported") == "false"
+        and guest_declared.get(ANDROID + "permission") is None
+        and len(list(guest_declared)) == 0,
+        "guest archive Activity must be private, permissionless and without intent filters")
 
 main_manifest = ET.parse(ROOT / "app/src/main/AndroidManifest.xml").getroot()
 app = main_manifest.find("application")
@@ -169,5 +179,43 @@ require("ContainerV1GuestResources.open(this, readyGuest)" in v1
 
 
 
-print("V0/V1 static contract PASS: controlled APK, five-step one-click report, "
-      "two private PIDs, trusted lifecycle proxy and stable main package.")
+# V2: installed host proxy must not turn into an exported IPC endpoint.
+v2_names = (".VirtualContainerV2Activity", ".VirtualContainerV2ProxyActivity")
+for name in v2_names:
+    require(name in v1_activities and
+            v1_activities[name].get(ANDROID + "exported") == "false",
+            "V2 host Activity must be registered and non-exported: " + name)
+v2_guest_route = (ROOT / "containerFixture/src/main/java/com/soozooq/tianwaitian/fixture/GuestV2Route.java").read_text(encoding="utf-8")
+v2_guest_activity = (ROOT / "containerFixture/src/main/java/com/soozooq/tianwaitian/fixture/GuestV2DeclaredActivity.java").read_text(encoding="utf-8")
+v2_probe = (host_source / "ContainerV2ManifestRouteProbe.java").read_text(encoding="utf-8")
+v2_proxy = (ROOT / "app/src/main/java/com/zcshou/gogogo/VirtualContainerV2ProxyActivity.java").read_text(encoding="utf-8")
+v2_controller = (ROOT / "app/src/main/java/com/zcshou/gogogo/VirtualContainerV2Activity.java").read_text(encoding="utf-8")
+require("extends Activity" in v2_guest_activity and "class GuestV2DeclaredActivity" in v2_guest_activity,
+        "V2 fixture manifest-declared class missing")
+require("String handle(String action, String value)" in v2_guest_route
+        and "GUEST_V2_RESULT:" in v2_guest_route,
+        "bounded guest DEX response contract missing")
+require("PackageManager.GET_ACTIVITIES" in v2_probe
+        and "getPackageArchiveInfo(" in v2_probe
+        and "activities.length != 1" in v2_probe
+        and "activity.exported" in v2_probe
+        and "Activity.class.isAssignableFrom(declared)" in v2_probe
+        and "guest.getVerifiedResourceApk()" in v2_probe,
+        "guest component archive introspection and DEX checks missing")
+require("new Intent(this, VirtualContainerV2ProxyActivity.class)" in v2_controller
+        and "startActivityForResult(request, REQUEST)" in v2_controller
+        and "nonceOk && responseOk && pidOk && uidOk && digestOk" in v2_controller
+        and "showAndSave(output)" in v2_controller,
+        "V2 controller must verify real host proxy response and save one report")
+require("ContainerV2ManifestRouteProbe.run(getApplicationContext()" in v2_proxy
+        and "setResult(check.passed ? RESULT_OK : RESULT_CANCELED, outbound)" in v2_proxy,
+        "V2 proxy not wired to guest manifest/DEX route")
+require("VirtualContainerV2Activity.PREFS" in screen
+        and "VirtualContainerV2Activity.LAST_RESULT" in screen
+        and "Tianwaitian V0+V1+V2" in screen
+        and "ServiceGo" not in v2_controller + v2_proxy + v2_probe,
+        "V2 output must be in single-copy diagnostic without location service calls")
+
+print("V0/V1/V2 static contract PASS: one-copy report, controlled fixture Manifest, "
+      "private host proxy, safe Intent handler and unchanged app identity.")
+
