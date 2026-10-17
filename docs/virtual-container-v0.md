@@ -1,5 +1,14 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2.4.17 第三阶段云端构建验收（2026-10-17）
+
+- 本轮代码版本 `2.4.17-tianwaitian-guest-res` / versionCode `2400085` / 宿主应用 ID `com.soozooq.gogogo.test`。
+- 修复后发布的编译基准 SHA：`5c286ed8e6888738f38937ed65475075cb3d985c`。[Build Preview APK #39031955908](https://github.com/soozooq/gogogo/actions/runs/39031955908) **success**；[Build Check #39031955892](https://github.com/soozooq/gogogo/actions/runs/39031955892) **success**。
+- 首次提交的 Preview 已能正确构建和打包独立资源，但完整 Build Check [#39031633325](https://github.com/soozooq/gogogo/actions/runs/39031633325) 报出 `ContainerV1GuestResources.close()` 的两条 `NewApi` Lint 错误：`Resources.removeLoaders` 与 `ResourcesProvider.close` 需 API 30；保持 `minSdkVersion 27` 不变，补入 Android R 及以上版本判断后复跑双工作流通过，未关闭 Lint。
+- 将**最新**成功 Preview 的 Artifact 取回验证：宿主 APK ZIP 完整；内置 `assets/twt-fixture-v0.apk` ZIP 完整，且包含 `resources.arsc`、`res/layout/guest_panel.xml`、`res/drawable/guest_mark.xml`；产物宿主 SHA-256：`b06f6ab9cb4e25a77a4bced076adc0bc59bdc758d5b8d231a1dd49609018ed2b`；嵌入 fixture APK SHA-256：`46a4196adb330499c32fff21837d7da6e2883c2df9508f307a8b1f1f548581f4`。
+- **仍未有 2.4.17 Android 13 真机第三阶段记录**：是否可以从独立 APK 按预期 inflate 布局并恢复点击计数，必须用户实际运行，不能把 CI success 当作设备 PASS。
+
+---
 ## 2026-10-17 — V1 第三阶段：独立 APK 自有资源实验（2.4.17，待真机）
 
 - 目标：除了原来能从独立 APK 加载 Java 类、接收 Activity 生命周期并创建 View，现在还要验证独立 APK **实际打包的 `res/layout`、`res/drawable`、`res/values`** 能在天外天宿主页面上成功解析。此阶段仍只有一个宿主安装包，不安装第二个应用。
