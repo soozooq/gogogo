@@ -16,7 +16,7 @@ public final class GuestV24Journal {
         checkSha(sha256);
         if (oldPid <= 0) throw new IllegalArgumentException("invalid worker PID");
         return VERSION + "|PENDING|" + oldToken + "|" + sha256 + "|"
-                + oldPid + "|0|0|NONE";
+                + oldPid + "|0|0|0|NONE";
     }
 
     public static String recover(String journal, String oldToken, String newToken,
@@ -34,12 +34,12 @@ public final class GuestV24Journal {
         }
         if ("RECOVERED".equals(f[1])) {
             // Duplicate recovery must preserve the already committed record.
-            if (newToken.equals(f[7]) && Integer.parseInt(f[6]) == currentPid) {
+            if (newToken.equals(f[7]) && Integer.parseInt(f[7]) == currentPid) {
                 return journal;
             }
             throw new IllegalStateException("stale or foreign recovery is rejected");
         }
-        if (!"PENDING".equals(f[1]) || !"0".equals(f[5]) || !"0".equals(f[6])
+        if (!"PENDING".equals(f[1]) || !"0".equals(f[5]) || !"0".equals(f[6]) || !"0".equals(f[7])
                 || !"NONE".equals(f[7])) {
             throw new IllegalStateException("unexpected pre-crash journal state");
         }
@@ -50,7 +50,7 @@ public final class GuestV24Journal {
             throw new IllegalStateException("trusted guest route returned unexpected value");
         }
         return VERSION + "|RECOVERED|" + oldToken + "|" + sha256 + "|"
-                + f[4] + "|0|" + currentPid + "|" + newToken;
+                + f[4] + "|0|1|" + currentPid + "|" + newToken;
     }
 
     public static boolean isPending(String encoded, String token, String sha, int pid) {
@@ -71,8 +71,9 @@ public final class GuestV24Journal {
                     && f[2].equals(oldToken) && f[3].equals(sha)
                     && Integer.parseInt(f[4]) == oldPid
                     && Integer.parseInt(f[5]) == 0
-                    && Integer.parseInt(f[6]) == newPid
-                    && f[7].equals(newToken) && oldPid != newPid;
+                    && Integer.parseInt(f[6]) == 1
+                    && Integer.parseInt(f[7]) == newPid
+                    && f[8].equals(newToken) && oldPid != newPid;
         } catch (RuntimeException failure) {
             return false;
         }
@@ -94,7 +95,7 @@ public final class GuestV24Journal {
             throw new IllegalArgumentException("journal size invalid");
         }
         String[] f = journal.split("\\|", -1);
-        if (f.length != 8 || !VERSION.equals(f[0])
+        if (f.length != 9 || !VERSION.equals(f[0])
                 || !("PENDING".equals(f[1]) || "RECOVERED".equals(f[1]))) {
             throw new IllegalArgumentException("invalid or unknown journal version");
         }
@@ -102,7 +103,7 @@ public final class GuestV24Journal {
         checkSha(f[3]);
         try {
             if (Integer.parseInt(f[4]) <= 0) throw new IllegalArgumentException("old PID");
-            int newPid = Integer.parseInt(f[6]);
+            int newPid = Integer.parseInt(f[7]);
             if ("PENDING".equals(f[1]) && newPid != 0) {
                 throw new IllegalArgumentException("pending new PID invalid");
             }
@@ -112,8 +113,11 @@ public final class GuestV24Journal {
         } catch (NumberFormatException failure) {
             throw new IllegalArgumentException("malformed PID", failure);
         }
+        if (!("PENDING".equals(f[1]) ? "0".equals(f[6]) : "1".equals(f[6]))) {
+            throw new IllegalArgumentException("new completion count incorrect");
+        }
         if (!"0".equals(f[5])) throw new IllegalArgumentException("old completions must be zero");
-        if ("PENDING".equals(f[1]) ? !"NONE".equals(f[7]) : !validToken(f[7])) {
+        if ("PENDING".equals(f[1]) ? !"NONE".equals(f[8]) : !validToken(f[8])) {
             throw new IllegalArgumentException("invalid new token");
         }
         return f;
