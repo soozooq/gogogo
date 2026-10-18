@@ -38,6 +38,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
     private MaterialButton copyButton;
     private MaterialButton v1Button;
     private MaterialButton v2Button;
+    private MaterialButton v3Button;
     private VirtualContainerV0OneClickDiagnostic autoDiagnostic;
     private MaterialButton button;
     private MaterialButton ipcButton;
@@ -96,6 +97,10 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
                 "V2：受控 APK 组件 / Intent 代理实验", v ->
                         startActivity(new Intent(this, VirtualContainerV2Activity.class)));
         root.addView(v2Button, GoGoUi.matchWrap());
+        v3Button = GoGoUi.secondaryButton(this,
+                "V3：选择真实 APK（只读归档审计）", v ->
+                        startActivity(new Intent(this, VirtualContainerV3ArchiveActivity.class)));
+        root.addView(v3Button, GoGoUi.matchWrap());
         report = GoGoUi.reportPanel(this);
         String previous = getPreferences(MODE_PRIVATE).getString("v0_last_complete", "");
         report.setText(previous.isEmpty()
@@ -145,8 +150,13 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
                     all += "\n\n========== V2.4 专属进程终止 / 冷启动恢复附录（最近一次）==========\n"
                             + v24;
                 }
+                String v3 = getSharedPreferences(VirtualContainerV3ArchiveActivity.PREFS,
+                        MODE_PRIVATE).getString(VirtualContainerV3ArchiveActivity.LAST_RESULT, "");
+                if (!v3.isEmpty()) {
+                    all += "\n\n========== V3 真实 APK 只读归档分析附录（最近一次）==========\n" + v3;
+                }
                 clipboard.setPrimaryClip(ClipData.newPlainText(
-                        "Tianwaitian V0+V1+V2+V2.2+V2.3+V2.4", all));
+                        "Tianwaitian V0-V3", all));
                 Toast.makeText(this, "V0–V2.4 总报告已复制",
                         Toast.LENGTH_SHORT).show();
             }
@@ -213,6 +223,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
         autoButton.setEnabled(enabled);
         v1Button.setEnabled(enabled);
         v2Button.setEnabled(enabled);
+        v3Button.setEnabled(enabled);
     }
 
     private void runFixtureProbe() {
