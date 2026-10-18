@@ -226,6 +226,12 @@
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
 
+        <!-- V2.3 controlled HOST Activity.recreate() only, no exported guest surface. -->
+        <activity
+            android:name=".VirtualContainerV23RecreationActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
+
         <activity
             android:name=".IsolatedCapsuleLabActivity"
             android:exported="false"
