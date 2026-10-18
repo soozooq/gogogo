@@ -295,7 +295,54 @@ require("VirtualContainerV2Activity.LAST_RECREATE_RESULT" in screen
         and "Tianwaitian V0+V1+V2+V2.2+V2.3" in screen
         and "ServiceGo" not in v23 + v23guest,
         "V2.3 must join one-copy report without modifying mock-location service")
-print("V0/V1/V2/V2.2/V2.3 static contract PASS: real host recreation, "
-      "new fixture guest object, old cancellation/disposal proof and one-copy report.")
+# V2.4 process death test must never touch host PID or the V0 services:
+# only the separately registered :virtualv24 worker may self-terminate.
+v24service = (".virtualv0.VirtualContainerV24WorkerService")
+remote = services.get(v24service)
+require(remote is not None
+        and remote.get(ANDROID+"exported")=="false"
+        and remote.get(ANDROID+"process")==":virtualv24",
+        "V2.4 must use isolated nonexported dedicated :virtualv24 service")
+require(".VirtualContainerV24Activity" in v1_activities
+        and v1_activities[".VirtualContainerV24Activity"].get(ANDROID+"exported")=="false",
+        "V2.4 controller Activity must remain private")
+v24worker=(host_source / "VirtualContainerV24WorkerService.java").read_text(encoding="utf-8")
+v24controller=(ROOT / "app/src/main/java/com/zcshou/gogogo/VirtualContainerV24Activity.java").read_text(encoding="utf-8")
+v24guest=(ROOT / "containerFixture/src/main/java/com/soozooq/tianwaitian/fixture/GuestV24Journal.java").read_text(encoding="utf-8")
+require("AtomicFile" in v24worker and "target.finishWrite(stream)" in v24worker
+        and "target.failWrite(stream)" in v24worker
+        and "Process.killProcess(Process.myPid())" in v24worker
+        and "Process.myPid() != hostPid" in v24worker
+        and "getPackageName() + \":virtualv24\"" in v24worker
+        and "Application.getProcessName()" in v24worker
+        and "ContainerV0TrustedGuest.open(this)" in v24worker
+        and "GuestV24Journal" in v24worker
+        and "MSG_KILL_CHILD" in v24worker
+        and "MSG_RECOVER" in v24worker,
+        "V2.4 controlled worker missing durable journal or safe kill boundary")
+require("GuestV2Route.handle(GuestV2Route.ACTION, \"NEW_V24\")" in v24guest
+        and "isRecovered" in v24guest
+        and "isPending" in v24guest
+        and "acceptOldResult" in v24guest
+        and "newToken.equals(f[8])" in v24guest
+        and "oldToken.equals(newToken)" in v24guest,
+        "V2.4 guest recovery must reject stale token and be idempotent")
+require("onServiceDisconnected" in v24controller
+        and "oldPid" in v24controller
+        and "newPid" in v24controller
+        and "sawDeath=true" in v24controller
+        and "newPid==oldPid" in v24controller
+        and "duplicateSafe" in v24controller
+        and "staleRejected" in v24controller
+        and "LAST_COLD_RESULT" in v24controller,
+        "V2.4 controller must prove true binder death and distinct cold-start PID")
+require("new Intent(this, VirtualContainerV24Activity.class)" in v2_controller
+        and "VirtualContainerV2Activity.LAST_COLD_RESULT" in screen
+        and "Tianwaitian V0+V1+V2+V2.2+V2.3+V2.4" in screen
+        and "ServiceGo" not in v24controller+v24worker+v24guest,
+        "V2.4 must preserve one-copy and location service boundaries")
+print("V0/V1/V2/V2.2/V2.3/V2.4 static contract PASS: dedicated child crash, "
+      "atomic durable guest journal, nonce/PID recovery and one-copy report.")
+
 
 
