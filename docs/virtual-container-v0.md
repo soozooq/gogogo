@@ -1,5 +1,16 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-18 — 2.4.22 双工作流构建验收通过，V2.3 等待真机
+
+- 已发布的构建代码 `main` SHA `2503b2943b35ab0c5f2d831ff7357cc5b4e106f3`；app `versionCode 2400090` / `versionName 2.4.22-tianwaitian-v23-recreate`，保留宿主包名 `com.soozooq.gogogo.test` 与既有签名设置。
+- [Build Preview APK #39110458834](https://github.com/soozooq/gogogo/actions/runs/39110458834) **success**：fixture Java 单测、宿主 JVM 测试、V0-V2.3 静态契约、Debug APK 真正打包与 manifest 验证成功。[Build Check #39110459107](https://github.com/soozooq/gogogo/actions/runs/39110459107) **success**：完整 Gradle/Release/Lint 通过。
+- GitHub Actions Artifact `gogogo-unified-labs-preview`（artifact ID `12130307111`）下载后校验：APK 文件 `Go_2.4.22-tianwaitian-v23-recreate_arm64-v8a_debug.apk`，40,356,950 bytes，SHA-256 `f78c379a6734e5e2430dd0d6a252d1c7d6f89267d78056f3124df42fa818efa3`；内置 `assets/twt-fixture-v0.apk` SHA-256 `9c7dc1d44e0de3f7233beb4a51d0a9af9fa2526db63b62c15be5c027f237dd83`，19,238 bytes。两层 ZIP CRC 检查完整，独立 fixture DEX 中包含新 `GuestV23Recreation` 类及以前的 `GuestV2Session` / `GuestV2Route`。
+- 第一轮 CI [Build Preview #39110228047](https://github.com/soozooq/gogogo/actions/runs/39110228047) **failure**：`GuestV23RecreationTest.teardownAbortsPendingWork` 验证出“只在 dispose 时被动取消”也会令旧的 `oldCleared()` 返回 true。修复后新增 `explicitlyCancelledBeforeRecreation`，只有实际在 `Activity.recreate()` **之前显式调用** `cancelOld` 才可通过清理门槛；静态 CI 也要求这个标记。修复后两个工作流重新跑绿，没有跳过单测或关闭 Lint。
+- **2.4.22 V2.3 Android 13 真机尚未验收**：本轮 CI 仅证明代码/测试/打包成立，不代表设备已观察到旧 Activity 真 onDestroy、旧 Guest dispose、新 Activity 真 onCreate 或请求防重成功。
+
+**真机操作**：原位升级（不卸载，防止丢数据）→ V0 → V2 控制页 →「V2 第三阶段」→ 等 Guest 初始化 → 点击「触发 Activity 真正重建」→ 等新页面显示核验状态 → 点击「完成并退出」→ 返回 V0 → 五项一键回归 → **只复制一次总报告**。若任一步卡住或 FAIL，直接退出复制原始证据，不重复点。历史 V1/V2/V2.2 附录有各自时间和哈希，不当作本版真机回归。
+
+---
 ## 2026-10-18 — V2 第三阶段：Activity 真重建与旧请求防重（2.4.22，待真机）
 
 - **已验证基线**：2.4.21 V0 五项、V2 Manifest/Intent、V2.2 Guest 连续请求与正常后台恢复均为 Android 13 真机 PASS；V1 UI/资源的实际 PASS 来自 2.4.19 历史附录，不混淆版本。
