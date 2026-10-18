@@ -4,6 +4,7 @@ import android.app.Application;
 import android.app.Service;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -192,7 +193,8 @@ public final class VirtualContainerV24WorkerService extends Service {
     }
 
     private boolean dedicatedProcess() {
-        return (getPackageName() + ":virtualv24").equals(Application.getProcessName());
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                && (getPackageName() + ":virtualv24").equals(Application.getProcessName());
     }
 
     private static int oldPid(String journal) {
