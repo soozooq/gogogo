@@ -254,7 +254,46 @@ require("VirtualContainerV2Activity.LAST_SESSION_RESULT" in screen
         and "ServiceGo" not in session_screen + guest_session,
         "V2.2 must join one-copy report without changing location service")
 
-print("V0/V1/V2/V2.2 static contract PASS: real host callbacks, bounded guest requests, "
-      "private proxy and one-copy report.")
+# V2.3: real HOST Activity.recreate() with a fresh APK guest object and
+# checked old-onDestroy proof. An arbitrary Bundle cannot substitute for
+# the old instance's real disposal / cancelled request evidence.
+v23 = (ROOT / "app/src/main/java/com/zcshou/gogogo/VirtualContainerV23RecreationActivity.java").read_text(encoding="utf-8")
+v23guest = (ROOT / "containerFixture/src/main/java/com/soozooq/tianwaitian/fixture/GuestV23Recreation.java").read_text(encoding="utf-8")
+v23name = ".VirtualContainerV23RecreationActivity"
+require(v23name in v1_activities
+        and v1_activities[v23name].get(ANDROID + "exported") == "false",
+        "V2.3 HOST Activity must be nonexported")
+require("GuestV23Recreation" in v23guest
+        and "prepareOld(String token)" in v23guest
+        and "cancelOld(String token)" in v23guest
+        and "acceptLate(String token)" in v23guest
+        and "startNew(String oldToken, String freshToken)" in v23guest
+        and "completeNew(String token)" in v23guest
+        and "void dispose()" in v23guest
+        and "completions == 1" in v23guest,
+        "V2.3 guest must cancel/reject stale work and finish new request only once")
+require("ContainerV2ManifestRouteProbe.run(getApplicationContext()" in v23
+        and "Class.forName(GUEST_CLASS, true, loader)" in v23
+        and "oldToken = UUID.randomUUID().toString()" in v23
+        and "recreate();" in v23
+        and "oldProofVerified = recreateRequested" in v23
+        and "oldToken.equals(proofToken)" in v23
+        and "digest.equals(proofDigest)" in v23
+        and "OLD_DISPOSED" in v23
+        and "OLD_CLEARED" in v23
+        and "call(dispose)" in v23
+        and "getSharedPreferences(PREFS, MODE_PRIVATE).edit()" in v23
+        and "V2.3 真机验收" in v23,
+        "V2.3 must check real old onDestroy proof before new guest verification")
+require("new Intent(this, VirtualContainerV23RecreationActivity.class)" in v2_controller
+        and "startActivityForResult(request, REQUEST_RECREATE)" in v2_controller
+        and "V23_RECREATION_PASS" in v2_controller,
+        "V2.3 private host controller or nonce response validation missing")
+require("VirtualContainerV2Activity.LAST_RECREATE_RESULT" in screen
+        and "Tianwaitian V0+V1+V2+V2.2+V2.3" in screen
+        and "ServiceGo" not in v23 + v23guest,
+        "V2.3 must join one-copy report without modifying mock-location service")
+print("V0/V1/V2/V2.2/V2.3 static contract PASS: real host recreation, "
+      "new fixture guest object, old cancellation/disposal proof and one-copy report.")
 
 
