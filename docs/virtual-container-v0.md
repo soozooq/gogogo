@@ -1,5 +1,21 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-18 19:06 — 2.4.22 V2.3 真机联合验收 PASS
+
+> 用户提供同一次 Android 13 真机测试的 V0 / V2 / V2.2 / V2.3 一键复制总报告。此处的实测 PASS 更新下方历史记录中「2.4.22 V2.3 等待真机」的当时状态；旧版构建/开发阶段的说明保留为时间线。
+
+- 设备 Android API `33`；宿主应用 `com.soozooq.gogogo.test`，主进程 PID `11942`，Linux UID `10441`。独立、受控 fixture APK SHA-256 `9c7dc1d44e0de3f7233beb4a51d0a9af9fa2526db63b62c15be5c027f237dd83`，与 2.4.22 双工作流成功的 Preview 实际下载产物核验一致；版本 `2.4.22-tianwaitian-v23-recreate`。
+- **V0 五项回归（19:06:44）5/5 PASS，FAIL/TIMEOUT=0**：ClassLoader A `79723395`、B `101689`，同名类及文件不串线；Binder 主 PID `11942` ↔ 子进程 `12662`；两子进程 A/B `12662` / `12688`，皆 UID `10441`，独立代码加载、状态隔离与两子进程执行通过。
+- **V2 第一阶段（19:06:48）PASS**：宿主/代理 PID 均 `11942`、UID 均 `10441`，随机关联标记、Guest DEX 受控响应及 Guest Manifest 解析均 PASS；fixture 内声明 `com.soozooq.tianwaitian.fixture.GuestV2DeclaredActivity`，`exported=false`，无权限请求。Android 真正启动的是安装好的宿主代理。
+- **V2.2（开始 19:06:50）PASS**：Guest 会话接收 4 项，其中 3 项完成、1 项主动取消、1 次预期非法请求拒绝，无挂起残留，`disposed=true`。真实 HOST `onPause→onStop→onRestart→onStart→onResume` 后完成待处理请求，退出 `onDestroy` 后正常清理；本次证明存活宿主的前后台恢复，`宿主 Activity 重建中断标志=false`。
+- **V2.3（开始 19:06:55）PASS**：`请求主动重建=true`、`新 Activity 实例=true`、`旧 Guest onDestroy/dispose/取消证据=true`、`新 Guest 拒绝旧请求并仅完成一次新请求=true`、`新 Guest 最终 dispose=true`；代理回传 `PASS` 且随机标记核对 `true`、HOST/代理 PID 均为 `11942`。所有该次 V0/V2/V2.2/V2.3 独立 APK SHA-256 统一为 `9c7dc1d4...`。
+- 旧 Guest 快照：`starts=1, completions=0, pending=false, cancelled=true, explicitCancellation=true, disposed=true`，时间线包含 `GUEST OLD pending D cancelled before Activity.recreate()` 和 `GUEST disposed=true`；证明**主动重建前显式取消**，而非销毁时才兜底取消。新 Guest 快照：`starts=1, completions=1, pending=false, staleRejected=true, disposed=true`，时间线包含 `GUEST rejected old/stale token`、`GUEST NEW completed one fresh D`、`GUEST disposed=true`。
+- 宿主状态线展示 `HOST cancelled original guest D; now calling real Activity.recreate()` → `onPause/onStop/onSaveInstanceState` → `HOST onCreate new instance from saved state` → 新实例校验旧清理证据 → 完成新 D → 新 `onDestroy`/dispose。**原始汇总中的 HOST 时间线没有直接拼入旧实例 `onDestroy` 一行**，但新实例根据与本次旧请求 Token、fixture SHA 相同的宿主私有 Preferences 证据判定 `oldProofVerified=true`；旧 Guest 的已清理快照独立保留。属于受控宿主内部证据，不是防恶意伪造的安全证明。
+- **V1 历史附录独立看待**：`2026-10-17 22:04:11`，PID `23965`，APK SHA-256 `c6dc44d6a335ee012710f8a1e566cc4bbe1e76804bcda9f7a6953fa07075f520`，是旧版本 2.4.19 的 UI/资源实测，不能把它误标为 2.4.22 新 fixture 的 V1 重新验证。
+
+**验收结论：** 2.4.22 的受控独立 APK 会话状态机在 Android 13 上通过 **HOST Activity 真重建 → 旧 Guest 显式取消/销毁 → 新 Guest 独立启动 → 旧请求拒绝/新请求单次完成 → 退出清理**。V0、V2 与 V2.2 在本版也回归 PASS。仍然没有证明被系统杀进程后的持久化恢复、独立 UID/权限沙箱或未安装 Guest Activity 系统原生启动；更没有新的微信等第三方 App 位置兼容证据。后续应转向**受控进程终止/冷启动后的恢复协议与幂等性**，避免把既有 Activity 重建当成进程死亡测试。
+
+---
 ## 2026-10-18 — 2.4.22 双工作流构建验收通过，V2.3 等待真机
 
 - 已发布的构建代码 `main` SHA `2503b2943b35ab0c5f2d831ff7357cc5b4e106f3`；app `versionCode 2400090` / `versionName 2.4.22-tianwaitian-v23-recreate`，保留宿主包名 `com.soozooq.gogogo.test` 与既有签名设置。
