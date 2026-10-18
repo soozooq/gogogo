@@ -1,5 +1,18 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-18 — 2.4.24 V3 真实 APK 只读归档双构建通过（待 Android 13 真机）
+
+- **构建 SHA：** `3499fe8fc11973f6e13e1b27bf8605f0cd5f43f2`，应用 `com.soozooq.gogogo.test`，`versionCode 2400092`、`versionName 2.4.24-tianwaitian-v3-archive`；主包名、签名配置、定位工具及 V0–V2.4 已有实验保留。
+- [Build Preview APK #39130596097](https://github.com/soozooq/gogogo/actions/runs/39130596097) **success**：包括全部历史回归、V3 SAF 只读解析禁执行约束、Android APK 真正打包与 Manifest 入口校验。[Build Check #39130596162](https://github.com/soozooq/gogogo/actions/runs/39130596162) **success**：完整 Gradle/Release/Lint 验收通过。
+- 最初的 [Preview #39130344003](https://github.com/soozooq/gogogo/actions/runs/39130344003) 和 [Build Check #39130344087](https://github.com/soozooq/gogogo/actions/runs/39130344087) 失败于 CI 旧版固定的剪贴板标题字符串；V3 报告合并后已改为 `Tianwaitian V0-V3`，只调整该过时检查，没有移除原有 Manifest、进程或禁执行安全规则；复建两条均成功。
+- GitHub Actions Artifact `gogogo-unified-labs-preview` ID `12138071990`，提取实际 ARM64 APK `Go_2.4.24-tianwaitian-v3-archive_arm64-v8a_debug.apk`，大小 `40,375,394` 字节，SHA-256 `276e09a3abb5ff59370b07d8de8c344704bdfcbaab3ca7f86940120c674fbffa`；内置受控 fixture APK SHA-256 `a36929f85fafd572b320af4c43cf345cf67aa141a5219a56d0e9e48cb8ce54da`，主/内置 ZIP CRC 检查均无错误。主 DEX 内确实包含 `VirtualContainerV3ArchiveActivity` 与 `ContainerV3ArchiveProbe` 类名。
+- **状态限定：V3 真实 APK 只读扫描尚未在用户 Android 13 真机测试，不能宣称实际外部 APK 解析 PASS。** 即使真机返回 `V3 真实 APK 归档解析：PASS`，仍然只是 Component/ZIP/DEX 等元数据读取，不是第三方应用已经安装或启动；不涉及虚拟 UID、权限沙箱或微信位置功能。
+
+**最短真机操作**：直接覆盖升级 2.4.24 → V0 → V3 选择真实 APK（只读归档审计）→ 通过 Android 文件选择器选一个用户自己合法持有的 APK 文件（普通单 APK，非多文件 XAPK/APKS 套件）→ 等待扫描报告 PASS/FAIL → 返回 V0，一键跑五项回归 → 最后仅复制一次 V0 汇总（自动带 V3 最新附录）。没有 APK 文件时不需要刻意下载未知第三方包；可先只验证 V0 后保留 V3 待验。
+
+**真实容器下一步：** 详见 [virtual-container-roadmap.md](virtual-container-roadmap.md)。优先让一个**未安装在系统里的独立演示 APK**真正以 Host stub Activity 显示其 Activity/资源和生命周期，再扩展虚拟包管理，而不是继续无限增加内部 fixture 测试 PASS。
+
+---
 ## 2026-10-18 — V3.0 真实外部 APK 只读归档审计（2.4.24，待构建/真机）
 
 - 用户关注完整容器剩余距离：已将真正的外部 APK 导入、组件启动和可用性设置为后续技术门槛。详细目标、优先级、时间区间和成熟框架许可核查见 [virtual-container-roadmap.md](virtual-container-roadmap.md)。
