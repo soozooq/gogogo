@@ -1,5 +1,16 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-18 — 2.4.21 云端双工作流已通过（V2.2 待真机）
+
+- 发布版本：`2.4.21-tianwaitian-v2-session` / `versionCode 2400089` / `com.soozooq.gogogo.test`，同一宿主签名方案及原有定位模拟路径保持不变。构建代码 SHA `00693ac0441c8a6953d3a3dc4f5f7c7852a98723`。
+- [Build Preview APK #39090948382](https://github.com/soozooq/gogogo/actions/runs/39090948382)：**success**。包括 fixture 新增七项 `GuestV2SessionTest` 单测、原有 V0/V1/V2 静态和 Java 回归、`app:assembleDebug`、原有真实 APK Manifest/fixture 打包检查。
+- [Build Check #39090948408](https://github.com/soozooq/gogogo/actions/runs/39090948408)：**success**。完整 Gradle 构建与 Lint 已结束，没有失败步骤。
+- 真实 Actions Artifact `gogogo-unified-labs-preview` ID `12122438436`，内唯一 ARM64 Debug APK 大小 `40339198` 字节、SHA-256：`5576063645e00fa24211b54b810a1c1bd31bef78f31ecae84f269ee767521311`。其嵌入测试 APK `assets/twt-fixture-v0.apk` SHA-256：`f8e7501f1157c711dd21a7367355e689fd3199453b0d399a749d90709df37e77`，包含 GuestV2Session 和 GuestV2DeclaredActivity DEX 类，两个 ZIP 包完整性检查均通过。
+- **当前状态：仅 CI / 编译 / 独立 fixture JVM 单测完成，2.4.21 V2.2 真机尚未验收。** CI 不能证明真实 Android onPause/onStop/onRestart/onResume 在用户设备触发并被 guest 状态机正确处理。用户需要实测才能宣称 V2.2 PASS。
+
+**一次复制真机流程**：安装/覆盖升级 2.4.21 → Virtual Container V0 → V2 控制页 → 点「V2 第二阶段：连续请求 / 取消 / 后台恢复」；等待自动脚本准备好 D 挂起请求 → 点「打开系统设置并返回」 → 返回 V2.2 → 点「验证挂起请求并完成退出」 → 回 V0，V0 五项一键回归 → 最后仅点一次「一键复制总报告」，自动带 V2 第一阶段和 V2.2 最近一次记录。任何步骤失败就退出并复制一次，避免重复实验。V1 的旧历史附录不算本版复测。
+
+---
 ## 2026-10-18 — V2 第二阶段 Guest 会话与真实宿主生命周期（2.4.21，待真机）
 
 - 本轮仍沿用已验证的 V0 / V1 / V2 第一阶段架构，只给自编译、内置、经过包名和独立 DEX 校验的 fixture 增加 `GuestV2Session`，不安装外部 APK，也不修改位置模拟。
