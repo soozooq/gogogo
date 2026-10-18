@@ -27,6 +27,8 @@ public final class VirtualContainerV2Activity extends AppCompatActivity {
     public static final String LAST_RESULT = "last_result";
     public static final String LAST_SESSION_RESULT = "last_session_result";
     public static final String LAST_SESSION_SUMMARY = "last_session_summary";
+    public static final String LAST_RECREATE_RESULT = "last_recreate_result";
+    public static final String LAST_RECREATE_SUMMARY = "last_recreate_summary";
 
     public static final String EXTRA_NONCE = "twt_v2_nonce";
     public static final String EXTRA_PAYLOAD = "twt_v2_payload";
@@ -39,6 +41,7 @@ public final class VirtualContainerV2Activity extends AppCompatActivity {
 
     private static final int REQUEST = 2202;
     private static final int REQUEST_SESSION = 2203;
+    private static final int REQUEST_RECREATE = 2204;
     private static final String PAYLOAD = "TWT_V2_2026";
     private String pendingNonce;
     private TextView report;
@@ -65,6 +68,9 @@ public final class VirtualContainerV2Activity extends AppCompatActivity {
         root.addView(GoGoUi.primaryButton(this,
                 "V2 第二阶段：连续请求 / 取消 / 后台恢复", v -> runSession()),
                 GoGoUi.matchWrap());
+        root.addView(GoGoUi.primaryButton(this,
+                "V2 第三阶段：真实 Activity 重建 / 防重复请求",
+                v -> runRecreation()), GoGoUi.matchWrap());
         root.addView(GoGoUi.secondaryButton(this,
                 "完成并返回 V0（总日志自动合并）", v -> finish()), GoGoUi.matchWrap());
         report = GoGoUi.reportPanel(this);
@@ -110,6 +116,23 @@ public final class VirtualContainerV2Activity extends AppCompatActivity {
         }
     }
 
+    private void runRecreation() {
+        if (pendingNonce != null) return;
+        pendingNonce = UUID.randomUUID().toString();
+        Intent request = new Intent(this, VirtualContainerV23RecreationActivity.class);
+        request.putExtra(EXTRA_NONCE, pendingNonce);
+        try {
+            startActivityForResult(request, REQUEST_RECREATE);
+        } catch (RuntimeException failure) {
+            String result = "V2.3 FAIL：无法启动私有宿主重建代理 · "
+                    + failure.getClass().getSimpleName();
+            report.setText(result);
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                    .putString(LAST_RECREATE_SUMMARY, result).apply();
+            pendingNonce = null;
+        }
+    }
+
     @Override protected void onSaveInstanceState(Bundle state) {
         state.putString(EXTRA_NONCE, pendingNonce);
         super.onSaveInstanceState(state);
@@ -117,6 +140,31 @@ public final class VirtualContainerV2Activity extends AppCompatActivity {
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_RECREATE) {
+            if (pendingNonce == null) return;
+            String expectedNonce = pendingNonce;
+            pendingNonce = null;
+            String actualNonce = data == null ? null : data.getStringExtra(EXTRA_NONCE);
+            String response = data == null ? null : data.getStringExtra(EXTRA_RESPONSE);
+            String digest = data == null ? null : data.getStringExtra(EXTRA_DIGEST);
+            int pid = data == null ? -1 : data.getIntExtra(EXTRA_PROXY_PID, -1);
+            int uid = data == null ? -1 : data.getIntExtra(EXTRA_PROXY_UID, -1);
+            boolean valid = data != null && resultCode == Activity.RESULT_OK
+                    && expectedNonce.equals(actualNonce)
+                    && "V23_RECREATION_PASS".equals(response)
+                    && digest != null && digest.matches("[a-f0-9]{64}")
+                    && data.getBooleanExtra(EXTRA_ARCHIVE_OK, false)
+                    && pid == Process.myPid() && uid == Process.myUid();
+            String summary = "V2.3 Activity 重建代理返回：" + (valid ? "PASS" : "FAIL/INCOMPLETE")
+                    + "\n旧请求/新请求及真实 onDestroy 证据见 V2.3 独立附录"
+                    + "\n随机标记匹配=" + expectedNonce.equals(actualNonce)
+                    + "\nHOST PID=" + Process.myPid() + "；代理 PID=" + pid
+                    + "\nAPK SHA-256=" + digest;
+            report.setText(summary);
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                    .putString(LAST_RECREATE_SUMMARY, summary).apply();
+            return;
+        }
         if (requestCode == REQUEST_SESSION) {
             if (pendingNonce == null) return;
             String expectedToken = pendingNonce;
