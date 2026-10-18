@@ -341,8 +341,43 @@ require("new Intent(this, VirtualContainerV24Activity.class)" in v2_controller
         and "Tianwaitian V0+V1+V2+V2.2+V2.3+V2.4" in screen
         and "ServiceGo" not in v24controller+v24worker+v24guest,
         "V2.4 must preserve one-copy and location service boundaries")
-print("V0/V1/V2/V2.2/V2.3/V2.4 static contract PASS: dedicated child crash, "
-      "atomic durable guest journal, nonce/PID recovery and one-copy report.")
+# V3 baseline: explicit user-selected real APK is inspected read-only. No
+# arbitrary executable code from that APK is loaded or launched at this stage.
+v3_activity_name=".VirtualContainerV3ArchiveActivity"
+require(v3_activity_name in v1_activities
+        and v1_activities[v3_activity_name].get(ANDROID + "exported")=="false",
+        "V3 file-picker Activity must be registered and private")
+v3=(ROOT / "app/src/main/java/com/zcshou/gogogo/VirtualContainerV3ArchiveActivity.java").read_text(encoding="utf-8")
+v3_probe=(host_source / "ContainerV3ArchiveProbe.java").read_text(encoding="utf-8")
+require("Intent.ACTION_OPEN_DOCUMENT" in v3
+        and "Intent.CATEGORY_OPENABLE" in v3
+        and "ContainerV3ArchiveProbe.inspect(getApplicationContext(), selected)" in v3
+        and "LAST_RESULT" in v3,
+        "V3 must only inspect APKs explicitly selected using Android document picker")
+require("getPackageArchiveInfo(" in v3_probe
+        and "PackageManager.GET_ACTIVITIES" in v3_probe
+        and "PackageManager.GET_SERVICES" in v3_probe
+        and "PackageManager.GET_PROVIDERS" in v3_probe
+        and "ZipFile" in v3_probe
+        and "MessageDigest.getInstance(\"SHA-256\")" in v3_probe
+        and "MAX_BYTES" in v3_probe
+        and "MAX_ZIP_ENTRIES" in v3_probe
+        and "temporary.delete()" in v3_probe
+        and "V3 第三方 APK 实际安装/启动：NOT TESTED" in v3_probe,
+        "V3 must verify read-only manifest/DEX/ZIP metadata and delete temporary copy")
+for dangerous in ("DexClassLoader", "PathClassLoader", "InMemoryDexClassLoader",
+                  "loadClass(", "System.load", "System.loadLibrary", "PackageInstaller",
+                  "startActivity(", "Runtime.getRuntime", "Process.killProcess"):
+    require(dangerous not in v3_probe,
+            "V3 untrusted APK archive probe may not run/install arbitrary code: "+dangerous)
+require("VirtualContainerV3ArchiveActivity.PREFS" in screen
+        and "VirtualContainerV3ArchiveActivity.LAST_RESULT" in screen
+        and "Tianwaitian V0-V3" in screen
+        and "ServiceGo" not in v3 + v3_probe,
+        "V3 report must join V0 single-copy without location service changes")
+print("V0-V3 static contract PASS: read-only external APK inspection added without execution; "
+      "existing trusted fixture and one-copy diagnostics remain.")
+
 
 
 
