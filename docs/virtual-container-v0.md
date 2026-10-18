@@ -1,5 +1,20 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-18 15:26 — 2.4.21 V2.2 真机联合验收 PASS
+
+> 用户从天外天 Android 13 真机提交完整一次复制总日志。本节正式结束此前“2.4.21 V2.2 待真机”的**历史待验收状态**；旧开发/CI 记录保持原样作为时间线，不应再将旧标题理解为当前状态。
+
+- 环境：`2.4.21-tianwaitian-v2-session` / `versionCode 2400089`、Android API 33，宿主包名 `com.soozooq.gogogo.test`；当次主 PID `17001`，UID `10441`。独立 fixture APK SHA-256 `f8e7501f1157c711dd21a7367355e689fd3199453b0d399a749d90709df37e77`，与 2.4.21 成功构建 Artifact 中嵌入的 APK 哈希完全一致。
+- **V0 实际设备回归 5/5 PASS（2026-10-18 15:26:11）**，无超时或失败：A/B ClassLoader 不同（`161053060` / `158803309`），文件/静态状态互不串线；Messenger Binder 主 PID `17001` ↔ 远端 `17526`；两远端子进程 PID `17526` 和 `17585`，UID 与宿主均为 `10441`；独立 APK DEX/双子进程执行全部通过。
+- **V2 第一阶段 Manifest/Intent 重新真机 PASS（15:26:21）**：主/代理 PID 均 `17001`，UID `10441`；随机标记匹配、Guest DEX 路由响应、APK Manifest 检查均为 `true`，受控 Guest 声明 `GuestV2DeclaredActivity` 且 `activityExported=false`、`guestPermissionCount=0`。
+- **V2.2 真机生命周期与会话联合验收 PASS（会话开始 15:26:23）**：`Manifest/DEX 检验与会话加载=true`，`受控连续/取消/异常恢复脚本=true`，`真机回后台后恢复并完成挂起 D=true`，`宿主 Activity 重建中断标志=false`；会话计数 `accepted=4`、`completed=3`（A/C/D）、`cancelled=1`（B）、`expectedRejected=1`（错误 ID 被拒绝）、`pending=none`、`finished=true`、`disposed=true`。
+- 真机真实宿主事件顺序：`HOST onPause` → `onStop` → `onSaveInstanceState` → `onRestart` → `onStart` → `onResume`，随后 Guest 执行未完成 D 并校验通过。最后宿主 `onPause/onStop/onDestroy`，Guest `dispose()`，Guest 快照 `realHostPause=true`、`realHostStop=true`、`realHostRestart=true`、`realHostReturnResume=true`、`forwardedLifecycleEvents=11`。额外 Host Activity result 关联随机标记匹配且 PID/UID 一致，`V2.2 Session 代理请求/响应：PASS`。
+- **关键解释**：Android 触发 `onSaveInstanceState` 不等于该宿主 Activity 实际重建。因为 `宿主 Activity 重建中断标志=false`，本次证明的是**存活的宿主 Activity 在正常前后台切换期间保留/完成受控 Guest 会话**；没有证明配置变更重建、应用进程被系统杀死或重启之后的会话持久化，更不是未安装 Guest Activity 由系统原生启动。
+- **V1 附录仍是历史记录**：`2026-10-17 22:04:11`，旧独立 APK SHA-256 `c6dc44d6a335ee012710f8a1e566cc4bbe1e76804bcda9f7a6953fa07075f520`，属于 2.4.19 真机 V1 UI/资源测试；不得当作 2.4.21 新 fixture 的 V1 重测。此次成功的一次复制汇总保留了 V0/V1 历史/V2/V2.2 各自的时间戳、进程与哈希。
+
+**结论与下一阶段方向**：将 2.4.21 的受控 V2.2 正常前后台 Guest 会话测试标记为 Android 13 **PASS**；下一研究点是**受控 Activity 重建时的一致性、待处理请求的明确取消与恢复策略、异常/进程中断后状态约束**。继续只用项目自有 fixture 和私有 Host Activity，区分 Host 真实生命周期与 Guest 普通 Java 代理协议，维持 V0 五项一键回归与一次复制总日志。整个过程仍共享宿主 UID、权限与安装包，不能宣称微信位置兼容或完整第三方 APK 虚拟化。
+
+---
 ## 2026-10-18 — 2.4.21 云端双工作流已通过（V2.2 待真机）
 
 - 发布版本：`2.4.21-tianwaitian-v2-session` / `versionCode 2400089` / `com.soozooq.gogogo.test`，同一宿主签名方案及原有定位模拟路径保持不变。构建代码 SHA `00693ac0441c8a6953d3a3dc4f5f7c7852a98723`。
