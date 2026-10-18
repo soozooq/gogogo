@@ -1,5 +1,20 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-18 20:59 — 2.4.23 V2.4 真机联合验收 PASS
+
+> 用户提交来自 Android 13 真机、通过 V0 页一次复制的诊断总报告。此处 **真实设备验收 PASS** 更新下方历史记录「2.4.23 V2.4 真机待验」当时状态；保留云端构建的原始时间线，不将 Preview success 误当成真机通过。
+
+- **本次真实设备环境**：Android API `33`，宿主应用 `com.soozooq.gogogo.test`，主 PID `14649`，同一 Linux UID `10441`。在 2.4.23 内嵌的受控 fixture APK SHA-256 为 `8ccfad3ecba59e6266005c9b4b49d1ed0c08b688d79708fe1eb3feab5ff4f218`，与该版本成功 GitHub Actions APK 中的受控 fixture 哈希一致（`versionCode 2400091`）。
+- **V0 真机五项 5/5 PASS，FAIL/TIMEOUT=0**，总报告生成时间 `2026-10-18 20:59:04`：ClassLoader A/B `122075401` / `192132878`，私有目录/静态状态互不串线；Binder 主 PID `14649` ↔ 子进程 `15553`，两个子进程 PID `15553` 和 `15649` 均 UID `10441`；独立 fixture APK 的 DEX 加载/双进程执行通过。
+- **V2.4 本轮真机 PASS（开始 `2026-10-18 20:59:11`）**：受控独立 APK SHA-256 同 V0；主进程 PID `14649` 在全程不变；专属旧 `:virtualv24` 进程 PID `16027` 在 `AtomicFile` 持久化 `PENDING` journal 后确认 ACK 并自我终止。宿主实际收到 `onServiceDisconnected`，日志 `旧进程真实 Binder 断开=true`。专属服务重新绑定获得**不同新 PID `16167`**，以相同 fixture SHA 读取磁盘 journal，完成受控恢复验证。
+- V2.4 关键布尔证据：`恢复后新请求只记一次/重试幂等=true`、`恢复后旧请求拒绝=true`、`主进程未被杀/未换 PID=true`，最后 `V2.4 验收：PASS`，没有该段 FAIL/TIMEOUT。原始事件按顺序包含 `OLD worker PID=16027 committed AtomicFile PENDING` → `OLD worker acknowledged guarded self-termination` → `HOST received real onServiceDisconnected for OLD PID=16027` → `NEW worker PID=16167 loaded same guest APK journal; OLD result rejected` → `NEW synthetic request committed once; duplicate retry idempotent`。
+- **对本次总报告中的其他附录须分别标注**：V1 历史 PASS 开始 `2026-10-17 22:04:11`，fixture SHA `c6dc44d6a335ee012710f8a1e566cc4bbe1e76804bcda9f7a6953fa07075f520`（2.4.19）；V2、V2.2、V2.3 的附录仍保留 `2026-10-18 19:06` 开始时间、旧 PID `11942`、fixture SHA `9c7dc1d44e0de3f7233beb4a51d0a9af9fa2526db63b62c15be5c027f237dd83`（2.4.22）。**这些是已有真实 PASS 历史记录，不是本次 2.4.23 对这些阶段的重新运行。**
+
+**V2.4 验收边界**：被明确终止的是同一宿主包名/UID 下专属 `:virtualv24` 子进程，宿主 UI/主 PID 保持存活；仅确认受控自编 fixture 的 PENDING journal 在此情况下可由新子进程读取并拒绝旧合成结果、幂等完成新合成操作。没有验证整个天外天主进程被 OS 杀死后的恢复；`AtomicFile` 与受控函数验证也不是对外部网络付款或真实副作用 exactly-once 的保证，更非独立 UID、任意第三方 APK 虚拟化或微信定位兼容。
+
+**下一阶段建议（尚未实现）**：在不干扰既有 V0 IPC 和定位服务前提下，为主进程崩溃或设备重启后的冷恢复设计可审计的 journal schema、请求所有权与生成 epoch、双实例回放拒绝、故障注入（写前/写后/确认前）及启动时安全清理协议；不得声称已验证主进程进程死亡或重新安装/数据迁移。
+
+---
 ## 2026-10-18 — 2.4.23 V2.4 双构建云端验收通过（真机待验）
 
 - 构建源 HEAD：`5192941c85bfbde938a5ef24d70de07958582a2f`，Android 宿主 `com.soozooq.gogogo.test`、`versionCode 2400091`、`versionName 2.4.23-tianwaitian-v24-cold-process`。前后 `main` 的文档提交标记 `[skip ci]`，未改变已编译的 APK 代码。
