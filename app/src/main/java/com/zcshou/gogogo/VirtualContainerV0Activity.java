@@ -128,8 +128,21 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
                         all += "\n\nV2.2 宿主代理请求核对：\n" + v22Summary;
                     }
                 }
-                clipboard.setPrimaryClip(ClipData.newPlainText("Tianwaitian V0+V1+V2+V2.2", all));
-                Toast.makeText(this, "V0 / V1 / V2 / V2.2 总报告已复制", Toast.LENGTH_SHORT).show();
+                String v23 = getSharedPreferences(VirtualContainerV2Activity.PREFS,
+                        MODE_PRIVATE).getString(VirtualContainerV2Activity.LAST_RECREATE_RESULT, "");
+                String v23Summary = getSharedPreferences(VirtualContainerV2Activity.PREFS,
+                        MODE_PRIVATE).getString(VirtualContainerV2Activity.LAST_RECREATE_SUMMARY, "");
+                if (!v23.isEmpty()) {
+                    all += "\n\n========== V2.3 真实 Activity 重建 / 请求防重附录（最近一次）==========\n"
+                            + v23;
+                    if (!v23Summary.isEmpty()) {
+                        all += "\n\nV2.3 宿主代理核对：\n" + v23Summary;
+                    }
+                }
+                clipboard.setPrimaryClip(ClipData.newPlainText(
+                        "Tianwaitian V0+V1+V2+V2.2+V2.3", all));
+                Toast.makeText(this, "V0 / V1 / V2 / V2.2 / V2.3 总报告已复制",
+                        Toast.LENGTH_SHORT).show();
             }
         });
         root.addView(copyButton, GoGoUi.matchWrap());
