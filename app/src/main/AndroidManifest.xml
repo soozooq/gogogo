@@ -232,6 +232,17 @@
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
 
+        <!-- V2.4: ONLY this purpose-built :virtualv24 worker may self-terminate.
+             The main process and the existing V0 IPC child services are untouched. -->
+        <activity
+            android:name=".VirtualContainerV24Activity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <service
+            android:name=".virtualv0.VirtualContainerV24WorkerService"
+            android:process=":virtualv24"
+            android:exported="false" />
+
         <activity
             android:name=".IsolatedCapsuleLabActivity"
             android:exported="false"
