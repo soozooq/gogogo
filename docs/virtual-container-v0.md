@@ -1,5 +1,18 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-18 — V2 第三阶段：Activity 真重建与旧请求防重（2.4.22，待真机）
+
+- **已验证基线**：2.4.21 V0 五项、V2 Manifest/Intent、V2.2 Guest 连续请求与正常后台恢复均为 Android 13 真机 PASS；V1 UI/资源的实际 PASS 来自 2.4.19 历史附录，不混淆版本。
+- 新版保留原 `com.soozooq.gogogo.test`、既有签名配置、`main`、正常定位功能与 V0/V1/V2/V2.2 流程；V2 控制页新增「V2 第三阶段：真实 Activity 重建 / 防重复请求」。只在内置受控 APK 的独立 DEX 增加 `GuestV23Recreation` 类、七个针对旧请求取消/过期令牌/一次完成/销毁的 JVM 单测。**不安装第二个 APK，不进入第三方应用。**
+- 宿主新增不可导出的 `VirtualContainerV23RecreationActivity`。初次进入时新建一个受控 Guest Java 对象并挂起测试请求 D；点击「触发 Activity 真正重建」前必须从旧 Guest 收到 `CANCELLED_D` 与 `oldCleared=true`，随后调用 Android `Activity.recreate()`。
+- 系统旧宿主实例发生 `onSaveInstanceState` 与**真实** `onDestroy`，旧 Guest 在 `onDestroy()` 执行 `dispose()`；将旧请求令牌、fixture APK SHA-256、旧会话取消及销毁的快照作为**同 UID 宿主内部测试证据**写入私有 Preferences。新 Android Activity 从保存的 Bundle 拿到旧令牌，读取**同一令牌、同一 APK** 的旧销毁证据。只有这些相符，才独立加载新的 APK DEX Guest 对象。
+- 新 Guest 内部必须拒绝旧令牌，并为新的随机令牌完成恰好一次 `RECOVER_V23` 合成请求。旧对象 `completions=0`、`pending=false`、`disposed=true`，新对象 `completions=1`，任何旧令牌泄漏、无旧销毁证据、跳过真实重建、提前退出都会显示 FAIL/INCOMPLETE。最终新宿主 `onDestroy` 还需记录自己 Guest 的 `dispose()` 才显示 PASS。
+- V2 控制页验证回传的 nonce、相同宿主 PID/UID、fixture SHA 与 `V23_RECREATION_PASS`；独立的 V2.3 完整时间线与代理核对摘要会自动附加到 V0 **一次复制总报告**，不会覆盖早已通过的 V2 第一阶段或 V2.2 历史附录。
+- **边界**：此轮不是保存或重新启动整个旧 Guest。我们验证的是明确的「旧请求取消 + 旧对象销毁 + 新对象冷启动 + 过期回调拒绝」策略；这是正常 Activity 重建，不是 OS 进程被杀后的跨进程持久恢复，也不构成任意第三方应用虚拟化、权限/UID 隔离或微信位置兼容。证据 Preferences 属于同 UID 宿主测试记录，不是恶意应用无法伪造的安全证明。
+
+**Android 13 真机最小验收**：覆盖升级 2.4.22（不卸载旧版本）→ V0 → V2 控制页 → 「V2 第三阶段」→ 等旧 Guest 加载完毕 → 点「触发 Activity 真正重建」→ 等新实例校验旧销毁证据 → 点「完成并退出」→ 返回 V0，原有五项一键回归 → 最后**只复制一次完整报告**给 GPT。如未出现可完成状态或任何 FAIL，直接退出回 V0 复制日志，不要反复点重建。
+
+---
 ## 2026-10-18 15:26 — 2.4.21 V2.2 真机联合验收 PASS
 
 > 用户从天外天 Android 13 真机提交完整一次复制总日志。本节正式结束此前“2.4.21 V2.2 待真机”的**历史待验收状态**；旧开发/CI 记录保持原样作为时间线，不应再将旧标题理解为当前状态。
