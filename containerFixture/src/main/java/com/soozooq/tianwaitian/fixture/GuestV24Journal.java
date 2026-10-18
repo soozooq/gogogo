@@ -34,13 +34,13 @@ public final class GuestV24Journal {
         }
         if ("RECOVERED".equals(f[1])) {
             // Duplicate recovery must preserve the already committed record.
-            if (newToken.equals(f[7]) && Integer.parseInt(f[7]) == currentPid) {
+            if (newToken.equals(f[8]) && Integer.parseInt(f[7]) == currentPid) {
                 return journal;
             }
             throw new IllegalStateException("stale or foreign recovery is rejected");
         }
         if (!"PENDING".equals(f[1]) || !"0".equals(f[5]) || !"0".equals(f[6]) || !"0".equals(f[7])
-                || !"NONE".equals(f[7])) {
+                || !"NONE".equals(f[8])) {
             throw new IllegalStateException("unexpected pre-crash journal state");
         }
         // Old pending synthetic request is ABORTED, not replayed. A NEW request
