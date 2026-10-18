@@ -1,5 +1,19 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-18 08:48 — 2.4.20 V2 真机 Manifest / Intent 联合验收 PASS
+
+> 用户提供一份由天外天本机「一键复制总报告」生成的完整日志。Android API 33、主程序 `com.soozooq.gogogo.test`，宿主 PID `29615`、UID `10441`；本节记录用户设备真机观测，区别于下文 2026-10-17 云端 Build Preview / Build Check 成功但“V2 待真机”的历史状态。
+
+- 版本基准：2.4.20 `versionCode 2400088`，嵌入受控测试 APK SHA-256 `3ccec41fd8a57f18dc393c6173d9cde9069fa7931859fbd23027895810e74ca2`；这一 SHA 与此前 2.4.20 CI 实际 artifact 中的 fixture 一致。
+- **V0 实际回归 5/5 PASS，FAIL/TIMEOUT=0**（2026-10-18 08:47:57）：双 ClassLoader A/B 句柄 `42208756` / `221411613` 且文件互不串线；Binder 主 PID `29615` ↔ 子进程 `30258`，相同 UID `10441`；另一子进程 `30279`，与 A 的状态标记都保留；独立 APK 的 DEX 加载/执行和双子进程代码执行均成功。
+- **V2 组件解析及受控显式 Intent 往返：PASS**（2026-10-18 08:48:04）。宿主与代理 PID 均为 `29615`，UID 均为 `10441`；`guest APK SHA-256` 匹配 V0；合成 action `com.soozooq.tianwaitian.fixture.action.V2_PING`，合成 payload `TWT_V2_2026`；`请求与返回的随机标记匹配=true`、`Guest DEX 路由响应正确=true`、`Guest APK Manifest 验证=true`。
+- `PackageManager.getPackageArchiveInfo` 从**未安装的受控 fixture APK** 解析到 `com.soozooq.tianwaitian.fixture.GuestV2DeclaredActivity`，确认 `activityExported=false`、`guestPermissionCount=0`，受控组件类及路由类的 ClassLoader 来自 fixture DEX；在宿主代理调用 Guest Route 后收到有效结果，最终 `V2 验收结果：PASS`。
+- **V1 附录不是本次新版本的真机回归测试**：它有明确历史时间戳 `2026-10-17 22:04:11`、旧宿主 PID `23965`、旧 fixture APK SHA-256 `c6dc44d6a335ee012710f8a1e566cc4bbe1e76804bcda9f7a6953fa07075f520`。其资源、界面、点击、重建恢复和清理 PASS 为 2.4.19 的已有证据；不得把该旧附录当成 2.4.20 对新 fixture V1 的重新验收。
+- **结论边界**：此 V2 PASS 确认“离线读取独立 APK Manifest 中受控 Activity 声明 + 系统启动**已注册的天外天宿主代理 Activity** + 受控 Guest DEX 函数处理合成 Intent + 返回结果核验”。**没有**由 Android ActivityManager 原生启动未安装 Guest Activity；宿主与代理同 UID/进程；不代表完整第三方应用虚拟化，也没有任何新的微信/QQ/抖音位置成功证据。
+
+**建议后续 V2 第二阶段**：仍只用已审计的受控 fixture，试验带明确输入/结果协议的 Host Activity 代理（创建、暂停、恢复、返回、异常中断）与请求状态一致性；区分设备真实回调、宿主转发及 Guest 自有状态，不向任意第三方 APK 或定位数据开放此测试。保留 V0 5/5 和一次复制总报告为回归门槛。
+
+---
 ## 2026-10-17 — 2.4.20 双工作流构建验收通过（V2 待 Android 真机）
 
 - 版本：`2.4.20-tianwaitian-intent-v2`，`versionCode 2400088`，宿主 applicationId 原样保留 `com.soozooq.gogogo.test`。**构建时的代码 HEAD** 是 `c2601c1ecc56f5ea20e2422ce3ab84ba740b1691`。
