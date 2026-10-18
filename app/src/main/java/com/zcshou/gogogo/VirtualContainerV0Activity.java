@@ -139,9 +139,15 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
                         all += "\n\nV2.3 宿主代理核对：\n" + v23Summary;
                     }
                 }
+                String v24 = getSharedPreferences(VirtualContainerV2Activity.PREFS,
+                        MODE_PRIVATE).getString(VirtualContainerV2Activity.LAST_COLD_RESULT, "");
+                if (!v24.isEmpty()) {
+                    all += "\n\n========== V2.4 专属进程终止 / 冷启动恢复附录（最近一次）==========\n"
+                            + v24;
+                }
                 clipboard.setPrimaryClip(ClipData.newPlainText(
-                        "Tianwaitian V0+V1+V2+V2.2+V2.3", all));
-                Toast.makeText(this, "V0 / V1 / V2 / V2.2 / V2.3 总报告已复制",
+                        "Tianwaitian V0+V1+V2+V2.2+V2.3+V2.4", all));
+                Toast.makeText(this, "V0–V2.4 总报告已复制",
                         Toast.LENGTH_SHORT).show();
             }
         });
