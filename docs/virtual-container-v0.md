@@ -1,5 +1,19 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-18 — V2.4 独立子进程死亡与冷启动恢复（2.4.23，待真机）
+
+- 2.4.22 已有 Android 13 真机 V0 5/5、V2 Manifest/Intent、V2.2 真实前后台、V2.3 `Activity.recreate()` 新旧 Guest 清理与防重复 PASS（历史 V1 来自 2.4.19，不冒充同版复测）。此阶段不再重做正常 Activity 生命周期。
+- 引入**唯一独立**的 `android:process=":virtualv24"`、`android:exported="false"` 服务 `VirtualContainerV24WorkerService`，它不与主进程、V0 原有 `:virtualv0`/`:virtualv0b` 或位置服务复用进程。进程终止只在它自己的 `Application.getProcessName()` 等于 `<package>:virtualv24`、确认主 PID 不同时，调用 `Process.killProcess(Process.myPid())`；绝不调用 ForceStop、整包停止或结束主进程。
+- 受控 fixture APK 内 `GuestV24Journal` 定义纯 Java 固定格式的旧请求 PENDING / 新请求 RECOVERED 与强制严格哈希/令牌/PID 约束，9 个 JUnit 测试覆盖错误 token/sha、同 PID 拒绝、重复恢复幂等、旧请求拒绝与异常格式拒绝。该类必须经 `ContainerV0TrustedGuest` 已校验的独立 DEX ClassLoader 加载执行。
+- 在专属服务的工作线程上，把旧 token、fixture SHA-256、旧子进程 PID 与旧完成次数 0 序列化，通过 Android `AtomicFile.startWrite/finishWrite` **持久化在宿主私有文件**（真正落盘并立即回读核对），才允许接受终止指令。服务先回复 Binder ACK，再延迟约 250ms 自我终止；主 Activity 只有观察到真正 `ServiceConnection.onServiceDisconnected` 才会重新绑定新的专属子进程。
+- 第二个进程必须是**不同 PID、相同 UID**，重新加载同一 fixture APK SHA 和同一磁盘 journal，在新的 Guest DEX 中将旧合成请求标记不再可接受，并仅提交一个新的纯 Java 合成计算；再次恢复同一 token 必须返回完全相同的已提交 journal 而不新增完成次数。此处的“幂等”只限合成测试请求和原子记录，不表示对网络付款等真实外部副作用的 exactly-once 事务保证。
+- V2 控制页新增 V2 第四阶段入口与一键按钮，自动执行初次 Binder、PENDING 持久化、受控远端死亡、重新绑定、Guest 恢复，15 秒阶段超时/不匹配/异常均 FAIL。进程日志和 PID/UID、旧请求拒绝、重复恢复幂等验证自动追加到 V0 一键复制总报告（V2.4 附录），不覆盖原有 V2/V2.2/V2.3 实测记录。
+- CI 增加 V2.4 进程声明、特定 kill 安全边界、原子日志、旧请求拒绝、幂等和单次总报告静态规则。普通定位服务、Mock、外部应用、Shizuku、签名和 applicationId 没有变更。
+- **边界**：本轮明确杀死的是天外天同 UID 的**专用子进程**，宿主 UI/主进程保持存活，不等于整个天外天进程被杀后自动恢复，更不是独立 Linux UID、权限沙箱、未安装 APK Activity 系统原生启动或微信/QQ 定位兼容。
+
+**真机最小测试（仅需一次复制）**：覆盖升级 2.4.23 → 进入 V0 → V2 →「V2 第四阶段：专属子进程死亡 / 冷启动恢复」→ 点一次「一键执行 V2.4 受控进程死亡 / 冷启动验证」→ 等 PASS 或 FAIL → 返回 V0，一键运行五项回归 → 最后只复制一次总日志。若失败、页面卡住或 15 秒超时，直接返回 V0 复制日志，不必手动杀进程、重启设备或重复点击。
+
+---
 ## 2026-10-18 19:06 — 2.4.22 V2.3 真机联合验收 PASS
 
 > 用户提供同一次 Android 13 真机测试的 V0 / V2 / V2.2 / V2.3 一键复制总报告。此处的实测 PASS 更新下方历史记录中「2.4.22 V2.3 等待真机」的当时状态；旧版构建/开发阶段的说明保留为时间线。
