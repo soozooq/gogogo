@@ -270,7 +270,9 @@ require("GuestV23Recreation" in v23guest
         and "startNew(String oldToken, String freshToken)" in v23guest
         and "completeNew(String token)" in v23guest
         and "void dispose()" in v23guest
-        and "completions == 1" in v23guest,
+        and "completions == 1" in v23guest
+        and "explicitlyCancelledBeforeRecreation" in v23guest
+        and "return explicitlyCancelledBeforeRecreation && cancelled" in v23guest,
         "V2.3 guest must cancel/reject stale work and finish new request only once")
 require("ContainerV2ManifestRouteProbe.run(getApplicationContext()" in v23
         and "Class.forName(GUEST_CLASS, true, loader)" in v23
