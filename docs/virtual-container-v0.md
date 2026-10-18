@@ -1,5 +1,19 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-18 — V2 第二阶段 Guest 会话与真实宿主生命周期（2.4.21，待真机）
+
+- 本轮仍沿用已验证的 V0 / V1 / V2 第一阶段架构，只给自编译、内置、经过包名和独立 DEX 校验的 fixture 增加 `GuestV2Session`，不安装外部 APK，也不修改位置模拟。
+- V2.2 Guest 纯 Java 会话在 fixture APK 内执行**可重复验证的四个请求**：A 正常完成，B 主动取消，C 先用不匹配 ID 请求完成（必须被拒绝）随后正确完成，D 作为未完成请求保留到**宿主真机前后台往返**之后完成；计数校验目标 `accepted=4, completed=3, cancelled=1, expectedRejected=1`，错误/取消不可计入 completed。
+- Guest 状态机只接受明确的生命周期字符串；由真正注册的**天外天宿主** `VirtualContainerV2SessionActivity` 从 `onCreate/onStart/onResume/onPause/onStop/onRestart/onDestroy` 回调转发。**不注入虚构的 Android 回调**：D 只有观察到真实 `onPause→onStop→onRestart→onResume` 后才能完成；未执行实际切后台、出错或提前退出均不报告 PASS。
+- 在 V2 控制页新增「V2 第二阶段：连续请求 / 取消 / 后台恢复」按钮；新测试页自动执行请求 A/B/C、建立挂起 D。用户只需打开系统设置再返回，点击“验证挂起请求并完成退出”。清理时会执行 `GuestV2Session.dispose()` 并将真实退出结果持久化，保留异常原因及 session trace。
+- 新宿主 Session Activity 在 Manifest 声明为 `android:exported=false`；进入前再次由原 `ContainerV2ManifestRouteProbe` 检查受控 Guest Manifest 与路由，不使用 Guest Activity 的真实系统启动。V2 控制页校验 Activity result nonce、PID/UID、response 和 SHA；与独立的 Guest 会话细节分别保存，失败不可冒充成功。
+- 保留 V0 页的**一次复制总日志**。复制内容可同时附加原 V2 第一阶段日志及 V2.2 最近一次请求/真实回调/清理附录；不会用本次 V2.2 的短摘要覆盖以前已验证的 V2 第一阶段结果。V1 较早版本附录也保留各自时间/哈希，不得冒充同版复测。
+- 新增 `GuestV2SessionTest` 七项单元测试，覆盖连续请求、取消、错误请求拒绝、后台恢复成功、缺失 onStop 不可成功、重复执行拒绝、失败退出释放；CI 合约保证新 Activity 不导出、报告可一次复制、不得操作位置服务。
+- **边界**：仍是天外天宿主 Activity 发出的生命周期 + 受控独立 APK 普通 Java 会话对象。没有独立 UID 权限沙箱、没有真正启动未安装 Guest Activity、没有任意第三方 APK 兼容声明，更不代表微信位置模拟成功。
+
+**真机验收**：直接升级 2.4.21 → 进入 V0 的 V2 控制页 → 点击「V2 第二阶段」→ 等 Guest 自动请求完成 → 打开系统设置再返回 → 点击「验证挂起请求并完成退出」→ 回 V0 → V0 五项一键回归 → 最后**一次复制总报告**；不必再逐项复制或重复之前 V1 的点击测试。如果 Guest 自动阶段失败，只需返回 V0 复制本次单份报告，保留 FAIL 证据。
+
+---
 ## 2026-10-18 08:48 — 2.4.20 V2 真机 Manifest / Intent 联合验收 PASS
 
 > 用户提供一份由天外天本机「一键复制总报告」生成的完整日志。Android API 33、主程序 `com.soozooq.gogogo.test`，宿主 PID `29615`、UID `10441`；本节记录用户设备真机观测，区别于下文 2026-10-17 云端 Build Preview / Build Check 成功但“V2 待真机”的历史状态。
