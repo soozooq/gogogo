@@ -219,6 +219,13 @@
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
 
+        <!-- Stage 2: local host proxy for trusted guest session state machine;
+             never exports the component or installs the guest APK. -->
+        <activity
+            android:name=".VirtualContainerV2SessionActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
+
         <activity
             android:name=".IsolatedCapsuleLabActivity"
             android:exported="false"
