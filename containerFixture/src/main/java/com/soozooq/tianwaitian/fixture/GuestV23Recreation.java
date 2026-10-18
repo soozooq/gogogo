@@ -8,6 +8,7 @@ public final class GuestV23Recreation {
     private String activeToken;
     private boolean pending;
     private boolean cancelled;
+    private boolean explicitlyCancelledBeforeRecreation;
     private boolean completed;
     private boolean disposed;
     private boolean staleRejected;
@@ -36,6 +37,7 @@ public final class GuestV23Recreation {
         }
         pending = false;
         cancelled = true;
+        explicitlyCancelledBeforeRecreation = true;
         trace("GUEST OLD pending D cancelled before Activity.recreate()");
         return "CANCELLED_D";
     }
@@ -84,7 +86,8 @@ public final class GuestV23Recreation {
     }
 
     public boolean oldCleared() {
-        return cancelled && !pending && completions == 0;
+        return explicitlyCancelledBeforeRecreation && cancelled
+                && !pending && completions == 0;
     }
 
     public boolean newReady() {
@@ -106,6 +109,7 @@ public final class GuestV23Recreation {
     public String snapshot() {
         return "starts=" + starts + "；completions=" + completions
                 + "；pending=" + pending + "；cancelled=" + cancelled
+                + "；explicitCancellation=" + explicitlyCancelledBeforeRecreation
                 + "；staleRejected=" + staleRejected + "；disposed=" + disposed
                 + "\n" + timeline;
     }
