@@ -1,5 +1,15 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-18 — 2.4.23 V2.4 双构建云端验收通过（真机待验）
+
+- 构建源 HEAD：`5192941c85bfbde938a5ef24d70de07958582a2f`，Android 宿主 `com.soozooq.gogogo.test`、`versionCode 2400091`、`versionName 2.4.23-tianwaitian-v24-cold-process`。前后 `main` 的文档提交标记 `[skip ci]`，未改变已编译的 APK 代码。
+- [Build Preview APK #39122873635](https://github.com/soozooq/gogogo/actions/runs/39122873635) **success**：新 fixture `GuestV24JournalTest` 九项纯 Java 边界测试、既有 Java 回归、主 APK Debug 真实构建、Manifest/资源与静态安全约束均通过。[Build Check #39122873607](https://github.com/soozooq/gogogo/actions/runs/39122873607) **success**：Gradle/Lint 等完整检查完成。
+- 真实构建产物 `gogogo-unified-labs-preview` Artifact ID `12134049527`，从 ZIP 提取唯一 APK `Go_2.4.23-tianwaitian-v24-cold-process_arm64-v8a_debug.apk`，大小 `40358986` 字节，SHA-256 `d66c4e54373b7e79a0b3e614633d9bbdcfc3e633c5c9cd9ceb6a457a14b0cfc9`。内部 `assets/twt-fixture-v0.apk` SHA-256 `8ccfad3ecba59e6266005c9b4b49d1ed0c08b688d79708fe1eb3feab5ff4f218`，内含 `GuestV24Journal` DEX；两层 ZIP 完整性测试 `No errors detected`。
+- **重要边界**：CI success 不是用户 Android 13 真机成功。本轮只有源码与 APK/CI/单测通过；专属子进程真实死亡回调、新 PID、旧记录原子读取、stale rejection/idempotence 仍须真机日志证明。不会预先把 V2.4 标为 PASS。旧版 V0/V1/V2/V2.2/V2.3 的真机通过记录仍保留为历史/基线，不代替本版 V2.4 测试。
+
+**一次复制最小真机操作**：覆盖升级 2.4.23 → V0 → V2 →「V2 第四阶段：专属子进程死亡 / 冷启动恢复」→「一键执行 V2.4 受控进程死亡 / 冷启动验证」→ 等待显示 PASS 或 FAIL（自动超时、无需手动强停）→ 返回 V0，V0 五项一键回归 → 最后复制一次完整总报告。若 V2.4 超时或失败，直接返回复制，不要反复点击。
+
+---
 ## 2026-10-18 — V2.4 独立子进程死亡与冷启动恢复（2.4.23，待真机）
 
 - 2.4.22 已有 Android 13 真机 V0 5/5、V2 Manifest/Intent、V2.2 真实前后台、V2.3 `Activity.recreate()` 新旧 Guest 清理与防重复 PASS（历史 V1 来自 2.4.19，不冒充同版复测）。此阶段不再重做正常 Activity 生命周期。
