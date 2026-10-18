@@ -212,7 +212,7 @@ require("ContainerV2ManifestRouteProbe.run(getApplicationContext()" in v2_proxy
         "V2 proxy not wired to guest manifest/DEX route")
 require("VirtualContainerV2Activity.PREFS" in screen
         and "VirtualContainerV2Activity.LAST_RESULT" in screen
-        and "Tianwaitian V0+V1+V2" in screen
+        and "Tianwaitian V0-V3" in screen
         and "ServiceGo" not in v2_controller + v2_proxy + v2_probe,
         "V2 output must be in single-copy diagnostic without location service calls")
 
@@ -250,7 +250,7 @@ require("new Intent(this, VirtualContainerV2SessionActivity.class)" in v2_contro
         and "LAST_SESSION_SUMMARY" in v2_controller,
         "V2.2 controller/result roundtrip missing")
 require("VirtualContainerV2Activity.LAST_SESSION_RESULT" in screen
-        and "Tianwaitian V0+V1+V2+V2.2" in screen
+        and "Tianwaitian V0-V3" in screen
         and "ServiceGo" not in session_screen + guest_session,
         "V2.2 must join one-copy report without changing location service")
 
@@ -292,7 +292,7 @@ require("new Intent(this, VirtualContainerV23RecreationActivity.class)" in v2_co
         and "V23_RECREATION_PASS" in v2_controller,
         "V2.3 private host controller or nonce response validation missing")
 require("VirtualContainerV2Activity.LAST_RECREATE_RESULT" in screen
-        and "Tianwaitian V0+V1+V2+V2.2+V2.3" in screen
+        and "Tianwaitian V0-V3" in screen
         and "ServiceGo" not in v23 + v23guest,
         "V2.3 must join one-copy report without modifying mock-location service")
 # V2.4 process death test must never touch host PID or the V0 services:
@@ -338,7 +338,7 @@ require("onServiceDisconnected" in v24controller
         "V2.4 controller must prove true binder death and distinct cold-start PID")
 require("new Intent(this, VirtualContainerV24Activity.class)" in v2_controller
         and "VirtualContainerV2Activity.LAST_COLD_RESULT" in screen
-        and "Tianwaitian V0+V1+V2+V2.2+V2.3+V2.4" in screen
+        and "Tianwaitian V0-V3" in screen
         and "ServiceGo" not in v24controller+v24worker+v24guest,
         "V2.4 must preserve one-copy and location service boundaries")
 # V3 baseline: explicit user-selected real APK is inspected read-only. No
