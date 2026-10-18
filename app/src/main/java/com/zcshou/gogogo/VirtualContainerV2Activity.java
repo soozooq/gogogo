@@ -26,6 +26,7 @@ public final class VirtualContainerV2Activity extends AppCompatActivity {
     public static final String PREFS = "twt_v2_component";
     public static final String LAST_RESULT = "last_result";
     public static final String LAST_SESSION_RESULT = "last_session_result";
+    public static final String LAST_SESSION_SUMMARY = "last_session_summary";
 
     public static final String EXTRA_NONCE = "twt_v2_nonce";
     public static final String EXTRA_PAYLOAD = "twt_v2_payload";
@@ -133,11 +134,14 @@ public final class VirtualContainerV2Activity extends AppCompatActivity {
                     && pid == Process.myPid() && uid == Process.myUid();
             // The real onDestroy/dispose evidence is independently appended
             // from VirtualContainerV2SessionActivity's persisted V2.2 report.
-            showAndSave("V2.2 Session 代理请求/响应：" + (ok ? "PASS" : "FAIL/INCOMPLETE")
+            String result = "V2.2 Session 代理请求/响应：" + (ok ? "PASS" : "FAIL/INCOMPLETE")
                     + "\nHOST PID=" + Process.myPid() + "；代理 PID=" + pid
                     + "\n随机标记匹配=" + expectedToken.equals(receivedToken)
                     + "\n独立 APK SHA-256=" + digest
-                    + "\n实际 Guest 状态及资源清理见 V2.2 独立附录。");
+                    + "\n实际 Guest 状态及资源清理见 V2.2 独立附录。";
+            report.setText(result);
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+                    .putString(LAST_SESSION_SUMMARY, result).apply();
             return;
         }
         if (requestCode != REQUEST || pendingNonce == null) return;
