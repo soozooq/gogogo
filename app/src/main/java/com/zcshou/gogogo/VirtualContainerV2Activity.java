@@ -29,6 +29,7 @@ public final class VirtualContainerV2Activity extends AppCompatActivity {
     public static final String LAST_SESSION_SUMMARY = "last_session_summary";
     public static final String LAST_RECREATE_RESULT = "last_recreate_result";
     public static final String LAST_RECREATE_SUMMARY = "last_recreate_summary";
+    public static final String LAST_COLD_RESULT = "last_cold_result";
 
     public static final String EXTRA_NONCE = "twt_v2_nonce";
     public static final String EXTRA_PAYLOAD = "twt_v2_payload";
@@ -71,6 +72,10 @@ public final class VirtualContainerV2Activity extends AppCompatActivity {
         root.addView(GoGoUi.primaryButton(this,
                 "V2 第三阶段：真实 Activity 重建 / 防重复请求",
                 v -> runRecreation()), GoGoUi.matchWrap());
+        root.addView(GoGoUi.primaryButton(this,
+                "V2 第四阶段：专属子进程死亡 / 冷启动恢复",
+                v -> startActivity(new Intent(this, VirtualContainerV24Activity.class))),
+                GoGoUi.matchWrap());
         root.addView(GoGoUi.secondaryButton(this,
                 "完成并返回 V0（总日志自动合并）", v -> finish()), GoGoUi.matchWrap());
         report = GoGoUi.reportPanel(this);
