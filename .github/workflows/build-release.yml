@@ -116,6 +116,7 @@ jobs:
           grep -F "VirtualContainerV1ProxyActivity" ci/v0-manifest.txt
           grep -F "VirtualContainerV2Activity" ci/v0-manifest.txt
           grep -F "VirtualContainerV2ProxyActivity" ci/v0-manifest.txt
+          grep -F "VirtualContainerV2SessionActivity" ci/v0-manifest.txt
           unzip -p "$APK" assets/twt-fixture-v0.apk > ci/embedded-v0-fixture.apk
           test -s ci/embedded-v0-fixture.apk
           unzip -t ci/embedded-v0-fixture.apk > ci/v0-fixture-zip-test.txt
