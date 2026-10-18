@@ -25,6 +25,7 @@ import java.util.UUID;
 public final class VirtualContainerV2Activity extends AppCompatActivity {
     public static final String PREFS = "twt_v2_component";
     public static final String LAST_RESULT = "last_result";
+    public static final String LAST_SESSION_RESULT = "last_session_result";
 
     public static final String EXTRA_NONCE = "twt_v2_nonce";
     public static final String EXTRA_PAYLOAD = "twt_v2_payload";
@@ -36,6 +37,7 @@ public final class VirtualContainerV2Activity extends AppCompatActivity {
     public static final String EXTRA_PROXY_UID = "twt_v2_proxy_uid";
 
     private static final int REQUEST = 2202;
+    private static final int REQUEST_SESSION = 2203;
     private static final String PAYLOAD = "TWT_V2_2026";
     private String pendingNonce;
     private TextView report;
@@ -59,6 +61,9 @@ public final class VirtualContainerV2Activity extends AppCompatActivity {
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.primaryButton(this,
                 "一键运行 V2 组件 / Intent 往返", v -> runV2()), GoGoUi.matchWrap());
+        root.addView(GoGoUi.primaryButton(this,
+                "V2 第二阶段：连续请求 / 取消 / 后台恢复", v -> runSession()),
+                GoGoUi.matchWrap());
         root.addView(GoGoUi.secondaryButton(this,
                 "完成并返回 V0（总日志自动合并）", v -> finish()), GoGoUi.matchWrap());
         report = GoGoUi.reportPanel(this);
@@ -90,6 +95,20 @@ public final class VirtualContainerV2Activity extends AppCompatActivity {
         }
     }
 
+    private void runSession() {
+        if (pendingNonce != null) return;
+        pendingNonce = UUID.randomUUID().toString();
+        Intent request = new Intent(this, VirtualContainerV2SessionActivity.class);
+        request.putExtra(EXTRA_NONCE, pendingNonce);
+        try {
+            startActivityForResult(request, REQUEST_SESSION);
+        } catch (RuntimeException failure) {
+            showAndSave("V2.2 FAIL：启动宿主 Session 代理失败 · "
+                    + failure.getClass().getSimpleName());
+            pendingNonce = null;
+        }
+    }
+
     @Override protected void onSaveInstanceState(Bundle state) {
         state.putString(EXTRA_NONCE, pendingNonce);
         super.onSaveInstanceState(state);
@@ -97,6 +116,30 @@ public final class VirtualContainerV2Activity extends AppCompatActivity {
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_SESSION) {
+            if (pendingNonce == null) return;
+            String expectedToken = pendingNonce;
+            pendingNonce = null;
+            String receivedToken = data == null ? null : data.getStringExtra(EXTRA_NONCE);
+            String response = data == null ? null : data.getStringExtra(EXTRA_RESPONSE);
+            String digest = data == null ? null : data.getStringExtra(EXTRA_DIGEST);
+            int pid = data == null ? -1 : data.getIntExtra(EXTRA_PROXY_PID, -1);
+            int uid = data == null ? -1 : data.getIntExtra(EXTRA_PROXY_UID, -1);
+            boolean ok = resultCode == Activity.RESULT_OK && data != null
+                    && expectedToken.equals(receivedToken)
+                    && "V2_SESSION_PASS".equals(response)
+                    && digest != null && digest.matches("[a-f0-9]{64}")
+                    && data.getBooleanExtra(EXTRA_ARCHIVE_OK, false)
+                    && pid == Process.myPid() && uid == Process.myUid();
+            // The real onDestroy/dispose evidence is independently appended
+            // from VirtualContainerV2SessionActivity's persisted V2.2 report.
+            showAndSave("V2.2 Session 代理请求/响应：" + (ok ? "PASS" : "FAIL/INCOMPLETE")
+                    + "\nHOST PID=" + Process.myPid() + "；代理 PID=" + pid
+                    + "\n随机标记匹配=" + expectedToken.equals(receivedToken)
+                    + "\n独立 APK SHA-256=" + digest
+                    + "\n实际 Guest 状态及资源清理见 V2.2 独立附录。");
+            return;
+        }
         if (requestCode != REQUEST || pendingNonce == null) return;
         String expectedNonce = pendingNonce;
         pendingNonce = null;
