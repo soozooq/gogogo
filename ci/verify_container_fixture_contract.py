@@ -216,6 +216,45 @@ require("VirtualContainerV2Activity.PREFS" in screen
         and "ServiceGo" not in v2_controller + v2_proxy + v2_probe,
         "V2 output must be in single-copy diagnostic without location service calls")
 
-print("V0/V1/V2 static contract PASS: one-copy report, controlled fixture Manifest, "
-      "private host proxy, safe Intent handler and unchanged app identity.")
+# V2 stage 2: no guest process elevation, public exported endpoints, or
+# fabricated lifecycle events passed off as Android OS callbacks.
+session_name = ".VirtualContainerV2SessionActivity"
+require(session_name in v1_activities
+        and v1_activities[session_name].get(ANDROID + "exported") == "false",
+        "V2.2 session Activity must be an installed, nonexported HOST component")
+guest_session = (ROOT / "containerFixture/src/main/java/com/soozooq/tianwaitian/fixture/GuestV2Session.java").read_text(encoding="utf-8")
+session_screen = (ROOT / "app/src/main/java/com/zcshou/gogogo/VirtualContainerV2SessionActivity.java").read_text(encoding="utf-8")
+require("class GuestV2Session" in guest_session
+        and "runScript()" in guest_session
+        and "finishAfterRealReturn()" in guest_session
+        and "onHostLifecycle(String event)" in guest_session
+        and "onPause" in guest_session and "onStop" in guest_session
+        and "onRestart" in guest_session and "onResume" in guest_session
+        and "void dispose()" in guest_session
+        and "GuestV2Route.handle" in guest_session,
+        "Guest DEX session protocol missing real callbacks, cancellation or result")
+require("ContainerV2ManifestRouteProbe.run(getApplicationContext()" in session_screen
+        and "Class.forName(GUEST_CLASS, true, loader)" in session_screen
+        and "GuestV2Session" in session_screen
+        and "startActivity(new Intent(Settings.ACTION_SETTINGS))" in session_screen
+        and "forward(\"onPause\")" in session_screen
+        and "forward(\"onStop\")" in session_screen
+        and "forward(\"onRestart\")" in session_screen
+        and "forward(\"onResume\")" in session_screen
+        and "forward(\"onDestroy\")" in session_screen
+        and "invoke(dispose)" in session_screen
+        and "V2 第二阶段联合验收" in session_screen,
+        "V2.2 session must rely on real HOST lifecycle and log disposal")
+require("new Intent(this, VirtualContainerV2SessionActivity.class)" in v2_controller
+        and "startActivityForResult(request, REQUEST_SESSION)" in v2_controller
+        and "LAST_SESSION_SUMMARY" in v2_controller,
+        "V2.2 controller/result roundtrip missing")
+require("VirtualContainerV2Activity.LAST_SESSION_RESULT" in screen
+        and "Tianwaitian V0+V1+V2+V2.2" in screen
+        and "ServiceGo" not in session_screen + guest_session,
+        "V2.2 must join one-copy report without changing location service")
+
+print("V0/V1/V2/V2.2 static contract PASS: real host callbacks, bounded guest requests, "
+      "private proxy and one-copy report.")
+
 
