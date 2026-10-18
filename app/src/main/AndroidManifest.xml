@@ -238,6 +238,12 @@
             android:name=".VirtualContainerV24Activity"
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
+
+        <!-- V3 first milestone: user-selected external APK read-only archive metadata. -->
+        <activity
+            android:name=".VirtualContainerV3ArchiveActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
         <service
             android:name=".virtualv0.VirtualContainerV24WorkerService"
             android:process=":virtualv24"
