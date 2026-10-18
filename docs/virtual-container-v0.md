@@ -1,5 +1,17 @@
 # 天外天 Virtual Container V0 — 主程序内建诊断
 
+## 2026-10-18 — V3.0 真实外部 APK 只读归档审计（2.4.24，待构建/真机）
+
+- 用户关注完整容器剩余距离：已将真正的外部 APK 导入、组件启动和可用性设置为后续技术门槛。详细目标、优先级、时间区间和成熟框架许可核查见 [virtual-container-roadmap.md](virtual-container-roadmap.md)。
+- 新增 `VirtualContainerV3ArchiveActivity`，可用 Android 系统文件选择器（SAF）选择用户主动提供的真实 APK，从受限流读取至**临时私有缓存文件**（最大 512 MiB），计算 SHA-256，然后仅使用 ZIP 元数据与 Android `PackageManager.getPackageArchiveInfo()` 解析 Manifest、Activity/Service/Receiver/Provider 数量、声明权限数量、DEX/资源表和 Native ABI。扫描后清除临时文件。
+- **非常重要**：首版 V3 只是只读归档元数据检查；没有安装/运行第三方 APK，没有 Guest Context、虚拟系统服务、ActivityManager 接管或任何通用隔离/位置注入兼容能力。解析 PASS 不能等价于“这个 APK 已经能运行”。
+- V3 结果附加到已有 V0 页**一次复制总报告**，不覆盖 V0–V2.4 真实设备记录。V1 旧报告仍保留自己的历史时间与 APK SHA。CI 必须验证 V3 仅通过文件选择器读取，不执行 DEX、不安装、不启动。
+- 2.4.24 保留原应用包名/签名/V0 一键回归/正常定位功能。**本段仅是提交代码状态，还需构建和真机测试。**
+
+**验收流程**：覆盖升级 → V0 → V3「选择真实 APK（只读归档审计）」→ 从手机文件选择器明确选择一个自己有权使用的普通 APK → 等解析 PASS 或 FAIL → 回 V0，运行五项一键回归 → 最后一次复制全部报告。若没有合适的 APK 文件，可暂不做 V3 测试；不要求你提供任何账号、密码或私人应用数据。
+
+---
+
 ## 2026-10-18 20:59 — 2.4.23 V2.4 真机联合验收 PASS
 
 > 用户提交来自 Android 13 真机、通过 V0 页一次复制的诊断总报告。此处 **真实设备验收 PASS** 更新下方历史记录「2.4.23 V2.4 真机待验」当时状态；保留云端构建的原始时间线，不将 Preview success 误当成真机通过。
