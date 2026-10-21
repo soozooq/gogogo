@@ -2,8 +2,13 @@
 <resources>
     <string name="app_name">Tianwaitian External Demo</string>
     <string name="demo_resource_marker">TWT_EXTERNAL_DEMO_V31_RESOURCE_1</string>
-    <string name="demo_title">来自独立 APK 的界面</string>
-    <string name="demo_description">这是单独构建的演示 APK。布局、文字、颜色和按钮逻辑来自这个文件，天外天负责显示代理页面。</string>
-    <string name="demo_counter">演示按钮点击次数：%1$d</string>
-    <string name="demo_increment">点击演示按钮 +1</string>
+    <string name="demo_title">我的随手记</string>
+    <string name="demo_description">写下备注、累计次数，稍后再回来继续。</string>
+    <string name="demo_counter">累计次数：%1$d</string>
+    <string name="demo_increment">记一次 +1</string>
+    <string name="demo_note_hint">写点什么（最多 500 字）</string>
+    <string name="demo_open_details">查看我的记录</string>
+    <string name="demo_back">返回编辑</string>
+    <string name="demo_note_empty">还没有备注</string>
+    <string name="demo_details_text">累计次数：%1$d\n\n%2$s</string>
 </resources>

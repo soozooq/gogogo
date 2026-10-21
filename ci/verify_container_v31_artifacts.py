@@ -185,7 +185,7 @@ def main():
             "standalone APK SHA is missing from compiled host DEX")
     aapt, apksigner = tool(args.sdk, "aapt"), tool(args.sdk, "apksigner")
     host_version = package_info(aapt, host, HOST_PACKAGE)
-    require(host_version > 2400092, "host versionCode did not advance")
+    require(host_version > 2400093, "host versionCode must advance beyond the V3.1 preview")
     require(package_info(aapt, demo, DEMO_PACKAGE) == 1, "standalone demo versionCode mismatch")
     host_manifest = run([aapt, "dump", "xmltree", host, "AndroidManifest.xml"])
     require(private_host_activity(host_manifest), "built V3.1 Host proxy must be registered and private")

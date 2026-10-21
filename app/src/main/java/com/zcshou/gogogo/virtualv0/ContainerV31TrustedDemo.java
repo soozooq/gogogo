@@ -6,8 +6,10 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
+import android.system.Os;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.security.MessageDigest;
@@ -25,6 +27,9 @@ import dalvik.system.DexClassLoader;
  * This is a trusted-code UI bridge sharing host UID, not an untrusted sandbox.
  */
 public final class ContainerV31TrustedDemo implements AutoCloseable {
+    private static final Object STORE_LOCK = new Object();
+    private static final String STORE_PREFS = "twt_external_demo_import";
+    private static final String APPROVED_SHA = "approved_sha256";
     private final File apk;
     private final String sha256;
     private Class<?> guestClass;
@@ -37,13 +42,72 @@ public final class ContainerV31TrustedDemo implements AutoCloseable {
     }
 
     public static ContainerV31TrustedDemo open(Context context, Uri selected) throws Exception {
-        if (Build.VERSION.SDK_INT < 30) {
-            throw new UnsupportedOperationException("V3.1 requires Android API 30+");
-        }
+        requireSupportedApi();
         if (selected == null || !"content".equals(selected.getScheme())) {
             throw new SecurityException("select the paired demo through the Android file picker");
         }
         Context app = context.getApplicationContext();
+        return prepareAndOpen(app,
+                () -> app.getContentResolver().openInputStream(selected), true);
+    }
+
+    /** Reopen only our fixed, explicitly imported source; no caller-supplied path. */
+    public static ContainerV31TrustedDemo openImported(Context context) throws Exception {
+        requireSupportedApi();
+        Context app = context.getApplicationContext();
+        synchronized (STORE_LOCK) {
+            if (!hasImportedDemo(app)) {
+                throw new SecurityException("import this build's paired demo before reopening");
+            }
+            File approved = approvedSource(app);
+            // Every open copies and verifies the full APK again before DEX use.
+            return prepareAndOpen(app, () -> new FileInputStream(approved), false);
+        }
+    }
+
+    /** Availability hint only. openImported always revalidates the actual bytes. */
+    public static boolean hasImportedDemo(Context context) {
+        Context app = context.getApplicationContext();
+        synchronized (STORE_LOCK) {
+            Object approved = app.getSharedPreferences(STORE_PREFS, Context.MODE_PRIVATE)
+                    .getAll().get(APPROVED_SHA);
+            File source = approvedSource(app);
+            return approved instanceof String && ContainerV31AdmissionPolicy.matchesDigest(
+                    getExpectedSha256(), (String) approved)
+                    && source.isFile() && !source.canWrite();
+        }
+    }
+
+    public static String getExpectedSha256() { return ContainerV31BuildTrust.APK_SHA256; }
+
+    /** Revoke future opens before removing retained source bytes. */
+    public static void forgetImportedDemo(Context context) {
+        Context app = context.getApplicationContext();
+        synchronized (STORE_LOCK) {
+            boolean revoked = app.getSharedPreferences(STORE_PREFS, Context.MODE_PRIVATE)
+                    .edit().remove(APPROVED_SHA).commit();
+            File source = approvedSource(app);
+            boolean deleted = !source.exists() || source.delete();
+            if (!revoked || !deleted) {
+                throw new IllegalStateException("import removal did not fully complete");
+            }
+        }
+    }
+
+    private static File approvedSource(Context app) {
+        return new File(new File(app.getFilesDir(), "external_demo_import"), "approved.apk");
+    }
+
+    private static void requireSupportedApi() {
+        if (Build.VERSION.SDK_INT < 30) {
+            throw new UnsupportedOperationException("controlled runtime requires Android API 30+");
+        }
+    }
+
+    private interface Source { InputStream open() throws Exception; }
+
+    private static ContainerV31TrustedDemo prepareAndOpen(Context app, Source source,
+            boolean rememberImport) throws Exception {
         File directory = new File(app.getCodeCacheDir(), "external_demo_v31");
         if (!directory.isDirectory() && !directory.mkdirs()) {
             throw new IllegalStateException("cannot create private demo code cache");
@@ -51,7 +115,7 @@ public final class ContainerV31TrustedDemo implements AutoCloseable {
         File apk = File.createTempFile("external-demo-", ".apk", directory);
         boolean accepted = false;
         try {
-            String digest = copyAndDigest(app, selected, apk);
+            String digest = copyAndDigest(source.open(), apk);
             // This check MUST precede PackageManager parsing and DexClassLoader.
             if (!ContainerV31AdmissionPolicy.matchesDigest(
                     ContainerV31BuildTrust.APK_SHA256, digest)) {
@@ -60,6 +124,7 @@ public final class ContainerV31TrustedDemo implements AutoCloseable {
             }
             verifyArchive(apk);
             verifyPackage(app, apk);
+            if (rememberImport) rememberApprovedSource(app, apk, digest);
             try {
                 app.getClassLoader().loadClass(ContainerV31AdmissionPolicy.ENTRY);
                 throw new SecurityException("external demo entry was embedded in host DEX");
@@ -85,12 +150,41 @@ public final class ContainerV31TrustedDemo implements AutoCloseable {
         }
     }
 
-    private static String copyAndDigest(Context context, Uri selected, File apk) throws Exception {
+    private static void rememberApprovedSource(Context app, File verifiedApk,
+            String digest) throws Exception {
+        synchronized (STORE_LOCK) {
+            File approved = approvedSource(app);
+            File directory = approved.getParentFile();
+            if (directory == null || (!directory.isDirectory() && !directory.mkdirs())) {
+                throw new IllegalStateException("cannot create private imported-app directory");
+            }
+            File incoming = File.createTempFile("verified-", ".apk", directory);
+            try {
+                String storedDigest = copyAndDigest(new FileInputStream(verifiedApk), incoming);
+                if (!ContainerV31AdmissionPolicy.matchesDigest(digest, storedDigest)) {
+                    throw new SecurityException("import changed during private retention");
+                }
+                // Atomic rename within the same private directory; no installed APK.
+                Os.rename(incoming.getAbsolutePath(), approved.getAbsolutePath());
+                if (!app.getSharedPreferences(STORE_PREFS, Context.MODE_PRIVATE)
+                        .edit().putString(APPROVED_SHA, storedDigest).commit()) {
+                    if (approved.exists()) approved.delete();
+                    throw new IllegalStateException("cannot retain explicit import authorization");
+                }
+            } finally {
+                if (incoming.exists() && !incoming.delete()) {
+                    throw new IllegalStateException("unfinished private import cleanup failed");
+                }
+            }
+        }
+    }
+
+    private static String copyAndDigest(InputStream selectedInput, File apk) throws Exception {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         long copied = 0;
         // Android 14 dynamic-code rule: mark read-only with the write FD already
         // open, then fill and fsync the private file. Never load the SAF URI.
-        try (InputStream input = context.getContentResolver().openInputStream(selected);
+        try (InputStream input = selectedInput;
              FileOutputStream output = new FileOutputStream(apk)) {
             if (input == null) throw new IllegalArgumentException("selected document has no data");
             if (!apk.setReadOnly()) throw new SecurityException("cannot make demo code read-only");

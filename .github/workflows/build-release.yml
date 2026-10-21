@@ -89,6 +89,7 @@ jobs:
         run: |
           python3 ci/verify_container_v31_contract.py
           python3 -m unittest discover -s ci -p 'test_container_v31_artifacts.py'
+          python3 -m unittest discover -s ci -p 'test_phone_update_package.py'
 
       - name: Compile and smoke-test pure V0 Java without Android SDK
         run: bash ci/run_container_v0_jvm_smoke.sh
@@ -157,6 +158,27 @@ jobs:
             --sdk "$ANDROID_HOME" \
             --commit "$(git rev-parse HEAD)" \
             --output ci/v31-artifacts.json
+
+      - name: Stage one flat, verified phone update download
+        id: stage_phone_update
+        if: env.BUILD_EXIT_CODE == '0' && steps.verify_apk.outcome == 'success' && steps.verify_v31.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ci/stage_phone_update.py \
+            --host-dir app/build/outputs/apk/debug \
+            --demo-dir externalDemo/build/outputs/apk/debug \
+            --evidence ci/v31-artifacts.json \
+            --output-dir app/build/outputs/phone-update
+
+      - name: Upload one phone update package
+        if: steps.stage_phone_update.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tianwaitian-phone-update
+          # upload-artifact creates the only ZIP; APKs are flat, not nested ZIPs.
+          path: app/build/outputs/phone-update/*
+          if-no-files-found: error
 
       - name: Upload diagnostics
         if: always()

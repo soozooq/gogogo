@@ -2,11 +2,39 @@ package com.soozooq.tianwaitian.externaldemo;
 
 /** State belonging to one demo entry instance, with no static shared session. */
 public final class DemoState {
+    public static final int STATE_SCHEMA = 1;
     public static final int MAX_CLICKS = 100000;
+    public static final int MAX_NOTE_LENGTH = 500;
+    public static final String PAGE_HOME = "home";
+    public static final String PAGE_DETAILS = "details";
     private final StringBuilder trace = new StringBuilder();
     private int clicks;
+    private int interactionCount;
+    private String note = "";
+    private String page = PAGE_HOME;
     private String lifecycle = "NEW";
     private boolean disposed;
+    private boolean restored;
+
+    /** Primitive-only snapshot; deliberately contains no Android objects or code paths. */
+    public static final class SavedState {
+        public final int schema;
+        public final int clicks;
+        public final String note;
+        public final String page;
+
+        public SavedState(int schema, int clicks, String note, String page) {
+            if (schema != STATE_SCHEMA || clicks < 0 || clicks > MAX_CLICKS
+                    || note == null || note.length() > MAX_NOTE_LENGTH
+                    || !(PAGE_HOME.equals(page) || PAGE_DETAILS.equals(page))) {
+                throw new IllegalArgumentException("invalid demo saved state");
+            }
+            this.schema = schema;
+            this.clicks = clicks;
+            this.note = note;
+            this.page = page;
+        }
+    }
 
     public DemoState(int restoredClicks) {
         if (restoredClicks < 0 || restoredClicks > MAX_CLICKS) {
@@ -17,6 +45,7 @@ public final class DemoState {
 
     public int click() {
         requireAlive();
+        recordInteraction();
         if (clicks < MAX_CLICKS) clicks++;
         append("CLICK " + clicks);
         return clicks;
@@ -58,7 +87,60 @@ public final class DemoState {
     }
 
     public int getClickCount() { return clicks; }
+    public int getInteractionCount() { return interactionCount; }
+    public String getNote() { return note; }
+    public String getPage() { return page; }
     public boolean isDisposed() { return disposed; }
+
+    public void setNote(String value) {
+        requireAlive();
+        if (value == null || value.length() > MAX_NOTE_LENGTH) {
+            throw new IllegalArgumentException("invalid note length");
+        }
+        if (!note.equals(value)) {
+            note = value;
+            recordInteraction();
+        }
+    }
+
+    public void openDetails() {
+        requireAlive();
+        if (!PAGE_DETAILS.equals(page)) {
+            page = PAGE_DETAILS;
+            recordInteraction();
+            append("PAGE details");
+        }
+    }
+
+    public boolean handleBack() {
+        requireAlive();
+        if (PAGE_HOME.equals(page)) return false;
+        page = PAGE_HOME;
+        recordInteraction();
+        append("PAGE home");
+        return true;
+    }
+
+    public SavedState save() {
+        return new SavedState(STATE_SCHEMA, clicks, note, page);
+    }
+
+    public void restore(SavedState saved) {
+        requireAlive();
+        if (!"NEW".equals(lifecycle) || saved == null) {
+            throw new IllegalStateException("restore must precede onCreate");
+        }
+        // SavedState validates all fields before any live state is changed.
+        clicks = saved.clicks;
+        note = saved.note;
+        page = saved.page;
+        // A restored count, note or page is historical data, never proof of a
+        // real operation in the current entry instance.
+        interactionCount = 0;
+        restored = true;
+        append("RESTORED schema=" + saved.schema + " clicks=" + clicks
+                + " noteLength=" + note.length() + " page=" + page);
+    }
 
     public void dispose() {
         if (disposed) return;
@@ -68,6 +150,9 @@ public final class DemoState {
 
     public String snapshot() {
         return "clicks=" + clicks + "; lifecycle=" + lifecycle
+                + "; interactions=" + interactionCount
+                + "; stateSchema=" + STATE_SCHEMA + "; restored=" + restored
+                + "; noteLength=" + note.length() + "; page=" + page
                 + "; disposed=" + disposed + "\n" + trace;
     }
 
@@ -75,6 +160,10 @@ public final class DemoState {
         if (disposed || "onDestroy".equals(lifecycle)) {
             throw new IllegalStateException("demo session already destroyed/disposed");
         }
+    }
+
+    private void recordInteraction() {
+        if (interactionCount < Integer.MAX_VALUE) interactionCount++;
     }
 
     private void append(String event) {

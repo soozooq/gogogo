@@ -1,5 +1,7 @@
 # V3.1：独立外部演示 APK 的 Host 代理界面
 
+**后续版本：** 用户要求简化操作并继续推进，本轮已扩展为 [应用运行：导入一次、保存状态、统一回传](virtual-container-runtime.md)，版本 `2.4.26-tianwaitian-runtime`。下文保留 V3.1 首版过程；其中重建安全停止、每次重新选文件、分别下载两个工件的说明已由新版流程替代，不能按旧手顺要求用户逐项重跑。
+
 2026-10-21，落实 [Codex 工单](tasks/codex-v3-1-external-demo-host-proxy.md)。当前条件为**无 Root、只有一部 Android 手机、没有电脑**；构建在云端进行。
 
 ## 能力与边界

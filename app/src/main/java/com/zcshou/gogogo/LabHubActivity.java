@@ -115,6 +115,11 @@ public final class LabHubActivity extends AppCompatActivity {
         root.addView(overview, GoGoUi.matchWrap());
 
         root.addView(GoGoUi.gap(this, 12));
+        root.addView(GoGoUi.navigationTile(this, "应用运行",
+                "导入一次后直接打开，结束时一次复制全部记录",
+                v -> open(VirtualContainerV0Activity.class)), GoGoUi.matchWrap());
+
+        root.addView(GoGoUi.gap(this, 12));
         root.addView(GoGoUi.sectionTitle(this, "先做这两项"),
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.muted(this,
@@ -191,10 +196,7 @@ public final class LabHubActivity extends AppCompatActivity {
                 new Entry("Cross Profile Observatory", "跨资料空间实验",
                         CrossProfileObservatoryActivity.class),
                 new Entry("Isolated Capsule", "隔离进程资源实验",
-                        IsolatedCapsuleLabActivity.class),
-                new Entry("Virtual Container V0",
-                        "同名 APK 双加载器与 A/B 文件验证",
-                        VirtualContainerV0Activity.class)
+                        IsolatedCapsuleLabActivity.class)
         });
 
         root.addView(GoGoUi.gap(this, 18));

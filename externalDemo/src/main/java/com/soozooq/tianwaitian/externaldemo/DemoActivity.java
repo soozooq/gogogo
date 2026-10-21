@@ -9,8 +9,10 @@ public final class DemoActivity extends Activity {
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        entry = new DemoEntry(this, getResources(),
-                savedInstanceState == null ? 0 : savedInstanceState.getInt("demo.clicks", 0));
+        entry = new DemoEntry(this, getResources(), 0);
+        if (savedInstanceState != null) {
+            entry.restoreState(savedInstanceState.getBundle("demo.state"));
+        }
         entry.onHostLifecycle("onCreate");
         setContentView(entry.createView());
     }
@@ -43,7 +45,7 @@ public final class DemoActivity extends Activity {
     @Override public void onSaveInstanceState(Bundle outState) {
         if (entry != null) {
             entry.onHostLifecycle("onSaveInstanceState");
-            outState.putInt("demo.clicks", entry.getClickCount());
+            outState.putBundle("demo.state", entry.saveState());
         }
         super.onSaveInstanceState(outState);
     }
@@ -56,5 +58,9 @@ public final class DemoActivity extends Activity {
             entry = null;
             super.onDestroy();
         }
+    }
+
+    @Override public void onBackPressed() {
+        if (entry == null || !entry.handleBack()) super.onBackPressed();
     }
 }
