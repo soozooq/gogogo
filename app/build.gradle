@@ -179,6 +179,16 @@ public final class ContainerV31BuildTrust {
 }
 android.sourceSets.main.java.srcDir(
         files(v31JavaDir).builtBy(tasks.named('generateContainerV31Trust')))
+// AGP materializes the source-directory FileCollection and can lose builtBy.
+// Declare the producer explicitly for compilers as well as Lint/packaging.
+tasks.withType(JavaCompile).configureEach {
+    dependsOn 'generateContainerV31Trust'
+}
+tasks.matching {
+    it.name.startsWith('compile') && it.name.endsWith('Kotlin')
+}.configureEach {
+    dependsOn 'generateContainerV31Trust'
+}
 
 tasks.matching {
     it.name == 'mergeDebugAssets' || it.name == 'mergeReleaseAssets'
