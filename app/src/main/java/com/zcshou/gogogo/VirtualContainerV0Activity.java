@@ -185,6 +185,11 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
 
     /** Host runtime can call after persisting its real exit/cleanup result. */
     public static String collectAllReports(Context context) {
+        return LabSupportLog.generateAll(context, "", "");
+    }
+
+    /** Saved container section only; keeps the shared export non-recursive. */
+    static String collectSavedContainerReports(Context context) {
         // Activity.getPreferences uses getLocalClassName. Our historical Activity
         // namespace differs from applicationId, so its legacy name is normally
         // the complete class name. Match Android's rule rather than losing data.

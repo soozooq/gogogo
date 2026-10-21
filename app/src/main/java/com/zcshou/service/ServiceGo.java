@@ -44,6 +44,7 @@ import com.zcshou.gogogo.LabPolicyEngine;
 import com.zcshou.gogogo.LabProviderReliabilityController;
 import com.zcshou.gogogo.LabGmsPublishEvidence;
 import com.zcshou.gogogo.LabGmsPublishGate;
+import com.zcshou.gogogo.LocationPublishGate;
 import com.zcshou.gogogo.LabPublishPerformanceEvidence;
 import com.zcshou.gogogo.LabServiceLifecycleJournal;
 import com.zcshou.gogogo.LabServiceTeardownSequence;
@@ -72,6 +73,7 @@ public class ServiceGo extends Service {
     public static final double DEFAULT_LNG = 117.027707;
     public static final double DEFAULT_ALT = 55.0D;
     public static final float DEFAULT_BEA = 0.0F;
+    private final LocationPublishGate mLocationPublishGate = new LocationPublishGate();
     private double mCurLat = DEFAULT_LAT;
     private double mCurLng = DEFAULT_LNG;
     private double mCurAlt = DEFAULT_ALT;
@@ -177,7 +179,7 @@ public class ServiceGo extends Service {
     // MockDroid/MOSES-inspired Resource Broker: raw state stays internal,
     // providers only see the policy-filtered published state.
     private LabPolicyEngine mPolicyEngine;
-    private volatile boolean mPolicyPublish = true;
+    private volatile boolean mPolicyPublish = false;
     private volatile double mPublishedLat = DEFAULT_LAT;
     private volatile double mPublishedLng = DEFAULT_LNG;
     private volatile double mPublishedAlt = DEFAULT_ALT;
@@ -185,7 +187,7 @@ public class ServiceGo extends Service {
     private volatile float mPublishedBearing = DEFAULT_BEA;
     private volatile float mPublishedAccuracy = 0.8f;
     private volatile boolean mPublishedIncludeMotion = true;
-    private volatile String mPolicySummary = "PERSONAL · location=EXACT";
+    private volatile String mPolicySummary = "WAITING_FOR_TARGET";
     private String mLastPolicySignature = "";
 
     private LabScenarioEngine mScenarioEngine;
@@ -329,7 +331,8 @@ public class ServiceGo extends Service {
         mHeadingFusionEngine = new LabHeadingIntelligenceEngine();
         mAttitudeHeadingEngine = new LabAttitudeHeadingEngine();
         mHeadingTraceRecorder = new LabHeadingTraceRecorder();
-        refreshPublishedPolicy();
+        // Creating/binding a service does not authorize publishing its default fields.
+        // The first complete target is selected in onStartCommand, Binder or VPN sync.
 
         mLocManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         mProviderReliability = new LabProviderReliabilityController(this, mLocManager);
@@ -382,6 +385,15 @@ public class ServiceGo extends Service {
     }
 
     private boolean applyVpnExitCoordinate(double latitude, double longitude) {
+        synchronized (mLocationPublishGate) {
+            return applyVpnExitCoordinateLocked(latitude, longitude);
+        }
+    }
+
+    private boolean applyVpnExitCoordinateLocked(double latitude, double longitude) {
+        // VPN callbacks refine an explicitly started session; a callback from
+        // onCreate alone must not authorize a cold/bound/settings-only service.
+        if (isStop || !mLocationPublishGate.isReady()) return false;
         if (!LabVpnGeoPolicy.canApply(LabVpnExitSync.enabled(this), true,
                 !mRouteActive && !mRoamActive && !mReplayActive && !isStop,
                 LabVpnGeoPolicy.valid(latitude, longitude, "vpn"))) return false;
@@ -390,6 +402,7 @@ public class ServiceGo extends Service {
         mCurLng = longitude;
         mCurAlt = DEFAULT_ALT;
         mSpeed = 0.0;
+        mLocationPublishGate.initialize(mCurLat, mCurLng, mCurAlt);
         mProvenanceSource = "VPN_EGRESS_IP_GEO";
         activateSimulationBackend("FIXED");
         recordProvenance("VPN_EGRESS", "approximate city target updated with user opt-in");
@@ -739,24 +752,42 @@ public class ServiceGo extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        synchronized (mLocationPublishGate) {
+            if (isStop || mLocationPublishGate.isClosed()) return START_NOT_STICKY;
+            int result = handleStartCommand(intent);
+            if (!mLocationPublishGate.isReady()) {
+                // onCreate already entered foreground/mock mode. Do not leave an
+                // invalid/settings-only cold start holding those providers idle.
+                stopSelf(startId);
+            }
+            return result;
+        }
+    }
+
+    private int locationStartResult() {
+        // A cold settings/invalid command must not later restart into an old target.
+        return mLocationPublishGate.isReady() ? START_STICKY : START_NOT_STICKY;
+    }
+
+    private int handleStartCommand(Intent intent) {
         android.content.SharedPreferences state =
                 getSharedPreferences("mock_location_state", MODE_PRIVATE);
 
         if (intent != null && ACTION_VPN_SYNC_CONFIG.equals(intent.getAction())) {
             if (mVpnExitSync != null) mVpnExitSync.startOrStopFromConfig();
             if (mVpnSystemTimeZone != null) mVpnSystemTimeZone.refresh();
-            return START_STICKY; // never reset coordinates from a settings-only intent
+            return locationStartResult(); // never reset coordinates from a settings-only intent
         }
         if (intent != null && ACTION_VPN_SYNC_REFRESH.equals(intent.getAction())) {
             if (mVpnExitSync != null) mVpnExitSync.manualRefresh();
-            return START_STICKY;
+            return locationStartResult();
         }
 
         if (intent != null && ACTION_SCENARIO_RESET.equals(intent.getAction())) {
             mScenarioStep = 0L;
             recordProvenance("SCENARIO", "replay reset to tick 0");
-            refreshPublishedPolicy();
-            return START_STICKY;
+            if (mLocationPublishGate.isReady()) refreshPublishedPolicy();
+            return locationStartResult();
         }
 
         if (intent != null && ACTION_RECORD_START.equals(intent.getAction())) {
@@ -766,9 +797,9 @@ public class ServiceGo extends Service {
                 mLastTrackLat = Double.NaN;
                 mLastTrackLng = Double.NaN;
             }
-            sampleTrackIfNeeded(true);
+            if (mLocationPublishGate.isReady()) sampleTrackIfNeeded(true);
             recordProvenance("TRACK", "recording started");
-            return START_STICKY;
+            return locationStartResult();
         }
 
         if (intent != null && ACTION_RECORD_STOP.equals(intent.getAction())) {
@@ -776,7 +807,7 @@ public class ServiceGo extends Service {
                 mTrackRecording = false;
             }
             recordProvenance("TRACK", "recording stopped");
-            return START_STICKY;
+            return locationStartResult();
         }
 
         if (intent != null && ACTION_RECORD_CLEAR.equals(intent.getAction())) {
@@ -789,7 +820,7 @@ public class ServiceGo extends Service {
                 mLastTrackLng = Double.NaN;
             }
             recordProvenance("TRACK", "recording buffer cleared");
-            return START_STICKY;
+            return locationStartResult();
         }
 
         if (intent != null && ACTION_MOTION_PAUSE.equals(intent.getAction())) {
@@ -804,7 +835,7 @@ public class ServiceGo extends Service {
                 recordProvenance("MOTION", "paused");
                 checkpointRoute(true);
             }
-            return START_STICKY;
+            return locationStartResult();
         }
 
         if (intent != null && ACTION_MOTION_RESUME.equals(intent.getAction())) {
@@ -826,7 +857,7 @@ public class ServiceGo extends Service {
                 recordProvenance("MOTION", "resumed");
                 checkpointRoute(true);
             }
-            return START_STICKY;
+            return locationStartResult();
         }
 
         if (intent != null && ACTION_MOTION_SPEED.equals(intent.getAction())) {
@@ -837,13 +868,13 @@ public class ServiceGo extends Service {
             }
             recordProvenance("MOTION", "multiplier=" + mMotionMultiplier + "x");
             checkpointRoute(true);
-            return START_STICKY;
+            return locationStartResult();
         }
 
         if (intent != null && ACTION_REPLAY_STOP.equals(intent.getAction())) {
             stopTimedReplay(true);
             mProvenanceSource = "IDLE";
-            return START_STICKY;
+            return locationStartResult();
         }
 
         if (intent != null && ACTION_REPLAY_START.equals(intent.getAction())) {
@@ -853,8 +884,27 @@ public class ServiceGo extends Service {
             long[] times = intent.getLongArrayExtra(EXTRA_REPLAY_TIMES_MS);
 
             try {
-                if (mReplayEngine == null) mReplayEngine = new LabTimedReplayEngine();
-                mReplayEngine.load(lats, lngs, alts, times);
+                if (!LocationPublishGate.validRoute(lats, lngs)
+                        || (alts != null && alts.length != lats.length)) {
+                    throw new IllegalArgumentException("invalid replay coordinates");
+                }
+                if (alts != null) {
+                    for (double altitude : alts) {
+                        if (!Double.isFinite(altitude)) {
+                            throw new IllegalArgumentException("invalid replay altitude");
+                        }
+                    }
+                }
+                // Load into a candidate first: malformed input must leave a running
+                // route/replay and its authorized target untouched.
+                LabTimedReplayEngine candidate = new LabTimedReplayEngine();
+                candidate.load(lats, lngs, alts, times);
+                LabTimedReplayEngine.Frame initial = candidate.current();
+                if (initial == null || !LocationPublishGate.validTarget(
+                        initial.latitude, initial.longitude, initial.altitude)) {
+                    throw new IllegalArgumentException("invalid replay target");
+                }
+                mReplayEngine = candidate;
                 clearRouteCheckpoint();
                 mRouteActive = false;
                 mRoamActive = false;
@@ -863,6 +913,9 @@ public class ServiceGo extends Service {
                 mMotionMultiplier = 1.0;
                 mReplayFrame = mReplayEngine.current();
                 applyReplayFrame(mReplayFrame);
+                if (!mLocationPublishGate.initialize(mCurLat, mCurLng, mCurAlt)) {
+                    throw new IllegalArgumentException("invalid replay target");
+                }
                 mLastMotionElapsed = SystemClock.elapsedRealtime();
                 mProvenanceSource = "REPLAY";
                 activateSimulationBackend("REPLAY");
@@ -873,14 +926,13 @@ public class ServiceGo extends Service {
                         "REPLAY",
                         "timestamped GPX started · duration="
                                 + mReplayEngine.durationMs() + "ms");
-                return START_STICKY;
+                return locationStartResult();
             } catch (Throwable t) {
-                stopTimedReplay(false);
                 recordProvenance(
                         "REPLAY",
                         "start failed: " + t.getClass().getSimpleName());
                 XLog.e("SERVICEGO: timestamped replay start failed: " + t.getMessage());
-                return START_STICKY;
+                return locationStartResult();
             }
         }
 
@@ -889,7 +941,7 @@ public class ServiceGo extends Service {
             clearRouteCheckpoint();
             stopLabMotion();
             mProvenanceSource = "IDLE";
-            return START_STICKY;
+            return locationStartResult();
         }
 
         if (intent != null && ACTION_ROAM_STOP.equals(intent.getAction())) {
@@ -897,14 +949,14 @@ public class ServiceGo extends Service {
             mSpeed = 0.0;
             recordProvenance("ROAM", "random roam stopped");
             mProvenanceSource = "IDLE";
-            return START_STICKY;
+            return locationStartResult();
         }
 
         if (intent != null && ACTION_ROUTE_START.equals(intent.getAction())) {
-            stopTimedReplay(false);
             double[] lats = intent.getDoubleArrayExtra(EXTRA_ROUTE_LATS);
             double[] lngs = intent.getDoubleArrayExtra(EXTRA_ROUTE_LNGS);
-            if (lats != null && lngs != null && lats.length > 1 && lats.length == lngs.length) {
+            if (LocationPublishGate.validRoute(lats, lngs)) {
+                stopTimedReplay(false);
                 mRouteLats = lats;
                 mRouteLngs = lngs;
                 buildRouteMetrics();
@@ -932,6 +984,7 @@ public class ServiceGo extends Service {
                 mCurLat = mRouteLats[0];
                 mCurLng = mRouteLngs[0];
                 mCurAlt = DEFAULT_ALT;
+                mLocationPublishGate.initialize(mCurLat, mCurLng, mCurAlt);
                 mSpeed = 0.0;
                 if (mRoutePhysicsEngine != null) {
                     mRoutePhysicsEngine.reset(0.0);
@@ -948,20 +1001,31 @@ public class ServiceGo extends Service {
                 replaceRouteCheckpoint();
                 XLog.i("SERVICEGO: Lab route started, points=" + lats.length
                         + " speed=" + mRouteSpeedMps + " mode=" + mRouteMode);
-                return START_STICKY;
+                return locationStartResult();
             }
+            recordProvenance("ROUTE", "invalid route command ignored");
+            return locationStartResult();
         }
 
         if (intent != null && ACTION_ROAM_START.equals(intent.getAction())) {
+            double centerLat = intent.getDoubleExtra(EXTRA_ROAM_CENTER_LAT,
+                    mLocationPublishGate.isReady() ? mCurLat : Double.NaN);
+            double centerLng = intent.getDoubleExtra(EXTRA_ROAM_CENTER_LNG,
+                    mLocationPublishGate.isReady() ? mCurLng : Double.NaN);
+            if (!LocationPublishGate.validTarget(centerLat, centerLng, DEFAULT_ALT)) {
+                recordProvenance("ROAM", "invalid center ignored");
+                return locationStartResult();
+            }
             stopTimedReplay(false);
             clearRouteCheckpoint();
-            mRoamCenterLat = intent.getDoubleExtra(EXTRA_ROAM_CENTER_LAT, mCurLat);
-            mRoamCenterLng = intent.getDoubleExtra(EXTRA_ROAM_CENTER_LNG, mCurLng);
+            mRoamCenterLat = centerLat;
+            mRoamCenterLng = centerLng;
             mRoamRadiusM = clamp(intent.getDoubleExtra(EXTRA_ROAM_RADIUS_M, 100.0), 5.0, 5000.0);
             mRoamSpeedMps = clamp(intent.getDoubleExtra(EXTRA_ROAM_SPEED_MPS, 1.4), 0.2, 30.0);
             mCurLat = mRoamCenterLat;
             mCurLng = mRoamCenterLng;
             mCurAlt = DEFAULT_ALT;
+            mLocationPublishGate.initialize(mCurLat, mCurLng, mCurAlt);
             mRouteActive = false;
             mRoamActive = true;
             mMotionPaused = false;
@@ -976,41 +1040,44 @@ public class ServiceGo extends Service {
             persistCurrentLocation(state);
             XLog.i("SERVICEGO: Lab random roam started, radius=" + mRoamRadiusM
                     + " speed=" + mRoamSpeedMps);
-            return START_STICKY;
+            return locationStartResult();
         }
 
         if (intent != null) {
-            // Ordinary manual position commands cancel Lab motion.
-            clearRouteCheckpoint();
-            stopLabMotion();
-
-            mCurLng = intent.getDoubleExtra(MainActivity.LNG_MSG_ID, DEFAULT_LNG);
-            mCurLat = intent.getDoubleExtra(MainActivity.LAT_MSG_ID, DEFAULT_LAT);
-            mCurAlt = intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT);
-            mProvenanceSource = "MANUAL";
-            activateSimulationBackend("FIXED");
-            recordProvenance("MANUAL", "position selected");
-            persistCurrentLocation(state);
-            LabVpnExitSync.markManualTargetPending(this);
-            // With the optional toggle enabled, resolve an up-to-date VPN target
-            // after this explicit manual start (without creating a second service).
-            if (mVpnExitSync != null && LabVpnExitSync.enabled(this)) {
-                mVpnExitSync.onManualPositionSelected();
+            // Unknown/control intents and missing fields are never an implicit Jinan target.
+            if (intent.getAction() != null
+                    || !intent.hasExtra(MainActivity.LNG_MSG_ID)
+                    || !intent.hasExtra(MainActivity.LAT_MSG_ID)
+                    || !applyManualTarget(
+                            intent.getDoubleExtra(MainActivity.LNG_MSG_ID, Double.NaN),
+                            intent.getDoubleExtra(MainActivity.LAT_MSG_ID, Double.NaN),
+                            intent.getDoubleExtra(MainActivity.ALT_MSG_ID, DEFAULT_ALT))) {
+                recordProvenance("MANUAL", "invalid or unsupported position command ignored");
+                return locationStartResult();
             }
         } else {
             if (restoreRouteCheckpoint()) {
+                mLocationPublishGate.initialize(mCurLat, mCurLng, mCurAlt);
                 if (mJoyStick != null) {
                     mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
                 }
-                return START_STICKY;
+                return locationStartResult();
             }
 
-            mCurLng = Double.longBitsToDouble(
-                    state.getLong("lng_bits", Double.doubleToRawLongBits(DEFAULT_LNG)));
-            mCurLat = Double.longBitsToDouble(
-                    state.getLong("lat_bits", Double.doubleToRawLongBits(DEFAULT_LAT)));
-            mCurAlt = Double.longBitsToDouble(
+            double restoredLng = Double.longBitsToDouble(
+                    state.getLong("lng_bits", Double.doubleToRawLongBits(Double.NaN)));
+            double restoredLat = Double.longBitsToDouble(
+                    state.getLong("lat_bits", Double.doubleToRawLongBits(Double.NaN)));
+            double restoredAlt = Double.longBitsToDouble(
                     state.getLong("alt_bits", Double.doubleToRawLongBits(DEFAULT_ALT)));
+            if (!LocationPublishGate.validTarget(restoredLat, restoredLng, restoredAlt)) {
+                recordProvenance("RESTORED", "no valid saved target; publication remains idle");
+                return locationStartResult();
+            }
+            mCurLng = restoredLng;
+            mCurLat = restoredLat;
+            mCurAlt = restoredAlt;
+            mLocationPublishGate.initialize(mCurLat, mCurLng, mCurAlt);
             mProvenanceSource = "RESTORED";
             activateSimulationBackend("FIXED");
         }
@@ -1019,7 +1086,28 @@ public class ServiceGo extends Service {
             mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
         }
 
-        return START_STICKY;
+        return locationStartResult();
+    }
+
+    // Caller holds mLocationPublishGate, so a tick cannot observe a half-written target.
+    private boolean applyManualTarget(double longitude, double latitude, double altitude) {
+        if (isStop || mLocationPublishGate.isClosed()
+                || !LocationPublishGate.validTarget(latitude, longitude, altitude)) return false;
+        clearRouteCheckpoint();
+        stopLabMotion();
+        mCurLng = longitude;
+        mCurLat = latitude;
+        mCurAlt = altitude;
+        mLocationPublishGate.initialize(mCurLat, mCurLng, mCurAlt);
+        mProvenanceSource = "MANUAL";
+        activateSimulationBackend("FIXED");
+        recordProvenance("MANUAL", "position selected");
+        persistCurrentLocation(getSharedPreferences("mock_location_state", MODE_PRIVATE));
+        LabVpnExitSync.markManualTargetPending(this);
+        if (mVpnExitSync != null && LabVpnExitSync.enabled(this)) {
+            mVpnExitSync.onManualPositionSelected();
+        }
+        return true;
     }
 
     private void persistCurrentLocation(android.content.SharedPreferences state) {
@@ -1095,10 +1183,7 @@ public class ServiceGo extends Service {
         try {
             LabRouteCheckpointStore.Checkpoint checkpoint = store.load();
             if (checkpoint == null
-                    || checkpoint.routeLats == null
-                    || checkpoint.routeLngs == null
-                    || checkpoint.routeLats.length < 2
-                    || checkpoint.routeLats.length != checkpoint.routeLngs.length) {
+                    || !LocationPublishGate.validRoute(checkpoint.routeLats, checkpoint.routeLngs)) {
                 return false;
             }
 
@@ -1119,12 +1204,10 @@ public class ServiceGo extends Service {
             mMotionPaused = p.paused;
             mMotionMultiplier = clamp(p.multiplier, 0.25, 4.0);
 
-            mCurLat = Double.isFinite(p.latitude)
-                    ? p.latitude
-                    : mRouteLats[mRouteIndex];
-            mCurLng = Double.isFinite(p.longitude)
-                    ? p.longitude
-                    : mRouteLngs[mRouteIndex];
+            boolean validProgress = LocationPublishGate.validTarget(
+                    p.latitude, p.longitude, 0.0);
+            mCurLat = validProgress ? p.latitude : mRouteLats[mRouteIndex];
+            mCurLng = validProgress ? p.longitude : mRouteLngs[mRouteIndex];
             mCurAlt = Double.isFinite(p.altitude) ? p.altitude : DEFAULT_ALT;
             mCurBea = Float.isFinite(p.bearingDegrees) ? p.bearingDegrees : DEFAULT_BEA;
 
@@ -1208,6 +1291,10 @@ public class ServiceGo extends Service {
 
     @Override
     public void onDestroy() {
+        // Stop provider submissions before waiting for an in-progress state capture.
+        isStop = true;
+        // Closing only waits for state capture, never for provider IPC.
+        mLocationPublishGate.close();
         if (mVpnSystemTimeZone != null) {
             mVpnSystemTimeZone.close();
             mVpnSystemTimeZone = null;
@@ -1217,7 +1304,6 @@ public class ServiceGo extends Service {
             mVpnExitSync = null;
         }
         mFusedShutdownRequested = true;
-        isStop = true;
         mGmsPublishGate.close(); // Old Tasks may return after ServiceGo teardown.
         sRunning = false;
         // A failed route checkpoint must never skip provider/GMS teardown.
@@ -1429,57 +1515,99 @@ public class ServiceGo extends Service {
         mJoyStick.setListener(new JoyStick.JoyStickClickListener() {
             @Override
             public void onMoveInfo(double speed, double disLng, double disLat, double angle) {
-                mSpeed = speed;
-                // 根据当前的经纬度和距离，计算下一个经纬度
-                // Latitude: 1 deg = 110.574 km // 纬度的每度的距离大约为 110.574km
-                // Longitude: 1 deg = 111.320*cos(latitude) km  // 经度的每度的距离从0km到111km不等
-                // 具体见：http://wp.mlab.tw/?p=2200
-                mCurLng += disLng / (111.320 * Math.cos(Math.abs(mCurLat) * Math.PI / 180));
-                mCurLat += disLat / 110.574;
-                mCurBea = (float) angle;
+                synchronized (mLocationPublishGate) {
+                    if (!mLocationPublishGate.isReady()) return;
+                    mSpeed = speed;
+                    // 根据当前的经纬度和距离，计算下一个经纬度
+                    // Latitude: 1 deg = 110.574 km // 纬度的每度的距离大约为 110.574km
+                    // Longitude: 1 deg = 111.320*cos(latitude) km  // 经度的每度的距离从0km到111km不等
+                    // 具体见：http://wp.mlab.tw/?p=2200
+                    mCurLng += disLng / (111.320 * Math.cos(Math.abs(mCurLat) * Math.PI / 180));
+                    mCurLat += disLat / 110.574;
+                    mCurBea = (float) angle;
+                }
             }
 
             @Override
             public void onPositionInfo(double lng, double lat, double alt) {
-                mCurLng = lng;
-                mCurLat = lat;
-                mCurAlt = alt;
+                synchronized (mLocationPublishGate) {
+                    if (isStop || mLocationPublishGate.isClosed()
+                            || !LocationPublishGate.validTarget(lat, lng, alt)) return;
+                    mCurLng = lng;
+                    mCurLat = lat;
+                    mCurAlt = alt;
+                    mLocationPublishGate.initialize(mCurLat, mCurLng, mCurAlt);
+                }
             }
         });
         mJoyStick.show();
     }
 
+    /** An immutable frame shared by all provider submissions in one tick. */
+    private static final class PublishedLocation {
+        final boolean publish;
+        final double latitude, longitude, altitude, speed;
+        final float bearing, accuracy;
+        final boolean includeMotion;
+
+        PublishedLocation(boolean publish, double latitude, double longitude,
+                double altitude, double speed, float bearing, float accuracy,
+                boolean includeMotion) {
+            this.publish = publish;
+            this.latitude = latitude;
+            this.longitude = longitude;
+            this.altitude = altitude;
+            this.speed = speed;
+            this.bearing = bearing;
+            this.accuracy = accuracy;
+            this.includeMotion = includeMotion;
+        }
+    }
+
+    private PublishedLocation capturePublishedLocation() {
+        mPublishPerformanceEvidence.onTick(SystemClock.elapsedRealtime());
+        advanceLabMotion();
+        sampleTrackIfNeeded(false);
+        sampleProvenanceIfNeeded();
+        refreshPublishedPolicy();
+        if (!LocationPublishGate.validTarget(mPublishedLat, mPublishedLng, mPublishedAlt)
+                || !Double.isFinite(mPublishedSpeed) || mPublishedSpeed < 0.0
+                || !Float.isFinite(mPublishedBearing)
+                || !Float.isFinite(mPublishedAccuracy) || mPublishedAccuracy < 0.0f) {
+            mPolicyPublish = false;
+            mPolicySummary = "INVALID_LOCATION_SAMPLE";
+        }
+        LabScenarioEngine scenario = mScenarioEngine;
+        if (scenario != null && scenario.isEnabled() && mScenarioStep < Long.MAX_VALUE) {
+            mScenarioStep++;
+        }
+        return new PublishedLocation(mPolicyPublish, mPublishedLat, mPublishedLng,
+                mPublishedAlt, mPublishedSpeed, mPublishedBearing, mPublishedAccuracy,
+                mPublishedIncludeMotion);
+    }
+
     private void initGoLocation() {
-        // 创建 HandlerThread 实例，第一个参数是线程的名字
         mLocHandlerThread = new HandlerThread(SERVICE_GO_HANDLER_NAME, Process.THREAD_PRIORITY_FOREGROUND);
-        // 启动 HandlerThread 线程
         mLocHandlerThread.start();
-        // Handler 对象与 HandlerThread 的 Looper 对象的绑定
         mLocHandler = new Handler(mLocHandlerThread.getLooper()) {
-            // 这里的Handler对象可以看作是绑定在HandlerThread子线程中，所以handlerMessage里的操作是在子线程中运行的
             @Override
             public void handleMessage(@NonNull Message msg) {
                 try {
                     Thread.sleep(TICK_INTERVAL_MS);
-
                     if (!isStop) {
-                        mPublishPerformanceEvidence.onTick(SystemClock.elapsedRealtime());
-                        advanceLabMotion();
-                        sampleTrackIfNeeded(false);
-                        sampleProvenanceIfNeeded();
-                        refreshPublishedPolicy();
-                        LabScenarioEngine scenario = mScenarioEngine;
-                        if (scenario != null && scenario.isEnabled() && mScenarioStep < Long.MAX_VALUE) {
-                            mScenarioStep++;
+                        PublishedLocation frame = mLocationPublishGate.captureIfReady(
+                                ServiceGo.this::capturePublishedLocation);
+                        // No default-coordinate publication while waiting for a complete target.
+                        // Provider Binder calls run outside the state monitor.
+                        if (frame != null && !isStop) {
+                            setLocationNetwork(frame);
+                            setLocationGPS(frame);
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                setLocationFused(frame);
+                            }
+                            setLocationFusedClient(frame);
                         }
-                        setLocationNetwork();
-                        setLocationGPS();
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            setLocationFused();
-                        }
-                        setLocationFusedClient();
-
-                        sendEmptyMessage(HANDLER_MSG_ID);
+                        if (!isStop) sendEmptyMessage(HANDLER_MSG_ID);
                     }
                 } catch (InterruptedException e) {
                     XLog.e("SERVICEGO: ERROR - handleMessage");
@@ -1487,7 +1615,6 @@ public class ServiceGo extends Service {
                 }
             }
         };
-
         mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
     }
 
@@ -2222,24 +2349,24 @@ public class ServiceGo extends Service {
         }
     }
 
-    private void setLocationGPS() {
-        if (!mPolicyPublish) return;
+    private void setLocationGPS(PublishedLocation frame) {
+        if (!frame.publish || isStop) return;
         try {
             Location loc = new Location(LocationManager.GPS_PROVIDER);
-            loc.setAccuracy(Math.max(0.8f, mPublishedAccuracy));
-            loc.setAltitude(mPublishedAlt);
-            if (mPublishedIncludeMotion) {
-                loc.setBearing(mPublishedBearing);
+            loc.setAccuracy(Math.max(0.8f, frame.accuracy));
+            loc.setAltitude(frame.altitude);
+            if (frame.includeMotion) {
+                loc.setBearing(frame.bearing);
             }
-            loc.setLatitude(mPublishedLat);
-            loc.setLongitude(mPublishedLng);
+            loc.setLatitude(frame.latitude);
+            loc.setLongitude(frame.longitude);
             loc.setTime(System.currentTimeMillis());
-            loc.setSpeed((float) mPublishedSpeed);
+            loc.setSpeed((float) frame.speed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 loc.setVerticalAccuracyMeters(1.5f);
                 loc.setSpeedAccuracyMetersPerSecond(0.2f);
-                if (mPublishedIncludeMotion) {
+                if (frame.includeMotion) {
                     loc.setBearingAccuracyDegrees(2.0f);
                 }
             }
@@ -2315,25 +2442,25 @@ public class ServiceGo extends Service {
         }
     }
 
-    private void setLocationNetwork() {
-        if (!mPolicyPublish) return;
+    private void setLocationNetwork(PublishedLocation frame) {
+        if (!frame.publish || isStop) return;
         try {
             Location loc = new Location(LocationManager.NETWORK_PROVIDER);
-            loc.setAccuracy(Math.max(2.0f, mPublishedAccuracy));
-            loc.setAltitude(mPublishedAlt);
-            if (mPublishedIncludeMotion) {
-                loc.setBearing(mPublishedBearing);
+            loc.setAccuracy(Math.max(2.0f, frame.accuracy));
+            loc.setAltitude(frame.altitude);
+            if (frame.includeMotion) {
+                loc.setBearing(frame.bearing);
             }
-            loc.setLatitude(mPublishedLat);
-            loc.setLongitude(mPublishedLng);
+            loc.setLatitude(frame.latitude);
+            loc.setLongitude(frame.longitude);
             loc.setTime(System.currentTimeMillis());
-            loc.setSpeed((float) mPublishedSpeed);
+            loc.setSpeed((float) frame.speed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 loc.setVerticalAccuracyMeters(3.0f);
                 loc.setSpeedAccuracyMetersPerSecond(0.5f);
-                if (mPublishedIncludeMotion) {
+                if (frame.includeMotion) {
                     loc.setBearingAccuracyDegrees(3.0f);
                 }
             }
@@ -2396,19 +2523,19 @@ public class ServiceGo extends Service {
         }
     }
 
-    private void setLocationFused() {
-        if (!mPolicyPublish) return;
+    private void setLocationFused(PublishedLocation frame) {
+        if (!frame.publish || isStop) return;
         try {
             Location loc = new Location(LocationManager.FUSED_PROVIDER);
-            loc.setAccuracy(Math.max(1.0f, mPublishedAccuracy));
-            loc.setAltitude(mPublishedAlt);
-            if (mPublishedIncludeMotion) {
-                loc.setBearing(mPublishedBearing);
+            loc.setAccuracy(Math.max(1.0f, frame.accuracy));
+            loc.setAltitude(frame.altitude);
+            if (frame.includeMotion) {
+                loc.setBearing(frame.bearing);
             }
-            loc.setLatitude(mPublishedLat);
-            loc.setLongitude(mPublishedLng);
+            loc.setLatitude(frame.latitude);
+            loc.setLongitude(frame.longitude);
             loc.setTime(System.currentTimeMillis());
-            loc.setSpeed((float) mPublishedSpeed);
+            loc.setSpeed((float) frame.speed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
 
             mLocManager.setTestProviderLocation(LocationManager.FUSED_PROVIDER, loc);
@@ -2424,8 +2551,8 @@ public class ServiceGo extends Service {
     }
 
     @SuppressLint("MissingPermission")
-    private void setLocationFusedClient() {
-        if (!mPolicyPublish || isStop || mFusedClient == null || !mFusedMockEnabled) return;
+    private void setLocationFusedClient(PublishedLocation frame) {
+        if (!frame.publish || isStop || mFusedClient == null || !mFusedMockEnabled) return;
         // This 33-ms tick may outrun Google Play services' Binder/Task queue.
         // Never submit another FLP mock fix before the previous Task finishes.
         // Framework GPS/NETWORK/FUSED still publish every eligible tick.
@@ -2433,15 +2560,15 @@ public class ServiceGo extends Service {
         if (token == 0L) return;
         try {
             Location loc = new Location("fused");
-            loc.setAccuracy(Math.max(1.0f, mPublishedAccuracy));
-            loc.setAltitude(mPublishedAlt);
-            if (mPublishedIncludeMotion) {
-                loc.setBearing(mPublishedBearing);
+            loc.setAccuracy(Math.max(1.0f, frame.accuracy));
+            loc.setAltitude(frame.altitude);
+            if (frame.includeMotion) {
+                loc.setBearing(frame.bearing);
             }
-            loc.setLatitude(mPublishedLat);
-            loc.setLongitude(mPublishedLng);
+            loc.setLatitude(frame.latitude);
+            loc.setLongitude(frame.longitude);
             loc.setTime(System.currentTimeMillis());
-            loc.setSpeed((float) mPublishedSpeed);
+            loc.setSpeed((float) frame.speed);
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
             // Returning a Task only proves submission. Its asynchronous result is
             // tracked separately; even Task success does not prove consumer delivery.
@@ -2497,12 +2624,10 @@ public class ServiceGo extends Service {
 
     public class ServiceGoBinder extends Binder {
         public void setPosition(double lng, double lat, double alt) {
-            mLocHandler.removeMessages(HANDLER_MSG_ID);
-            mCurLng = lng;
-            mCurLat = lat;
-            mCurAlt = alt;
-            mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
-            if (mJoyStick != null) mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+            synchronized (mLocationPublishGate) {
+                if (!applyManualTarget(lng, lat, alt)) return;
+                if (mJoyStick != null) mJoyStick.setCurrentPosition(mCurLng, mCurLat, mCurAlt);
+            }
         }
 
         public double getLongitude() { return mCurLng; }
@@ -2511,7 +2636,9 @@ public class ServiceGo extends Service {
         public double getSpeedMps() { return mSpeed; }
         public float getBearingDegrees() { return mCurBea; }
 
-        public boolean isPolicyPublishing() { return mPolicyPublish; }
+        public boolean isPolicyPublishing() {
+            return mLocationPublishGate.isReady() && mPolicyPublish && !isStop;
+        }
         public double getPublishedLongitude() { return mPublishedLng; }
         public double getPublishedLatitude() { return mPublishedLat; }
         public double getPublishedAltitude() { return mPublishedAlt; }
@@ -2774,9 +2901,11 @@ public class ServiceGo extends Service {
         public double getScenarioNoiseNorthMeters() { return mScenarioNoiseNorthMeters; }
         public double getScenarioNoiseEastMeters() { return mScenarioNoiseEastMeters; }
         public void resetScenarioStep() {
-            mScenarioStep = 0L;
-            recordProvenance("SCENARIO", "replay reset to tick 0 via Binder");
-            refreshPublishedPolicy();
+            synchronized (mLocationPublishGate) {
+                mScenarioStep = 0L;
+                recordProvenance("SCENARIO", "replay reset to tick 0 via Binder");
+                if (mLocationPublishGate.isReady()) refreshPublishedPolicy();
+            }
         }
 
         public boolean isRouteActive() { return mRouteActive; }
