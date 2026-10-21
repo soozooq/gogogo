@@ -151,8 +151,13 @@ public final class ContainerV31TrustedDemo implements AutoCloseable {
                 apk.getAbsolutePath(), flags);
         ActivityInfo activity = info == null || info.activities == null
                 || info.activities.length != 1 ? null : info.activities[0];
+        // Keep the helper valid for the host's API 27 minimum as well; the
+        // V3.1 UI independently requires API 30 before reaching this path.
+        @SuppressWarnings("deprecation")
+        long version = info == null ? -1 : Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                ? info.getLongVersionCode() : info.versionCode;
         if (info == null || !ContainerV31AdmissionPolicy.matchesIdentity(
-                info.packageName, info.getLongVersionCode(),
+                info.packageName, version,
                 activity == null ? null : activity.name, length(info.activities),
                 length(info.requestedPermissions), length(info.services)
                         + length(info.receivers) + length(info.providers))) {
