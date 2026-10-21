@@ -2,6 +2,8 @@
 
 **状态：容器已按用户 2026-10-21 指令解冻，准许开展代码修改、CI 和设备测试准备。本工单尚未执行；由 Codex 接手。**
 
+**执行更新（2026-10-21）：** 已实施独立 demo、精确 SHA 准入、Host 代理 View 与配套 CI；[实现与五步手机验收](../virtual-container-v31.md)。无 Root、单手机、无电脑为当前约束，代码、构建及真机分别验收，Draft PR 保持待审查。
+
 ## 代码基准和目标
 
 仓库 `soozooq/gogogo`，以当前 `main` 为准。上次已验收的稳定基线：2.4.24，`versionCode 2400092`，`applicationId com.soozooq.gogogo.test`，签名沿用原项目。已有 V0–V2.4 受控 APK 的 ClassLoader、资源 View、Manifest、Intent 代理、Session、Activity.recreate、独立子进程重启回放协议等真机 PASS；V3.0 仅完成外部 APK 只读归档分析，**未实现执行第三方 APK**。

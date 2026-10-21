@@ -10,6 +10,7 @@ on:
     branches:
       - main
       - master
+      - feat/v31-external-demo-host
       - integration/gogogo-labs-main-20261009
       - feat/gogogo-lab-phase12
       - feat/gogogo-lab-phase13
@@ -83,6 +84,11 @@ jobs:
       - name: Verify embedded fixture and isolated IPC contract
         run: python3 ci/verify_container_fixture_contract.py
 
+      - name: Verify independent V3.1 demo and trusted import contract
+        run: |
+          python3 ci/verify_container_v31_contract.py
+          python3 -m unittest discover -s ci -p 'test_container_v31_artifacts.py'
+
       - name: Compile and smoke-test pure V0 Java without Android SDK
         run: bash ci/run_container_v0_jvm_smoke.sh
 
@@ -100,3 +106,28 @@ jobs:
             cat "$lint_report"
           fi
           exit "$code"
+
+      - name: Verify independently built V3.1 demo and Host artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ci/verify_container_v31_artifacts.py \
+            --host-dir app/build/outputs/apk/debug \
+            --demo-dir externalDemo/build/outputs/apk/debug \
+            --trust app/build/generated/containerV31/external-demo-trust.json \
+            --sdk "$ANDROID_HOME" \
+            --commit "$(git rev-parse HEAD)" \
+            --output ci/v31-artifacts.json
+
+      - name: Upload V3.1 build and test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-v31-build-check-${{ github.run_number }}
+          path: |
+            ci/v31-artifacts.json
+            app/build/generated/containerV31/external-demo-trust.json
+            app/build/test-results/
+            externalDemo/build/test-results/
+            externalDemo/build/reports/lint-results*
+          if-no-files-found: ignore

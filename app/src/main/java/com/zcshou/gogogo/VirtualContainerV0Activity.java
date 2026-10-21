@@ -39,6 +39,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
     private MaterialButton v1Button;
     private MaterialButton v2Button;
     private MaterialButton v3Button;
+    private MaterialButton v31Button;
     private VirtualContainerV0OneClickDiagnostic autoDiagnostic;
     private MaterialButton button;
     private MaterialButton ipcButton;
@@ -101,6 +102,10 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
                 "V3：选择真实 APK（只读归档审计）", v ->
                         startActivity(new Intent(this, VirtualContainerV3ArchiveActivity.class)));
         root.addView(v3Button, GoGoUi.matchWrap());
+        v31Button = GoGoUi.secondaryButton(this,
+                "V3.1：选择配对演示 APK 并打开界面", v ->
+                        startActivity(new Intent(this, VirtualContainerV31ProxyActivity.class)));
+        root.addView(v31Button, GoGoUi.matchWrap());
         report = GoGoUi.reportPanel(this);
         String previous = getPreferences(MODE_PRIVATE).getString("v0_last_complete", "");
         report.setText(previous.isEmpty()
@@ -155,9 +160,14 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
                 if (!v3.isEmpty()) {
                     all += "\n\n========== V3 真实 APK 只读归档分析附录（最近一次）==========\n" + v3;
                 }
+                String v31 = getSharedPreferences(VirtualContainerV31ProxyActivity.PREFS,
+                        MODE_PRIVATE).getString(VirtualContainerV31ProxyActivity.LAST_RESULT, "");
+                if (!v31.isEmpty()) {
+                    all += "\n\n========== V3.1 外部受控演示 APK 界面附录（最近一次）==========\n" + v31;
+                }
                 clipboard.setPrimaryClip(ClipData.newPlainText(
                         "Tianwaitian V0-V3", all));
-                Toast.makeText(this, "V0–V2.4 总报告已复制",
+                Toast.makeText(this, "V0–V3.1 总报告已复制",
                         Toast.LENGTH_SHORT).show();
             }
         });
@@ -224,6 +234,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
         v1Button.setEnabled(enabled);
         v2Button.setEnabled(enabled);
         v3Button.setEnabled(enabled);
+        v31Button.setEnabled(enabled);
     }
 
     private void runFixtureProbe() {

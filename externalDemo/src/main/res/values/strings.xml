@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Tianwaitian External Demo</string>
+    <string name="demo_resource_marker">TWT_EXTERNAL_DEMO_V31_RESOURCE_1</string>
+    <string name="demo_title">来自独立 APK 的界面</string>
+    <string name="demo_description">这是单独构建的演示 APK。布局、文字、颜色和按钮逻辑来自这个文件，天外天负责显示代理页面。</string>
+    <string name="demo_counter">演示按钮点击次数：%1$d</string>
+    <string name="demo_increment">点击演示按钮 +1</string>
+</resources>

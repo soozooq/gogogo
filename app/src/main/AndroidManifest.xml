@@ -244,6 +244,11 @@
             android:name=".VirtualContainerV3ArchiveActivity"
             android:exported="false"
             android:theme="@style/AppTheme.NoActionBar" />
+        <!-- Only the exact paired self-authored demo may render in this HOST Activity. -->
+        <activity
+            android:name=".VirtualContainerV31ProxyActivity"
+            android:exported="false"
+            android:theme="@style/AppTheme.NoActionBar" />
         <service
             android:name=".virtualv0.VirtualContainerV24WorkerService"
             android:process=":virtualv24"

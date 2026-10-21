@@ -1,4 +1,6 @@
-> **soozooq / GoGoGo 主分支整合版说明（2026-10-13）**：本 Fork 已将 Lab 48–52 / RC1 统一合并至 `main`，并将应用桌面名称从「影梭」调整为「GoGoGo」。vivo Android 13 真机已观察到 E1/E2（GMS Task）及 E3（自有消费者 GPS/NETWORK/GMS updates）的新鲜模拟位置，正常停止清理回调有正向证据；**微信主号和 vivo 原生分身仍显示旧福建定位，不能宣称微信兼容成功**。当前版本 `2.4.0-rc2-integrated` 仍是个人设备测试预览，不是安全的正式发布版；旧签名材料仍在公开仓库，生产发布前需要更换签名方案。
+> **V3.1 候选版（2026-10-21）**：[独立外部演示 APK、免 Root Host 代理界面与手机五步验收](docs/virtual-container-v31.md)。当前功能分支版本 `2.4.25-tianwaitian-v31-demo`；构建与真机结果分别记录，尚不代表微信／抖音定位兼容。下文 10 月 13 日整合说明为历史记录。
+
+> **soozooq / GoGoGo 主分支整合版说明（2026-10-13）**：本 Fork 已将 Lab 48–52 / RC1 统一合并至 `main`，并将应用桌面名称从「影梭」调整为「GoGoGo」。vivo Android 13 真机已观察到 E1/E2（GMS Task）及 E3（自有消费者 GPS/NETWORK/GMS updates）的新鲜模拟位置，正常停止清理回调有正向证据；**微信主号和 vivo 原生分身仍显示旧福建定位，不能宣称微信兼容成功**。当时版本 `2.4.0-rc2-integrated` 是个人设备测试预览，不是安全的正式发布版；旧签名材料仍在公开仓库，生产发布前需要更换签名方案。
 >
 > - 本 Fork 源码： https://github.com/soozooq/gogogo
 > - 最新 `main` 构建： [Build Check](https://github.com/soozooq/gogogo/actions/workflows/build-check.yml) · [Preview APK（在 Artifacts 中下载 ZIP 并解压）](https://github.com/soozooq/gogogo/actions/workflows/build-release.yml)

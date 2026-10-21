@@ -1,1 +1,1 @@
-include ':app', ':containerFixture'
+include ':app', ':containerFixture', ':externalDemo'
