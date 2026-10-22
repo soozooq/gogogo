@@ -211,6 +211,35 @@ public final class LabSupportLog {
         return out.toString();
     }
 
+    /**
+     * Shared user-requested export for location diagnostics and saved container
+     * records. Each section is read independently; copying never runs an
+     * experiment or changes the original session's outcome.
+     */
+    public static String generateAll(Context context, String expectedLongitude,
+                                     String expectedLatitude) {
+        StringBuilder out = new StringBuilder(20_000);
+        out.append("GOGOGO_COMPLETE_SUPPORT_LOG_V1\n");
+        out.append("scope=read_only_current_diagnostics_and_saved_records; ")
+                .append("no_experiments_started=true; historical_results_not_rerun=true\n");
+        try {
+            section(out, "LOCATION_DIAGNOSTICS",
+                    generate(context, expectedLongitude, expectedLatitude));
+        } catch (Exception error) {
+            section(out, "LOCATION_DIAGNOSTICS",
+                    "SECTION_ERROR_" + error.getClass().getSimpleName());
+        }
+        try {
+            section(out, "SAVED_APPLICATION_RECORDS",
+                    VirtualContainerV0Activity.collectSavedContainerReports(context));
+        } catch (Exception error) {
+            section(out, "SAVED_APPLICATION_RECORDS",
+                    "SECTION_ERROR_" + error.getClass().getSimpleName());
+        }
+        out.append("END_GOGOGO_COMPLETE_SUPPORT_LOG_V1\n");
+        return out.toString();
+    }
+
     /** User action only. Do not upload automatically. */
     public static void copy(Context context, String expectedLongitude,
                             String expectedLatitude) {
@@ -225,7 +254,7 @@ public final class LabSupportLog {
                     Context.CLIPBOARD_SERVICE);
             if (manager == null) throw new IllegalStateException("NO_CLIPBOARD");
             manager.setPrimaryClip(ClipData.newPlainText("GoGoGo 诊断日志",
-                    generate(context, expectedLongitude, expectedLatitude)));
+                    generateAll(context, expectedLongitude, expectedLatitude)));
             Toast.makeText(context, "日志已复制，直接粘贴发给 GPT 即可", Toast.LENGTH_LONG).show();
             return true;
         } catch (Exception e) {

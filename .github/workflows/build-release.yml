@@ -10,6 +10,7 @@ on:
   push:
     branches:
       - main
+      - feat/v31-external-demo-host
       - integration/gogogo-labs-main-20261009
       - x8-compat
       - fix/x8-modern-amap
@@ -84,14 +85,20 @@ jobs:
       - name: Verify embedded fixture and isolated IPC contract
         run: python3 ci/verify_container_fixture_contract.py
 
+      - name: Verify independent V3.1 demo and trusted import contract
+        run: |
+          python3 ci/verify_container_v31_contract.py
+          python3 -m unittest discover -s ci -p 'test_container_v31_artifacts.py'
+          python3 -m unittest discover -s ci -p 'test_phone_update_package.py'
+
       - name: Compile and smoke-test pure V0 Java without Android SDK
         run: bash ci/run_container_v0_jvm_smoke.sh
 
-      - name: Test independent fixture, run application JVM tests and build debug APK
+      - name: Test independent fixture and external demo, run application JVM tests and build APKs
         shell: bash
         run: |
           set +e
-          ./gradlew --no-daemon :containerFixture:testDebugUnitTest :app:testDebugUnitTest :app:assembleDebug --stacktrace 2>&1 | tee ci/latest-build.txt
+          ./gradlew --no-daemon :containerFixture:testDebugUnitTest :externalDemo:testDebugUnitTest :externalDemo:lintDebug :externalDemo:assembleDebug :app:testDebugUnitTest :app:assembleDebug --stacktrace 2>&1 | tee ci/latest-build.txt
           code=${PIPESTATUS[0]}
           echo "exit=$code" >> ci/diagnostic.txt
           echo "BUILD_EXIT_CODE=$code" >> "$GITHUB_ENV"
@@ -138,6 +145,41 @@ jobs:
           unzip -l ci/embedded-v0-fixture.apk | grep -F "classes.dex"
           sha256sum ci/embedded-v0-fixture.apk | tee ci/v0-fixture-sha256.txt
 
+      - name: Verify independently built V3.1 demo and exact-SHA Host admission
+        id: verify_v31
+        if: env.BUILD_EXIT_CODE == '0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ci/verify_container_v31_artifacts.py \
+            --host-dir app/build/outputs/apk/debug \
+            --demo-dir externalDemo/build/outputs/apk/debug \
+            --trust app/build/generated/containerV31/external-demo-trust.json \
+            --sdk "$ANDROID_HOME" \
+            --commit "$(git rev-parse HEAD)" \
+            --output ci/v31-artifacts.json
+
+      - name: Stage one flat, verified phone update download
+        id: stage_phone_update
+        if: env.BUILD_EXIT_CODE == '0' && steps.verify_apk.outcome == 'success' && steps.verify_v31.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ci/stage_phone_update.py \
+            --host-dir app/build/outputs/apk/debug \
+            --demo-dir externalDemo/build/outputs/apk/debug \
+            --evidence ci/v31-artifacts.json \
+            --output-dir app/build/outputs/phone-update
+
+      - name: Upload one phone update package
+        if: steps.stage_phone_update.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tianwaitian-phone-update
+          # upload-artifact creates the only ZIP; APKs are flat, not nested ZIPs.
+          path: app/build/outputs/phone-update/*
+          if-no-files-found: error
+
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -153,18 +195,33 @@ jobs:
             ci/v0-fixture-zip-test.txt
             ci/v1-fixture-resources.txt
             ci/v2-fixture-manifest.txt
+            ci/v31-artifacts.json
+            app/build/generated/containerV31/external-demo-trust.json
             app/build/test-results/testDebugUnitTest/
             containerFixture/build/test-results/testDebugUnitTest/
+            externalDemo/build/test-results/testDebugUnitTest/
+            externalDemo/build/reports/lint-results*
           if-no-files-found: ignore
 
       - name: Upload APK
         # A compiled APK is not a deliverable until the installed package,
         # launcher, private V0 services and embedded guest fixture all verify.
-        if: env.BUILD_EXIT_CODE == '0' && steps.verify_apk.outcome == 'success'
+        if: env.BUILD_EXIT_CODE == '0' && steps.verify_apk.outcome == 'success' && steps.verify_v31.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: gogogo-unified-labs-preview
           path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Upload standalone V3.1 demo APK file for explicit phone selection
+        # This is a separate ordinary file, not another installation or a host asset.
+        if: env.BUILD_EXIT_CODE == '0' && steps.verify_apk.outcome == 'success' && steps.verify_v31.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: tianwaitian-v31-external-demo
+          path: |
+            externalDemo/build/outputs/apk/debug/*.apk
+            ci/v31-artifacts.json
           if-no-files-found: error
 
       - name: Mark build failed

@@ -29,8 +29,8 @@ android {
         minSdkVersion 27
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 35
-        versionCode 2400092
-        versionName '2.4.24-tianwaitian-v3-archive' // https://semver.org/lang/zh-CN/
+        versionCode 2400095
+        versionName '2.4.27-location-startup' // https://semver.org/lang/zh-CN/
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += ['zh', 'zh-rCN', 'en', 'en-rUS']
         ndk {
@@ -136,10 +136,65 @@ tasks.register('stageContainerV0Fixture', Copy) {
 // fixing implicit dependency validation in :app:generateReleaseLintVitalReportModel.
 android.sourceSets.main.assets.srcDir(tasks.named('stageContainerV0Fixture'))
 
+// This demo is an EXTERNAL user-selected file, never an embedded asset or a
+// host dependency. Pin the exact independently compiled APK for this build.
+// Only its small SHA/metadata record is compiled into the host.
+def v31DemoApk = project(':externalDemo').layout.buildDirectory.file(
+        'outputs/apk/debug/externalDemo-debug.apk')
+def v31JavaDir = layout.buildDirectory.dir('generated/source/containerV31')
+def v31TrustJson = layout.buildDirectory.file('generated/containerV31/external-demo-trust.json')
+tasks.register('generateContainerV31Trust') {
+    dependsOn ':externalDemo:assembleDebug'
+    inputs.file(v31DemoApk)
+    outputs.dir(v31JavaDir)
+    outputs.file(v31TrustJson)
+    doLast {
+        def apk = v31DemoApk.get().asFile
+        def digest = java.security.MessageDigest.getInstance('SHA-256')
+        apk.withInputStream { stream ->
+            byte[] buffer = new byte[32768]
+            int count
+            while ((count = stream.read(buffer)) != -1) digest.update(buffer, 0, count)
+        }
+        def sha = digest.digest().encodeHex().toString()
+        def generated = new File(v31JavaDir.get().asFile,
+                'com/zcshou/gogogo/virtualv0/ContainerV31BuildTrust.java')
+        generated.parentFile.mkdirs()
+        generated.setText('''package com.zcshou.gogogo.virtualv0;
+/** Generated from the paired independent demo APK; never a fallback trust value. */
+public final class ContainerV31BuildTrust {
+    private ContainerV31BuildTrust() {}
+    public static final String APK_SHA256 = "''' + sha + '''";
+}
+''', 'UTF-8')
+        def metadata = v31TrustJson.get().asFile
+        metadata.parentFile.mkdirs()
+        metadata.setText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson([
+            apk_sha256: sha,
+            package_name: 'com.soozooq.tianwaitian.externaldemo',
+            version_code: 1,
+            entry_class: 'com.soozooq.tianwaitian.externaldemo.DemoEntry'
+        ])) + '\n', 'UTF-8')
+    }
+}
+android.sourceSets.main.java.srcDir(
+        files(v31JavaDir).builtBy(tasks.named('generateContainerV31Trust')))
+// AGP materializes the source-directory FileCollection and can lose builtBy.
+// Declare the producer explicitly for compilers as well as Lint/packaging.
+tasks.withType(JavaCompile).configureEach {
+    dependsOn 'generateContainerV31Trust'
+}
+tasks.matching {
+    it.name.startsWith('compile') && it.name.endsWith('Kotlin')
+}.configureEach {
+    dependsOn 'generateContainerV31Trust'
+}
+
 tasks.matching {
     it.name == 'mergeDebugAssets' || it.name == 'mergeReleaseAssets'
 }.configureEach {
     dependsOn 'stageContainerV0Fixture'
+    dependsOn 'generateContainerV31Trust'
 }
 
 // AGP 8.12 Lint analysis/model tasks inspect the generated asset directory
@@ -150,6 +205,7 @@ tasks.matching {
     it.name.contains('Lint') || it.name.startsWith('lint')
 }.configureEach {
     dependsOn 'stageContainerV0Fixture'
+    dependsOn 'generateContainerV31Trust'
 }
 
 

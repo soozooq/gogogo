@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Tianwaitian External Demo</string>
+    <string name="demo_resource_marker">TWT_EXTERNAL_DEMO_V31_RESOURCE_1</string>
+    <string name="demo_title">我的随手记</string>
+    <string name="demo_description">写下备注、累计次数，稍后再回来继续。</string>
+    <string name="demo_counter">累计次数：%1$d</string>
+    <string name="demo_increment">记一次 +1</string>
+    <string name="demo_note_hint">写点什么（最多 500 字）</string>
+    <string name="demo_open_details">查看我的记录</string>
+    <string name="demo_back">返回编辑</string>
+    <string name="demo_note_empty">还没有备注</string>
+    <string name="demo_details_text">累计次数：%1$d\n\n%2$s</string>
+</resources>

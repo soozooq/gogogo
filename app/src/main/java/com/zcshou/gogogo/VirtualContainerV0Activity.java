@@ -15,7 +15,7 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.widget.Toast;
-import android.view.ViewGroup;
+import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -33,12 +33,19 @@ import com.zcshou.gogogo.virtualv0.VirtualContainerV0TwoSlotProbe;
 /** Explicit, offline, own-APK-only feasibility experiment. */
 public final class VirtualContainerV0Activity extends AppCompatActivity {
     private TextView report;
+    private TextView summary;
+    private LinearLayout advancedPanel;
+    private MaterialButton advancedToggle;
+    private static final String LAST_PAGE_RESULT = "v0_last_page_result";
+    private static final String LAST_PAGE_AT = "v0_last_page_at";
+    private static final String LAST_COMPLETE_AT = "v0_last_complete_at";
     private MaterialButton autoButton;
     private MaterialButton stopButton;
     private MaterialButton copyButton;
     private MaterialButton v1Button;
     private MaterialButton v2Button;
     private MaterialButton v3Button;
+    private MaterialButton v31Button;
     private VirtualContainerV0OneClickDiagnostic autoDiagnostic;
     private MaterialButton button;
     private MaterialButton ipcButton;
@@ -60,112 +67,202 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
         int pad = GoGoUi.dp(this, 18);
         root.setPadding(pad, pad, pad, pad);
         scroll.addView(root);
-        GoGoUi.addLabHeader(root, "SYSTEMS / VIRTUAL CONTAINER",
-                "虚拟容器 V0 · 双实例",
-                "Android 13 · 同名类加载 · 私有文件隔离",
-                v -> finish());
-        root.addView(GoGoUi.muted(this,
-                "V0 只执行内置的受控测试代码与独立测试 APK；不触碰微信、不请求定位、不安装第二个应用。"),
+        GoGoUi.addLabHeader(root, "TIANWAITIAN / APPLICATIONS",
+                "应用运行",
+                "打开应用后直接使用，记录会自动保存", v -> finish());
+
+        com.google.android.material.card.MaterialCardView quickCard = GoGoUi.card(this);
+        LinearLayout quick = GoGoUi.cardContent(this);
+        quickCard.addView(quick);
+        v31Button = GoGoUi.primaryButton(this, "打开应用", v ->
+                startActivity(new Intent(this, VirtualContainerV31ProxyActivity.class)));
+        quick.addView(v31Button, GoGoUi.matchWrap());
+        summary = GoGoUi.muted(this, "");
+        quick.addView(summary, GoGoUi.matchWrap());
+        copyButton = GoGoUi.secondaryButton(this, "一键复制全部记录", v -> copyAllRecords());
+        copyButton.setContentDescription("一键复制总报告，包含全部保存记录");
+        quick.addView(copyButton, GoGoUi.matchWrap());
+        quick.addView(GoGoUi.muted(this,
+                "运行与验证记录会一并保存，下次只需发送一次。"), GoGoUi.matchWrap());
+        root.addView(quickCard, GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 14));
+        advancedToggle = GoGoUi.secondaryButton(this, "高级验证 · 展开", v -> {
+            boolean expand = advancedPanel.getVisibility() != View.VISIBLE;
+            advancedPanel.setVisibility(expand ? View.VISIBLE : View.GONE);
+            advancedToggle.setText(expand ? "高级验证 · 收起" : "高级验证 · 展开");
+        });
+        root.addView(advancedToggle, GoGoUi.matchWrap());
+        advancedPanel = new LinearLayout(this);
+        advancedPanel.setOrientation(LinearLayout.VERTICAL);
+        advancedPanel.setVisibility(View.GONE);
+        root.addView(advancedPanel, GoGoUi.matchWrap());
+        com.google.android.material.card.MaterialCardView advancedCard = GoGoUi.card(this);
+        LinearLayout advanced = GoGoUi.cardContent(this);
+        advancedCard.addView(advanced);
+        advancedPanel.addView(advancedCard, GoGoUi.matchWrap());
+        advanced.addView(GoGoUi.muted(this,
+                "已有验证和原始记录集中保留在这里；日常打开应用无需逐项重跑。"),
                 GoGoUi.matchWrap());
         autoButton = GoGoUi.primaryButton(this,
                 "一键诊断 V0 五项（自动生成总报告）", v -> runOneClick());
-        root.addView(autoButton, GoGoUi.matchWrap());
+        advanced.addView(autoButton, GoGoUi.matchWrap());
         stopButton = GoGoUi.secondaryButton(this, "停止一键诊断", v -> stopOneClick());
         stopButton.setEnabled(false);
-        root.addView(stopButton, GoGoUi.matchWrap());
-        root.addView(GoGoUi.muted(this,
-                "下方五项仅供失败后单独复测；通常只需要上面一键诊断、最后复制一次。"),
-                GoGoUi.matchWrap());
+        advanced.addView(stopButton, GoGoUi.matchWrap());
         button = GoGoUi.secondaryButton(this, "单项：A → B → A 验证", v -> runProbe());
-        root.addView(button, GoGoUi.matchWrap());
+        advanced.addView(button, GoGoUi.matchWrap());
         ipcButton = GoGoUi.secondaryButton(this, "验证跨进程 Binder 往返", v -> runIpcProbe());
-        root.addView(ipcButton, GoGoUi.matchWrap());
+        advanced.addView(ipcButton, GoGoUi.matchWrap());
         stateButton = GoGoUi.secondaryButton(this,
                 "验证双进程 A/B 状态隔离", v -> runTwoSlotProbe());
-        root.addView(stateButton, GoGoUi.matchWrap());
+        advanced.addView(stateButton, GoGoUi.matchWrap());
         fixtureButton = GoGoUi.secondaryButton(this,
                 "验证独立 APK 的 DEX 加载与执行", v -> runFixtureProbe());
-        root.addView(fixtureButton, GoGoUi.matchWrap());
+        advanced.addView(fixtureButton, GoGoUi.matchWrap());
         guestProcessButton = GoGoUi.secondaryButton(this,
                 "验证独立 APK 在双进程执行", v -> runRemoteGuestProbe());
-        root.addView(guestProcessButton, GoGoUi.matchWrap());
+        advanced.addView(guestProcessButton, GoGoUi.matchWrap());
         v1Button = GoGoUi.secondaryButton(this,
                 "V1：打开受控 APK 生命周期代理页", v ->
                         startActivity(new Intent(this, VirtualContainerV1ProxyActivity.class)));
-        root.addView(v1Button, GoGoUi.matchWrap());
+        advanced.addView(v1Button, GoGoUi.matchWrap());
         v2Button = GoGoUi.secondaryButton(this,
                 "V2：受控 APK 组件 / Intent 代理实验", v ->
                         startActivity(new Intent(this, VirtualContainerV2Activity.class)));
-        root.addView(v2Button, GoGoUi.matchWrap());
+        advanced.addView(v2Button, GoGoUi.matchWrap());
         v3Button = GoGoUi.secondaryButton(this,
                 "V3：选择真实 APK（只读归档审计）", v ->
                         startActivity(new Intent(this, VirtualContainerV3ArchiveActivity.class)));
-        root.addView(v3Button, GoGoUi.matchWrap());
+        advanced.addView(v3Button, GoGoUi.matchWrap());
         report = GoGoUi.reportPanel(this);
-        String previous = getPreferences(MODE_PRIVATE).getString("v0_last_complete", "");
+        String previous = getPreferences(MODE_PRIVATE).getString(LAST_PAGE_RESULT, "");
+        if (previous.isEmpty()) {
+            previous = getPreferences(MODE_PRIVATE).getString("v0_last_complete", "");
+        }
         report.setText(previous.isEmpty()
-                ? "尚未运行。点击「一键诊断 V0 五项」，完成后只需复制一次总报告。"
-                : "上次完成的 V0 一键诊断报告（如需复测请重新运行）：\n" + previous);
-        root.addView(report, GoGoUi.matchWrap());
-        copyButton = GoGoUi.secondaryButton(this, "一键复制总报告 / 单项结果", v -> {
-            ClipboardManager clipboard =
-                    (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-            if (clipboard != null) {
-                String all = report.getText().toString();
-                String v1 = getSharedPreferences(VirtualContainerV1ProxyActivity.PREFS,
-                        MODE_PRIVATE).getString(VirtualContainerV1ProxyActivity.LAST_RESULT, "");
-                if (!v1.isEmpty()) {
-                    all += "\n\n========== V1 生命周期实验附录（最近一次）==========\n" + v1;
-                }
-                String v2 = getSharedPreferences(VirtualContainerV2Activity.PREFS,
-                        MODE_PRIVATE).getString(VirtualContainerV2Activity.LAST_RESULT, "");
-                if (!v2.isEmpty()) {
-                    all += "\n\n========== V2 组件 / Intent 实验附录（最近一次）==========\n" + v2;
-                }
-                String v22 = getSharedPreferences(VirtualContainerV2Activity.PREFS,
-                        MODE_PRIVATE).getString(VirtualContainerV2Activity.LAST_SESSION_RESULT, "");
-                String v22Summary = getSharedPreferences(VirtualContainerV2Activity.PREFS,
-                        MODE_PRIVATE).getString(VirtualContainerV2Activity.LAST_SESSION_SUMMARY, "");
-                if (!v22.isEmpty()) {
-                    all += "\n\n========== V2.2 连续请求 / 真机生命周期附录（最近一次）==========\n"
-                            + v22;
-                    if (!v22Summary.isEmpty()) {
-                        all += "\n\nV2.2 宿主代理请求核对：\n" + v22Summary;
-                    }
-                }
-                String v23 = getSharedPreferences(VirtualContainerV2Activity.PREFS,
-                        MODE_PRIVATE).getString(VirtualContainerV2Activity.LAST_RECREATE_RESULT, "");
-                String v23Summary = getSharedPreferences(VirtualContainerV2Activity.PREFS,
-                        MODE_PRIVATE).getString(VirtualContainerV2Activity.LAST_RECREATE_SUMMARY, "");
-                if (!v23.isEmpty()) {
-                    all += "\n\n========== V2.3 真实 Activity 重建 / 请求防重附录（最近一次）==========\n"
-                            + v23;
-                    if (!v23Summary.isEmpty()) {
-                        all += "\n\nV2.3 宿主代理核对：\n" + v23Summary;
-                    }
-                }
-                String v24 = getSharedPreferences(VirtualContainerV2Activity.PREFS,
-                        MODE_PRIVATE).getString(VirtualContainerV2Activity.LAST_COLD_RESULT, "");
-                if (!v24.isEmpty()) {
-                    all += "\n\n========== V2.4 专属进程终止 / 冷启动恢复附录（最近一次）==========\n"
-                            + v24;
-                }
-                String v3 = getSharedPreferences(VirtualContainerV3ArchiveActivity.PREFS,
-                        MODE_PRIVATE).getString(VirtualContainerV3ArchiveActivity.LAST_RESULT, "");
-                if (!v3.isEmpty()) {
-                    all += "\n\n========== V3 真实 APK 只读归档分析附录（最近一次）==========\n" + v3;
-                }
-                clipboard.setPrimaryClip(ClipData.newPlainText(
-                        "Tianwaitian V0-V3", all));
-                Toast.makeText(this, "V0–V2.4 总报告已复制",
-                        Toast.LENGTH_SHORT).show();
-            }
-        });
-        root.addView(copyButton, GoGoUi.matchWrap());
-        root.addView(GoGoUi.muted(this,
-                "注意：不同 ClassLoader / 不同私有目录不构成独立 Linux UID。"),
+                ? "高级验证尚无记录；可直接使用上方应用入口。"
+                : "此前保存的高级验证记录（保留原始时间，未自动重跑）：\n" + previous);
+        advanced.addView(report, GoGoUi.matchWrap());
+        advanced.addView(GoGoUi.muted(this,
+                "独立 ClassLoader、私有目录和 Host 代理不构成独立 Linux UID。"),
                 GoGoUi.matchWrap());
         setContentView(scroll);
+        refreshSummary();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        refreshSummary();
+    }
+
+    private void refreshSummary() {
+        if (summary == null) return;
+        String latest = getSharedPreferences(VirtualContainerV31ProxyActivity.PREFS,
+                MODE_PRIVATE).getString(VirtualContainerV31ProxyActivity.LAST_RESULT, "");
+        summary.setText(latest.isEmpty()
+                ? "首次选择配套文件后即可打开，后续操作记录会自动保存。"
+                : "已保存最近一次应用运行记录，可与已有验证结果一并复制。");
+    }
+
+    private void showV0Result(String value, boolean finished) {
+        long savedAt = System.currentTimeMillis();
+        report.setText(value);
+        if (finished) {
+            getPreferences(MODE_PRIVATE).edit().putString(LAST_PAGE_RESULT, value)
+                    .putLong(LAST_PAGE_AT, savedAt).apply();
+            refreshSummary();
+        }
+    }
+
+    private void copyAllRecords() {
+        ClipboardManager clipboard =
+                (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+        if (clipboard == null) return;
+        clipboard.setPrimaryClip(ClipData.newPlainText("Tianwaitian V0-V3", collectAllReports(this)));
+        Toast.makeText(this, "全部已保存记录已复制，下次发送一次即可", Toast.LENGTH_SHORT).show();
+        refreshSummary();
+    }
+
+    /** Host runtime can call after persisting its real exit/cleanup result. */
+    public static String collectAllReports(Context context) {
+        return LabSupportLog.generateAll(context, "", "");
+    }
+
+    /** Saved container section only; keeps the shared export non-recursive. */
+    static String collectSavedContainerReports(Context context) {
+        // Activity.getPreferences uses getLocalClassName. Our historical Activity
+        // namespace differs from applicationId, so its legacy name is normally
+        // the complete class name. Match Android's rule rather than losing data.
+        String fullName = VirtualContainerV0Activity.class.getName();
+        String packagePrefix = context.getPackageName() + ".";
+        String preferenceName = fullName.startsWith(packagePrefix)
+                ? fullName.substring(packagePrefix.length()) : fullName;
+        android.content.SharedPreferences v0Prefs =
+                context.getSharedPreferences(preferenceName, MODE_PRIVATE);
+        StringBuilder all = new StringBuilder("天外天 / 应用运行与验证总记录\n");
+        all.append("导出时间=").append(formatTime(System.currentTimeMillis())).append('\n');
+        all.append("来源说明：各附录为最近一次实际保存的记录，保留各自原始会话和时间；")
+                .append("历史记录不代表本次重新运行。\n");
+        String page = v0Prefs.getString(LAST_PAGE_RESULT, "");
+        long pageAt = v0Prefs.getLong(LAST_PAGE_AT, 0);
+        if (!page.isEmpty()) {
+            all.append("\n========== 本页最近保存的高级验证记录 ==========\n")
+                    .append("保存时间=").append(formatTime(pageAt)).append('\n').append(page);
+        }
+        String complete = v0Prefs.getString("v0_last_complete", "");
+        if (!complete.isEmpty() && !complete.equals(page)) {
+            all.append("\n\n========== 历史 V0 一键诊断（未自动重跑）==========\n")
+                    .append("保存时间=").append(formatTime(v0Prefs
+                            .getLong(LAST_COMPLETE_AT, 0))).append('\n').append(complete);
+        }
+        String v31 = context.getSharedPreferences(VirtualContainerV31ProxyActivity.PREFS,
+                MODE_PRIVATE).getString(VirtualContainerV31ProxyActivity.LAST_RESULT, "");
+        String recent = VirtualContainerV31ProxyActivity.collectRecentResults(context);
+        if (recent.isEmpty() || !recent.contains(v31)) {
+            appendRecord(all, "最新应用运行状态（原始会话及时间见记录）", v31);
+        }
+        appendRecord(all, "最近已结束的应用运行（最多五轮，各自时间见记录）", recent);
+        String v1 = context.getSharedPreferences(VirtualContainerV1ProxyActivity.PREFS,
+                MODE_PRIVATE).getString(VirtualContainerV1ProxyActivity.LAST_RESULT, "");
+        appendRecord(all, "V1 生命周期实验附录（最近一次）", v1);
+        String v2 = context.getSharedPreferences(VirtualContainerV2Activity.PREFS,
+                MODE_PRIVATE).getString(VirtualContainerV2Activity.LAST_RESULT, "");
+        appendRecord(all, "V2 组件 / Intent 实验附录（最近一次）", v2);
+        String v22 = context.getSharedPreferences(VirtualContainerV2Activity.PREFS,
+                MODE_PRIVATE).getString(VirtualContainerV2Activity.LAST_SESSION_RESULT, "");
+        appendRecord(all, "V2.2 连续请求 / 真机生命周期附录（最近一次）", v22);
+        String v22Summary = context.getSharedPreferences(VirtualContainerV2Activity.PREFS,
+                MODE_PRIVATE).getString(VirtualContainerV2Activity.LAST_SESSION_SUMMARY, "");
+        if (!v22.isEmpty()) appendRecord(all, "V2.2 宿主代理请求核对", v22Summary);
+        String v23 = context.getSharedPreferences(VirtualContainerV2Activity.PREFS,
+                MODE_PRIVATE).getString(VirtualContainerV2Activity.LAST_RECREATE_RESULT, "");
+        appendRecord(all, "V2.3 真实 Activity 重建 / 请求防重附录（最近一次）", v23);
+        String v23Summary = context.getSharedPreferences(VirtualContainerV2Activity.PREFS,
+                MODE_PRIVATE).getString(VirtualContainerV2Activity.LAST_RECREATE_SUMMARY, "");
+        if (!v23.isEmpty()) appendRecord(all, "V2.3 宿主代理核对", v23Summary);
+        String v24 = context.getSharedPreferences(VirtualContainerV2Activity.PREFS,
+                MODE_PRIVATE).getString(VirtualContainerV2Activity.LAST_COLD_RESULT, "");
+        appendRecord(all, "V2.4 专属进程终止 / 冷启动恢复附录（最近一次）", v24);
+        String v3 = context.getSharedPreferences(VirtualContainerV3ArchiveActivity.PREFS,
+                MODE_PRIVATE).getString(VirtualContainerV3ArchiveActivity.LAST_RESULT, "");
+        appendRecord(all, "V3 真实 APK 只读归档分析附录（最近一次）", v3);
+        if (page.isEmpty() && complete.isEmpty() && v31.isEmpty() && recent.isEmpty() && v1.isEmpty()
+                && v2.isEmpty() && v22.isEmpty() && v23.isEmpty() && v24.isEmpty()
+                && v3.isEmpty()) {
+            all.append("\n尚无实际运行或验证记录；此状态不表示任何验证已通过。\n");
+        }
+        return all.toString();
+    }
+
+    private static void appendRecord(StringBuilder all, String title, String value) {
+        if (value != null && !value.isEmpty()) {
+            all.append("\n\n========== ").append(title).append(" ==========\n").append(value);
+        }
+    }
+
+    private static String formatTime(long at) {
+        return at > 0 ? new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.CHINA)
+                .format(new java.util.Date(at)) : "UNKNOWN（以原始记录内时间为准）";
     }
 
     private void runOneClick() {
@@ -176,10 +273,11 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
         autoDiagnostic = new VirtualContainerV0OneClickDiagnostic(
                 getApplicationContext(), (fullReport, complete) -> {
             if (isFinishing() || isDestroyed()) return;
-            report.setText(fullReport);
+            showV0Result(fullReport, complete);
             if (complete) {
                 getPreferences(MODE_PRIVATE).edit()
-                        .putString("v0_last_complete", fullReport).apply();
+                        .putString("v0_last_complete", fullReport)
+                        .putLong(LAST_COMPLETE_AT, System.currentTimeMillis()).apply();
                 autoDiagnostic = null;
                 setExperimentButtonsEnabled(true);
                 stopButton.setEnabled(false);
@@ -209,7 +307,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
             final String finalResult = result;
             runOnUiThread(() -> {
                 if (isFinishing() || isDestroyed()) return;
-                report.setText(finalResult);
+                showV0Result(finalResult, true);
                 setExperimentButtonsEnabled(true);
             });
         }, "virtual-container-v0").start();
@@ -224,6 +322,8 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
         v1Button.setEnabled(enabled);
         v2Button.setEnabled(enabled);
         v3Button.setEnabled(enabled);
+        v31Button.setEnabled(enabled);
+        copyButton.setEnabled(enabled);
     }
 
     private void runFixtureProbe() {
@@ -242,7 +342,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
             final String finalResult = result;
             runOnUiThread(() -> {
                 if (isFinishing() || isDestroyed()) return;
-                report.setText(finalResult);
+                showV0Result(finalResult, true);
                 setExperimentButtonsEnabled(true);
             });
         }, "virtual-container-guest-apk").start();
@@ -264,7 +364,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
         stateProbe = new VirtualContainerV0TwoSlotProbe(getApplicationContext(), result -> {
             stateProbe = null;
             if (isFinishing() || isDestroyed()) return;
-            report.setText(result);
+            showV0Result(result, true);
             setExperimentButtonsEnabled(true);
         }, guestMode);
         stateProbe.start();
@@ -320,7 +420,7 @@ public final class VirtualContainerV0Activity extends AppCompatActivity {
 
     private void finishIpc(String result) {
         if (!isFinishing() && !isDestroyed()) {
-            report.setText(result);
+            showV0Result(result, true);
             setExperimentButtonsEnabled(true);
         }
         clearIpc();

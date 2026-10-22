@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="demo_hint">#B9C9D5</color>
+    <color name="demo_background">#123B41</color>
+    <color name="demo_foreground">#FFFFFF</color>
+</resources>
