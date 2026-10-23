@@ -45,6 +45,7 @@ import com.zcshou.gogogo.LabProviderReliabilityController;
 import com.zcshou.gogogo.LabGmsPublishEvidence;
 import com.zcshou.gogogo.LabGmsPublishGate;
 import com.zcshou.gogogo.LocationPublishGate;
+import com.zcshou.gogogo.LocationGeometry;
 import com.zcshou.gogogo.LabPublishPerformanceEvidence;
 import com.zcshou.gogogo.LabServiceLifecycleJournal;
 import com.zcshou.gogogo.LabServiceTeardownSequence;
@@ -861,8 +862,12 @@ public class ServiceGo extends Service {
         }
 
         if (intent != null && ACTION_MOTION_SPEED.equals(intent.getAction())) {
-            mMotionMultiplier = clamp(
-                    intent.getDoubleExtra(EXTRA_MOTION_MULTIPLIER, 1.0), 0.25, 4.0);
+            double multiplier = intent.getDoubleExtra(EXTRA_MOTION_MULTIPLIER, 1.0);
+            if (!Double.isFinite(multiplier)) {
+                recordProvenance("MOTION", "invalid multiplier ignored");
+                return locationStartResult();
+            }
+            mMotionMultiplier = clamp(multiplier, 0.25, 4.0);
             if (!mMotionPaused && mRoamActive) {
                 mSpeed = mRoamSpeedMps * mMotionMultiplier;
             }
@@ -955,7 +960,8 @@ public class ServiceGo extends Service {
         if (intent != null && ACTION_ROUTE_START.equals(intent.getAction())) {
             double[] lats = intent.getDoubleArrayExtra(EXTRA_ROUTE_LATS);
             double[] lngs = intent.getDoubleArrayExtra(EXTRA_ROUTE_LNGS);
-            if (LocationPublishGate.validRoute(lats, lngs)) {
+            double speed = intent.getDoubleExtra(EXTRA_ROUTE_SPEED_MPS, 1.4);
+            if (LocationPublishGate.validRoute(lats, lngs) && Double.isFinite(speed)) {
                 stopTimedReplay(false);
                 mRouteLats = lats;
                 mRouteLngs = lngs;
@@ -965,8 +971,7 @@ public class ServiceGo extends Service {
                 mRouteMode = Math.max(ROUTE_MODE_ONCE,
                         Math.min(ROUTE_MODE_PINGPONG,
                                 intent.getIntExtra(EXTRA_ROUTE_MODE, ROUTE_MODE_ONCE)));
-                mRouteSpeedMps = clamp(
-                        intent.getDoubleExtra(EXTRA_ROUTE_SPEED_MPS, 1.4), 0.2, 60.0);
+                mRouteSpeedMps = clamp(speed, 0.2, 60.0);
                 mRouteMotionProfile = Math.max(
                         MOTION_PROFILE_WALK,
                         Math.min(
@@ -1012,16 +1017,19 @@ public class ServiceGo extends Service {
                     mLocationPublishGate.isReady() ? mCurLat : Double.NaN);
             double centerLng = intent.getDoubleExtra(EXTRA_ROAM_CENTER_LNG,
                     mLocationPublishGate.isReady() ? mCurLng : Double.NaN);
-            if (!LocationPublishGate.validTarget(centerLat, centerLng, DEFAULT_ALT)) {
-                recordProvenance("ROAM", "invalid center ignored");
+            double radius = intent.getDoubleExtra(EXTRA_ROAM_RADIUS_M, 100.0);
+            double speed = intent.getDoubleExtra(EXTRA_ROAM_SPEED_MPS, 1.4);
+            if (!LocationPublishGate.validTarget(centerLat, centerLng, DEFAULT_ALT)
+                    || !Double.isFinite(radius) || !Double.isFinite(speed)) {
+                recordProvenance("ROAM", "invalid center/radius/speed ignored");
                 return locationStartResult();
             }
             stopTimedReplay(false);
             clearRouteCheckpoint();
             mRoamCenterLat = centerLat;
             mRoamCenterLng = centerLng;
-            mRoamRadiusM = clamp(intent.getDoubleExtra(EXTRA_ROAM_RADIUS_M, 100.0), 5.0, 5000.0);
-            mRoamSpeedMps = clamp(intent.getDoubleExtra(EXTRA_ROAM_SPEED_MPS, 1.4), 0.2, 30.0);
+            mRoamRadiusM = clamp(radius, 5.0, 5000.0);
+            mRoamSpeedMps = clamp(speed, 0.2, 30.0);
             mCurLat = mRoamCenterLat;
             mCurLng = mRoamCenterLng;
             mCurAlt = DEFAULT_ALT;
@@ -2234,14 +2242,10 @@ public class ServiceGo extends Service {
     private void chooseNewRoamTarget() {
         double angle = mRandom.nextDouble() * Math.PI * 2.0;
         double radius = Math.sqrt(mRandom.nextDouble()) * mRoamRadiusM;
-        double north = Math.cos(angle) * radius;
-        double east = Math.sin(angle) * radius;
-
-        mRoamTargetLat = mRoamCenterLat + north / 111320.0;
-        double cos = Math.max(0.05, Math.cos(Math.toRadians(mRoamCenterLat)));
-        mRoamTargetLng = mRoamCenterLng + east / (111320.0 * cos);
-        if (mRoamTargetLng > 180.0) mRoamTargetLng -= 360.0;
-        if (mRoamTargetLng < -180.0) mRoamTargetLng += 360.0;
+        double[] destination = LocationGeometry.destination(
+                mRoamCenterLat, mRoamCenterLng, Math.toDegrees(angle), radius);
+        mRoamTargetLat = destination[0];
+        mRoamTargetLng = destination[1];
     }
 
     private static double shortestLongitudeDelta(double from, double to) {
@@ -2261,15 +2265,7 @@ public class ServiceGo extends Service {
     }
 
     private static double distanceMeters(double lat1, double lon1, double lat2, double lon2) {
-        final double earth = 6371000.0;
-        double p1 = Math.toRadians(lat1);
-        double p2 = Math.toRadians(lat2);
-        double dp = Math.toRadians(lat2 - lat1);
-        double dl = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(dp / 2.0) * Math.sin(dp / 2.0)
-                + Math.cos(p1) * Math.cos(p2)
-                * Math.sin(dl / 2.0) * Math.sin(dl / 2.0);
-        return earth * 2.0 * Math.atan2(Math.sqrt(a), Math.sqrt(1.0 - a));
+        return LocationGeometry.distanceMeters(lat1, lon1, lat2, lon2);
     }
 
     private static float bearingDegrees(double lat1, double lon1, double lat2, double lon2) {

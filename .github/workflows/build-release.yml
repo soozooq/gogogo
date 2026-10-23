@@ -11,6 +11,7 @@ on:
     branches:
       - main
       - feat/v31-external-demo-host
+      - fix/location-input-validation
       - integration/gogogo-labs-main-20261009
       - x8-compat
       - fix/x8-modern-amap
