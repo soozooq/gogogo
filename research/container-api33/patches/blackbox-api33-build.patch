@@ -1,0 +1,136 @@
+diff --git a/BCore/src/main/aidl/top/niunaijun/bcore/entity/location/BLocationConfig.aidl b/BCore/src/main/aidl/top/niunaijun/bcore/entity/location/BLocationConfig.aidl
+index c8ffd80..742995f 100644
+--- a/BCore/src/main/aidl/top/niunaijun/bcore/entity/location/BLocationConfig.aidl
++++ b/BCore/src/main/aidl/top/niunaijun/bcore/entity/location/BLocationConfig.aidl
+@@ -1,3 +1,3 @@
+-package top.niunaijun.bcore.core.system.location;
++package top.niunaijun.bcore.entity.location;
+ 
+-parcelable BLocationConfig;
+\ No newline at end of file
++parcelable BLocationConfig;
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/accounts/BAccountManagerService.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/accounts/BAccountManagerService.java
+index d103d80..959b903 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/core/system/accounts/BAccountManagerService.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/core/system/accounts/BAccountManagerService.java
+@@ -1343,14 +1343,14 @@ public class BAccountManagerService extends IBAccountManagerService.Stub impleme
+     }
+ 
+     private static AuthenticatorDescription parseAuthenticatorDescription(Resources resources, String packageName, AttributeSet attributeSet) {
+-        TypedArray array = resources.obtainAttributes(attributeSet, ArrayUtils.toInt(black.com.android.internal.R.styleable.AccountAuthenticator.get()));
++        TypedArray array = resources.obtainAttributes(attributeSet, black.com.android.internal.InternalResources.styleable.AccountAuthenticator.get());
+         try {
+-            String accountType = array.getString(black.com.android.internal.R.styleable.AccountAuthenticator_accountType.get());
+-            int label = array.getResourceId(black.com.android.internal.R.styleable.AccountAuthenticator_label.get(), 0);
+-            int icon = array.getResourceId(black.com.android.internal.R.styleable.AccountAuthenticator_icon.get(), 0);
+-            int smallIcon = array.getResourceId(black.com.android.internal.R.styleable.AccountAuthenticator_smallIcon.get(), 0);
+-            int accountPreferences = array.getResourceId(black.com.android.internal.R.styleable.AccountAuthenticator_accountPreferences.get(), 0);
+-            boolean customTokens = array.getBoolean(black.com.android.internal.R.styleable.AccountAuthenticator_customTokens.get(), false);
++            String accountType = array.getString(black.com.android.internal.InternalResources.styleable.AccountAuthenticator_accountType.get());
++            int label = array.getResourceId(black.com.android.internal.InternalResources.styleable.AccountAuthenticator_label.get(), 0);
++            int icon = array.getResourceId(black.com.android.internal.InternalResources.styleable.AccountAuthenticator_icon.get(), 0);
++            int smallIcon = array.getResourceId(black.com.android.internal.InternalResources.styleable.AccountAuthenticator_smallIcon.get(), 0);
++            int accountPreferences = array.getResourceId(black.com.android.internal.InternalResources.styleable.AccountAuthenticator_accountPreferences.get(), 0);
++            boolean customTokens = array.getBoolean(black.com.android.internal.InternalResources.styleable.AccountAuthenticator_customTokens.get(), false);
+ 
+             if (TextUtils.isEmpty(accountType)) {
+                 return null;
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/am/ActivityStack.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/am/ActivityStack.java
+index f2bdc83..7ff2ad1 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/core/system/am/ActivityStack.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/core/system/am/ActivityStack.java
+@@ -308,8 +308,8 @@ public class ActivityStack {
+             }
+ 
+             assert resources != null;
+-            typedArray = resources.newTheme().obtainStyledAttributes(id, ArrayUtils.toInt(black.com.android.internal.R.styleable.Window.get()));
+-            boolean windowIsTranslucent = typedArray.getBoolean(black.com.android.internal.R.styleable.Window_windowIsTranslucent.get(), false);
++            typedArray = resources.newTheme().obtainStyledAttributes(id, black.com.android.internal.InternalResources.styleable.Window.get());
++            boolean windowIsTranslucent = typedArray.getBoolean(black.com.android.internal.InternalResources.styleable.Window_windowIsTranslucent.get(), false);
+             if (windowIsTranslucent) {
+                 shadow.setComponent(new ComponentName(BlackBoxCore.getHostPkg(), ProxyManifest.TransparentProxyActivity(vPID)));
+             } else {
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java
+index b2c7548..6873030 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java
+@@ -20,14 +20,14 @@ public class ActivityCompat {
+     public static void fix(Activity activity) {
+         Context baseContext = activity.getBaseContext();
+         try {
+-            TypedArray typedArray = activity.obtainStyledAttributes(ArrayUtils.toInt(black.com.android.internal.R.styleable.Window.get()));
++            TypedArray typedArray = activity.obtainStyledAttributes(black.com.android.internal.InternalResources.styleable.Window.get());
+             if (typedArray != null) {
+-                boolean isShowWallpaper = typedArray.getBoolean(black.com.android.internal.R.styleable.Window_windowShowWallpaper.get(), false);
++                boolean isShowWallpaper = typedArray.getBoolean(black.com.android.internal.InternalResources.styleable.Window_windowShowWallpaper.get(), false);
+                 if (isShowWallpaper) {
+                     activity.getWindow().setBackgroundDrawable(WallpaperManager.getInstance(activity).getDrawable());
+                 }
+ 
+-                boolean isFullscreen = typedArray.getBoolean(black.com.android.internal.R.styleable.Window_windowFullscreen.get(), false);
++                boolean isFullscreen = typedArray.getBoolean(black.com.android.internal.InternalResources.styleable.Window_windowFullscreen.get(), false);
+                 if (isFullscreen) {
+                     activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+                 }
+@@ -74,4 +74,4 @@ public class ActivityCompat {
+         ApplicationInfo applicationInfo = activity.getApplicationInfo();
+         return applicationInfo.loadIcon(packageManager);
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/android-mirror/src/main/java/black/com/android/internal/InternalResources.java b/android-mirror/src/main/java/black/com/android/internal/InternalResources.java
+new file mode 100644
+index 0000000..7495bb1
+--- /dev/null
++++ b/android-mirror/src/main/java/black/com/android/internal/InternalResources.java
+@@ -0,0 +1,22 @@
++package black.com.android.internal;
++
++import black.Reflector;
++
++// Keep this reflection mirror out of AGP's generated-R class filtering.
++public class InternalResources {
++    public static class styleable {
++        public static final Reflector REF = Reflector.on("com.android.internal.R$styleable");
++
++        public static Reflector.FieldWrapper<int[]> AccountAuthenticator = REF.field("AccountAuthenticator");
++        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_accountPreferences = REF.field("AccountAuthenticator_accountPreferences");
++        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_accountType = REF.field("AccountAuthenticator_accountType");
++        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_customTokens = REF.field("AccountAuthenticator_customTokens");
++        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_icon = REF.field("AccountAuthenticator_icon");
++        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_label = REF.field("AccountAuthenticator_label");
++        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_smallIcon = REF.field("AccountAuthenticator_smallIcon");
++        public static Reflector.FieldWrapper<int[]> Window = REF.field("Window");
++        public static Reflector.FieldWrapper<Integer> Window_windowFullscreen = REF.field("Window_windowFullscreen");
++        public static Reflector.FieldWrapper<Integer> Window_windowIsTranslucent = REF.field("Window_windowIsTranslucent");
++        public static Reflector.FieldWrapper<Integer> Window_windowShowWallpaper = REF.field("Window_windowShowWallpaper");
++    }
++}
+diff --git a/android-mirror/src/main/java/black/com/android/internal/R.java b/android-mirror/src/main/java/black/com/android/internal/R.java
+deleted file mode 100644
+index 79d2e2c..0000000
+--- a/android-mirror/src/main/java/black/com/android/internal/R.java
++++ /dev/null
+@@ -1,21 +0,0 @@
+-package black.com.android.internal;
+-
+-import black.Reflector;
+-
+-public class R {
+-    public static class styleable {
+-        public static final Reflector REF = Reflector.on("com.android.internal.R$styleable");
+-
+-        public static Reflector.FieldWrapper<Integer[]> AccountAuthenticator = REF.field("AccountAuthenticator");
+-        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_accountPreferences = REF.field("AccountAuthenticator_accountPreferences");
+-        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_accountType = REF.field("AccountAuthenticator_accountType");
+-        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_customTokens = REF.field("AccountAuthenticator_customTokens");
+-        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_icon = REF.field("AccountAuthenticator_icon");
+-        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_label = REF.field("AccountAuthenticator_label");
+-        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_smallIcon = REF.field("AccountAuthenticator_smallIcon");
+-        public static Reflector.FieldWrapper<Integer[]> Window = REF.field("Window");
+-        public static Reflector.FieldWrapper<Integer> Window_windowFullscreen = REF.field("Window_windowFullscreen");
+-        public static Reflector.FieldWrapper<Integer> Window_windowIsTranslucent = REF.field("Window_windowIsTranslucent");
+-        public static Reflector.FieldWrapper<Integer> Window_windowShowWallpaper = REF.field("Window_windowShowWallpaper");
+-    }
+-}

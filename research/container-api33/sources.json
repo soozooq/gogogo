@@ -1,0 +1,24 @@
+{
+  "blackbox": {
+    "url": "https://github.com/ccgjson/BlackBox.git",
+    "commit": "df6249da4b032649689a98242f147da6c5342172",
+    "directory": "blackbox-api33",
+    "patch": "patches/blackbox-api33-build.patch",
+    "added_files": ["android-mirror/src/main/java/black/com/android/internal/InternalResources.java"]
+  },
+  "virtualapp": {
+    "url": "https://github.com/ISEKHON/VirtualApp.git",
+    "commit": "b3c634ad7941765df3da84a207aca94b7861afae",
+    "directory": "virtualapp-api33"
+  },
+  "guest": {
+    "url": "https://github.com/FossifyOrg/Calculator/releases/download/1.4.0/calculator-10-foss-release.apk",
+    "filename": "calculator-10-foss-release.apk",
+    "package": "org.fossify.math",
+    "size": 7047681,
+    "sha256": "7c5443c22d6d62c67dfe80df33ea9161ff0fa440f92590bcb45d7008b57613ed",
+    "license": "GPL-3.0",
+    "source": "https://github.com/FossifyOrg/Calculator/tree/1.4.0"
+  },
+  "aosp_api33": "d27f9960456403533af0a0d5d9f14cf71c9c8cf6"
+}

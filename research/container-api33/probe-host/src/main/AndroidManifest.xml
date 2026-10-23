@@ -1,0 +1,23 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.soozooq.tianwaitian.containerresearch">
+    <!-- No broad permission inheritance from the reference engine. -->
+    <uses-permission tools:node="removeAll" />
+    <uses-permission-sdk-23 tools:node="removeAll" />
+    <uses-feature tools:node="removeAll" />
+    <permission android:name="${applicationId}.INTERNAL" android:protectionLevel="signature" />
+    <uses-permission android:name="${applicationId}.INTERNAL" tools:node="replace" />
+    <!-- Required by the engine to bring its own virtual activity task forward. -->
+    <uses-permission android:name="android.permission.REORDER_TASKS" tools:node="replace" />
+    <application android:name=".ProbeApplication" android:label="容器研究（未适配微信）"
+        android:allowBackup="false" android:extractNativeLibs="true"
+        android:permission="${applicationId}.INTERNAL"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <activity android:name=".ProbeActivity" android:exported="true" android:permission="">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

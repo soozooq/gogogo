@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+"""Run only on this research emulator; never accepts a physical-device serial."""
+import argparse
+import atexit
+from datetime import datetime, timezone
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import time
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--sdk', default=os.environ.get('ANDROID_SDK_ROOT') or os.environ.get('ANDROID_HOME'))
+parser.add_argument('--root', default=os.environ.get('CONTAINER_RESEARCH_WORKDIR'))
+parser.add_argument('--serial', default='emulator-5580')
+parser.add_argument('--installed-baseline', action='store_true')
+parser.add_argument('--label', default='latest')
+args = parser.parse_args()
+if not args.sdk or not args.root:
+    raise SystemExit('Specify --sdk/--root or ANDROID_SDK_ROOT/CONTAINER_RESEARCH_WORKDIR')
+if not re.fullmatch(r'emulator-\d+', args.serial):
+    raise SystemExit('Only a dedicated emulator is permitted')
+root = Path(args.root).resolve()
+if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{0,63}', args.label):
+    raise SystemExit('Invalid evidence label')
+evidence = root / 'evidence' / args.label
+evidence.mkdir(parents=True, exist_ok=False)
+adb = [str(Path(args.sdk) / 'platform-tools/adb'), '-s', args.serial]
+
+def run(arguments, timeout=60, check=True):
+    result = subprocess.run(adb + arguments, capture_output=True, timeout=timeout)
+    if check and result.returncode:
+        raise RuntimeError(result.stderr.decode(errors='replace')[:1500])
+    return result
+
+def shell(command, timeout=30, check=True):
+    return run(['shell', command], timeout, check).stdout.decode(errors='replace').strip()
+
+deadline = time.monotonic() + 1200
+last_notice = 0
+while time.monotonic() < deadline:
+    try:
+        if shell('getprop sys.boot_completed', timeout=10, check=False) == '1':
+            break
+    except subprocess.TimeoutExpired:
+        pass
+    if time.monotonic() - last_notice >= 30:
+        print('Waiting for software-emulated Android 13 boot', flush=True)
+        last_notice = time.monotonic()
+    time.sleep(2)
+else:
+    raise SystemExit('Android did not boot; no runtime result')
+if shell('getprop ro.kernel.qemu') != '1' or shell('getprop ro.build.version.sdk') != '33':
+    raise SystemExit('Not the required API 33 research emulator')
+run(['unroot'], check=False)
+for _ in range(30):
+    try:
+        if shell('id -u', timeout=5, check=False) == '2000':
+            break
+    except subprocess.TimeoutExpired:
+        pass
+    time.sleep(1)
+else:
+    raise SystemExit('Ordinary adb shell UID unavailable')
+host = root / 'probe-host-build/outputs/apk/debug/probeHost-debug.apk'
+test = root / 'probe-host-build/outputs/apk/androidTest/debug/probeHost-debug-androidTest.apk'
+guest = root / 'guest/calculator-10-foss-release.apk'
+if not all(p.is_file() for p in (host, test, guest)):
+    raise SystemExit('Build artifacts missing')
+if shell('getenforce') != 'Enforcing':
+    raise SystemExit('SELinux must remain enforcing')
+metadata = {
+    'started_at_utc': datetime.now(timezone.utc).isoformat(),
+    'scope': 'CLOUD_EMULATOR_ONLY_NOT_VIVO_OR_WECHAT',
+    'case': 'system_installed_control' if args.installed_baseline else 'container_uninstalled_guest',
+    'serial': args.serial, 'api': 33, 'abi': shell('getprop ro.product.cpu.abi'),
+    'shell_uid': shell('id -u'), 'selinux': shell('getenforce'),
+    'artifacts': {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in (host, test, guest)},
+}
+(evidence / 'case-inputs.json').write_text(json.dumps(metadata, indent=2) + '\n')
+if shell('pm path org.fossify.math', check=False):
+    raise SystemExit('Guest already installed in system; use a fresh research emulator')
+print('Installing standalone host/test; guest remains uninstalled in the system', flush=True)
+for apk in (host, test):
+    print(run(['install', '-r', str(apk)], timeout=180).stdout.decode(errors='replace'), flush=True)
+control_installed = False
+
+def remove_control_guest():
+    global control_installed
+    if not control_installed:
+        return True
+    cleanup = run(['uninstall', 'org.fossify.math'], timeout=120, check=False)
+    removed = cleanup.returncode == 0 and b'Success' in cleanup.stdout
+    (evidence / 'control-cleanup.json').write_text(json.dumps({'removed': removed}) + '\n')
+    if removed:
+        control_installed = False
+    return removed
+
+def emergency_cleanup():
+    try:
+        remove_control_guest()
+    except Exception as error:
+        (evidence / 'control-cleanup-error.txt').write_text(type(error).__name__ + '\n')
+
+atexit.register(emergency_cleanup)
+if args.installed_baseline:
+    print('Installing guest only for the ordinary system-app control', flush=True)
+    print(run(['install', str(guest)], timeout=180).stdout.decode(errors='replace'), flush=True)
+    control_installed = True
+run(['push', str(guest), '/data/local/tmp/gogogo-research-guest.apk'], timeout=120)
+shell('settings put global window_animation_scale 0')
+shell('settings put global transition_animation_scale 0')
+shell('settings put global animator_duration_scale 0')
+shell('input keyevent KEYCODE_WAKEUP')
+shell('wm dismiss-keyguard', check=False)
+run(['logcat', '-c'])
+print('Running real third-party UI and return-from-home check', flush=True)
+result = run(['shell', 'am', 'instrument', '-w', '-r', '-e', 'class',
+    'com.soozooq.tianwaitian.containerresearch.ExternalGuestInstrumentedTest#' +
+    ('installedCalculatorControl' if args.installed_baseline else 'calculatorRunsUninstalledAndRetainsResultAfterHome'),
+    'com.soozooq.tianwaitian.containerresearch.test/androidx.test.runner.AndroidJUnitRunner'],
+    timeout=300, check=False)
+text = result.stdout.decode(errors='replace') + result.stderr.decode(errors='replace')
+(evidence / 'cloud-instrumentation.txt').write_text(text)
+for relative in ('window.xml', 'screen.png'):
+    data = run(['exec-out', 'run-as', 'com.soozooq.tianwaitian.containerresearch', 'cat',
+        'files/runtime-evidence/' + relative], check=False)
+    if data.returncode == 0:
+        (evidence / ('cloud-' + relative)).write_bytes(data.stdout)
+    elif relative == 'screen.png':
+        screen = run(['exec-out', 'screencap', '-p'], check=False)
+        if screen.returncode == 0:
+            (evidence / 'cloud-screen.png').write_bytes(screen.stdout)
+(evidence / 'cloud-logcat.txt').write_bytes(run(['logcat', '-d', '-v', 'threadtime'], check=False).stdout)
+(evidence / 'cloud-activities.txt').write_text(shell('dumpsys activity activities', check=False))
+(evidence / 'cloud-guest-system-path.txt').write_text(shell('pm path org.fossify.math', check=False))
+cleanup_ok = remove_control_guest()
+passed = result.returncode == 0 and 'OK (1 test)' in text and not re.search(
+    r'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=|Process crashed', text)
+system_guest_after_cleanup = bool(shell('pm path org.fossify.math', check=False))
+passed = passed and cleanup_ok and not system_guest_after_cleanup
+(evidence / 'case-result.json').write_text(json.dumps({
+    'passed': passed, 'control_removed': cleanup_ok,
+    'guest_system_installed_after_cleanup': system_guest_after_cleanup,
+    'wechat_result': 'NOT_TESTED', 'location_replacement': 'DISABLED'
+}, indent=2) + '\n')
+(evidence / 'cloud-runtime-check.exit').write_text('0\n' if passed else '1\n')
+print(text[-5000:], flush=True)
+raise SystemExit(0 if passed else 1)

@@ -1,0 +1,44 @@
+// Local research toolchain only. Does not change application/runtime source.
+gradle.settingsEvaluated { settings ->
+    if (settings.rootDir.name == 'blackbox-api33') {
+        settings.include ':probeHost'
+        settings.project(':probeHost').projectDir = new File(System.getenv('CONTAINER_RESEARCH_SPEC_DIR'), 'probe-host')
+    }
+}
+gradle.beforeProject { p ->
+    p.afterEvaluate {
+        def android = p.extensions.findByName('android')
+        if (android != null) {
+            if (p.path == ':probeHost') {
+                p.buildDir = new File(System.getenv('CONTAINER_RESEARCH_WORKDIR'), 'probe-host-build')
+            }
+            android.ndkVersion = '25.1.8937393'
+            android.buildToolsVersion = '33.0.2'
+            if (android.externalNativeBuild?.cmake?.path != null) {
+                android.externalNativeBuild.cmake.version = '3.22.1'
+            }
+        }
+    }
+}
+
+gradle.projectsEvaluated {
+    def host = gradle.rootProject.findProject(':probeHost')
+    if (host != null) {
+        host.tasks.register('writeResearchDependencyInventory') {
+            doLast {
+                def components = host.configurations.getByName('debugRuntimeClasspath')
+                        .incoming.resolutionResult.allComponents
+                def rows = components.findAll { it.moduleVersion != null }.collect { component ->
+                    def id = component.moduleVersion
+                    [group: id.group, name: id.name, version: id.version,
+                     source_kind: component.id instanceof org.gradle.api.artifacts.component.ProjectComponentIdentifier
+                         ? 'local_project' : 'maven_artifact']
+                }.sort { a, b -> "${a.group}:${a.name}" <=> "${b.group}:${b.name}" }
+                def output = new File(System.getenv('CONTAINER_RESEARCH_WORKDIR'),
+                        'evidence/runtime-dependencies.json')
+                output.parentFile.mkdirs()
+                output.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(rows)) + '\n'
+            }
+        }
+    }
+}

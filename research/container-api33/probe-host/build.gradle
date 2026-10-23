@@ -1,0 +1,28 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    compileSdk 33
+    defaultConfig {
+        applicationId 'com.soozooq.tianwaitian.containerresearch'
+        minSdk 26
+        targetSdk 33
+        versionCode 1
+        versionName '0.1-research'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        ndk { abiFilters 'arm64-v8a', 'x86_64' }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    packagingOptions { jniLibs { useLegacyPackaging true } }
+}
+
+dependencies {
+    implementation project(':BCore')
+    androidTestImplementation 'androidx.test:runner:1.5.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'
+}
