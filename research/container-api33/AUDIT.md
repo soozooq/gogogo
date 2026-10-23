@@ -38,6 +38,8 @@
 
 第一次失败是真实引擎崩溃：Android 13 已没有旧 GnssStatusListenerTransport，加载旧镜像抛出初始化错误。API31+ 路径改用真实 IGnssStatusListener，延时任务发送 started 和零卫星状态，注销／Binder 死亡／关闭模式释放记录；不声称物理 first-fix，不生成 NMEA、测量、导航电文或天线信息。虚拟模式抑制新物理观测注册，注销仍向系统转发以处理旧注册。旧系统路径未在本轮验证。
 
+新增的官方 Android 11 转译检查只做匿名启动，显式断言目标的虚拟模式为 `CLOSE_MODE`，不能复用 Android 13 的定位通过结论。只读复查发现 API30 及更旧的上游分支仍有合成 NMEA 逻辑；该路径没有修正或验证，后续不得直接在这条云端启动流程中打开模拟定位并宣称 GNSS 兼容。若继续做旧系统定位，需先移除制造卫星／原始观测的路径并单独核对实际框架契约。
+
 自有 Guest 相关回归 24.271 秒通过：真实公共 GnssStatus.Callback 收到 started 和零卫星，first-fix 为零；BLocation 附加卫星数为零；注销后状态计数稳定，六条定位路径及 mock 标记仍通过。同轮受控定位契约 4 项和计算器运行／原签名回归也通过。证据与失败分类见[本轮结果](evidence/official-gpstest-location-results.json)。这只覆盖 GPSTest 的前台流程，未验证通知／后台服务生命周期、GMS 或目标软件业务。
 
 ## 真实 Guest 调用链：自有消费者

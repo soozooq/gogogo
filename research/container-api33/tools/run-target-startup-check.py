@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dedicated API30 official-translation emulator only. Anonymous startup, no account actions."""
+"""Dedicated official-translation emulator only. Anonymous startup, no account actions."""
 import argparse
 import hashlib
 import json
@@ -16,6 +16,7 @@ p.add_argument('--sdk', default=os.environ.get('ANDROID_SDK_ROOT') or os.environ
 p.add_argument('--serial', default='emulator-5580')
 p.add_argument('--label', required=True)
 p.add_argument('--target', choices=['wechat', 'douyin'], required=True)
+p.add_argument('--api', choices=['30', '32'], default='32')
 a = p.parse_args()
 if not a.root or not a.sdk or not re.fullmatch(r'emulator-\d+', a.serial):
     raise SystemExit('Dedicated emulator SDK/workdir required')
@@ -36,8 +37,8 @@ def run(args, timeout=60, check=True):
 def shell(command, timeout=30, check=True):
     return run(['shell', command], timeout, check).stdout.decode(errors='replace').strip()
 
-if shell('getprop ro.kernel.qemu') != '1' or shell('getprop ro.build.version.sdk') != '30':
-    raise SystemExit('Only the dedicated API30 image is accepted; no target result')
+if shell('getprop ro.kernel.qemu') != '1' or shell('getprop ro.build.version.sdk') != a.api:
+    raise SystemExit('Only the explicitly selected dedicated image is accepted; no target result')
 run(['unroot'], check=False)
 for _ in range(20):
     if shell('id -u', check=False) == '2000': break
@@ -66,8 +67,8 @@ if sha != entry['sha256']:
 host = work / 'probe-host-build/outputs/apk/debug/probeHost-debug.apk'
 test = work / 'probe-host-build/outputs/apk/androidTest/debug/probeHost-debug-androidTest.apk'
 if not host.is_file() or not test.is_file(): raise SystemExit('Build the standalone host and driver first')
-inputs = {'scope': 'OFFICIAL_ANDROID11_TRANSLATION_STARTUP_ONLY_NOT_LOCATION_OR_VIVO',
-    'target': entry, 'image': props,
+inputs = {'scope': 'OFFICIAL_ANDROID_TRANSLATION_STARTUP_ONLY_NOT_API33_OR_VIVO',
+    'target': entry, 'image': props, 'requested_api': int(a.api),
     'artifacts': {str(x.relative_to(work)): hashlib.sha256(x.read_bytes()).hexdigest() for x in [host, test, apk]},
     'research_source_sha256': {str(x.relative_to(spec)): hashlib.sha256(x.read_bytes()).hexdigest()
         for folder in ['tools', 'probe-host', 'patches'] for x in sorted((spec / folder).rglob('*'))
@@ -83,10 +84,12 @@ created_control = False
 def capture(prefix):
     run(['shell', 'rm', '-f', '/data/local/tmp/gogogo-target-window.xml'], check=False)
     try:
-        run(['shell', 'uiautomator', 'dump', '/data/local/tmp/gogogo-target-window.xml'], timeout=15, check=False)
+        dumped = run(['shell', 'uiautomator', 'dump', '/data/local/tmp/gogogo-target-window.xml'], timeout=15, check=False)
+        (evidence / (prefix + '-dump.txt')).write_bytes(dumped.stdout + dumped.stderr)
+        xml = run(['exec-out', 'cat', '/data/local/tmp/gogogo-target-window.xml'], check=False).stdout
     except subprocess.TimeoutExpired:
-        return b''
-    xml = run(['exec-out', 'cat', '/data/local/tmp/gogogo-target-window.xml'], check=False).stdout
+        (evidence / (prefix + '-dump.txt')).write_text('UI dump timed out; capture screen independently\n')
+        xml = b''
     if xml.lstrip().startswith(b'<?xml'):
         (evidence / (prefix + '-window.xml')).write_bytes(xml)
     screen = run(['exec-out', 'screencap', '-p'], check=False).stdout
@@ -119,7 +122,7 @@ try:
         raise RuntimeError('No ordinary launcher component')
     shell('am start -n ' + component)
     deadline = time.monotonic() + 120
-    stage = None; text = []
+    stage = None; text = []; native_crash = False
     while time.monotonic() < deadline:
         xml = capture('baseline')
         try:
@@ -128,8 +131,12 @@ try:
         except ET.ParseError: text = []
         stage = anonymous_stage(text)
         if stage: break
+        crash = run(['logcat', '-d', '-b', 'crash'], check=False).stdout
+        native_crash = ('>>> ' + pkg + ' <<<').encode() in crash and b'signal ' in crash
+        if native_crash: break
         time.sleep(2)
-    result['baseline'] = stage or 'STARTUP_UI_NOT_REACHED_WITHIN_BOUND_UNKNOWN_CAUSE'
+    result['baseline'] = stage or ('ORIGINAL_SYSTEM_CONTROL_NATIVE_CRASH' if native_crash
+        else 'STARTUP_UI_NOT_REACHED_WITHIN_BOUND_UNKNOWN_CAUSE')
     (evidence / 'baseline-visible-text.json').write_text(json.dumps(text, ensure_ascii=False, indent=2) + '\n')
     (evidence / 'baseline-crash-log.txt').write_bytes(run(['logcat', '-d', '-b', 'crash'], check=False).stdout)
     removed = run(['uninstall', pkg], timeout=120, check=False)
@@ -148,7 +155,7 @@ try:
     run(['push', str(apk), '/data/local/tmp/gogogo-official-target.apk'], timeout=180)
     run(['shell', 'run-as', 'com.soozooq.tianwaitian.containerresearch', 'rm', '-rf', 'files/target-startup-' + a.target])
     run(['logcat', '-c'])
-    test_result = run(['shell', 'am', 'instrument', '-w', '-r', '-e', 'target', a.target, '-e', 'class',
+    test_result = run(['shell', 'am', 'instrument', '-w', '-r', '-e', 'target', a.target, '-e', 'api', a.api, '-e', 'class',
         'com.soozooq.tianwaitian.containerresearch.OfficialTargetStartupInstrumentedTest#pinnedOfficialTargetColdStartup',
         'com.soozooq.tianwaitian.containerresearch.test/androidx.test.runner.AndroidJUnitRunner'], timeout=420, check=False)
     transcript = test_result.stdout + test_result.stderr

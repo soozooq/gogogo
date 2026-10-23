@@ -14,9 +14,11 @@
 
 当前只准入上述两个固定发布文件，**微信／抖音、腾讯／字节 SDK、GMS、海外业务和 ARM64／vivo 尚未成功**。[已核验的官方目标安装包](evidence/official-target-apk-readiness.json)都只有 ARM64 原生库；未加入普通入口、未改签或分发，版本也不等于用户手机版本。
 
-本云端 x86_64 模拟器[拒绝 ARM64 镜像](evidence/arm64-cloud-runtime-limit.json)。[GitHub ARM Mac 构建通过，VM 因 HVF 不可用未启动](evidence/cloud-arm-mac-build-and-vm-limit.json)。Linux 的 KVM 启动、存储和构建已通过，最近[文件选择器抽屉遮挡导致未完成选择](evidence/cloud-picker-occlusion-failure.json)，现改为默认下载目录并等待真实返回，已通过导入并实际打开 Guest；随后[首次启动更新说明遮挡坐标](evidence/cloud-fresh-gpstest-dialog-failure.json)，已按实际 XML 修正关闭按钮，完整流程仍待确认。失败不算引擎或定位结果。[云端流程](../../.github/workflows/container-research.yml)只上传证据，不上传 APK，继续研发统一留在 #60。
+本云端 x86_64 模拟器[拒绝 ARM64 镜像](evidence/arm64-cloud-runtime-limit.json)。[GitHub ARM Mac 构建通过，VM 因 HVF 不可用未启动](evidence/cloud-arm-mac-build-and-vm-limit.json)。Linux 的 KVM 启动、存储和构建已通过，最近[文件选择器抽屉遮挡导致未完成选择](evidence/cloud-picker-occlusion-failure.json)，现改为默认下载目录并等待真实返回，已通过导入并实际打开 Guest；随后[首次启动更新说明遮挡坐标](evidence/cloud-fresh-gpstest-dialog-failure.json)，已按实际 XML 修正关闭按钮。[全新 KVM 普通流程 10.563 秒及计算器回归 5.778 秒通过](evidence/cloud-ordinary-entry-pass.json)，全部输入与实测提交逐项核对。失败不算引擎或定位结果。[云端流程](../../.github/workflows/container-research.yml)只上传证据，不上传 APK，继续研发统一留在 #60。
 
-[官方 Google API33 x86_64 镜像实测](evidence/google-api33-nativebridge-check.json)没有 ARM64 转译。[官方 API30 镜像实测](evidence/google-api30-nativebridge-check.json)已确认内置 ARM64 转译、UID 2000 与 SELinux Enforcing。`tools/run-target-startup-check.py` 和独立云端 KVM 检查要求这一专用环境，固定两份官方目标原包，平台安装选项选择宿主 ARM64 ABI 并核对实际状态。它先普通安装对照，再容器匿名启动，保持定位关闭，停在欢迎或隐私页；不接受条款、不登录。代码已编译，尚未通过运行，不加入普通入口。即使通过，也仅是 Android 11 转译环境的启动证据。
+[官方 Google API33 x86_64 镜像实测](evidence/google-api33-nativebridge-check.json)没有 ARM64 转译。[官方 API30 镜像实测](evidence/google-api30-nativebridge-check.json)已确认内置 ARM64 转译、UID 2000 与 SELinux Enforcing。`tools/run-target-startup-check.py` 和独立云端 KVM 检查要求这一专用环境，固定两份官方目标原包，平台安装选项选择宿主 ARM64 ABI 并核对实际状态。它先普通安装对照，再容器匿名启动，保持定位关闭，停在欢迎或隐私页；不接受条款、不登录。[KVM 原包对照](evidence/official-target-baseline-limit.json)正常安装成功，但微信／抖音都在容器外发生原生崩溃，未达到欢迎／隐私页，容器未启动。微信的具体原因未定，抖音转译库报告 `Bad ubidi_openSized_66 call`。不将这算作容器或真机失败，也不重复相同 API30 环境。
+
+另核对 [API31／32 官方镜像的局部元数据](evidence/api31-32-translation-metadata.json)，云端改为实际资格核查 API32，然后在条件成立时重复原包对照。元数据不是启动证明；尚无微信／抖音运行通过，不加入普通入口。所有转译结果均不能代替 Android 13／ARM64／vivo 或定位业务验收。
 
 ## 前轮：官方 GPSTest 实际采用位置
 

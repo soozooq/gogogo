@@ -69,7 +69,9 @@ public final class OfficialTargetStartupInstrumentedTest {
         } else { fail("Only the two pinned original cloud inputs are admitted"); return; }
         assertEquals("2000", shell("id -u"));
         assertEquals("1", shell("getprop ro.kernel.qemu"));
-        assertEquals("30", shell("getprop ro.build.version.sdk"));
+        String api = InstrumentationRegistry.getArguments().getString("api");
+        assertTrue("Explicit qualified cloud image API", "30".equals(api) || "32".equals(api));
+        assertEquals(api, shell("getprop ro.build.version.sdk"));
         assertEquals("Enforcing", shell("getenforce"));
         assertEquals("", shell("pm path " + pkg));
         assertTrue("Actual image must advertise ARM64 app support",
@@ -80,8 +82,8 @@ public final class OfficialTargetStartupInstrumentedTest {
         File folder = new File(context.getFilesDir(), "target-startup-" + key);
         assertTrue(folder.isDirectory() || folder.mkdirs());
         File apk = new File(context.getFilesDir(), "pinned-target.apk");
-        JSONObject report = new JSONObject().put("scope", "CLOUD_TRANSLATED_ANDROID11_STARTUP_ONLY_NOT_LOCATION_OR_VIVO")
-                .put("target", key).put("package", pkg).put("sha256", sha)
+        JSONObject report = new JSONObject().put("scope", "CLOUD_TRANSLATED_STARTUP_ONLY_NOT_API33_OR_VIVO")
+                .put("target", key).put("package", pkg).put("sha256", sha).put("api", api)
                 .put("location_enabled", false).put("terms_accepted", false).put("login_attempted", false)
                 .put("passed", false);
         long idle = Configurator.getInstance().getWaitForIdleTimeout();
