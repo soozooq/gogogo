@@ -1,0 +1,20 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    compileSdk 33
+    defaultConfig {
+        applicationId 'com.soozooq.tianwaitian.locationconsumer'
+        minSdk 31
+        targetSdk 33
+        versionCode 1
+        versionName '0.1-owned-consumer'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+// Deliberately no host, container-engine, SDK, or other library dependency.

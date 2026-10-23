@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 import time
 
 parser = argparse.ArgumentParser()
@@ -18,6 +19,7 @@ parser.add_argument('--serial', default='emulator-5580')
 mode = parser.add_mutually_exclusive_group()
 mode.add_argument('--installed-baseline', action='store_true')
 mode.add_argument('--location-contract', action='store_true')
+mode.add_argument('--guest-location', action='store_true')
 parser.add_argument('--label', default='latest')
 args = parser.parse_args()
 if not args.sdk or not args.root:
@@ -69,6 +71,10 @@ else:
 host = root / 'probe-host-build/outputs/apk/debug/probeHost-debug.apk'
 test = root / 'probe-host-build/outputs/apk/androidTest/debug/probeHost-debug-androidTest.apk'
 guest = root / 'guest/calculator-10-foss-release.apk'
+guest_package = 'org.fossify.math'
+if args.guest_location:
+    guest = root / 'location-consumer-build/outputs/apk/debug/locationConsumer-debug.apk'
+    guest_package = 'com.soozooq.tianwaitian.locationconsumer'
 inputs = (host, test) if args.location_contract else (host, test, guest)
 if not all(p.is_file() for p in inputs):
     raise SystemExit('Build artifacts missing')
@@ -77,7 +83,8 @@ if shell('getenforce') != 'Enforcing':
 metadata = {
     'started_at_utc': datetime.now(timezone.utc).isoformat(),
     'scope': 'CLOUD_EMULATOR_ONLY_NOT_VIVO_OR_WECHAT',
-    'case': 'controlled_location_contract' if args.location_contract else
+    'case': 'owned_guest_location_real_process' if args.guest_location else
+        'controlled_location_contract' if args.location_contract else
         ('system_installed_control' if args.installed_baseline else 'container_uninstalled_guest'),
     'serial': args.serial, 'api': 33, 'abi': shell('getprop ro.product.cpu.abi'),
     'shell_uid': shell('id -u'), 'selinux': shell('getenforce'),
@@ -87,11 +94,16 @@ spec = Path(__file__).resolve().parents[1]
 source_inputs = [spec / 'sources.json', *sorted((spec / 'patches').glob('*.patch')),
     *sorted((spec / 'tools').glob('*.*')), *sorted((spec / 'probe-host').rglob('*.java')),
     spec / 'probe-host/build.gradle', spec / 'probe-host/src/main/AndroidManifest.xml']
+source_inputs += [*sorted((spec / 'location-consumer').rglob('*.java')),
+    *sorted((spec / 'location-consumer').rglob('*.xml')), spec / 'location-consumer/build.gradle']
 metadata['research_source_sha256'] = {
     str(p.relative_to(spec)): hashlib.sha256(p.read_bytes()).hexdigest() for p in source_inputs
     if p.is_file() and '__pycache__' not in p.parts}
 (evidence / 'case-inputs.json').write_text(json.dumps(metadata, indent=2) + '\n')
-if shell('pm path org.fossify.math', check=False):
+if args.guest_location:
+    subprocess.run([sys.executable, str(spec / 'tools/inspect-location-consumer.py'),
+        '--sdk', args.sdk, '--apk', str(guest), '--output', str(evidence / 'consumer-artifact.json')], check=True)
+if shell('pm path ' + guest_package, check=False):
     raise SystemExit('Guest already installed in system; use a fresh research emulator')
 print('Installing standalone host/test; guest remains uninstalled in the system', flush=True)
 for apk in (host, test):
@@ -121,27 +133,35 @@ if args.installed_baseline:
     print(run(['install', str(guest)], timeout=180).stdout.decode(errors='replace'), flush=True)
     control_installed = True
 if not args.location_contract:
-    run(['push', str(guest), '/data/local/tmp/gogogo-research-guest.apk'], timeout=120)
+    run(['push', str(guest), '/data/local/tmp/gogogo-location-consumer.apk' if args.guest_location
+        else '/data/local/tmp/gogogo-research-guest.apk'], timeout=120)
 shell('settings put global window_animation_scale 0')
 shell('settings put global transition_animation_scale 0')
 shell('settings put global animator_duration_scale 0')
 shell('input keyevent KEYCODE_WAKEUP')
 shell('wm dismiss-keyguard', check=False)
 run(['logcat', '-c'])
-test_class = ('top.niunaijun.bcore.fake.service.LocationContractInstrumentedTest'
+test_class = ('com.soozooq.tianwaitian.containerresearch.GuestLocationInstrumentedTest'
+    if args.guest_location else 'top.niunaijun.bcore.fake.service.LocationContractInstrumentedTest'
     if args.location_contract else 'com.soozooq.tianwaitian.containerresearch.ExternalGuestInstrumentedTest#' +
     ('installedCalculatorControl' if args.installed_baseline else 'calculatorRunsUninstalledAndRetainsResultAfterHome'))
-print('Running controlled public-API33 location contracts' if args.location_contract
+print('Running public Android location calls in a real owned Guest process' if args.guest_location
+    else 'Running controlled public-API33 location contracts' if args.location_contract
     else 'Running real third-party UI and return-from-home check', flush=True)
-result = run(['shell', 'am', 'instrument', '-w', '-r', '-e', 'class',
-    test_class,
+instrumentation = ['shell', 'am', 'instrument', '-w', '-r', '-e', 'class', test_class]
+if args.guest_location:
+    instrumentation += ['-e', 'consumer_sha256', hashlib.sha256(guest.read_bytes()).hexdigest()]
+result = run(instrumentation + [
     'com.soozooq.tianwaitian.containerresearch.test/androidx.test.runner.AndroidJUnitRunner'],
     timeout=300, check=False)
 text = result.stdout.decode(errors='replace') + result.stderr.decode(errors='replace')
 (evidence / 'cloud-instrumentation.txt').write_text(text)
-for relative in (() if args.location_contract else ('window.xml', 'screen.png')):
+folder = 'guest-location-evidence' if args.guest_location else 'runtime-evidence'
+for relative in (() if args.location_contract else
+        ('window.xml', 'screen.png', 'result.json', 'last-guest-ui.txt') if args.guest_location
+        else ('window.xml', 'screen.png')):
     data = run(['exec-out', 'run-as', 'com.soozooq.tianwaitian.containerresearch', 'cat',
-        'files/runtime-evidence/' + relative], check=False)
+        'files/' + folder + '/' + relative], check=False)
     if data.returncode == 0:
         (evidence / ('cloud-' + relative)).write_bytes(data.stdout)
     elif relative == 'screen.png':
@@ -150,20 +170,24 @@ for relative in (() if args.location_contract else ('window.xml', 'screen.png'))
             (evidence / 'cloud-screen.png').write_bytes(screen.stdout)
 (evidence / 'cloud-logcat.txt').write_bytes(run(['logcat', '-d', '-v', 'threadtime'], check=False).stdout)
 (evidence / 'cloud-activities.txt').write_text(shell('dumpsys activity activities', check=False))
-(evidence / 'cloud-guest-system-path.txt').write_text(shell('pm path org.fossify.math', check=False))
+(evidence / 'cloud-guest-system-path.txt').write_text(shell('pm path ' + guest_package, check=False))
 cleanup_ok = remove_control_guest()
 expected_result = 'OK (4 tests)' if args.location_contract else 'OK (1 test)'
 passed = result.returncode == 0 and expected_result in text and not re.search(
     r'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=|Process crashed', text)
-system_guest_after_cleanup = bool(shell('pm path org.fossify.math', check=False))
+system_guest_after_cleanup = bool(shell('pm path ' + guest_package, check=False))
 passed = passed and cleanup_ok and not system_guest_after_cleanup
+if args.guest_location:
+    guest_result = evidence / 'cloud-result.json'
+    passed = passed and guest_result.is_file() and json.loads(guest_result.read_text()).get('passed') is True
 (evidence / 'case-result.json').write_text(json.dumps({
     'passed': passed, 'control_removed': cleanup_ok,
     'guest_system_installed_after_cleanup': system_guest_after_cleanup,
     'wechat_result': 'NOT_TESTED',
-    'location_replacement': 'CONTROLLED_PUBLIC_API33_TEST_ONLY' if args.location_contract else 'DISABLED',
+    'location_replacement': 'OWNED_GUEST_REAL_PROCESS_ONLY' if args.guest_location else
+        'CONTROLLED_PUBLIC_API33_TEST_ONLY' if args.location_contract else 'DISABLED',
     'guest_signer_metadata': 'PASS' if passed and not args.location_contract
-        and not args.installed_baseline else 'NOT_TESTED',
+        and not args.installed_baseline and not args.guest_location else 'NOT_TESTED',
 }, indent=2) + '\n')
 (evidence / 'cloud-runtime-check.exit').write_text('0\n' if passed else '1\n')
 print(text[-5000:], flush=True)

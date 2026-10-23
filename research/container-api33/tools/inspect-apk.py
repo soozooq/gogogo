@@ -37,7 +37,8 @@ with zipfile.ZipFile(host) as apk:
     assert apk.testzip() is None
     definitions = apk_defined_classes(apk)
     embedded_apks = [n for n in apk.namelist() if n.endswith('.apk')]
-    guest_definitions = [n for n in definitions if n.startswith('Lorg/fossify/')]
+    guest_definitions = [n for n in definitions if n.startswith(('Lorg/fossify/',
+        'Lcom/soozooq/tianwaitian/locationconsumer/'))]
     abis = sorted({n.split('/')[1] for n in apk.namelist() if n.startswith('lib/') and n.endswith('.so')})
     mirror = 'Lblack/com/android/internal/InternalResources$styleable;' in definitions
 assert not embedded_apks and not guest_definitions and mirror

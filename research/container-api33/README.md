@@ -4,9 +4,17 @@
 
 项目接手只认根目录 [PROJECT_STATUS.md](../../PROJECT_STATUS.md)。本轮继续使用同一个研发分支和 Draft #60，没有按修复或检查新增分支／PR。
 
-## 本轮更新：定位契约与原签名
+## 最新进展：真实 Guest 中的定位调用
 
-[最新结果](evidence/api33-location-signature-results.json)绑定本轮源码、补丁及宿主／测试 APK 摘要，覆盖：
+[独立的自有定位消费者](location-consumer/README.md)在系统未安装时，由容器在另一真实进程运行；通过普通 Android `LocationManager` 读取 GPS／NETWORK 的缓存、单次回调、持续更新。六条路径均跟随宿主设定的 A→B 目标，停止后计数稳定，取消后的回调为零。消费者不知道预期坐标，没有引擎、宿主或反射依赖；测试没有代理框架接口或直接调用 Hook。系统核验了不同 PID、共享宿主 UID。
+
+[本轮结果](evidence/owned-guest-location-results.json)包含 18.919 秒通过的 JUnit、Guest 原始报告、全部输入摘要及两次早期自动化失败的分类。它覆盖真实 Guest 调用链，**仍是自编消费者，不能代表第三方 SDK、微信、抖音或 ARM64／vivo**。宿主 APK 与前轮相同，SHA-256 仍为 `e3131646a7d52c048cd6ed942492468e578f42d736075bb6b2ed52a288d1e1d0`；消费者和新测试 APK 分别绑定。此前证据保留原提交，不冒充新结果。
+
+![自有 Guest 完成目标切换、停止与取消](evidence/owned-guest-location.png)
+
+## 前轮基础：定位契约与原签名
+
+[前轮结果（提交 4be23be）](evidence/api33-location-signature-results.json)绑定当时源码、补丁及宿主／测试 APK 摘要，覆盖：
 
 - API 33 的公共 `LocationManager`：单次回调与取消、GPS／NETWORK 的新鲜且明确标记为模拟的样本、持续批量回调、注销、次数／时长限制及停用后释放，共 4 项受控检查通过。测试代理显式调用真实 Hook 入口，持续样本经过引擎的定位服务 Binder；**不包含真实 Guest 进程的 Hook 安装或第三方位置采用验证**。
 - 原版计算器：系统未安装该包时，虚拟包管理器的 `GET_SIGNATURES` 与 `GET_SIGNING_CERTIFICATES` 均返回官方 APK 的原证书；真实界面的计算与从桌面重开保留结果再次通过。该项仍保持虚拟定位关闭。
@@ -47,7 +55,7 @@
 ```bash
 export CONTAINER_RESEARCH_WORKDIR=/tmp/gogogo-container-research-work
 python3 tools/prepare.py --workdir "$CONTAINER_RESEARCH_WORKDIR"
-bash tools/run-build.sh blackbox :BCore:assembleDebug :probeHost:assembleDebug :probeHost:assembleDebugAndroidTest :probeHost:writeResearchDependencyInventory
+bash tools/run-build.sh blackbox :BCore:assembleDebug :probeHost:assembleDebug :probeHost:assembleDebugAndroidTest :locationConsumer:assembleDebug :probeHost:writeResearchDependencyInventory
 bash tools/run-build.sh virtualapp :app:assembleDebug
 python3 tools/license-inventory.py --graph "$CONTAINER_RESEARCH_WORKDIR/evidence/runtime-dependencies.json" --gradle-cache "$GRADLE_USER_HOME" --output /tmp/dependency-licenses.json
 python3 tools/inspect-apk.py --sdk "$ANDROID_SDK_ROOT" --host "$CONTAINER_RESEARCH_WORKDIR/probe-host-build/outputs/apk/debug/probeHost-debug.apk" --output /tmp/host-artifact.json
@@ -61,6 +69,7 @@ python3 tools/inspect-apk.py --sdk "$ANDROID_SDK_ROOT" --host "$CONTAINER_RESEAR
 python3 tools/run-cloud-check.py --serial emulator-5580 --label installed-control --installed-baseline
 python3 tools/run-cloud-check.py --serial emulator-5580 --label container-guest
 python3 tools/run-cloud-check.py --serial emulator-5580 --label location-contract --location-contract
+python3 tools/run-cloud-check.py --serial emulator-5580 --label owned-guest-location --guest-location
 ```
 
-每轮使用独立且不允许覆盖的证据目录，记录 APK 输入摘要、真实界面、JUnit 原文和结束状态。正常安装仅用于第一项对照，之后移除；第二项要求系统中不存在该包。原始日志留在研究工作区，仓库只收录摘要、必要报告和云端截图。
+每轮使用独立且不允许覆盖的证据目录，记录源码／APK 摘要、真实界面、JUnit 原文和结束状态。正常安装仅用于第一项对照，之后移除；容器检查要求系统中不存在对应包。`--guest-location` 只在云端测试中准入本次独立构建并校验摘要的消费者，默认宿主入口的计算器准入规则不变。原始日志留在研究工作区，仓库只收录摘要、必要报告和云端截图。

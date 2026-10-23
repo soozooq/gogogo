@@ -1,0 +1,7 @@
+<resources>
+    <item name="status" type="id" />
+    <item name="start" type="id" />
+    <item name="refresh" type="id" />
+    <item name="stop" type="id" />
+    <item name="cancel" type="id" />
+</resources>

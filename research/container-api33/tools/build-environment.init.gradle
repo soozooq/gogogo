@@ -3,6 +3,8 @@ gradle.settingsEvaluated { settings ->
     if (settings.rootDir.name == 'blackbox-api33') {
         settings.include ':probeHost'
         settings.project(':probeHost').projectDir = new File(System.getenv('CONTAINER_RESEARCH_SPEC_DIR'), 'probe-host')
+        settings.include ':locationConsumer'
+        settings.project(':locationConsumer').projectDir = new File(System.getenv('CONTAINER_RESEARCH_SPEC_DIR'), 'location-consumer')
     }
 }
 gradle.beforeProject { p ->
@@ -11,6 +13,9 @@ gradle.beforeProject { p ->
         if (android != null) {
             if (p.path == ':probeHost') {
                 p.buildDir = new File(System.getenv('CONTAINER_RESEARCH_WORKDIR'), 'probe-host-build')
+            }
+            if (p.path == ':locationConsumer') {
+                p.buildDir = new File(System.getenv('CONTAINER_RESEARCH_WORKDIR'), 'location-consumer-build')
             }
             android.ndkVersion = '25.1.8937393'
             android.buildToolsVersion = '33.0.2'
