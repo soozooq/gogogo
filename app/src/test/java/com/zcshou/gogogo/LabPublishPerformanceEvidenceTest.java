@@ -4,6 +4,20 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class LabPublishPerformanceEvidenceTest {
+    @Test public void lateObservedCompletionReclassifiesUnknownAndKeepsLatency() {
+        LabPublishPerformanceEvidence evidence = new LabPublishPerformanceEvidence();
+        evidence.onTaskReturned();
+        evidence.onCallbackUnavailable();
+        evidence.onCallbackRecovered();
+        evidence.onTaskFinished(true,100L,150L);
+        LabPublishPerformanceEvidence.Snapshot snapshot = evidence.snapshot();
+        assertEquals(1L,snapshot.taskReturned);
+        assertEquals(1L,snapshot.taskFinished);
+        assertEquals(0L,snapshot.taskObserverUnknown);
+        assertEquals(0L,snapshot.pendingTasks);
+        assertEquals(0L,snapshot.unmatchedCallbacks);
+        assertEquals(50.0,snapshot.meanTaskLatencyMs(),0.0);
+    }
     @Test public void noObservationsAreUnknownRatherThanThirtyHertz() {
         LabPublishPerformanceEvidence.Snapshot s =
                 new LabPublishPerformanceEvidence().snapshot();

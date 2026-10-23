@@ -23,29 +23,37 @@ public final class LabTimedReplayEngine {
             double[] longitudes,
             double[] altitudes,
             long[] timestampsMs) {
-        validate(latitudes, longitudes, altitudes, timestampsMs);
-
-        int count = latitudes.length;
-        lats = latitudes.clone();
-        lngs = longitudes.clone();
-        alts = altitudes == null ? new double[count] : altitudes.clone();
-        relativeTimesMs = new long[count];
-
-        long base = timestampsMs[0];
-        long previous = 0L;
-        for (int i = 0; i < count; i++) {
-            long relative = timestampsMs[i] - base;
-            if (relative < previous) {
-                throw new IllegalArgumentException("timestamps must be monotonic");
-            }
-            relativeTimesMs[i] = relative;
-            previous = relative;
+        // Validate and prepare a replacement without changing an active replay.
+        if (latitudes == null || longitudes == null || timestampsMs == null
+                || latitudes.length < 2 || latitudes.length > 5000
+                || longitudes.length != latitudes.length
+                || timestampsMs.length != latitudes.length
+                || (altitudes != null && altitudes.length != latitudes.length)) {
+            throw new IllegalArgumentException("replay arrays are required (2..5000 points)");
         }
-
-        durationMs = relativeTimesMs[count - 1];
-        if (durationMs <= 0L) {
+        double[] nextLats = latitudes.clone();
+        double[] nextLngs = longitudes.clone();
+        double[] nextAlts = altitudes == null ? new double[nextLats.length] : altitudes.clone();
+        long[] nextTimes = timestampsMs.clone();
+        validate(nextLats, nextLngs, nextAlts, nextTimes);
+        long[] nextRelativeTimes = new long[nextLats.length];
+        long base = nextTimes[0];
+        try {
+            for (int i = 0; i < nextTimes.length; i++) {
+                nextRelativeTimes[i] = Math.subtractExact(nextTimes[i], base);
+            }
+        } catch (ArithmeticException overflow) {
+            throw new IllegalArgumentException("replay duration is too large", overflow);
+        }
+        long nextDuration = nextRelativeTimes[nextRelativeTimes.length - 1];
+        if (nextDuration <= 0L) {
             throw new IllegalArgumentException("replay duration must be positive");
         }
+        lats = nextLats;
+        lngs = nextLngs;
+        alts = nextAlts;
+        relativeTimesMs = nextRelativeTimes;
+        durationMs = nextDuration;
 
         playheadMs = 0.0;
         playbackMultiplier = 1.0;
@@ -54,6 +62,9 @@ public final class LabTimedReplayEngine {
     }
 
     public Frame advance(double dtSeconds, double multiplier) {
+        if (!Double.isFinite(dtSeconds) || !Double.isFinite(multiplier)) {
+            throw new IllegalArgumentException("non-finite replay timing");
+        }
         if (!active || lats == null) return null;
 
         double dtMs = Math.max(0.0, Math.min(1000.0, dtSeconds * 1000.0));
@@ -176,8 +187,8 @@ public final class LabTimedReplayEngine {
 
         long previous = Long.MIN_VALUE;
         for (int i = 0; i < lats.length; i++) {
-            if (!Double.isFinite(lats[i]) || !Double.isFinite(lngs[i])) {
-                throw new IllegalArgumentException("non-finite coordinate");
+            if (!LocationPublishGate.validTarget(lats[i], lngs[i], alts[i])) {
+                throw new IllegalArgumentException("invalid replay coordinate or altitude");
             }
             if (timestampsMs[i] < previous) {
                 throw new IllegalArgumentException("timestamps must be monotonic");
@@ -205,13 +216,11 @@ public final class LabTimedReplayEngine {
         if (delta > 180.0) delta -= 360.0;
         if (delta < -180.0) delta += 360.0;
         double out = from + delta * fraction;
-        while (out > 180.0) out -= 360.0;
-        while (out < -180.0) out += 360.0;
-        return out;
+        return LocationGeometry.normalizeLongitude(out);
     }
 
     private static double lerp(double a, double b, double t) {
-        return a + (b - a) * t;
+        return a * (1.0 - t) + b * t;
     }
 
     private static double clamp(double value, double min, double max) {
@@ -223,15 +232,7 @@ public final class LabTimedReplayEngine {
             double lon1,
             double lat2,
             double lon2) {
-        final double earth = 6371000.0;
-        double p1 = Math.toRadians(lat1);
-        double p2 = Math.toRadians(lat2);
-        double dp = Math.toRadians(lat2 - lat1);
-        double dl = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(dp / 2.0) * Math.sin(dp / 2.0)
-                + Math.cos(p1) * Math.cos(p2)
-                * Math.sin(dl / 2.0) * Math.sin(dl / 2.0);
-        return earth * 2.0 * Math.atan2(Math.sqrt(a), Math.sqrt(1.0 - a));
+        return LocationGeometry.distanceMeters(lat1, lon1, lat2, lon2);
     }
 
     private static double bearingDegrees(

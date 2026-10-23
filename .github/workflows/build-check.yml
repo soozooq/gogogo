@@ -11,6 +11,7 @@ on:
       - main
       - master
       - feat/v31-external-demo-host
+      - fix/location-input-validation
       - integration/gogogo-labs-main-20261009
       - feat/gogogo-lab-phase12
       - feat/gogogo-lab-phase13

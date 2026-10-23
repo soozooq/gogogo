@@ -1,4 +1,4 @@
-> **定位启动修复候选版（2026-10-21）**：[实际定位链路修复与简短使用说明](docs/location-startup-correctness.md)。当前功能分支版本 `2.4.27-location-startup`，修复有效目标初始化前误发默认坐标、无效命令错误重置，并统一复制已保存记录；无需逐项重跑旧实验。尚未证明微信／抖音实时定位或海外定位目标已实现。此前 [2.4.26 受控应用运行能力](docs/virtual-container-runtime.md) 保留为高级工具。
+> **诊断简化候选版（2026-10-23）**：[一次复制日志，不必逐项实验](docs/simple-support-flow.md)。功能分支版本 `2.4.31-simple-support`，底部「诊断」默认只需点击「一键复制完整日志」，自动汇总当下的位置缓存、网络状态和已有记录；其余工具收进一个可选高级入口。包含此前的[GMS 顺序](docs/gms-task-ordering.md)、[Framework Provider 清理](docs/provider-lifecycle-ordering.md)及[海外坐标与回放校验](docs/location-coordinate-correctness.md)。用户已反馈微信发送位置与实时共享都未成功；本版简化反馈操作，不代表微信／抖音及海外功能已兼容。
 
 > **soozooq / GoGoGo 主分支整合版说明（2026-10-13）**：本 Fork 已将 Lab 48–52 / RC1 统一合并至 `main`，并将应用桌面名称从「影梭」调整为「GoGoGo」。vivo Android 13 真机已观察到 E1/E2（GMS Task）及 E3（自有消费者 GPS/NETWORK/GMS updates）的新鲜模拟位置，正常停止清理回调有正向证据；**微信主号和 vivo 原生分身仍显示旧福建定位，不能宣称微信兼容成功**。当时版本 `2.4.0-rc2-integrated` 是个人设备测试预览，不是安全的正式发布版；旧签名材料仍在公开仓库，生产发布前需要更换签名方案。
 >

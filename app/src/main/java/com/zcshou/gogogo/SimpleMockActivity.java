@@ -572,7 +572,7 @@ public class SimpleMockActivity extends AppCompatActivity {
         diagCard.addView(diagContent);
         diagContent.addView(GoGoUi.sectionTitle(this, "状态与设置"), GoGoUi.matchWrap());
         diagContent.addView(GoGoUi.muted(this,
-                "这里保留简短自检。完整环境与权限取证统一放在「实验与诊断」。"),
+                "这里保留简短状态。遇到问题时，在底部「诊断」复制一份日志即可。"),
                 GoGoUi.matchWrap());
 
         com.google.android.material.button.MaterialButton refreshButton =

@@ -45,6 +45,9 @@ import com.zcshou.gogogo.LabProviderReliabilityController;
 import com.zcshou.gogogo.LabGmsPublishEvidence;
 import com.zcshou.gogogo.LabGmsPublishGate;
 import com.zcshou.gogogo.LocationPublishGate;
+import com.zcshou.gogogo.LocationGeometry;
+import com.zcshou.gogogo.ProviderOperationQueue;
+import com.zcshou.gogogo.AsyncProviderOperationQueue;
 import com.zcshou.gogogo.LabPublishPerformanceEvidence;
 import com.zcshou.gogogo.LabServiceLifecycleJournal;
 import com.zcshou.gogogo.LabServiceTeardownSequence;
@@ -73,7 +76,28 @@ public class ServiceGo extends Service {
     public static final double DEFAULT_LNG = 117.027707;
     public static final double DEFAULT_ALT = 55.0D;
     public static final float DEFAULT_BEA = 0.0F;
+    private static final java.util.concurrent.ExecutorService PROVIDER_IO =
+            java.util.concurrent.Executors.newSingleThreadExecutor(task -> {
+                Thread worker = new Thread(task, "TianwaitianProviderIO");
+                worker.setDaemon(true);
+                return worker;
+            });
+    private final ProviderOperationQueue<PublishedLocation> mProviderOperations =
+            new ProviderOperationQueue<>(PROVIDER_IO, this::publishProviderFrame);
+    private static final java.util.concurrent.ExecutorService GMS_IO =
+            java.util.concurrent.Executors.newSingleThreadExecutor(task -> {
+                Thread worker = new Thread(task, "TianwaitianGmsIO");
+                worker.setDaemon(true);
+                return worker;
+            });
+    private static final AsyncProviderOperationQueue.Dispatcher GMS_TASKS =
+            new AsyncProviderOperationQueue.Dispatcher(GMS_IO);
+    private final AsyncProviderOperationQueue<PublishedLocation> mGmsOperations =
+            new AsyncProviderOperationQueue<>(GMS_TASKS, this::dispatchGmsLocation);
     private final LocationPublishGate mLocationPublishGate = new LocationPublishGate();
+    private String mLifecycleSession;
+    private volatile String mProviderSnapshot = "WAITING_FOR_PROVIDER_IO";
+    private volatile int mProviderOrphanSnapshot;
     private double mCurLat = DEFAULT_LAT;
     private double mCurLng = DEFAULT_LNG;
     private double mCurAlt = DEFAULT_ALT;
@@ -262,7 +286,7 @@ public class ServiceGo extends Service {
     private FusedLocationProviderClient mFusedClient; // Google Play Services fused mock, null = GMS 不可用
     private volatile boolean mFusedMockEnabled = false;
     private volatile boolean mFusedShutdownRequested = false;
-    // Request ID most recently issued by THIS ServiceGo instance. Never
+    // Mode intent most recently queued by THIS ServiceGo instance. Never
     // interpret older GMS callbacks as authority over a newer service.
     private volatile long mLastGmsRequestId = 0L;
     // Read by the location HandlerThread and written during main-thread teardown.
@@ -299,7 +323,7 @@ public class ServiceGo extends Service {
     public void onCreate() {
         super.onCreate();
         sRunning = true;
-        LabServiceLifecycleJournal.onServiceCreated(this);
+        mLifecycleSession = LabServiceLifecycleJournal.onServiceCreated(this);
         // A previous ServiceGo may still have GMS Task callbacks pending.
         // Invalidate its authority before this instance initializes providers.
         LabProviderReliabilityController.markGmsServiceSessionStarted(this);
@@ -335,27 +359,21 @@ public class ServiceGo extends Service {
         // The first complete target is selected in onStartCommand, Binder or VPN sync.
 
         mLocManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-        mProviderReliability = new LabProviderReliabilityController(this, mLocManager);
-        mProviderReliability.sweepBeforeRegistration();
+        mProviderReliability = new LabProviderReliabilityController(this, mLocManager,
+                callback -> mProviderOperations.runWhenOpen(() -> {
+                    try { callback.run(); } finally { refreshProviderSnapshot(); }
+                }));
         mRouteCheckpointStore = new LabRouteCheckpointStore(this);
         initHeadingSensor();
 
-        removeTestProviderNetwork();
-        addTestProviderNetwork();
-
-        removeTestProviderGPS();
-        addTestProviderGPS();
-
-        // Android 12+ supports a framework FUSED provider, distinct from Google FLP.
-        // A target app's use of this provider has NOT been demonstrated here.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            removeTestProviderFused();
-            addTestProviderFused();
-        }
-
-        initGoLocation();
-
         initNotification();
+        // Every service instance shares one FIFO worker. Old cleanup must finish
+        // before a new instance registers providers, without blocking the UI.
+        if (!mProviderOperations.runWhenOpen(this::initializeFrameworkProviders)) {
+            XLog.e("SERVICEGO: provider initialization could not be queued");
+            stopSelf();
+        }
+        initGoLocation();
 
         if (ENABLE_JOYSTICK_OVERLAY) {
             // No-map test build: floating joystick intentionally disabled.
@@ -363,16 +381,11 @@ public class ServiceGo extends Service {
 
         // Keep standard providers subscribed for our own lifecycle diagnostics.
         // This does NOT establish which APIs WeChat or other apps invoke.
-        initPersistentLocationListener();
+        // Persistent subscriptions are initialized after registration on PROVIDER_IO.
 
         // Independent Google Play services FLP mock path (if installed).
         // Its Task result and the target application's consumption are separate evidence.
         initFusedMock();
-        // Observe permission changes without changing any AppOps value.
-        // The observer lives only as long as this ServiceGo instance.
-        if (mProviderReliability != null) {
-            mProviderReliability.startMonitoring();
-        }
         // Owned by the existing foreground mock service: no second background service.
         // Only opts in when user deliberately enables VPN geo-follow.
         mVpnSystemTimeZone = new LabVpnSystemTimeZone(this);
@@ -637,98 +650,132 @@ public class ServiceGo extends Service {
                 heading.source);
     }
 
-    @SuppressLint("MissingPermission")
     private void initFusedMock() {
         mFusedShutdownRequested = false;
-        long pendingRequestId = 0L;
+        long requestId = 0L;
         try {
             mFusedClient = LocationServices.getFusedLocationProviderClient(this);
-            pendingRequestId = LabProviderReliabilityController.beginGmsRequest(
-                    this, "ENABLE_REQUESTED");
-            mLastGmsRequestId = pendingRequestId;
-            final long enableRequestId = pendingRequestId;
-            mFusedClient.setMockMode(true)
-                    .addOnSuccessListener(unused -> {
-                        if (mFusedShutdownRequested || isStop) {
-                            // A late enable may still require GMS cleanup. It
-                            // must NOT overwrite a newer Task's audit state.
-                            LabProviderReliabilityController.finishGmsRequest(
-                                    this, enableRequestId, "LATE_ENABLE_AFTER_STOP");
-                            // Do not let an obsolete ServiceGo issue a disable
-                            // for a newly started service's GMS mock session.
-                            requestGmsMockDisable("LATE_ENABLE");
-                            return;
-                        }
-                        if (LabProviderReliabilityController.finishGmsRequest(
-                                this, enableRequestId, "ENABLE_SUCCEEDED")) {
-                            mFusedMockEnabled = true;
-                        }
-                        XLog.i("SERVICEGO: FusedLocation setMockMode(true) callback");
-                    })
-                    .addOnFailureListener(e -> {
-                        LabProviderReliabilityController.finishGmsRequest(
-                                this, enableRequestId,
-                                "ENABLE_FAILED_" + e.getClass().getSimpleName());
-                        XLog.e("SERVICEGO: FusedLocation setMockMode failed: " + e.getMessage());
-                    });
-        } catch (Throwable t) {
-            String event = "ENABLE_EXCEPTION_" + t.getClass().getSimpleName();
-            if (pendingRequestId != 0L) {
-                LabProviderReliabilityController.finishGmsRequest(
-                        this, pendingRequestId, event);
+            requestId = LabProviderReliabilityController.beginGmsRequest(this, "ENABLE_QUEUED");
+            mLastGmsRequestId = requestId;
+            final long queuedId = requestId;
+            if (!mGmsOperations.runWhenOpen(done -> dispatchGmsMode(true, queuedId, "START", done))) {
+                LabProviderReliabilityController.finishGmsRequest(this, queuedId, "ENABLE_QUEUE_UNAVAILABLE");
+            }
+        } catch (RuntimeException failure) {
+            String event = "ENABLE_EXCEPTION_" + failure.getClass().getSimpleName();
+            if (requestId > 0L) {
+                LabProviderReliabilityController.finishGmsRequest(this, requestId, event);
             } else {
                 LabProviderReliabilityController.recordGmsEvent(this, event);
             }
-            // GMS may be unavailable; framework providers still work.
-            XLog.e("SERVICEGO: FusedLocation init failed (GMS not available?): " + t.getMessage());
-            mFusedClient = null;
+            mFusedClient = null; // Framework providers remain independent of GMS.
+            XLog.e("SERVICEGO: GMS initialization unavailable: " + failure.getClass().getSimpleName());
         }
     }
 
     private void requestGmsMockDisable(String reason) {
-        if (mFusedClient == null) return;
-        // No unchecked fallback: both ordinary SERVICE_STOP and late-enable
-        // compensation must respect newer ServiceGo sessions.
-        long disableRequestId = LabProviderReliabilityController.beginGmsDisableIfCurrent(
-                this, mLastGmsRequestId, "DISABLE_REQUESTED_" + reason);
-        if (disableRequestId <= 0L) {
-            // A newer ServiceGo owns the audit slot. This instance cannot
-            // submit another mock-disable request.
-            return;
-        }
-        mLastGmsRequestId = disableRequestId;
-        final long callbackRequestId = disableRequestId;
-        // The permission may be revoked while a Task is in flight.
-        boolean fine = checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
-                == android.content.pm.PackageManager.PERMISSION_GRANTED;
-        boolean coarse = checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
-                == android.content.pm.PackageManager.PERMISSION_GRANTED;
-        if (!fine && !coarse) {
-            LabProviderReliabilityController.finishGmsRequest(
-                    this, callbackRequestId,
-                    "DISABLE_BLOCKED_NO_LOCATION_PERMISSION_" + reason);
-            return;
-        }
+        if (mGmsOperations.isClosed()) return;
+        mFusedShutdownRequested = true;
+        mFusedMockEnabled = false;
+        long requestId = 0L;
         try {
-            mFusedClient.setMockMode(false)
-                    .addOnSuccessListener(unused -> {
-                        if (LabProviderReliabilityController.finishGmsRequest(
-                                ServiceGo.this, callbackRequestId,
-                                "DISABLE_SUCCEEDED_" + reason)) {
-                            mFusedMockEnabled = false;
-                        }
-                    })
-                    .addOnFailureListener(e ->
-                            LabProviderReliabilityController.finishGmsRequest(
-                                    ServiceGo.this, callbackRequestId,
-                                    "DISABLE_FAILED_" + e.getClass().getSimpleName()));
-        } catch (SecurityException e) {
-            LabProviderReliabilityController.finishGmsRequest(
-                    this, callbackRequestId, "DISABLE_DENIED_" + reason);
-        } catch (RuntimeException e) {
-            LabProviderReliabilityController.finishGmsRequest(
-                    this, callbackRequestId,
-                    "DISABLE_EXCEPTION_" + e.getClass().getSimpleName());
+            if (mFusedClient != null) {
+                requestId = LabProviderReliabilityController.beginGmsDisableIfCurrent(
+                        this, mLastGmsRequestId, "DISABLE_QUEUED_" + reason);
+                if (requestId > 0L) mLastGmsRequestId = requestId;
+            }
+        } finally {
+            final long queuedId = requestId;
+            // Reserve cleanup before the next service queues ENABLE. It waits for
+            // every old mode/location Task, even when their callbacks are stale.
+            boolean queued = mGmsOperations.close(done -> {
+                if (queuedId > 0L) dispatchGmsMode(false, queuedId, reason, done);
+                else done.run();
+            });
+            if (!queued && queuedId > 0L) {
+                LabProviderReliabilityController.finishGmsRequest(
+                        this, queuedId, "DISABLE_QUEUE_UNAVAILABLE_" + reason);
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void dispatchGmsMode(boolean enable, long requestId, String reason, Runnable done) {
+        if (mFusedClient == null || (enable && (isStop || mFusedShutdownRequested))) {
+            done.run();
+            return;
+        }
+        String mode = enable ? "ENABLE" : "DISABLE";
+        if (!enable && checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED
+                && checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            try {
+                LabProviderReliabilityController.finishGmsRequest(this, requestId,
+                        "DISABLE_BLOCKED_NO_LOCATION_PERMISSION_" + reason);
+            } finally { done.run(); }
+            return;
+        }
+        com.google.android.gms.tasks.Task<Void> task;
+        try {
+            task = mFusedClient.setMockMode(enable);
+        } catch (RuntimeException failure) {
+            try {
+                LabProviderReliabilityController.finishGmsRequest(this, requestId,
+                        mode + "_EXCEPTION_" + failure.getClass().getSimpleName());
+            } finally { done.run(); }
+            return;
+        }
+        observeGmsTask(task, result -> {
+            String event;
+            if (result.isSuccessful()) {
+                event = enable && (isStop || mFusedShutdownRequested)
+                        ? "LATE_ENABLE_AFTER_STOP" : mode + "_SUCCEEDED_" + reason;
+            } else if (result.isCanceled()) {
+                event = mode + "_CANCELLED_" + reason;
+            } else {
+                Exception failure = result.getException();
+                event = mode + "_FAILED_" + (failure == null ? "UNKNOWN" : failure.getClass().getSimpleName());
+            }
+            boolean current = LabProviderReliabilityController.finishGmsRequest(this, requestId, event);
+            if (!enable) mFusedMockEnabled = false;
+            else if (result.isSuccessful() && current && !isStop && !mFusedShutdownRequested) {
+                mFusedMockEnabled = true;
+            }
+            // No late-enable disable retry: close already queued it after this Task.
+        }, done, () -> LabProviderReliabilityController.finishGmsRequest(
+                this, requestId, mode + "_COMPLETION_UNOBSERVED"), () -> {});
+    }
+
+    /** A returned Task cannot release the FIFO until completion is observed. */
+    private void observeGmsTask(com.google.android.gms.tasks.Task<Void> task,
+            java.util.function.Consumer<com.google.android.gms.tasks.Task<Void>> terminal,
+            Runnable done, Runnable unavailable, Runnable recovered) {
+        java.util.concurrent.atomic.AtomicBoolean observed = new java.util.concurrent.atomic.AtomicBoolean();
+        java.util.concurrent.atomic.AtomicBoolean wasUnknown = new java.util.concurrent.atomic.AtomicBoolean();
+        java.util.function.Consumer<com.google.android.gms.tasks.Task<Void>> finish = result -> {
+            if (!observed.compareAndSet(false, true)) return;
+            try {
+                if (wasUnknown.getAndSet(false)) recovered.run();
+                terminal.accept(result);
+            } catch (RuntimeException evidenceError) {
+                XLog.e("SERVICEGO: GMS terminal evidence failed: " + evidenceError.getClass().getSimpleName());
+            } finally { done.run(); }
+        };
+        try {
+            task.addOnCompleteListener(GMS_IO, finish::accept);
+        } catch (RuntimeException observerError) {
+            // Already-completed Tasks can be read directly. Otherwise keep this
+            // channel blocked; a timeout is not proof the remote call finished.
+            try {
+                if (task.isComplete()) {
+                    finish.accept(task);
+                    return;
+                }
+            } catch (RuntimeException ignored) { }
+            wasUnknown.set(true);
+            GMS_TASKS.markUnobserved();
+            try { unavailable.run(); } catch (RuntimeException ignored) { }
         }
     }
 
@@ -741,8 +788,10 @@ public class ServiceGo extends Service {
             @Override public void onStatusChanged(String provider, int status, Bundle extras) {}
         };
         try {
-            mLocManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0f, mPersistentListener);
-            mLocManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0f, mPersistentListener);
+            mLocManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0f,
+                    mPersistentListener, android.os.Looper.getMainLooper());
+            mLocManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0f,
+                    mPersistentListener, android.os.Looper.getMainLooper());
         } catch (SecurityException e) {
             XLog.e("SERVICEGO: ERROR - requestLocationUpdates permission missing");
         } catch (Exception e) {
@@ -861,8 +910,12 @@ public class ServiceGo extends Service {
         }
 
         if (intent != null && ACTION_MOTION_SPEED.equals(intent.getAction())) {
-            mMotionMultiplier = clamp(
-                    intent.getDoubleExtra(EXTRA_MOTION_MULTIPLIER, 1.0), 0.25, 4.0);
+            double multiplier = intent.getDoubleExtra(EXTRA_MOTION_MULTIPLIER, 1.0);
+            if (!Double.isFinite(multiplier)) {
+                recordProvenance("MOTION", "invalid multiplier ignored");
+                return locationStartResult();
+            }
+            mMotionMultiplier = clamp(multiplier, 0.25, 4.0);
             if (!mMotionPaused && mRoamActive) {
                 mSpeed = mRoamSpeedMps * mMotionMultiplier;
             }
@@ -955,7 +1008,8 @@ public class ServiceGo extends Service {
         if (intent != null && ACTION_ROUTE_START.equals(intent.getAction())) {
             double[] lats = intent.getDoubleArrayExtra(EXTRA_ROUTE_LATS);
             double[] lngs = intent.getDoubleArrayExtra(EXTRA_ROUTE_LNGS);
-            if (LocationPublishGate.validRoute(lats, lngs)) {
+            double speed = intent.getDoubleExtra(EXTRA_ROUTE_SPEED_MPS, 1.4);
+            if (LocationPublishGate.validRoute(lats, lngs) && Double.isFinite(speed)) {
                 stopTimedReplay(false);
                 mRouteLats = lats;
                 mRouteLngs = lngs;
@@ -965,8 +1019,7 @@ public class ServiceGo extends Service {
                 mRouteMode = Math.max(ROUTE_MODE_ONCE,
                         Math.min(ROUTE_MODE_PINGPONG,
                                 intent.getIntExtra(EXTRA_ROUTE_MODE, ROUTE_MODE_ONCE)));
-                mRouteSpeedMps = clamp(
-                        intent.getDoubleExtra(EXTRA_ROUTE_SPEED_MPS, 1.4), 0.2, 60.0);
+                mRouteSpeedMps = clamp(speed, 0.2, 60.0);
                 mRouteMotionProfile = Math.max(
                         MOTION_PROFILE_WALK,
                         Math.min(
@@ -1012,16 +1065,19 @@ public class ServiceGo extends Service {
                     mLocationPublishGate.isReady() ? mCurLat : Double.NaN);
             double centerLng = intent.getDoubleExtra(EXTRA_ROAM_CENTER_LNG,
                     mLocationPublishGate.isReady() ? mCurLng : Double.NaN);
-            if (!LocationPublishGate.validTarget(centerLat, centerLng, DEFAULT_ALT)) {
-                recordProvenance("ROAM", "invalid center ignored");
+            double radius = intent.getDoubleExtra(EXTRA_ROAM_RADIUS_M, 100.0);
+            double speed = intent.getDoubleExtra(EXTRA_ROAM_SPEED_MPS, 1.4);
+            if (!LocationPublishGate.validTarget(centerLat, centerLng, DEFAULT_ALT)
+                    || !Double.isFinite(radius) || !Double.isFinite(speed)) {
+                recordProvenance("ROAM", "invalid center/radius/speed ignored");
                 return locationStartResult();
             }
             stopTimedReplay(false);
             clearRouteCheckpoint();
             mRoamCenterLat = centerLat;
             mRoamCenterLng = centerLng;
-            mRoamRadiusM = clamp(intent.getDoubleExtra(EXTRA_ROAM_RADIUS_M, 100.0), 5.0, 5000.0);
-            mRoamSpeedMps = clamp(intent.getDoubleExtra(EXTRA_ROAM_SPEED_MPS, 1.4), 0.2, 30.0);
+            mRoamRadiusM = clamp(radius, 5.0, 5000.0);
+            mRoamSpeedMps = clamp(speed, 0.2, 30.0);
             mCurLat = mRoamCenterLat;
             mCurLng = mRoamCenterLng;
             mCurAlt = DEFAULT_ALT;
@@ -1295,6 +1351,10 @@ public class ServiceGo extends Service {
         isStop = true;
         // Closing only waits for state capture, never for provider IPC.
         mLocationPublishGate.close();
+        LabServiceLifecycleJournal.onProviderCleanupQueued(this, mLifecycleSession);
+        if (!mProviderOperations.close(this::cleanupFrameworkProviders)) {
+            LabServiceLifecycleJournal.onProviderCleanupFinished(this, mLifecycleSession, true);
+        }
         if (mVpnSystemTimeZone != null) {
             mVpnSystemTimeZone.close();
             mVpnSystemTimeZone = null;
@@ -1315,8 +1375,8 @@ public class ServiceGo extends Service {
                         + e.getClass().getSimpleName());
             }
         }
-        // Stop and briefly join the publisher before removing providers to
-        // reduce a publish-vs-remove race. Avoid an unbounded main-thread wait.
+        // Stop state capture with a bounded join. Framework I/O has its own FIFO
+        // cleanup above; correctness does not depend on this thread exiting in time.
         if (mLocHandler != null) {
             try {
                 mLocHandler.removeMessages(HANDLER_MSG_ID);
@@ -1351,27 +1411,8 @@ public class ServiceGo extends Service {
             }
         }
 
-        // Each provider cleanup is independent: failure in one must not
-        // prevent the remaining providers or GMS shutdown from being attempted.
-        int providerCleanupFailures = LabServiceTeardownSequence.run(
-                this::removeTestProviderNetwork,
-                this::removeTestProviderGPS,
-                () -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        removeTestProviderFused();
-                    }
-                });
-        if (providerCleanupFailures > 0) {
-            XLog.e("SERVICEGO: teardown provider stages failed="
-                    + providerCleanupFailures);
-        }
-
-        if (mPersistentListener != null) {
-            try {
-                mLocManager.removeUpdates(mPersistentListener);
-            } catch (Exception ignored) {
-            }
-        }
+        // Framework provider cleanup and listener removal are queued after the
+        // last in-flight publisher/repair, not raced on the main thread.
 
         if (mSensorManager != null && mHeadingListener != null) {
             try {
@@ -1380,10 +1421,9 @@ public class ServiceGo extends Service {
             }
         }
 
-        // Always request the GMS mock reset, even if enable is still pending.
-        // Neither a returned Task nor onDestroy() itself proves reset success.
-        // A newer ServiceGo may already own the GMS audit generation.
-        // Normal stop must obey the same ownership gate as late-enable retry.
+        // Queue reset after every old GMS Task, including a pending enable/fix.
+        // The next service's enable waits for this reset's terminal callback.
+        // Neither queuing reset nor onDestroy() proves reset success.
         if (LabServiceTeardownSequence.run(
                 () -> requestGmsMockDisable("SERVICE_STOP")) > 0) {
             XLog.e("SERVICEGO: shutdown GMS request threw RuntimeException");
@@ -1450,12 +1490,7 @@ public class ServiceGo extends Service {
 
         try {
             int finalizationFailures = LabServiceTeardownSequence.run(
-                    () -> {
-                        if (mProviderReliability != null) {
-                            mProviderReliability.stopMonitoring();
-                        }
-                    },
-                    () -> LabServiceLifecycleJournal.onServiceDestroyed(this));
+                    () -> LabServiceLifecycleJournal.onServiceDestroyed(this, mLifecycleSession));
             if (finalizationFailures > 0) {
                 XLog.e("SERVICEGO: teardown finalization stages failed="
                         + finalizationFailures);
@@ -1600,12 +1635,7 @@ public class ServiceGo extends Service {
                         // No default-coordinate publication while waiting for a complete target.
                         // Provider Binder calls run outside the state monitor.
                         if (frame != null && !isStop) {
-                            setLocationNetwork(frame);
-                            setLocationGPS(frame);
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                setLocationFused(frame);
-                            }
-                            setLocationFusedClient(frame);
+                            mProviderOperations.submit(frame);
                         }
                         if (!isStop) sendEmptyMessage(HANDLER_MSG_ID);
                     }
@@ -1616,6 +1646,59 @@ public class ServiceGo extends Service {
             }
         };
         mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
+    }
+
+    private void initializeFrameworkProviders() {
+        if (isStop) return;
+        try {
+            try {
+                mProviderReliability.sweepBeforeRegistration();
+            } catch (RuntimeException failure) {
+                XLog.e("SERVICEGO: provider cold sweep failed: " + failure.getClass().getSimpleName());
+            }
+            removeTestProviderNetwork();
+            addTestProviderNetwork();
+            removeTestProviderGPS();
+            addTestProviderGPS();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                removeTestProviderFused();
+                addTestProviderFused();
+            }
+            if (!isStop) {
+                initPersistentLocationListener();
+                mProviderReliability.startMonitoring();
+            }
+        } finally {
+            refreshProviderSnapshot();
+        }
+    }
+
+    private void publishProviderFrame(PublishedLocation frame) {
+        if (isStop) return;
+        setLocationNetwork(frame);
+        setLocationGPS(frame);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) setLocationFused(frame);
+        setLocationFusedClient(frame);
+    }
+
+    private void refreshProviderSnapshot() {
+        LabProviderReliabilityController controller = mProviderReliability;
+        if (controller != null) {
+            mProviderSnapshot = controller.summary();
+            mProviderOrphanSnapshot = controller.orphanedCount();
+        }
+    }
+
+    private void cleanupFrameworkProviders() {
+        int failures = LabServiceTeardownSequence.run(
+                () -> { if (mProviderReliability != null) mProviderReliability.stopMonitoring(); },
+                this::removeTestProviderNetwork,
+                this::removeTestProviderGPS,
+                () -> { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) removeTestProviderFused(); },
+                () -> { if (mPersistentListener != null) mLocManager.removeUpdates(mPersistentListener); },
+                this::refreshProviderSnapshot);
+        LabServiceLifecycleJournal.onProviderCleanupFinished(this, mLifecycleSession, failures > 0);
+        if (failures > 0) XLog.e("SERVICEGO: asynchronous framework cleanup stages failed=" + failures);
     }
 
     private void buildRouteMetrics() {
@@ -2234,14 +2317,10 @@ public class ServiceGo extends Service {
     private void chooseNewRoamTarget() {
         double angle = mRandom.nextDouble() * Math.PI * 2.0;
         double radius = Math.sqrt(mRandom.nextDouble()) * mRoamRadiusM;
-        double north = Math.cos(angle) * radius;
-        double east = Math.sin(angle) * radius;
-
-        mRoamTargetLat = mRoamCenterLat + north / 111320.0;
-        double cos = Math.max(0.05, Math.cos(Math.toRadians(mRoamCenterLat)));
-        mRoamTargetLng = mRoamCenterLng + east / (111320.0 * cos);
-        if (mRoamTargetLng > 180.0) mRoamTargetLng -= 360.0;
-        if (mRoamTargetLng < -180.0) mRoamTargetLng += 360.0;
+        double[] destination = LocationGeometry.destination(
+                mRoamCenterLat, mRoamCenterLng, Math.toDegrees(angle), radius);
+        mRoamTargetLat = destination[0];
+        mRoamTargetLng = destination[1];
     }
 
     private static double shortestLongitudeDelta(double from, double to) {
@@ -2261,15 +2340,7 @@ public class ServiceGo extends Service {
     }
 
     private static double distanceMeters(double lat1, double lon1, double lat2, double lon2) {
-        final double earth = 6371000.0;
-        double p1 = Math.toRadians(lat1);
-        double p2 = Math.toRadians(lat2);
-        double dp = Math.toRadians(lat2 - lat1);
-        double dl = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(dp / 2.0) * Math.sin(dp / 2.0)
-                + Math.cos(p1) * Math.cos(p2)
-                * Math.sin(dl / 2.0) * Math.sin(dl / 2.0);
-        return earth * 2.0 * Math.atan2(Math.sqrt(a), Math.sqrt(1.0 - a));
+        return LocationGeometry.distanceMeters(lat1, lon1, lat2, lon2);
     }
 
     private static float bearingDegrees(double lat1, double lon1, double lat2, double lon2) {
@@ -2326,6 +2397,7 @@ public class ServiceGo extends Service {
     // 注意下面临时添加 @SuppressLint("wrongconstant") 以处理 addTestProvider 参数值的 lint 错误
     @SuppressLint("wrongconstant")
     private void addTestProviderGPS() {
+        if (isStop) return;
         try {
             // 注意，由于 android api 问题，下面的参数会提示错误(以下参数是通过相关API获取的真实GPS参数，不是随便写的)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -2384,8 +2456,11 @@ public class ServiceGo extends Service {
                 mProviderReliability.retryDeferredCleanup();
             }
             XLog.e("SERVICEGO: ERROR - setLocationGPS, reinitializing provider");
-            removeTestProviderGPS();
-            addTestProviderGPS();
+            if (!isStop) {
+                removeTestProviderGPS();
+                addTestProviderGPS();
+            }
+            refreshProviderSnapshot();
         }
     }
 
@@ -2417,6 +2492,7 @@ public class ServiceGo extends Service {
     // 注意下面临时添加 @SuppressLint("wrongconstant") 以处理 addTestProvider 参数值的 lint 错误
     @SuppressLint("wrongconstant")
     private void addTestProviderNetwork() {
+        if (isStop) return;
         try {
             // 注意，由于 android api 问题，下面的参数会提示错误(以下参数是通过相关API获取的真实NETWORK参数，不是随便写的)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -2474,8 +2550,11 @@ public class ServiceGo extends Service {
                 mProviderReliability.retryDeferredCleanup();
             }
             XLog.e("SERVICEGO: ERROR - setLocationNetwork, reinitializing provider");
-            removeTestProviderNetwork();
-            addTestProviderNetwork();
+            if (!isStop) {
+                removeTestProviderNetwork();
+                addTestProviderNetwork();
+            }
+            refreshProviderSnapshot();
         }
     }
 
@@ -2505,6 +2584,7 @@ public class ServiceGo extends Service {
 
     @SuppressLint("wrongconstant")
     private void addTestProviderFused() {
+        if (isStop) return;
         try {
             mLocManager.addTestProvider(LocationManager.FUSED_PROVIDER, false, true, false,
                     false, true, true, true, ProviderProperties.POWER_USAGE_HIGH, ProviderProperties.ACCURACY_FINE);
@@ -2546,18 +2626,25 @@ public class ServiceGo extends Service {
             if (mProviderReliability != null) {
                 mProviderReliability.markPublishFailure(LocationManager.FUSED_PROVIDER, e);
             }
+            refreshProviderSnapshot();
             // fused test provider 没注上时这里会 fail,正常
         }
     }
 
-    @SuppressLint("MissingPermission")
     private void setLocationFusedClient(PublishedLocation frame) {
         if (!frame.publish || isStop || mFusedClient == null || !mFusedMockEnabled) return;
-        // This 33-ms tick may outrun Google Play services' Binder/Task queue.
-        // Never submit another FLP mock fix before the previous Task finishes.
-        // Framework GPS/NETWORK/FUSED still publish every eligible tick.
+        mGmsOperations.submit(frame);
+    }
+
+    @SuppressLint("MissingPermission")
+    private void dispatchGmsLocation(PublishedLocation frame, Runnable done) {
+        if (!frame.publish || isStop || mFusedClient == null || !mFusedMockEnabled) {
+            done.run();
+            return;
+        }
         long token = mGmsPublishGate.begin(SystemClock.elapsedRealtime());
-        if (token == 0L) return;
+        if (token == 0L) { done.run(); return; }
+        com.google.android.gms.tasks.Task<Void> publishTask;
         try {
             Location loc = new Location("fused");
             loc.setAccuracy(Math.max(1.0f, frame.accuracy));
@@ -2572,38 +2659,33 @@ public class ServiceGo extends Service {
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
             // Returning a Task only proves submission. Its asynchronous result is
             // tracked separately; even Task success does not prove consumer delivery.
-            com.google.android.gms.tasks.Task<Void> publishTask =
-                    mFusedClient.setMockLocation(loc);
-            mGmsFusedDispatchCount++;
-            mGmsPublishEvidence.onTaskReturned();
-            mPublishPerformanceEvidence.onTaskReturned();
-            final long taskReturnedElapsed = SystemClock.elapsedRealtime();
-            mLastGmsFusedDispatchElapsed = taskReturnedElapsed;
+            publishTask = mFusedClient.setMockLocation(loc);
+        } catch (RuntimeException failure) {
             try {
-                // Direct executor keeps high-frequency evidence callbacks off the UI
-                // queue. The recorder is synchronized and the callback does no I/O.
-                publishTask.addOnCompleteListener(Runnable::run, result -> {
-                    boolean succeeded = result.isSuccessful();
-                    long completedElapsed = SystemClock.elapsedRealtime();
-                    mGmsPublishGate.complete(token, succeeded, completedElapsed);
-                    mGmsPublishEvidence.onTaskCompleted(succeeded);
-                    mPublishPerformanceEvidence.onTaskFinished(succeeded,
-                            taskReturnedElapsed, completedElapsed);
-                    if (succeeded) {
-                        mLastGmsFusedTaskSuccessElapsed = completedElapsed;
-                    }
-                });
-            } catch (RuntimeException observerError) {
-                // A returned Task without a registered observer is UNKNOWN, not failed.
                 mGmsPublishGate.complete(token, false, SystemClock.elapsedRealtime());
-                mGmsPublishEvidence.onCallbackUnavailable();
-                mPublishPerformanceEvidence.onCallbackUnavailable();
-            }
-        } catch (Throwable t) {
-            // Do not log every tick; report synchronous failures as separate evidence.
-            mGmsPublishGate.complete(token, false, SystemClock.elapsedRealtime());
-            mGmsPublishEvidence.onSynchronousFailure();
+                mGmsPublishEvidence.onSynchronousFailure();
+            } finally { done.run(); }
+            return;
         }
+        mGmsFusedDispatchCount++;
+        mGmsPublishEvidence.onTaskReturned();
+        mPublishPerformanceEvidence.onTaskReturned();
+        final long taskReturnedElapsed = SystemClock.elapsedRealtime();
+        mLastGmsFusedDispatchElapsed = taskReturnedElapsed;
+        observeGmsTask(publishTask, result -> {
+            boolean succeeded = result.isSuccessful();
+            long completedElapsed = SystemClock.elapsedRealtime();
+            mGmsPublishGate.complete(token, succeeded, completedElapsed);
+            mGmsPublishEvidence.onTaskCompleted(succeeded);
+            mPublishPerformanceEvidence.onTaskFinished(succeeded, taskReturnedElapsed, completedElapsed);
+            if (succeeded) mLastGmsFusedTaskSuccessElapsed = completedElapsed;
+        }, done, () -> {
+            mGmsPublishEvidence.onCallbackUnavailable();
+            mPublishPerformanceEvidence.onCallbackUnavailable();
+        }, () -> {
+            mGmsPublishEvidence.onCallbackRecovered();
+            mPublishPerformanceEvidence.onCallbackRecovered();
+        });
     }
 
     public class NoteActionReceiver extends BroadcastReceiver {
@@ -2648,13 +2730,15 @@ public class ServiceGo extends Service {
         public String getPolicySummary() { return mPolicySummary; }
 
         public String getProviderReliabilitySummary() {
-            LabProviderReliabilityController controller = mProviderReliability;
-            return controller == null ? "UNAVAILABLE" : controller.summary();
+            return mProviderSnapshot + " · provider_io="
+                    + (mProviderOperations.isClosed() ? "CLOSING" : "OPEN")
+                    + " · coalesced=" + mProviderOperations.coalescedFrames()
+                    + " · io_errors=" + mProviderOperations.failures()
+                    + " · gms_unobserved_events=" + GMS_TASKS.failures();
         }
 
         public int getProviderOrphanedCount() {
-            LabProviderReliabilityController controller = mProviderReliability;
-            return controller == null ? 0 : controller.orphanedCount();
+            return mProviderOrphanSnapshot;
         }
 
         public String getRouteRecoverySummary() {
@@ -2803,7 +2887,9 @@ public class ServiceGo extends Service {
         public long getGmsFusedDispatchCount() { return mGmsFusedDispatchCount; }
         public long getGmsFusedAcceptedCount() { return mGmsPublishGate.succeeded(); }
         public long getGmsFusedFailedCount() { return mGmsPublishGate.failed(); }
-        public long getGmsFusedBackpressureCount() { return mGmsPublishGate.coalesced(); }
+        public long getGmsFusedBackpressureCount() {
+            return mGmsPublishGate.coalesced() + mGmsOperations.coalescedFrames();
+        }
         public long getGmsFusedPendingAgeMs() { return mGmsPublishGate.pendingAgeMs(SystemClock.elapsedRealtime()); }
         public long getGmsFusedLastAcceptedAgeMs() { return mGmsPublishGate.lastSuccessAgeMs(SystemClock.elapsedRealtime()); }
         public LabGmsPublishEvidence.Snapshot getGmsPublishEvidenceSnapshot() {

@@ -10,6 +10,20 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class LabRecoveryTriageTest {
+    @Test public void queuedAndUnobservedCleanupArePendingWhileCancellationIsNotSuccess() {
+        assertEquals(LabRecoveryTriage.Gms.DISABLE_REQUESTED,
+                LabRecoveryTriage.gms("DISABLE_QUEUED_SERVICE_STOP"));
+        assertEquals(LabRecoveryTriage.Gms.DISABLE_REQUESTED,
+                LabRecoveryTriage.gms("DISABLE_COMPLETION_UNOBSERVED"));
+        assertEquals(LabRecoveryTriage.Gms.DISABLE_FAILED,
+                LabRecoveryTriage.gms("DISABLE_CANCELLED_SERVICE_STOP"));
+        assertEquals(LabRecoveryTriage.Gms.DISABLE_FAILED,
+                LabRecoveryTriage.gms("DISABLE_QUEUE_UNAVAILABLE_SERVICE_STOP"));
+        String report = LabRecoveryTriage.render(sample(LabRecoveryTriage.Lifecycle.NORMAL_STOP,
+                false,row("ALREADY_ABSENT",null),"DISABLE_QUEUED_SERVICE_STOP"));
+        assertTrue(report.contains("尚未证实关闭成功"));
+        assertTrue(report.contains("GMS 关闭没有成功回调证据"));
+    }
     private static LabRecoveryTriage.ProviderRow row(
             String outcome, String previous) {
         return new LabRecoveryTriage.ProviderRow("GPS", "启动扫尾", outcome, previous);

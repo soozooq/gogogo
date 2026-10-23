@@ -27,6 +27,10 @@ public final class LabServiceLifecycleJournal {
     private static final String PREFERENCES = "lab_service_lifecycle_v1";
     private static final String CROSS_PROCESS_EVENT = "lab_service_last_event_v1.txt";
     private static final String KEY_STATE = "state";
+    private static final String KEY_SESSION_TOKEN = "session_token";
+    private static final String KEY_PROVIDER_CLEANUP = "provider_cleanup";
+    private static final String KEY_PROVIDER_CLEANUP_QUEUED = "provider_cleanup_queued";
+    private static final String KEY_PROVIDER_CLEANUP_FINISHED = "provider_cleanup_finished";
     private static final String KEY_PID = "service_pid";
     private static final String KEY_GENERATION = "service_generation";
     private static final String KEY_STARTED_WALL = "started_wall";
@@ -52,7 +56,7 @@ public final class LabServiceLifecycleJournal {
     }
 
     /** Call once in ServiceGo.onCreate(), before provider setup. */
-    public static synchronized void onServiceCreated(Context context) {
+    public static synchronized String onServiceCreated(Context context) {
         SharedPreferences prefs = preferences(context);
         long nowElapsed = SystemClock.elapsedRealtime();
         long nowWall = System.currentTimeMillis();
@@ -64,6 +68,7 @@ public final class LabServiceLifecycleJournal {
         boolean sameBoot = isSameBoot(
                 prefs.getLong(KEY_STARTED_BOOT_COUNT, -1L), nowBootCount,
                 prefs.getLong(KEY_STARTED_WALL, 0L), priorStart, nowWall, nowElapsed);
+        String sessionToken = UUID.randomUUID().toString();
         SharedPreferences.Editor editor = prefs.edit();
 
         // A new process cannot close a previously open session; record only
@@ -75,6 +80,10 @@ public final class LabServiceLifecycleJournal {
         }
 
         editor.putString(KEY_STATE, STATE_ACTIVE)
+                .putString(KEY_SESSION_TOKEN, sessionToken)
+                .putString(KEY_PROVIDER_CLEANUP, "NOT_REQUESTED")
+                .remove(KEY_PROVIDER_CLEANUP_QUEUED)
+                .remove(KEY_PROVIDER_CLEANUP_FINISHED)
                 .putString(KEY_GENERATION, PROCESS_GENERATION)
                 .putInt(KEY_PID, Process.myPid())
                 .putLong(KEY_STARTED_WALL, nowWall)
@@ -83,12 +92,14 @@ public final class LabServiceLifecycleJournal {
                 .putLong(KEY_SESSION_COUNT, prefs.getLong(KEY_SESSION_COUNT, 0L) + 1L)
                 .commit(); // A process may be force-stopped without onDestroy().
         writeCrossProcessEvent(context, STATE_ACTIVE, nowWall, nowElapsed, nowBootCount);
+        return sessionToken;
     }
 
-    /** Call after ServiceGo's normal best-effort cleanup has completed. */
-    public static synchronized void onServiceDestroyed(Context context) {
+    /** Lifecycle callback only; asynchronous framework cleanup is recorded separately. */
+    public static synchronized void onServiceDestroyed(Context context, String sessionToken) {
         SharedPreferences prefs = preferences(context);
-        if (!PROCESS_GENERATION.equals(prefs.getString(KEY_GENERATION, ""))) {
+        if (sessionToken == null || !sessionToken.equals(prefs.getString(KEY_SESSION_TOKEN, ""))
+                || !PROCESS_GENERATION.equals(prefs.getString(KEY_GENERATION, ""))) {
             return;
         }
         long stoppedWall = System.currentTimeMillis();
@@ -98,6 +109,24 @@ public final class LabServiceLifecycleJournal {
                 .commit();
         writeCrossProcessEvent(context, STATE_STOPPED, stoppedWall,
                 SystemClock.elapsedRealtime(), readBootCount(context));
+    }
+
+    public static synchronized void onProviderCleanupQueued(Context context, String sessionToken) {
+        SharedPreferences prefs = preferences(context);
+        if (sessionToken == null || !sessionToken.equals(prefs.getString(KEY_SESSION_TOKEN, ""))) return;
+        prefs.edit().putString(KEY_PROVIDER_CLEANUP, "QUEUED_NOT_FINISHED")
+                .putLong(KEY_PROVIDER_CLEANUP_QUEUED, System.currentTimeMillis())
+                .remove(KEY_PROVIDER_CLEANUP_FINISHED).commit();
+    }
+
+    public static synchronized void onProviderCleanupFinished(
+            Context context, String sessionToken, boolean unexpectedFailure) {
+        SharedPreferences prefs = preferences(context);
+        // An old worker must never complete a newer service's cleanup record.
+        if (sessionToken == null || !sessionToken.equals(prefs.getString(KEY_SESSION_TOKEN, ""))) return;
+        prefs.edit().putString(KEY_PROVIDER_CLEANUP,
+                        unexpectedFailure ? "STAGE_FAILURE_OR_NOT_QUEUED" : "ATTEMPTED_NOT_PROOF_CLEARED")
+                .putLong(KEY_PROVIDER_CLEANUP_FINISHED, System.currentTimeMillis()).commit();
     }
 
     /**
@@ -249,6 +278,11 @@ public final class LabServiceLifecycleJournal {
         if (hasRecord) {
             text.append("记录所属进程 PID: ").append(prefs.getInt(KEY_PID, -1)).append('\n');
         }
+        text.append("Framework Provider 清理: ")
+                .append(prefs.getString(KEY_PROVIDER_CLEANUP, "NO_RECORD"))
+                .append("；queued=").append(formatTime(prefs.getLong(KEY_PROVIDER_CLEANUP_QUEUED, 0)))
+                .append("；finished=").append(formatTime(prefs.getLong(KEY_PROVIDER_CLEANUP_FINISHED, 0)))
+                .append("（执行过清理不证明系统已恢复真实定位）\n");
         text.append("最近一次正常结束: ")
                 .append(formatTime(prefs.getLong(KEY_STOPPED_WALL, 0L))).append('\n');
 

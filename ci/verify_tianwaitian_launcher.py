@@ -152,6 +152,24 @@ check("if (opening) collapseAllAdvanced();" in hub
       and "收起全部高级工具" in hub
       and "groupTitles[i], groupCounts[i], false" in hub,
       "diagnostic advanced accordion or collapse-all is missing")
+# Daily feedback needs no manual experiment or prior saved result. Keep the
+# cache-only export off the UI thread and specialist tools behind one disclosure.
+daily_hub = hub[hub.index("private void buildUi() {"):hub.index("private void setAdvancedExpanded(")]
+for specialist in ("LabQuickCheckActivity.class", "ConsumerLocationProbeActivity.class",
+                   "LabAutoDiagnosticActivity.class", "VirtualContainerV0Activity.class"):
+    check(specialist not in daily_hub, "daily diagnostics must not require specialist navigation")
+check("advancedPanel.getChildCount() == 0" in hub and "buildAdvancedTools(advancedPanel)" in hub
+      and "LabSupportLog.generateForFeedback(app)" in hub
+      and "resumed && hasWindowFocus()" in hub and "exportWorker.shutdownNow()" in hub,
+      "simple diagnostics must lazily retain tools and export with foreground clipboard ownership")
+support_snapshot = (base / "LabSupportSnapshot.java").read_text(encoding="utf-8")
+for mutation in ("requestLocationUpdates(", "getCurrentLocation(", "requestPermissions(",
+                 "setMockMode(", "setMockLocation(", "startService(", "stopService("):
+    check(mutation not in support_snapshot, "support export must not mutate location/service: " + mutation)
+check("getLastKnownLocation(provider)" in support_snapshot
+      and ".getLastLocation(), 2, TimeUnit.SECONDS" in support_snapshot
+      and "real_coordinates=REDACTED" in support_snapshot,
+      "one-copy feedback must read bounded existing caches without exposing real coordinates")
 print("Tianwaitian streamlined layout checks PASS: map retains space, "
       "simulation controls preserved, advanced views de-duplicated.")
 
