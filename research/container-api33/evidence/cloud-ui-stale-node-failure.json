@@ -1,0 +1,15 @@
+{
+  "scope": "FAST_CLOUD_UI_DRIVER_STALE_NODE_NOT_LOCATION_FAILURE",
+  "run_id": 39987499311,
+  "job_id": 120530379631,
+  "commit": "4623611b93052c772fe656e26ce7ae044ed82ea2",
+  "boot_host_install_shared_storage": "PASS",
+  "instrumentation_started": true,
+  "failure": "UiAutomator StaleObjectException during Downloads root click before APK import",
+  "test_seconds": 3.897,
+  "target_coordinates_checked": false,
+  "cause": "A document-picker node was replaced between lookup and reading its click bounds. KVM exposes the timing race.",
+  "fix": "Reacquire exact selectors with bounded retries only for stale nodes; actions still occur through real UI. Coordinate, process and stop assertions remain unchanged.",
+  "production_changed": false,
+  "next_run": "PENDING_PUSH"
+}

@@ -13,9 +13,11 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.uiautomator.By;
+import androidx.test.uiautomator.BySelector;
 import androidx.test.uiautomator.Configurator;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject2;
+import androidx.test.uiautomator.StaleObjectException;
 import androidx.test.uiautomator.Until;
 
 import java.io.File;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.function.Function;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -64,16 +67,16 @@ public final class ThirdPartyLocationInstrumentedTest {
             BLocationManager.disableFakeLocation(0, GUEST);
             assertTrue(context.getSharedPreferences("research-entry", Context.MODE_PRIVATE).edit().clear().commit());
             openOrdinaryHost(context);
-            hostControl("import_guest").click();
+            clickFresh(By.res(context.getPackageName(), "import_guest"), "Import button");
             UiObject2 roots = device.wait(Until.findObject(By.desc("Show roots")), 30000);
             assertNotNull("Normal Android document picker", roots);
-            roots.click();
+            clickFresh(By.desc("Show roots"), "Document roots");
             UiObject2 downloads = device.wait(Until.findObject(By.res("android", "title").text("Downloads")), 30000);
             assertNotNull("Downloads document root", downloads);
-            downloads.click();
+            clickFresh(By.res("android", "title").text("Downloads"), "Downloads root");
             UiObject2 apk = device.wait(Until.findObject(By.text("GPSTest-3.10.6.apk")), 30000);
             assertNotNull("Exact original APK in normal document picker", apk);
-            apk.click();
+            clickFresh(By.text("GPSTest-3.10.6.apk"), "Original APK entry");
             assertNotNull("Ordinary import completed", device.wait(Until.findObject(By.res(
                     context.getPackageName(), "open_guest").enabled(true)), 60000));
             assertTrue(BlackBoxCore.get().isInstalled(GUEST, 0));
@@ -92,9 +95,9 @@ public final class ThirdPartyLocationInstrumentedTest {
             device.dumpWindowHierarchy(new File(evidence, "window.xml"));
             device.takeScreenshot(new File(evidence, "screen.png"));
             openOrdinaryHost(context);
-            assertEquals("-33.86", hostControl("target_latitude").getText());
-            assertEquals("151.20", hostControl("target_longitude").getText());
-            hostControl("stop_guest").click();
+            assertEquals("-33.86", fresh(By.res(context.getPackageName(), "target_latitude"), UiObject2::getText, "Latitude"));
+            assertEquals("151.20", fresh(By.res(context.getPackageName(), "target_longitude"), UiObject2::getText, "Longitude"));
+            clickFresh(By.res(context.getPackageName(), "stop_guest"), "Stop button");
             long deadline = SystemClock.elapsedRealtime() + 10000;
             while (SystemClock.elapsedRealtime() < deadline && !shell("pidof " + GUEST).isEmpty()) SystemClock.sleep(100);
             assertEquals("Stop removes the actual virtual Guest process", "", shell("pidof " + GUEST));
@@ -135,9 +138,28 @@ public final class ThirdPartyLocationInstrumentedTest {
     }
 
     private void setOrdinaryTarget(String lat, String lon) {
-        hostControl("target_latitude").setText(lat);
-        hostControl("target_longitude").setText(lon);
-        hostControl("open_guest").click();
+        String host = "com.soozooq.tianwaitian.containerresearch";
+        fresh(By.res(host, "target_latitude"), node -> { node.setText(lat); return true; }, "Latitude field");
+        fresh(By.res(host, "target_longitude"), node -> { node.setText(lon); return true; }, "Longitude field");
+        clickFresh(By.res(host, "open_guest"), "Apply/open button");
+    }
+
+    private void clickFresh(BySelector selector, String description) {
+        fresh(selector, node -> { node.click(); return true; }, description);
+    }
+
+    private <T> T fresh(BySelector selector, Function<UiObject2, T> action, String description) {
+        long deadline = SystemClock.elapsedRealtime() + 30000;
+        while (SystemClock.elapsedRealtime() < deadline) {
+            UiObject2 node = device.findObject(selector);
+            if (node != null) {
+                try { return action.apply(node); }
+                catch (StaleObjectException changedBeforeAction) { /* Reacquire the replaced node. */ }
+            }
+            SystemClock.sleep(50);
+        }
+        fail("Stable UI control unavailable: " + description);
+        return null;
     }
 
     private String shell(String command) throws Exception {
@@ -263,14 +285,16 @@ public final class ThirdPartyLocationInstrumentedTest {
 
     private void handleNormalPermissionDialog() throws Exception {
         for (String pkg : new String[] {"com.android.permissioncontroller", "com.google.android.permissioncontroller"}) {
+            try {
             UiObject2 precise = device.findObject(By.res(pkg, "permission_location_accuracy_radio_fine"));
             if (precise != null && !precise.isChecked()) precise.click();
             UiObject2 allow = device.findObject(By.res(pkg, "permission_allow_foreground_only_button"));
             if (allow != null) {
+                allow.click();
                 permissionActions.put(new JSONObject().put("system_package", pkg)
                         .put("action", "ALLOW_WHILE_IN_USE").put("elapsed_ms", SystemClock.elapsedRealtime()));
-                allow.click();
             }
+            } catch (StaleObjectException dialogChanged) { return; }
         }
     }
 
