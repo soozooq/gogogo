@@ -21,6 +21,9 @@
     "package": "org.fossify.math",
     "size": 7047681,
     "sha256": "7c5443c22d6d62c67dfe80df33ea9161ff0fa440f92590bcb45d7008b57613ed",
+    "certificate_sha256": "affdb124d3f4720c2f98dbca9eacba0514fba4306e20a2786c861c3c0d6ff292",
+    "version_name": "1.4.0",
+    "version_code": 10,
     "license": "GPL-3.0",
     "source": "https://github.com/FossifyOrg/Calculator/tree/1.4.0"
   },

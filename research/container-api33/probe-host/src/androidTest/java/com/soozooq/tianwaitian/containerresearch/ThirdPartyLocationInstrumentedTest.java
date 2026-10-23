@@ -16,6 +16,7 @@ import androidx.test.uiautomator.By;
 import androidx.test.uiautomator.Configurator;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject2;
+import androidx.test.uiautomator.Until;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -47,6 +48,97 @@ public final class ThirdPartyLocationInstrumentedTest {
     private final JSONArray stages = new JSONArray();
     private final JSONArray permissionActions = new JSONArray();
     private List<String> lastTexts = new ArrayList<>();
+
+    @Test public void ordinaryImportCoordinateAndStopEntry() throws Exception {
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        File evidence = new File(context.getFilesDir(), "third-party-location-evidence");
+        assertTrue(evidence.isDirectory() || evidence.mkdirs());
+        long idle = Configurator.getInstance().getWaitForIdleTimeout();
+        Configurator.getInstance().setWaitForIdleTimeout(0);
+        assertEquals("", shell("pm path " + GUEST));
+        assertEquals(PackageManager.PERMISSION_DENIED, context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION));
+        try {
+            closeOnlySystemUiFailureDialog();
+            BlackBoxCore.get().stopPackage(GUEST, 0);
+            BlackBoxCore.get().uninstallPackageAsUser(GUEST, 0);
+            BLocationManager.disableFakeLocation(0, GUEST);
+            assertTrue(context.getSharedPreferences("research-entry", Context.MODE_PRIVATE).edit().clear().commit());
+            openOrdinaryHost(context);
+            hostControl("import_guest").click();
+            UiObject2 roots = device.wait(Until.findObject(By.desc("Show roots")), 30000);
+            assertNotNull("Normal Android document picker", roots);
+            roots.click();
+            UiObject2 downloads = device.wait(Until.findObject(By.res("android", "title").text("Downloads")), 30000);
+            assertNotNull("Downloads document root", downloads);
+            downloads.click();
+            UiObject2 apk = device.wait(Until.findObject(By.text("GPSTest-3.10.6.apk")), 30000);
+            assertNotNull("Exact original APK in normal document picker", apk);
+            apk.click();
+            assertNotNull("Ordinary import completed", device.wait(Until.findObject(By.res(
+                    context.getPackageName(), "open_guest").enabled(true)), 60000));
+            assertTrue(BlackBoxCore.get().isInstalled(GUEST, 0));
+            setOrdinaryTarget("38.125", "-121.875");
+            stages.put(new JSONObject().put("stage", "ORDINARY_ENTRY_TARGET_A")
+                    .put("visible_text", awaitCoordinates(38.125, -121.875)));
+            assertTrue("Actual normal system permission UI was used", permissionActions.length() > 0);
+            assertEquals(PackageManager.PERMISSION_GRANTED, context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION));
+            String firstPid = shell("pidof " + GUEST);
+            assertTrue("Actual Guest process exists", firstPid.matches("[0-9]+"));
+            openOrdinaryHost(context);
+            setOrdinaryTarget("-33.86", "151.20");
+            stages.put(new JSONObject().put("stage", "ORDINARY_ENTRY_TARGET_B")
+                    .put("visible_text", awaitCoordinates(-33.86, 151.20)));
+            assertEquals("Coordinate changes keep the Guest process", firstPid, shell("pidof " + GUEST));
+            device.dumpWindowHierarchy(new File(evidence, "window.xml"));
+            device.takeScreenshot(new File(evidence, "screen.png"));
+            openOrdinaryHost(context);
+            assertEquals("-33.86", hostControl("target_latitude").getText());
+            assertEquals("151.20", hostControl("target_longitude").getText());
+            hostControl("stop_guest").click();
+            long deadline = SystemClock.elapsedRealtime() + 10000;
+            while (SystemClock.elapsedRealtime() < deadline && !shell("pidof " + GUEST).isEmpty()) SystemClock.sleep(100);
+            assertEquals("Stop removes the actual virtual Guest process", "", shell("pidof " + GUEST));
+            assertEquals(BLocationManager.CLOSE_MODE, BLocationManager.get().getPattern(0, GUEST));
+            assertEquals("", shell("pm path " + GUEST));
+            device.takeScreenshot(new File(evidence, "entry.png"));
+            write(new File(evidence, "result.json"), new JSONObject()
+                    .put("scope", "ORDINARY_IMPORT_COORDINATE_LAUNCH_STOP_OFFICIAL_GPSTEST_NOT_WECHAT")
+                    .put("package", GUEST).put("apk_sha256", SHA).put("permission_actions", permissionActions)
+                    .put("stages", stages).put("same_guest_pid", firstPid).put("stop_process_absent", true)
+                    .put("stop_virtual_mode", "CLOSE_MODE").put("passed", true).toString(2));
+        } finally {
+            try {
+                write(new File(evidence, "last-visible-text.json"), new JSONArray(lastTexts).toString(2));
+                if (!new File(evidence, "screen.png").isFile()) {
+                    device.dumpWindowHierarchy(new File(evidence, "window.xml"));
+                    device.takeScreenshot(new File(evidence, "screen.png"));
+                }
+            } finally {
+                BlackBoxCore.get().stopPackage(GUEST, 0);
+                BLocationManager.disableFakeLocation(0, GUEST);
+                Configurator.getInstance().setWaitForIdleTimeout(idle);
+            }
+        }
+    }
+
+    private void openOrdinaryHost(Context context) {
+        context.startActivity(new Intent(context, ProbeActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
+        hostControl("import_guest");
+    }
+
+    private UiObject2 hostControl(String id) {
+        UiObject2 value = device.wait(Until.findObject(By.res(
+                "com.soozooq.tianwaitian.containerresearch", id)), 30000);
+        assertNotNull("Ordinary entry control: " + id, value);
+        return value;
+    }
+
+    private void setOrdinaryTarget(String lat, String lon) {
+        hostControl("target_latitude").setText(lat);
+        hostControl("target_longitude").setText(lon);
+        hostControl("open_guest").click();
+    }
 
     private String shell(String command) throws Exception {
         try (InputStream input = new ParcelFileDescriptor.AutoCloseInputStream(

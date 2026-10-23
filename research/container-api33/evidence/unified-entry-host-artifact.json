@@ -1,0 +1,49 @@
+{
+  "scope": "COMPILED_RESEARCH_HOST_NOT_WECHAT_COMPATIBILITY",
+  "package": "com.soozooq.tianwaitian.containerresearch",
+  "sha256": "0d856ee54f622401b88707962302029e0a4f98b5bdb8336e24ff5343db90da01",
+  "size": 4788851,
+  "native_abis": [
+    "arm64-v8a",
+    "x86_64"
+  ],
+  "uses_permissions": [
+    "android.permission.ACCESS_COARSE_LOCATION",
+    "android.permission.ACCESS_FINE_LOCATION",
+    "android.permission.ACCESS_NETWORK_STATE",
+    "android.permission.FOREGROUND_SERVICE",
+    "android.permission.INTERNET",
+    "android.permission.REORDER_TASKS",
+    "com.soozooq.tianwaitian.containerresearch.INTERNAL"
+  ],
+  "default_component_permission": "com.soozooq.tianwaitian.containerresearch.INTERNAL",
+  "resource_mirror_defined": true,
+  "embedded_guest_apks": [],
+  "embedded_guest_class_definitions": [],
+  "signature_verified": true,
+  "pinned_guest_catalog": [
+    {
+      "label": "Fossify \u8ba1\u7b97\u5668",
+      "location": false,
+      "package": "org.fossify.math",
+      "sha256": "7c5443c22d6d62c67dfe80df33ea9161ff0fa440f92590bcb45d7008b57613ed",
+      "size": 7047681,
+      "version_code": 10,
+      "version_name": "1.4.0",
+      "certificate_sha256": "affdb124d3f4720c2f98dbca9eacba0514fba4306e20a2786c861c3c0d6ff292",
+      "url": "https://github.com/FossifyOrg/Calculator/releases/download/1.4.0/calculator-10-foss-release.apk"
+    },
+    {
+      "label": "GPSTest \u5b9a\u4f4d",
+      "location": true,
+      "package": "com.android.gpstest.osmdroid",
+      "sha256": "897b91fe6a1ea0c3a7f6e2b041d5ace0d582941f67cf454fb7778f031d89ce41",
+      "size": 3457918,
+      "version_code": 24100,
+      "version_name": "3.10.6",
+      "certificate_sha256": "67e04383a96a83476426adcbdd95c4c75d78028a5c4ada75c00334b1c7a5d706",
+      "url": "https://github.com/barbeau/gpstest/releases/download/v3.10.6/osmdroidRelease-v3.10.6.apk"
+    }
+  ],
+  "certificate_sha256": "81b7350f2e056029168a8a3ad6d29f1c6c0a7132a2f6db9296c5a26bd135e728"
+}

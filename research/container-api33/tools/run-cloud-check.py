@@ -21,8 +21,11 @@ mode.add_argument('--installed-baseline', action='store_true')
 mode.add_argument('--location-contract', action='store_true')
 mode.add_argument('--guest-location', action='store_true')
 mode.add_argument('--third-party-location', action='store_true')
+parser.add_argument('--ordinary-entry', action='store_true', help='Use the real import/coordinate launcher with --third-party-location')
 parser.add_argument('--label', default='latest')
 args = parser.parse_args()
+if args.ordinary_entry and not args.third_party_location:
+    raise SystemExit('--ordinary-entry requires --third-party-location')
 if not args.sdk or not args.root:
     raise SystemExit('Specify --sdk/--root or ANDROID_SDK_ROOT/CONTAINER_RESEARCH_WORKDIR')
 if not re.fullmatch(r'emulator-\d+', args.serial):
@@ -87,7 +90,7 @@ if shell('getenforce') != 'Enforcing':
 metadata = {
     'started_at_utc': datetime.now(timezone.utc).isoformat(),
     'scope': 'CLOUD_EMULATOR_ONLY_NOT_VIVO_OR_WECHAT',
-    'case': 'official_gpstest_location_ui' if args.third_party_location else
+    'case': 'ordinary_import_coordinate_entry' if args.ordinary_entry else 'official_gpstest_location_ui' if args.third_party_location else
         'owned_guest_location_real_process' if args.guest_location else
         'controlled_location_contract' if args.location_contract else
         ('system_installed_control' if args.installed_baseline else 'container_uninstalled_guest'),
@@ -99,6 +102,7 @@ spec = Path(__file__).resolve().parents[1]
 source_inputs = [spec / 'sources.json', *sorted((spec / 'patches').glob('*.patch')),
     *sorted((spec / 'tools').glob('*.*')), *sorted((spec / 'probe-host').rglob('*.java')),
     spec / 'probe-host/build.gradle', spec / 'probe-host/src/main/AndroidManifest.xml']
+source_inputs += sorted((spec / 'probe-host/src/main/res').rglob('*.xml'))
 source_inputs += [*sorted((spec / 'location-consumer').rglob('*.java')),
     *sorted((spec / 'location-consumer').rglob('*.xml')), spec / 'location-consumer/build.gradle']
 metadata['research_source_sha256'] = {
@@ -156,13 +160,22 @@ if not args.location_contract:
     run(['push', str(guest), '/data/local/tmp/gogogo-official-gpstest.apk' if args.third_party_location
         else '/data/local/tmp/gogogo-location-consumer.apk' if args.guest_location
         else '/data/local/tmp/gogogo-research-guest.apk'], timeout=120)
+if args.ordinary_entry:
+    run(['push', str(guest), '/sdcard/Download/GPSTest-3.10.6.apk'], timeout=120)
 shell('settings put global window_animation_scale 0')
 shell('settings put global transition_animation_scale 0')
 shell('settings put global animator_duration_scale 0')
 shell('input keyevent KEYCODE_WAKEUP')
 shell('wm dismiss-keyguard', check=False)
 run(['logcat', '-c'])
-test_class = ('com.soozooq.tianwaitian.containerresearch.ThirdPartyLocationInstrumentedTest'
+folder = 'third-party-location-evidence' if args.third_party_location else \
+    'guest-location-evidence' if args.guest_location else 'runtime-evidence'
+# Only this dedicated emulator's own test-output directory; never reuse a prior screenshot/report.
+run(['shell', 'run-as', 'com.soozooq.tianwaitian.containerresearch',
+     'rm', '-rf', 'files/' + folder])
+test_class = ('com.soozooq.tianwaitian.containerresearch.ThirdPartyLocationInstrumentedTest#' +
+    ('ordinaryImportCoordinateAndStopEntry' if args.ordinary_entry else
+     'officialGpsTestReceivesChangedTargetThroughItsNormalUi')
     if args.third_party_location else 'com.soozooq.tianwaitian.containerresearch.GuestLocationInstrumentedTest'
     if args.guest_location else 'top.niunaijun.bcore.fake.service.LocationContractInstrumentedTest'
     if args.location_contract else 'com.soozooq.tianwaitian.containerresearch.ExternalGuestInstrumentedTest#' +
@@ -179,10 +192,8 @@ result = run(instrumentation + [
     timeout=300, check=False)
 text = result.stdout.decode(errors='replace') + result.stderr.decode(errors='replace')
 (evidence / 'cloud-instrumentation.txt').write_text(text)
-folder = 'third-party-location-evidence' if args.third_party_location else \
-    'guest-location-evidence' if args.guest_location else 'runtime-evidence'
 for relative in (() if args.location_contract else
-        ('window.xml', 'screen.png', 'result.json', 'last-visible-text.json') if args.third_party_location else
+        ('window.xml', 'screen.png', 'entry.png', 'result.json', 'last-visible-text.json') if args.third_party_location else
         ('window.xml', 'screen.png', 'result.json', 'last-guest-ui.txt') if args.guest_location
         else ('window.xml', 'screen.png')):
     data = run(['exec-out', 'run-as', 'com.soozooq.tianwaitian.containerresearch', 'cat',

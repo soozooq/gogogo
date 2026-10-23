@@ -1,24 +1,62 @@
 package com.soozooq.tianwaitian.containerresearch;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.net.Uri;
+import android.os.Build;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import top.niunaijun.bcore.BlackBoxCore;
 import top.niunaijun.bcore.entity.pm.InstallResult;
 
-/** Only a pinned, unmodified third-party release; not a custom guest protocol. */
+/** Exact, unmodified releases from the build-generated pinned source catalog. */
 public final class GuestImport {
+    // Retained for the existing calculator regression; the ordinary UI uses Entry.
     public static final String PACKAGE = "org.fossify.math";
-    public static final String SHA256 = "7c5443c22d6d62c67dfe80df33ea9161ff0fa440f92590bcb45d7008b57613ed";
     public static final long MAX_BYTES = 10L * 1024 * 1024;
     private GuestImport() {}
 
-    public static File copyAndVerify(Context context, Uri uri) throws Exception {
+    public static final class Entry {
+        public final String label, packageName, sha256, certificateSha256, versionName, url;
+        public final long size, versionCode;
+        public final boolean location;
+        private Entry(JSONObject json) throws Exception {
+            label = json.getString("label"); packageName = json.getString("package");
+            sha256 = json.getString("sha256"); certificateSha256 = json.getString("certificate_sha256");
+            versionName = json.getString("version_name"); versionCode = json.getLong("version_code");
+            size = json.getLong("size"); location = json.getBoolean("location"); url = json.getString("url");
+            if (!sha256.matches("[0-9a-f]{64}") || !certificateSha256.matches("[0-9a-f]{64}")
+                    || size <= 0 || size > MAX_BYTES) throw new IllegalStateException("CATALOG_INVALID");
+        }
+        @Override public String toString() { return label + " " + versionName; }
+    }
+
+    public static List<Entry> catalog(Context context) throws Exception {
+        try (InputStream input = context.getAssets().open("approved-guests.json")) {
+            JSONArray data = new JSONArray(new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+            List<Entry> entries = new ArrayList<>();
+            for (int i = 0; i < data.length(); i++) entries.add(new Entry(data.getJSONObject(i)));
+            return Collections.unmodifiableList(entries);
+        }
+    }
+
+    public static Entry entryFor(Context context, String packageName) throws Exception {
+        for (Entry entry : catalog(context)) if (entry.packageName.equals(packageName)) return entry;
+        throw new IllegalArgumentException("UNAPPROVED_GUEST");
+    }
+
+    public static File copyAndVerify(Context context, Uri uri, Entry entry) throws Exception {
         File directory = new File(context.getFilesDir(), "research-import");
         if (!directory.isDirectory() && !directory.mkdirs()) throw new IllegalStateException("NO_DIRECTORY");
         File temporary = File.createTempFile("guest-", ".apk", directory);
@@ -32,12 +70,12 @@ public final class GuestImport {
                 int read;
                 while ((read = input.read(buffer)) != -1) {
                     total += read;
-                    if (total > MAX_BYTES) throw new IllegalArgumentException("APK_TOO_LARGE");
+                    if (total > entry.size) throw new IllegalArgumentException("APK_SIZE");
                     output.write(buffer, 0, read);
                 }
                 output.getFD().sync();
             }
-            verify(temporary);
+            verify(temporary, entry);
             if (!temporary.setReadOnly()) throw new IllegalStateException("APK_NOT_READ_ONLY");
             complete = true;
             return temporary;
@@ -46,7 +84,13 @@ public final class GuestImport {
         }
     }
 
-    public static void verify(File file) throws Exception {
+    public static void verify(File file, Entry entry) throws Exception {
+        if (file.length() != entry.size || !entry.sha256.equals(hashFile(file))) {
+            throw new IllegalArgumentException("UNAPPROVED_GUEST");
+        }
+    }
+
+    private static String hashFile(File file) throws Exception {
         if (file.length() <= 0 || file.length() > MAX_BYTES) throw new IllegalArgumentException("APK_SIZE");
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         try (InputStream input = new FileInputStream(file)) {
@@ -54,19 +98,38 @@ public final class GuestImport {
             int count;
             while ((count = input.read(buffer)) != -1) digest.update(buffer, 0, count);
         }
-        StringBuilder hex = new StringBuilder();
-        for (byte value : digest.digest()) hex.append(String.format(Locale.US, "%02x", value & 255));
-        if (!SHA256.equals(hex.toString())) throw new IllegalArgumentException("UNAPPROVED_GUEST");
+        return hex(digest.digest());
     }
 
-    public static void installVerified(File file) throws Exception {
-        verify(file);
+    private static String hex(byte[] bytes) {
+        StringBuilder hex = new StringBuilder();
+        for (byte value : bytes) hex.append(String.format(Locale.US, "%02x", value & 255));
+        return hex.toString();
+    }
+
+    public static void installVerified(File file, Entry entry) throws Exception {
+        verify(file, entry);
+        PackageInfo archive = BlackBoxCore.getPackageManager().getPackageArchiveInfo(file.getAbsolutePath(),
+                Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES);
+        if (archive == null || !entry.packageName.equals(archive.packageName)
+                || !entry.versionName.equals(archive.versionName)
+                || entry.versionCode != (Build.VERSION.SDK_INT >= 28 ? archive.getLongVersionCode() : archive.versionCode)) {
+            throw new IllegalArgumentException("ARCHIVE_IDENTITY");
+        }
+        Signature[] signers = Build.VERSION.SDK_INT >= 28 && archive.signingInfo != null
+                ? archive.signingInfo.getApkContentsSigners() : archive.signatures;
+        if (signers == null || signers.length != 1 || !entry.certificateSha256.equals(hex(
+                MessageDigest.getInstance("SHA-256").digest(signers[0].toByteArray())))) {
+            throw new IllegalArgumentException("ARCHIVE_SIGNATURE");
+        }
         InstallResult result = BlackBoxCore.get().installPackageAsUser(file, 0);
-        if (!result.success || !PACKAGE.equals(result.packageName)) {
-            throw new IllegalStateException("IMPORT_FAILED: " + result.msg);
+        if (!result.success || !entry.packageName.equals(result.packageName)) {
+            throw new IllegalStateException("IMPORT_FAILED");
         }
     }
 
-    /** True means launch was requested, not that the guest rendered or accepted location. */
+    public static void verify(File file) throws Exception { verify(file, entryFor(BlackBoxCore.getContext(), PACKAGE)); }
+    public static void installVerified(File file) throws Exception { installVerified(file, entryFor(BlackBoxCore.getContext(), PACKAGE)); }
+    /** True means launch requested, not proof that the Guest rendered or adopted location. */
     public static boolean requestLaunch() { return BlackBoxCore.get().launchApk(PACKAGE, 0); }
 }

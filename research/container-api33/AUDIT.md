@@ -24,7 +24,13 @@
 
 [受控测试源码](probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java)在宿主测试进程构造公共 `LocationManager`，由框架创建真实回调／监听对象；测试代理显式调用四个修正后的 Hook 入口。它不冒充真实 Guest 的定位调用，也不请求系统真实定位。共 4 项检查通过，原文和输入摘要见[本轮结果](evidence/api33-location-signature-results.json)。
 
-普通研究入口和计算器运行仍保持虚拟定位关闭。不能把本轮接口修正直接归因于用户此前系统微信的失败。PendingIntent、被动定位、全部 LocationRequest 过滤条件和 GMS 融合定位仍未完整验证。VirtualApp fork 没有应用这些修正。
+计算器运行仍保持虚拟定位关闭；普通入口选择 GPSTest 后才按用户输入启用它的虚拟会话。不能把接口修正直接归因于用户此前系统微信的失败。PendingIntent、被动定位、全部 LocationRequest 过滤条件和 GMS 融合定位仍未完整验证。VirtualApp fork 没有应用这些修正。
+
+## 普通入口与目标架构
+
+普通入口的原包导入、系统授权、坐标更新、重复进入和停止经过真实界面检查，63.652 秒通过；定位控制没有由测试直接替代。清单来自固定来源，导入同时核对文件与归档身份。详见[本轮输入与实际可见文本](evidence/unified-entry-results.json)。后加的云端启动脚本／工作流尚不属于这次本地运行，等待 GitHub 的独立结果。
+
+官方微信 8.0.79 与抖音 40.8.0 已下载并验证原包签名结构、记录 SHA-256，均仅含 ARM64 原生库。它们没有进入准入清单或运行；这也不确认用户手机安装版本。本机官方模拟器因宿主架构拒绝 ARM64 镜像，不能据此判定应用或引擎在 ARM64 上不兼容。GitHub ARM 环境的匹配镜像尝试尚待实测；官方文档同时说明 macOS ARM 不提供嵌套虚拟化，软件模拟是否可用仍须实际结果，不能靠配置文件宣称成功。
 
 ## 官方 GPSTest 与 GNSS 兼容
 

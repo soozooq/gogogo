@@ -18,7 +18,33 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     packagingOptions { jniLibs { useLegacyPackaging true } }
+    sourceSets.main.assets.srcDir layout.buildDirectory.dir('generated/researchGuestAssets')
 }
+
+// One pinned source manifest supplies both the cloud verifier and the ordinary import UI.
+def researchSources = new File(System.getenv('CONTAINER_RESEARCH_SPEC_DIR'), 'sources.json')
+def catalogOutput = layout.buildDirectory.file('generated/researchGuestAssets/approved-guests.json')
+def generateResearchGuestCatalog = tasks.register('generateResearchGuestCatalog') {
+    inputs.file researchSources
+    outputs.file catalogOutput
+    doLast {
+        def sources = new groovy.json.JsonSlurper().parse(researchSources)
+        def entries = [
+            [key: 'guest', label: 'Fossify 计算器', location: false],
+            [key: 'third_party_location', label: 'GPSTest 定位', location: true]
+        ].collect { item ->
+            def source = sources[item.key]
+            [label: item.label, location: item.location, package: source['package'],
+             sha256: source.sha256, size: source.size, version_code: source.version_code,
+             version_name: source.version_name, certificate_sha256: source.certificate_sha256,
+             url: source.url]
+        }
+        def target = catalogOutput.get().asFile
+        target.parentFile.mkdirs()
+        target.text = groovy.json.JsonOutput.toJson(entries)
+    }
+}
+tasks.named('preBuild').configure { dependsOn generateResearchGuestCatalog }
 
 dependencies {
     implementation project(':BCore')

@@ -41,9 +41,17 @@ with zipfile.ZipFile(host) as apk:
     definitions = apk_defined_classes(apk)
     embedded_apks = [n for n in apk.namelist() if n.endswith('.apk')]
     guest_definitions = [n for n in definitions if n.startswith(('Lorg/fossify/',
-        'Lcom/soozooq/tianwaitian/locationconsumer/'))]
+        'Lcom/android/gpstest/', 'Lcom/soozooq/tianwaitian/locationconsumer/'))]
     abis = sorted({n.split('/')[1] for n in apk.namelist() if n.startswith('lib/') and n.endswith('.so')})
     mirror = 'Lblack/com/android/internal/InternalResources$styleable;' in definitions
+    catalog = json.loads(apk.read('assets/approved-guests.json'))
+sources = json.loads((spec / 'sources.json').read_text())
+assert len(catalog) == 2
+for actual, key, location in zip(catalog, ['guest', 'third_party_location'], [False, True]):
+    expected = sources[key]
+    assert actual['location'] is location
+    for field in ['package', 'sha256', 'size', 'version_code', 'version_name', 'certificate_sha256', 'url']:
+        assert actual[field] == expected[field], field
 assert not embedded_apks and not guest_definitions and mirror
 assert abis == ['arm64-v8a', 'x86_64']
 signature = subprocess.check_output([str(sdk / 'build-tools/33.0.2/apksigner'), 'verify', '--print-certs', str(host)], text=True)
@@ -61,6 +69,7 @@ report = {
     'embedded_guest_apks': embedded_apks,
     'embedded_guest_class_definitions': guest_definitions,
     'signature_verified': True,
+    'pinned_guest_catalog': catalog,
     'certificate_sha256': certificate.group(1),
 }
 Path(args.output).write_text(json.dumps(report, indent=2) + '\n')
