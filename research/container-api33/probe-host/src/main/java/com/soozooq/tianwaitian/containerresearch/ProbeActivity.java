@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.DocumentsContract;
 import android.text.InputType;
 import android.view.View;
 import android.widget.AdapterView;
@@ -70,6 +71,8 @@ public final class ProbeActivity extends Activity {
             Intent pick = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             pick.setType("application/vnd.android.package-archive");
             pick.addCategory(Intent.CATEGORY_OPENABLE);
+            pick.putExtra(DocumentsContract.EXTRA_INITIAL_URI, DocumentsContract.buildDocumentUri(
+                    "com.android.externalstorage.documents", "primary:Download"));
             startActivityForResult(pick, 1);
         });
         root.addView(choose);

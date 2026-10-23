@@ -1,0 +1,165 @@
+package com.soozooq.tianwaitian.containerresearch;
+
+import static org.junit.Assert.*;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.os.ParcelFileDescriptor;
+import android.os.SystemClock;
+import android.view.accessibility.AccessibilityNodeInfo;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.uiautomator.Configurator;
+import androidx.test.uiautomator.UiDevice;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import java.io.File;
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import top.niunaijun.bcore.BlackBoxCore;
+import top.niunaijun.bcore.entity.pm.InstallResult;
+import top.niunaijun.bcore.fake.frameworks.BLocationManager;
+
+/** Cloud-only cold startup. Never accepts terms, logs in, sends messages or enables location. */
+@RunWith(AndroidJUnit4.class)
+public final class OfficialTargetStartupInstrumentedTest {
+    private final UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
+    private String pkg, sha, cert;
+    private long size;
+    private List<String> lastText = new ArrayList<>();
+
+    private String shell(String command) throws Exception {
+        try (InputStream input = new ParcelFileDescriptor.AutoCloseInputStream(
+                InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand(command))) {
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            byte[] buffer = new byte[8192]; int n;
+            while ((n = input.read(buffer)) != -1) bytes.write(buffer, 0, n);
+            return new String(bytes.toByteArray(), StandardCharsets.UTF_8).trim();
+        }
+    }
+    private static String hex(byte[] bytes) {
+        StringBuilder result = new StringBuilder();
+        for (byte value : bytes) result.append(String.format(Locale.US, "%02x", value & 255));
+        return result.toString();
+    }
+    private static void write(File file, JSONObject value) throws Exception {
+        try (FileOutputStream output = new FileOutputStream(file)) {
+            output.write(value.toString(2).getBytes(StandardCharsets.UTF_8)); output.getFD().sync();
+        }
+    }
+    @Test public void pinnedOfficialTargetColdStartup() throws Exception {
+        String key = InstrumentationRegistry.getArguments().getString("target");
+        if ("wechat".equals(key)) {
+            pkg = "com.tencent.mm"; size = 285284760L;
+            sha = "f2a725bc04302ad218a563533ae79356e66b64aa711b275bc919a8d432f7e15d";
+            cert = "0fe4ff85c215918396dadc7cd8ce6963339af33d37751a56e54c7206b63a3c7c";
+        } else if ("douyin".equals(key)) {
+            pkg = "com.ss.android.ugc.aweme"; size = 360503779L;
+            sha = "9fc10c40b81b8244e515f9588d381f43e6ed870e6d9bebf14754a5e309ba380a";
+            cert = "5182ae3b1b85337bb182cf24882449f84447ded18e296a747a9f6a0a2622512e";
+        } else { fail("Only the two pinned original cloud inputs are admitted"); return; }
+        assertEquals("2000", shell("id -u"));
+        assertEquals("1", shell("getprop ro.kernel.qemu"));
+        assertEquals("30", shell("getprop ro.build.version.sdk"));
+        assertEquals("Enforcing", shell("getenforce"));
+        assertEquals("", shell("pm path " + pkg));
+        assertTrue("Actual image must advertise ARM64 app support",
+                shell("getprop ro.product.cpu.abilist").contains("arm64-v8a"));
+        String bridge = shell("getprop ro.dalvik.vm.native.bridge");
+        assertTrue("Native Bridge must be enabled", !bridge.isEmpty() && !"0".equals(bridge));
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        File folder = new File(context.getFilesDir(), "target-startup-" + key);
+        assertTrue(folder.isDirectory() || folder.mkdirs());
+        File apk = new File(context.getFilesDir(), "pinned-target.apk");
+        JSONObject report = new JSONObject().put("scope", "CLOUD_TRANSLATED_ANDROID11_STARTUP_ONLY_NOT_LOCATION_OR_VIVO")
+                .put("target", key).put("package", pkg).put("sha256", sha)
+                .put("location_enabled", false).put("terms_accepted", false).put("login_attempted", false)
+                .put("passed", false);
+        long idle = Configurator.getInstance().getWaitForIdleTimeout();
+        Configurator.getInstance().setWaitForIdleTimeout(0);
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            try (InputStream input = new ParcelFileDescriptor.AutoCloseInputStream(
+                    InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                            .executeShellCommand("cat /data/local/tmp/gogogo-official-target.apk"));
+                 FileOutputStream output = new FileOutputStream(apk)) {
+                long total = 0; int n; byte[] buffer = new byte[65536];
+                while ((n = input.read(buffer)) != -1) {
+                    total += n; assertTrue(total <= size); digest.update(buffer, 0, n); output.write(buffer, 0, n);
+                }
+                assertEquals(size, total); output.getFD().sync();
+            }
+            assertEquals(sha, hex(digest.digest())); assertTrue(apk.setReadOnly());
+            InstallResult imported = BlackBoxCore.get().installPackageAsUser(apk, 0);
+            report.put("import_success", imported.success);
+            assertTrue("Pinned virtual import must succeed", imported.success);
+            assertEquals(pkg, imported.packageName);
+            BLocationManager.disableFakeLocation(0, pkg);
+            PackageInfo identity = BlackBoxCore.getBPackageManager().getPackageInfo(pkg,
+                    PackageManager.GET_SIGNING_CERTIFICATES, 0);
+            assertNotNull(identity); assertNotNull(identity.signingInfo);
+            assertEquals(1, identity.signingInfo.getApkContentsSigners().length);
+            assertEquals(cert, hex(MessageDigest.getInstance("SHA-256")
+                    .digest(identity.signingInfo.getApkContentsSigners()[0].toByteArray())));
+            report.put("original_signer", true);
+            Intent launch = BlackBoxCore.getBPackageManager().getLaunchIntentForPackage(pkg, 0);
+            assertNotNull(launch); BlackBoxCore.get().startActivity(launch, 0);
+            long deadline = SystemClock.elapsedRealtime() + 90000;
+            String stage = null;
+            while (SystemClock.elapsedRealtime() < deadline) {
+                List<String> text = new ArrayList<>();
+                collect(InstrumentationRegistry.getInstrumentation().getUiAutomation().getRootInActiveWindow(), text);
+                lastText = text;
+                String joined = String.join("\n", text).toLowerCase(Locale.ROOT);
+                boolean privacy = (joined.contains("隐私") || joined.contains("privacy"))
+                        && (joined.contains("同意") || joined.contains("agree"));
+                if ("wechat".equals(key) && (joined.contains("log in") || joined.contains("登录"))
+                        && (joined.contains("sign up") || joined.contains("注册"))) {
+                    stage = "WELCOME_WITHOUT_LOGIN";
+                } else if (privacy && (!"wechat".equals(key)
+                        || joined.contains("微信") || joined.contains("wechat"))) {
+                    stage = "PRIVACY_WITHOUT_ACCEPTANCE";
+                }
+                if (stage != null) break;
+                SystemClock.sleep(300);
+            }
+            report.put("visible_text", new JSONArray(lastText));
+            String pid = shell("pidof " + pkg);
+            boolean ready = stage != null && !pid.isEmpty();
+            report.put("guest_pid", pid);
+            report.put("stage", stage == null ? "NOT_REACHED" : stage);
+            report.put("passed", ready);
+            assertTrue("Expected anonymous startup UI was not reached: " + lastText, ready);
+        } finally {
+            try {
+                report.put("visible_text", new JSONArray(lastText));
+                write(new File(folder, "result.json"), report);
+                device.dumpWindowHierarchy(new File(folder, "window.xml"));
+                device.takeScreenshot(new File(folder, "screen.png"));
+            } finally {
+                BlackBoxCore.get().stopPackage(pkg, 0);
+                BLocationManager.disableFakeLocation(0, pkg);
+                BlackBoxCore.get().uninstallPackageAsUser(pkg, 0);
+                apk.delete(); Configurator.getInstance().setWaitForIdleTimeout(idle);
+            }
+        }
+    }
+    private void collect(AccessibilityNodeInfo node, List<String> text) {
+        if (node == null) return;
+        CharSequence owner = node.getPackageName();
+        if (owner != null && (pkg.contentEquals(owner)
+                || "com.soozooq.tianwaitian.containerresearch".contentEquals(owner)) && node.getText() != null) {
+            text.add(node.getText().toString());
+        }
+        for (int i = 0; i < node.getChildCount(); i++) collect(node.getChild(i), text);
+    }
+}

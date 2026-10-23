@@ -9,6 +9,7 @@ import android.os.Build;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -44,7 +45,13 @@ public final class GuestImport {
 
     public static List<Entry> catalog(Context context) throws Exception {
         try (InputStream input = context.getAssets().open("approved-guests.json")) {
-            JSONArray data = new JSONArray(new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            byte[] buffer = new byte[4096]; int n;
+            while ((n = input.read(buffer)) != -1) {
+                if (bytes.size() + n > 65536) throw new IllegalStateException("CATALOG_TOO_LARGE");
+                bytes.write(buffer, 0, n);
+            }
+            JSONArray data = new JSONArray(new String(bytes.toByteArray(), java.nio.charset.StandardCharsets.UTF_8));
             List<Entry> entries = new ArrayList<>();
             for (int i = 0; i < data.length(); i++) entries.add(new Entry(data.getJSONObject(i)));
             return Collections.unmodifiableList(entries);

@@ -213,6 +213,14 @@ for relative in (() if args.location_contract else
         ('window.xml', 'screen.png', 'entry.png', 'result.json', 'last-visible-text.json') if args.third_party_location else
         ('window.xml', 'screen.png', 'result.json', 'last-guest-ui.txt') if args.guest_location
         else ('window.xml', 'screen.png')):
+    exists = run(['shell', 'run-as', 'com.soozooq.tianwaitian.containerresearch',
+        'test', '-f', 'files/' + folder + '/' + relative], check=False).returncode == 0
+    if not exists:
+        if relative == 'screen.png':
+            screen = run(['exec-out', 'screencap', '-p'], check=False)
+            if screen.returncode == 0 and screen.stdout.startswith(b'\x89PNG\r\n\x1a\n'):
+                (evidence / 'cloud-screen.png').write_bytes(screen.stdout)
+        continue
     data = run(['exec-out', 'run-as', 'com.soozooq.tianwaitian.containerresearch', 'cat',
         'files/' + folder + '/' + relative], check=False)
     if data.returncode == 0:

@@ -68,15 +68,16 @@ public final class ThirdPartyLocationInstrumentedTest {
             assertTrue(context.getSharedPreferences("research-entry", Context.MODE_PRIVATE).edit().clear().commit());
             openOrdinaryHost(context);
             clickFresh(By.res(context.getPackageName(), "import_guest"), "Import button");
-            UiObject2 roots = device.wait(Until.findObject(By.desc("Show roots")), 30000);
-            assertNotNull("Normal Android document picker", roots);
-            clickFresh(By.desc("Show roots"), "Document roots");
-            UiObject2 downloads = device.wait(Until.findObject(By.res("android", "title").text("Downloads")), 30000);
-            assertNotNull("Downloads document root", downloads);
-            clickFresh(By.res("android", "title").text("Downloads"), "Downloads root");
+            assertNotNull("Normal Android document picker", device.wait(Until.findObject(By.desc("Show roots")), 30000));
+            // The ordinary product requests Download as initial directory. Do not click a file
+            // through an open navigation drawer or a window that is still transitioning.
+            if (device.hasObject(By.text("Open from"))) device.pressBack();
+            assertTrue("Document drawer closed", device.wait(Until.gone(By.text("Open from")), 30000));
             UiObject2 apk = device.wait(Until.findObject(By.text("GPSTest-3.10.6.apk")), 30000);
             assertNotNull("Exact original APK in normal document picker", apk);
             clickFresh(By.text("GPSTest-3.10.6.apk"), "Original APK entry");
+            assertTrue("System picker returned to the host", device.wait(Until.gone(
+                    By.pkg("com.android.documentsui")), 30000));
             assertNotNull("Ordinary import completed", device.wait(Until.findObject(By.res(
                     context.getPackageName(), "open_guest").enabled(true)), 60000));
             assertTrue(BlackBoxCore.get().isInstalled(GUEST, 0));

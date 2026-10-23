@@ -56,7 +56,9 @@ GPS／NETWORK 的缓存、单次回调、持续批量回调共六条路径均跟
 
 [GitHub Linux 的全新源码构建及静态核验也通过](research/container-api33/evidence/cloud-linux-build-and-probe-failure.json)，53 项运行依赖的许可声明无未解析项。运行脚本在获取模拟器版本时误选 GUI 二进制，因缺少 libpulse 在启动系统前退出；现已改为同样的无窗口参数，版本探测只记结果，真正的启动／UI 才决定成功。首次工作流上下文、废弃 SDK 包、Mac 目录差异的失败记录均保留，未算成运行通过。
 
-[同分支工作流](.github/workflows/container-research.yml)现在执行 Linux 构建／普通入口与计算器回归，ARM Mac 只验证构建；只上传证据，不发布 APK。Linux 修正后的首次运行仍待确认。同时准备官方 Google API33 x86_64 镜像，核查它实际提供的 ARM 应用转译；旧版公告／文档不作为当前镜像可运行目标包的证明，后续结果必须注明转译环境，不能算 ARM 真机兼容。
+[同分支工作流](.github/workflows/container-research.yml)执行 Linux 构建／普通入口与计算器回归，ARM Mac 只验证构建；只上传证据，不发布 APK。Linux 的 KVM 启动和存储准备已经通过；随后实际失败发生在系统文件选择器的抽屉遮住文件时，尚未返回宿主开始导入，见[失败分类与修正](research/container-api33/evidence/cloud-picker-occlusion-failure.json)。普通入口现默认打开下载目录，驱动等抽屉关闭和选择器返回；证据采集先检查文件存在，防止把读取失败文字保存成报告或图片。新源码已编译，修正后的完整云端流程仍待确认，不以历史通过替代。
+
+[实际启动的官方 Google API33 镜像](research/container-api33/evidence/google-api33-nativebridge-check.json)只有 x86_64，Native Bridge 为 0；没有得到原版 ARM64 微信／抖音的运行证据。API30 官方镜像的元数据声明 ARM64 转译，正核验实际系统。新增仅供专用云端模拟器使用的原版目标启动预检：先普通安装对照，再容器启动，固定原 APK 与证书，定位保持关闭，停在欢迎或隐私页，不接受条款或登录。该驱动已编译，尚无运行通过；Android 11 转译结果也不能算 Android 13／ARM64／vivo 或定位业务成功。
 
 下一步继续核对上述云端结果与目标软件的真实启动／业务条件。微信发送／实时共享、抖音无线及海外业务仍未完成；日常应用与 #59 未改，不要求手机用户安装或重复实验。
 
