@@ -301,8 +301,13 @@ public final class ThirdPartyLocationInstrumentedTest {
 
     private void dismissKnownWhatsNewDialog() {
         if (device.hasObject(By.textContains("What's new")) || device.hasObject(By.textContains("What's New"))) {
-            UiObject2 ok = device.findObject(By.res("android", "button1"));
-            if (ok != null && ("OK".equals(ok.getText()) || "Close".equals(ok.getText()))) ok.click();
+            try {
+                UiObject2 ok = device.findObject(By.res("android", "button3"));
+                if (ok != null && ("OK".equalsIgnoreCase(ok.getText())
+                        || "Close".equalsIgnoreCase(ok.getText()))) ok.click();
+            } catch (StaleObjectException dialogChanged) {
+                // The next coordinate poll reacquires the known informational dialog.
+            }
         }
     }
 

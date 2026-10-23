@@ -1,0 +1,21 @@
+{
+  "scope": "FRESH_GPSTEST_INFORMATIONAL_DIALOG_NOT_LOCATION_ENGINE_FAILURE",
+  "run_id": 40034786269,
+  "job_id": 120691483806,
+  "commit": "e31fa14b0ca09dcff46ac2d516afdf05ceefedc1",
+  "artifact_id": 12536627739,
+  "artifact_sha256": "808ab0bbab7bd19c94e4746e554f6a95a73d8ee9c38aff129bc4b2cd443175bb",
+  "confirmed": [
+    "System picker returned",
+    "Ordinary host import completed and virtual package installed assertion passed",
+    "Original GPSTest actual resource IDs and What's New dialog visible"
+  ],
+  "failure": "Coordinate UI remained behind the first-launch informational dialog",
+  "observed_button": {
+    "resource_id": "android:id/button3",
+    "text": "CLOSE"
+  },
+  "fix": "Only known GPSTest update-information dialog: neutral button3 with case-insensitive CLOSE; stale nodes retried by the next poll",
+  "location_business": "NOT_VERIFIED",
+  "wechat_douyin": "NOT_TESTED"
+}

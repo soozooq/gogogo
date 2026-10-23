@@ -136,3 +136,61 @@ jobs:
           name: container-research-arm-mac-build-evidence-${{ github.run_number }}
           path: ${{ runner.temp }}/container-research/evidence/
           if-no-files-found: ignore
+
+  official-target-startup:
+    name: Anonymous startup (official Android 11 translation)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Set dedicated work directories after runner allocation
+        run: |
+          echo "CONTAINER_RESEARCH_WORKDIR=$RUNNER_TEMP/container-research" >> "$GITHUB_ENV"
+          echo "ANDROID_AVD_HOME=$RUNNER_TEMP/container-research-avd" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/container-research/evidence"
+          uname -a > "$RUNNER_TEMP/container-research/evidence/host-platform.txt"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '12266719'
+          packages: ''
+          log-accepted-android-sdk-licenses: false
+      - name: Expose the command-line tools path used by the verifiers
+        run: |
+          set -euo pipefail
+          if [ ! -x "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" ]; then
+            test -x "$ANDROID_HOME/cmdline-tools/16.0/bin/apkanalyzer"
+            test ! -e "$ANDROID_HOME/cmdline-tools/latest"
+            ln -s 16.0 "$ANDROID_HOME/cmdline-tools/latest"
+          fi
+          test -x "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
+      - name: Install the fixed SDK toolchain serially
+        run: sdkmanager --sdk_root="$ANDROID_HOME" 'platforms;android-30' 'platforms;android-33' 'platforms;android-34' 'build-tools;33.0.2' 'ndk;25.1.8937393' 'cmake;3.22.1'
+      - name: Prepare pinned source, apply reviewed patch and build
+        run: |
+          set -euo pipefail
+          python3 research/container-api33/tools/prepare.py --workdir "$CONTAINER_RESEARCH_WORKDIR" --candidate blackbox
+          bash research/container-api33/tools/run-build.sh blackbox :BCore:assembleDebug :probeHost:assembleDebug :probeHost:assembleDebugAndroidTest
+      - name: Record this source and inspect the unchanged multi-ABI host
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD > "$CONTAINER_RESEARCH_WORKDIR/evidence/research-commit.txt"
+          python3 research/container-api33/tools/inspect-apk.py --sdk "$ANDROID_HOME" --host "$CONTAINER_RESEARCH_WORKDIR/probe-host-build/outputs/apk/debug/probeHost-debug.apk" --output "$CONTAINER_RESEARCH_WORKDIR/evidence/host-artifact.json"
+      - name: Allow this dedicated runner to use KVM
+        run: |
+          test -c /dev/kvm
+          sudo chmod a+rw /dev/kvm
+      - name: Compare original installed and container anonymous startup
+        run: bash research/container-api33/tools/run-target-emulator-checks.sh
+      - name: Upload anonymous startup evidence (no APK distribution)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-research-target-startup-evidence-${{ github.run_number }}
+          path: ${{ runner.temp }}/container-research/evidence/
+          if-no-files-found: ignore

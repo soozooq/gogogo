@@ -72,6 +72,8 @@ inputs = {'scope': 'OFFICIAL_ANDROID11_TRANSLATION_STARTUP_ONLY_NOT_LOCATION_OR_
     'research_source_sha256': {str(x.relative_to(spec)): hashlib.sha256(x.read_bytes()).hexdigest()
         for folder in ['tools', 'probe-host', 'patches'] for x in sorted((spec / folder).rglob('*'))
         if x.is_file() and x.suffix in ['.py', '.sh', '.java', '.xml', '.gradle', '.patch']},
+    'input_manifests_sha256': {str(x.relative_to(spec)): hashlib.sha256(x.read_bytes()).hexdigest()
+        for x in [spec / 'sources.json', spec / 'evidence/official-target-apk-readiness.json']},
     'terms_accepted': False, 'login_attempted': False, 'messages_sent': False, 'location_enabled': False}
 (evidence / 'case-inputs.json').write_text(json.dumps(inputs, indent=2) + '\n')
 result = {'scope': inputs['scope'], 'baseline': 'NOT_RUN', 'container': 'NOT_RUN',
@@ -104,6 +106,7 @@ def anonymous_stage(text):
 try:
     shell('input keyevent KEYCODE_WAKEUP'); shell('wm dismiss-keyguard', check=False)
     run(['logcat', '-c'])
+    result['baseline'] = 'INSTALL_PENDING_OR_TIMED_OUT_UNKNOWN'
     installed = run(['install', str(apk)], timeout=240, check=False)
     (evidence / 'baseline-install.txt').write_bytes(installed.stdout + installed.stderr)
     if installed.returncode or b'Success' not in installed.stdout:
@@ -133,7 +136,15 @@ try:
     created_control = not (removed.returncode == 0 and b'Success' in removed.stdout)
     if created_control or shell('pm path ' + pkg, check=False): raise RuntimeError('Owned control cleanup incomplete')
     if not stage: raise RuntimeError('No baseline UI confirmation; do not classify virtual compatibility')
-    for own in [host, test]: run(['install', '-r', str(own)], timeout=180)
+    # Request the platform's supported ARM64 ABI for our unchanged multi-ABI host,
+    # so host and ARM-only guest run under the same official Native Bridge.
+    run(['install', '-r', '--abi', 'arm64-v8a', str(host)], timeout=180)
+    host_package = shell('dumpsys package com.soozooq.tianwaitian.containerresearch')
+    (evidence / 'host-package.txt').write_text(host_package + '\n')
+    if 'primaryCpuAbi=arm64-v8a' not in host_package:
+        raise RuntimeError('Platform did not select the ARM64 host ABI; no mixed-ISA conclusion')
+    result['host_primary_cpu_abi'] = 'arm64-v8a'
+    run(['install', '-r', str(test)], timeout=180)
     run(['push', str(apk), '/data/local/tmp/gogogo-official-target.apk'], timeout=180)
     run(['shell', 'run-as', 'com.soozooq.tianwaitian.containerresearch', 'rm', '-rf', 'files/target-startup-' + a.target])
     run(['logcat', '-c'])
@@ -157,9 +168,14 @@ except Exception as error:
     result['error'] = type(error).__name__ + ': ' + str(error)[:1500]
     result['passed'] = False
 finally:
-    if created_control or shell('pm path ' + pkg, check=False):
-        run(['uninstall', pkg], timeout=120, check=False)
-    result['system_package_after_cleanup'] = bool(shell('pm path ' + pkg, check=False))
+    try:
+        if created_control or shell('pm path ' + pkg, check=False):
+            run(['uninstall', pkg], timeout=120, check=False)
+        result['system_package_after_cleanup'] = bool(shell('pm path ' + pkg, check=False))
+    except Exception as error:
+        result['system_package_after_cleanup'] = 'UNKNOWN'
+        result['cleanup_error'] = type(error).__name__ + ': ' + str(error)[:1500]
+        result['passed'] = False
     (evidence / 'case-result.json').write_text(json.dumps(result, indent=2) + '\n')
 print(json.dumps(result, indent=2))
 raise SystemExit(0 if result.get('passed') else 1)

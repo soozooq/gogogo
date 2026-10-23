@@ -14,9 +14,9 @@
 
 当前只准入上述两个固定发布文件，**微信／抖音、腾讯／字节 SDK、GMS、海外业务和 ARM64／vivo 尚未成功**。[已核验的官方目标安装包](evidence/official-target-apk-readiness.json)都只有 ARM64 原生库；未加入普通入口、未改签或分发，版本也不等于用户手机版本。
 
-本云端 x86_64 模拟器[拒绝 ARM64 镜像](evidence/arm64-cloud-runtime-limit.json)。[GitHub ARM Mac 构建通过，VM 因 HVF 不可用未启动](evidence/cloud-arm-mac-build-and-vm-limit.json)。Linux 的 KVM 启动、存储和构建已通过，最近[文件选择器抽屉遮挡导致未完成选择](evidence/cloud-picker-occlusion-failure.json)，现改为默认下载目录并等待真实返回，完整修正仍待云端确认。失败不算引擎或定位结果。[云端流程](../../.github/workflows/container-research.yml)只上传证据，不上传 APK，继续研发统一留在 #60。
+本云端 x86_64 模拟器[拒绝 ARM64 镜像](evidence/arm64-cloud-runtime-limit.json)。[GitHub ARM Mac 构建通过，VM 因 HVF 不可用未启动](evidence/cloud-arm-mac-build-and-vm-limit.json)。Linux 的 KVM 启动、存储和构建已通过，最近[文件选择器抽屉遮挡导致未完成选择](evidence/cloud-picker-occlusion-failure.json)，现改为默认下载目录并等待真实返回，已通过导入并实际打开 Guest；随后[首次启动更新说明遮挡坐标](evidence/cloud-fresh-gpstest-dialog-failure.json)，已按实际 XML 修正关闭按钮，完整流程仍待确认。失败不算引擎或定位结果。[云端流程](../../.github/workflows/container-research.yml)只上传证据，不上传 APK，继续研发统一留在 #60。
 
-[官方 Google API33 x86_64 镜像实测](evidence/google-api33-nativebridge-check.json)没有 ARM64 转译。另有 `tools/run-target-startup-check.py` 和独立云端驱动，要求专用 API30 官方转译模拟器、普通 shell 与 SELinux，固定两份官方目标原包。它先普通安装对照，再容器匿名启动，保持定位关闭，停在欢迎或隐私页；不接受条款、不登录。代码已编译，尚未通过运行，不加入普通入口。即使通过，也仅是 Android 11 转译环境的启动证据。
+[官方 Google API33 x86_64 镜像实测](evidence/google-api33-nativebridge-check.json)没有 ARM64 转译。[官方 API30 镜像实测](evidence/google-api30-nativebridge-check.json)已确认内置 ARM64 转译、UID 2000 与 SELinux Enforcing。`tools/run-target-startup-check.py` 和独立云端 KVM 检查要求这一专用环境，固定两份官方目标原包，平台安装选项选择宿主 ARM64 ABI 并核对实际状态。它先普通安装对照，再容器匿名启动，保持定位关闭，停在欢迎或隐私页；不接受条款、不登录。代码已编译，尚未通过运行，不加入普通入口。即使通过，也仅是 Android 11 转译环境的启动证据。
 
 ## 前轮：官方 GPSTest 实际采用位置
 

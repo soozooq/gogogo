@@ -104,6 +104,7 @@ public final class OfficialTargetStartupInstrumentedTest {
             assertTrue("Pinned virtual import must succeed", imported.success);
             assertEquals(pkg, imported.packageName);
             BLocationManager.disableFakeLocation(0, pkg);
+            assertEquals(BLocationManager.CLOSE_MODE, BLocationManager.get().getPattern(0, pkg));
             PackageInfo identity = BlackBoxCore.getBPackageManager().getPackageInfo(pkg,
                     PackageManager.GET_SIGNING_CERTIFICATES, 0);
             assertNotNull(identity); assertNotNull(identity.signingInfo);
