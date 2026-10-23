@@ -1,0 +1,13 @@
+{
+  "scope": "CLOUD_SDK_DIRECTORY_LAYOUT_NOT_APP_OR_ARM_RUNTIME",
+  "run_id": 39982237888,
+  "commit": "e21e52798430ad04f91aa46a14b792e649966773",
+  "failed_job_id": 120512224916,
+  "failed_step": "Expose the command-line tools path used by the verifiers",
+  "actual": "Mac runner already has correct cmdline-tools16.0 package in cmdline-tools/latest; no numbered16.0 directory. Setup action successfully reused it.",
+  "fix": "Accept executable latest/bin/apkanalyzer first; create an alias from numbered directory only if latest is missing.",
+  "app_build_started": false,
+  "arm_runtime": "NOT_TESTED",
+  "linux_job_at_observation": "INSTALLING_FIXED_TOOLCHAIN",
+  "new_run": "PENDING_PUSH"
+}
