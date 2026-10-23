@@ -16,7 +16,13 @@ uname -a > "$CONTAINER_RESEARCH_WORKDIR/evidence/host-platform.txt"
 sdkmanager --sdk_root="$ANDROID_HOME" 'emulator' 'platform-tools' "system-images;android-33;default;$research_abi"
 printf 'no\n' | avdmanager create avd --name api33-research-check --package "system-images;android-33;default;$research_abi"
 research_adb="$ANDROID_HOME/platform-tools/adb"
-"$ANDROID_HOME/emulator/emulator" -version > "$CONTAINER_RESEARCH_WORKDIR/evidence/emulator-version.txt" 2>&1
+# The informational probe must use the same headless binary as the actual run.
+# A failed version probe is evidence, not a substitute for attempting the boot.
+if "$ANDROID_HOME/emulator/emulator" -no-window -no-audio -version > "$CONTAINER_RESEARCH_WORKDIR/evidence/emulator-version.txt" 2>&1; then
+    echo 0 > "$CONTAINER_RESEARCH_WORKDIR/evidence/emulator-version.exit"
+else
+    echo "$?" > "$CONTAINER_RESEARCH_WORKDIR/evidence/emulator-version.exit"
+fi
 "$ANDROID_HOME/emulator/emulator" -avd api33-research-check -port 5580 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel off -memory 1536 -cores 2 -no-snapshot-load -no-snapshot-save > "$CONTAINER_RESEARCH_WORKDIR/evidence/emulator.log" 2>&1 &
 research_emulator_pid=$!
 trap 'kill "$research_emulator_pid" 2>/dev/null || true' EXIT

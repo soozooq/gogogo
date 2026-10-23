@@ -14,7 +14,7 @@
 
 当前只准入上述两个固定发布文件，**微信／抖音、腾讯／字节 SDK、GMS、海外业务和 ARM64／vivo 尚未成功**。[已核验的官方目标安装包](evidence/official-target-apk-readiness.json)都只有 ARM64 原生库；未加入普通入口、未改签或分发，版本也不等于用户手机版本。
 
-本云端 x86_64 模拟器[拒绝 ARM64 镜像](evidence/arm64-cloud-runtime-limit.json)。新增[GitHub 云端流程](../../.github/workflows/container-research.yml)，分别构建并验证 Linux 普通入口，尝试 ARM macOS 上的匹配架构环境；首次执行仍待核验，只上传证据，不上传 APK。它不能提前作为 ARM64 运行证据。继续研发统一留在 #60。
+本云端 x86_64 模拟器[拒绝 ARM64 镜像](evidence/arm64-cloud-runtime-limit.json)。随后 [GitHub ARM Mac 构建通过、VM 未启动](evidence/cloud-arm-mac-build-and-vm-limit.json)：M1 的 HVF 不可用，未得到 ARM64 应用运行结果，不再重复该受限启动。[Linux 全新构建及静态核验通过](evidence/cloud-linux-build-and-probe-failure.json)，其 GUI 版本探测在启动前缺库；已修正为无窗口探测，真实运行仍待确认。[云端流程](../../.github/workflows/container-research.yml)继续做 Linux 普通入口／计算器回归及 ARM Mac 构建，只上传证据，不上传 APK。另核查官方 Google 镜像的内置 ARM 应用转译，不能提前当作目标应用或 ARM 真机成功。继续研发统一留在 #60。
 
 ## 前轮：官方 GPSTest 实际采用位置
 

@@ -1,0 +1,74 @@
+{
+  "scope": "ARM_MAC_BUILD_PASS_VM_BOOT_FAILED_NOT_ARM_APP_RESULT",
+  "run_id": 39982534103,
+  "job_id": 120513611920,
+  "commit": "c91af76e6010dc0e3e286e8228e291263445a9bd",
+  "host_platform": "Darwin sat12-bq154-0635eabb-4a37-496f-90e4-00eda4867085-3ACE1198991F.local 24.6.0 Darwin Kernel Version 24.6.0: Tue Jul 21 20:51:34 PDT 2026; root:xnu-11417.140.69.711.44~1/RELEASE_ARM64_VMAPPLE arm64\n",
+  "pinned_source_build_and_static_check": "PASS",
+  "host_static": {
+    "scope": "COMPILED_RESEARCH_HOST_NOT_WECHAT_COMPATIBILITY",
+    "package": "com.soozooq.tianwaitian.containerresearch",
+    "sha256": "0247bd1c1704991c0acfed19f0e45a0fbf353735ae96bf8134f30cccf67feeaa",
+    "size": 4484619,
+    "native_abis": [
+      "arm64-v8a",
+      "x86_64"
+    ],
+    "uses_permissions": [
+      "android.permission.ACCESS_COARSE_LOCATION",
+      "android.permission.ACCESS_FINE_LOCATION",
+      "android.permission.ACCESS_NETWORK_STATE",
+      "android.permission.FOREGROUND_SERVICE",
+      "android.permission.INTERNET",
+      "android.permission.REORDER_TASKS",
+      "com.soozooq.tianwaitian.containerresearch.INTERNAL"
+    ],
+    "default_component_permission": "com.soozooq.tianwaitian.containerresearch.INTERNAL",
+    "resource_mirror_defined": true,
+    "embedded_guest_apks": [],
+    "embedded_guest_class_definitions": [],
+    "signature_verified": true,
+    "pinned_guest_catalog": [
+      {
+        "label": "Fossify \u8ba1\u7b97\u5668",
+        "location": false,
+        "package": "org.fossify.math",
+        "sha256": "7c5443c22d6d62c67dfe80df33ea9161ff0fa440f92590bcb45d7008b57613ed",
+        "size": 7047681,
+        "version_code": 10,
+        "version_name": "1.4.0",
+        "certificate_sha256": "affdb124d3f4720c2f98dbca9eacba0514fba4306e20a2786c861c3c0d6ff292",
+        "url": "https://github.com/FossifyOrg/Calculator/releases/download/1.4.0/calculator-10-foss-release.apk"
+      },
+      {
+        "label": "GPSTest \u5b9a\u4f4d",
+        "location": true,
+        "package": "com.android.gpstest.osmdroid",
+        "sha256": "897b91fe6a1ea0c3a7f6e2b041d5ace0d582941f67cf454fb7778f031d89ce41",
+        "size": 3457918,
+        "version_code": 24100,
+        "version_name": "3.10.6",
+        "certificate_sha256": "67e04383a96a83476426adcbdd95c4c75d78028a5c4ada75c00334b1c7a5d706",
+        "url": "https://github.com/barbeau/gpstest/releases/download/v3.10.6/osmdroidRelease-v3.10.6.apk"
+      }
+    ],
+    "certificate_sha256": "9da40201bd3cd343a8443a873bf45a30bfabd7544180642923dcb55c51e39b19"
+  },
+  "requested_image": "system-images;android-33;default;arm64-v8a",
+  "emulator_flags": "-no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel off -memory1536 -cores2",
+  "fatal_output": [
+    "WARNING      | arm64-v8a emulation may not work without hardware acceleration!",
+    "HVF error: HV_UNSUPPORTED",
+    "qemu-system-aarch64-headless: failed to initialize HVF: Invalid argument",
+    "WARNING      | QEMU main loop exits abnormally with code 1"
+  ],
+  "guest_booted": false,
+  "arm64_app_runtime": "NOT_TESTED",
+  "wechat_douyin": "NOT_TESTED",
+  "reason": "Hosted M1 macOS does not provide nested virtualization. With accel off, emulator still fails HVF initialization. This is a VM infrastructure limit, not Guest compatibility evidence.",
+  "official_reference": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners#limitations-for-arm64-macos-runners",
+  "action": "Keep ARM Mac build/static verification; do not repeat the same unsupported boot on every source push. Pursue official Google-image built-in app translation separately, with explicit scope.",
+  "artifact_id": 12513839498,
+  "artifact_sha256": "74fb6be6857964271d3dfd7c9b65dd34cf2bf9678168355bca04769439ed6da0",
+  "artifacts_contain_apks": false
+}

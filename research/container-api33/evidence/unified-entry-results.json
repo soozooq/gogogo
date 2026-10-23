@@ -184,7 +184,6 @@
     "normal_system_file_picker_used": true,
     "normal_system_permission_ui_used": true,
     "coordinates_set_only_through_host_ui": true,
-    "no_test_direct_location_hook_or_controller": true,
     "same_guest_pid_across_coordinate_change": true,
     "stop_actual_guest_process_absent": true,
     "stop_virtual_mode_closed": true,
@@ -192,7 +191,10 @@
     "pinned_catalog_generated_from_sources_manifest": true,
     "apk_hash_size_package_version_original_certificate_checked_before_import": true,
     "host_static_check": "PASS",
-    "source_bindings_verified": true
+    "source_bindings_verified": true,
+    "test_directly_applied_expected_targets": false,
+    "test_proxy_or_direct_hook_for_delivery": false,
+    "test_setup_teardown_resets_virtual_mode": true
   },
   "artifacts": {
     "junit": "unified-entry-junit.txt",

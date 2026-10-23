@@ -52,7 +52,11 @@ GPS／NETWORK 的缓存、单次回调、持续批量回调共六条路径均跟
 
 [官方目标包静态核验](research/container-api33/evidence/official-target-apk-readiness.json)：从微信／抖音官方页面取得微信 `8.0.79`、抖音 `40.8.0`，完成原包签名验证并记录摘要；两份均只有 `arm64-v8a` 原生库。这不是用户手机版本确认，也不是运行或定位成功，尚未加入普通入口或重新分发。
 
-本云端安装 ARM64 API33 镜像后，官方模拟器因 x86_64 宿主拒绝启动，见[原始限制](research/container-api33/evidence/arm64-cloud-runtime-limit.json)。这不是 ARM64 应用失败，也没有 ARM64 运行结果。新增[同分支云端流程](.github/workflows/container-research.yml)：Linux 构建／普通入口与计算器回归，另在 GitHub 的 ARM macOS 环境尝试匹配架构运行；首次运行 [39981202640](https://github.com/soozooq/gogogo/actions/runs/39981202640) 在配置校验失败（运行目录误用 runner 上下文，零个 Job）；现已改为分配 Runner 后设置目录，等待新一轮实际结果。只上传证据，不发布 APK。不能把任务已提交或构建通过写成 ARM64 兼容。
+本云端安装 ARM64 API33 镜像后，官方模拟器因 x86_64 宿主拒绝启动，见[原始限制](research/container-api33/evidence/arm64-cloud-runtime-limit.json)。随后[GitHub ARM Mac 实际构建通过](research/container-api33/evidence/cloud-arm-mac-build-and-vm-limit.json)，但其 M1 虚拟机即使指定 `accel off` 仍在 HVF 初始化报 `HV_UNSUPPORTED`，系统没有启动。这是基础环境限制，仍没有 ARM64／vivo 的应用运行证据；不重复该云机器上已确认受限的启动。
+
+[GitHub Linux 的全新源码构建及静态核验也通过](research/container-api33/evidence/cloud-linux-build-and-probe-failure.json)，53 项运行依赖的许可声明无未解析项。运行脚本在获取模拟器版本时误选 GUI 二进制，因缺少 libpulse 在启动系统前退出；现已改为同样的无窗口参数，版本探测只记结果，真正的启动／UI 才决定成功。首次工作流上下文、废弃 SDK 包、Mac 目录差异的失败记录均保留，未算成运行通过。
+
+[同分支工作流](.github/workflows/container-research.yml)现在执行 Linux 构建／普通入口与计算器回归，ARM Mac 只验证构建；只上传证据，不发布 APK。Linux 修正后的首次运行仍待确认。同时准备官方 Google API33 x86_64 镜像，核查它实际提供的 ARM 应用转译；旧版公告／文档不作为当前镜像可运行目标包的证明，后续结果必须注明转译环境，不能算 ARM 真机兼容。
 
 下一步继续核对上述云端结果与目标软件的真实启动／业务条件。微信发送／实时共享、抖音无线及海外业务仍未完成；日常应用与 #59 未改，不要求手机用户安装或重复实验。
 

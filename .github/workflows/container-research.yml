@@ -78,8 +78,8 @@ jobs:
           path: ${{ runner.temp }}/container-research/evidence/
           if-no-files-found: ignore
 
-  arm64-runtime:
-    name: ARM64 ordinary-entry attempt (macOS)
+  arm-mac-build:
+    name: Build and inspect (ARM Mac)
     runs-on: macos-15
     timeout-minutes: 45
     steps:
@@ -124,12 +124,10 @@ jobs:
           bash research/container-api33/tools/run-build.sh blackbox :probeHost:assembleDebug :probeHost:assembleDebugAndroidTest
           python3 research/container-api33/tools/inspect-apk.py --sdk "$ANDROID_HOME" --host "$CONTAINER_RESEARCH_WORKDIR/probe-host-build/outputs/apk/debug/probeHost-debug.apk" --output "$CONTAINER_RESEARCH_WORKDIR/evidence/host-artifact.json"
           git rev-parse HEAD > "$CONTAINER_RESEARCH_WORKDIR/evidence/research-commit.txt"
-      - name: Attempt matching ARM system and ordinary-entry flow
-        run: bash research/container-api33/tools/run-emulator-checks.sh arm64-v8a
-      - name: Upload actual ARM attempt evidence (no APK distribution)
+      - name: Upload ARM Mac build evidence (no APK distribution)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: container-research-arm64-evidence-${{ github.run_number }}
+          name: container-research-arm-mac-build-evidence-${{ github.run_number }}
           path: ${{ runner.temp }}/container-research/evidence/
           if-no-files-found: ignore
