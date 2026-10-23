@@ -18,7 +18,9 @@
 
 [官方 Google API33 x86_64 镜像实测](evidence/google-api33-nativebridge-check.json)没有 ARM64 转译。[官方 API30 镜像实测](evidence/google-api30-nativebridge-check.json)已确认内置 ARM64 转译、UID 2000 与 SELinux Enforcing。`tools/run-target-startup-check.py` 和独立云端 KVM 检查要求这一专用环境，固定两份官方目标原包，平台安装选项选择宿主 ARM64 ABI 并核对实际状态。它先普通安装对照，再容器匿名启动，保持定位关闭，停在欢迎或隐私页；不接受条款、不登录。[KVM 原包对照](evidence/official-target-baseline-limit.json)正常安装成功，但微信／抖音都在容器外发生原生崩溃，未达到欢迎／隐私页，容器未启动。微信的具体原因未定，抖音转译库报告 `Bad ubidi_openSized_66 call`。不将这算作容器或真机失败，也不重复相同 API30 环境。
 
-另核对 [API31／32 官方镜像的局部元数据](evidence/api31-32-translation-metadata.json)，云端改为实际资格核查 API32，然后在条件成立时重复原包对照。元数据不是启动证明；尚无微信／抖音运行通过，不加入普通入口。所有转译结果均不能代替 Android 13／ARM64／vivo 或定位业务验收。
+另核对 [API31／32 官方镜像的局部元数据](evidence/api31-32-translation-metadata.json)，[API32 实际启动确认转译启用，但两款原包对照仍原生崩溃](evidence/official-target-api32-baseline-limit.json)，微信报告 `Cannot process signal 11`，抖音报告 `Bad ubidi_openSized_68 call`。容器没有启动，不能归因为容器或真机失败。
+
+默认 CI 保留构建／静态审计和普通入口回归；目标转译预检改为手动选择、默认关闭，运行条件变化后再复核，跳过不算通过。失败记录完整保留，不重复相同环境。下一项技术前提是可正常运行原包的原生 ARM64 环境；当前没有连接用户手机。[官方模拟器宿主归档](evidence/official-emulator-host-archives.json)不列 Linux ARM64，ARM Mac 的 HVF 限制也仍在。尚无微信／抖音启动、定位或海外业务通过，不加入普通入口。
 
 ## 前轮：官方 GPSTest 实际采用位置
 

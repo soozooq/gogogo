@@ -2,6 +2,12 @@ name: Container research
 
 on:
   workflow_dispatch:
+    inputs:
+      run_translated_target_probe:
+        description: 'Opt in only after changing the control environment; recorded API30/32 originals crash before container startup'
+        required: false
+        default: false
+        type: boolean
   push:
     branches: [research/container-api33-20261023]
     paths:
@@ -139,6 +145,9 @@ jobs:
 
   official-target-startup:
     name: Anonymous startup (official Android 12L translation)
+    # Keep the failed evidence. Unchanged, incompatible controls cannot test the container.
+    # This is an optional environment qualification, never a passing target-compatibility gate.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_translated_target_probe }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
