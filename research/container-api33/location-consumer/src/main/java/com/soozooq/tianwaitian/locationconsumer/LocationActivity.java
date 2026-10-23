@@ -7,6 +7,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationRequest;
+import android.location.GnssStatus;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Process;
@@ -26,8 +27,17 @@ public final class LocationActivity extends Activity {
     private TextView status;
     private boolean listening;
     private int gpsCount, networkCount, batches, cancelledCallbacks, cancelAttempts, reads;
+    private int gnssStarted, gnssStatuses, gnssFirstFixes;
     private final LocationListener gps = new Samples("gps");
     private final LocationListener network = new Samples("network");
+    private final GnssStatus.Callback gnss = new GnssStatus.Callback() {
+        @Override public void onStarted() { put("gnss_started", ++gnssStarted); }
+        @Override public void onFirstFix(int millis) { put("gnss_first_fix_count", ++gnssFirstFixes); }
+        @Override public void onSatelliteStatusChanged(GnssStatus value) {
+            put("gnss_satellite_count", value.getSatelliteCount());
+            put("gnss_status_count", ++gnssStatuses);
+        }
+    };
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -42,6 +52,9 @@ public final class LocationActivity extends Activity {
                 LocationRequest request = new LocationRequest.Builder(300).build();
                 locations.requestLocationUpdates("gps", request, getMainExecutor(), gps);
                 locations.requestLocationUpdates("network", request, getMainExecutor(), network);
+                if (!locations.registerGnssStatusCallback(getMainExecutor(), gnss)) {
+                    throw new IllegalStateException("GNSS status registration rejected");
+                }
             } catch (RuntimeException e) { failure(e); }
         });
         button(content, R.id.refresh, "刷新单次", this::readOnce);
@@ -79,6 +92,10 @@ public final class LocationActivity extends Activity {
         put("batch_count", 0);
         put("cancelled_callbacks", 0);
         put("read_sequence", 0);
+        put("gnss_started", 0);
+        put("gnss_status_count", 0);
+        put("gnss_satellite_count", 0);
+        put("gnss_first_fix_count", 0);
     }
 
     private void button(LinearLayout parent, int id, String title, Runnable action) {
@@ -110,6 +127,8 @@ public final class LocationActivity extends Activity {
                 sample.put("lat", value.getLatitude());
                 sample.put("lon", value.getLongitude());
                 sample.put("mock", value.isMock());
+                sample.put("extra_satellites", value.getExtras() == null ? 0
+                        : value.getExtras().getInt("satellites", 0));
                 sample.put("elapsed_ns", value.getElapsedRealtimeNanos());
                 sample.put("callback_elapsed_ns", SystemClock.elapsedRealtimeNanos());
                 sample.put("age_ms", (SystemClock.elapsedRealtimeNanos()
@@ -137,6 +156,7 @@ public final class LocationActivity extends Activity {
         try {
             locations.removeUpdates(gps);
             locations.removeUpdates(network);
+            locations.unregisterGnssStatusCallback(gnss);
             listening = false;
             put("listening", false);
         } catch (RuntimeException e) { failure(e); }

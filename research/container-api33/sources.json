@@ -6,7 +6,8 @@
     "patch": "patches/blackbox-api33-build.patch",
     "added_files": [
       "android-mirror/src/main/java/black/com/android/internal/InternalResources.java",
-      "BCore/src/main/java/top/niunaijun/bcore/utils/compat/LocationCallbackCompat.java"
+      "BCore/src/main/java/top/niunaijun/bcore/utils/compat/LocationCallbackCompat.java",
+      "BCore/src/main/java/top/niunaijun/bcore/utils/compat/VirtualGnssStatus.java"
     ]
   },
   "virtualapp": {
@@ -23,5 +24,18 @@
     "license": "GPL-3.0",
     "source": "https://github.com/FossifyOrg/Calculator/tree/1.4.0"
   },
-  "aosp_api33": "d27f9960456403533af0a0d5d9f14cf71c9c8cf6"
+  "aosp_api33": "d27f9960456403533af0a0d5d9f14cf71c9c8cf6",
+  "third_party_location": {
+    "url": "https://github.com/barbeau/gpstest/releases/download/v3.10.6/osmdroidRelease-v3.10.6.apk",
+    "filename": "osmdroidRelease-v3.10.6.apk",
+    "package": "com.android.gpstest.osmdroid",
+    "size": 3457918,
+    "sha256": "897b91fe6a1ea0c3a7f6e2b041d5ace0d582941f67cf454fb7778f031d89ce41",
+    "certificate_sha256": "67e04383a96a83476426adcbdd95c4c75d78028a5c4ada75c00334b1c7a5d706",
+    "version_name": "3.10.6",
+    "version_code": 24100,
+    "license": "Apache-2.0",
+    "source_commit": "ffcf2a974e3c6b34cc3aac1c7086f467d24b8439",
+    "source": "https://github.com/barbeau/gpstest/tree/ffcf2a974e3c6b34cc3aac1c7086f467d24b8439"
+  }
 }

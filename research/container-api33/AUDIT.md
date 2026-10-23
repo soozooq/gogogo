@@ -1,6 +1,6 @@
 # 可复用基础审计
 
-本轮结论：已有可编译、能在 API 33 云端环境运行一款真实第三方 APK 的研究基础；现代定位的部分接口契约及原签名信息已修正，真实 Guest 进程内的自有消费者也已通过定位调用链检查。第三方定位 SDK 采用、微信／抖音兼容、完整组件及权限隔离仍未完成。接手从根目录 [PROJECT_STATUS.md](../../PROJECT_STATUS.md) 开始。
+本轮结论：API 33 云端中，原版计算器与官方 GPSTest 均实际运行；后者在正常精确定位授权后，其可见坐标跟随两次目标。现代定位、GNSS 回调和原签名信息已修正，自有消费者用于相关接口回归。腾讯／字节 SDK、微信／抖音、完整组件及权限隔离仍未完成。接手从根目录 [PROJECT_STATUS.md](../../PROJECT_STATUS.md) 开始。
 
 ## 构建与普通应用运行
 
@@ -24,7 +24,15 @@
 
 [受控测试源码](probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java)在宿主测试进程构造公共 `LocationManager`，由框架创建真实回调／监听对象；测试代理显式调用四个修正后的 Hook 入口。它不冒充真实 Guest 的定位调用，也不请求系统真实定位。共 4 项检查通过，原文和输入摘要见[本轮结果](evidence/api33-location-signature-results.json)。
 
-普通研究入口和计算器运行仍保持虚拟定位关闭。不能把本轮接口修正直接归因于用户此前系统微信的失败，也不能由此断言第三方已经采用位置。PendingIntent、被动定位、GNSS 状态、全部 LocationRequest 过滤条件和 GMS 融合定位仍未完整验证。VirtualApp fork 没有应用这些修正。
+普通研究入口和计算器运行仍保持虚拟定位关闭。不能把本轮接口修正直接归因于用户此前系统微信的失败。PendingIntent、被动定位、全部 LocationRequest 过滤条件和 GMS 融合定位仍未完整验证。VirtualApp fork 没有应用这些修正。
+
+## 官方 GPSTest 与 GNSS 兼容
+
+固定官方 `barbeau/gpstest` v3.10.6 的 osmdroid release，APK SHA-256 与官方 asset digest 一致，使用原证书，不嵌入宿主。原版代码使用普通 LocationManager、GNSS 回调及其 Service；31.322 秒完成正常精确定位授权和实际坐标 A→B 显示。系统前后均未安装该包，自动化仅在看到 Guest 资源 ID 的实际窗口中读取文本。Android 将可访问节点包名归为宿主，不能据此要求每个节点名都等于 Guest。
+
+第一次失败是真实引擎崩溃：Android 13 已没有旧 GnssStatusListenerTransport，加载旧镜像抛出初始化错误。API31+ 路径改用真实 IGnssStatusListener，延时任务发送 started 和零卫星状态，注销／Binder 死亡／关闭模式释放记录；不声称物理 first-fix，不生成 NMEA、测量、导航电文或天线信息。虚拟模式抑制新物理观测注册，注销仍向系统转发以处理旧注册。旧系统路径未在本轮验证。
+
+自有 Guest 相关回归 24.271 秒通过：真实公共 GnssStatus.Callback 收到 started 和零卫星，first-fix 为零；BLocation 附加卫星数为零；注销后状态计数稳定，六条定位路径及 mock 标记仍通过。同轮受控定位契约 4 项和计算器运行／原签名回归也通过。证据与失败分类见[本轮结果](evidence/official-gpstest-location-results.json)。这只覆盖 GPSTest 的前台流程，未验证通知／后台服务生命周期、GMS 或目标软件业务。
 
 ## 真实 Guest 调用链：自有消费者
 

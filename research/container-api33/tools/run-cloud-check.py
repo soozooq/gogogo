@@ -20,6 +20,7 @@ mode = parser.add_mutually_exclusive_group()
 mode.add_argument('--installed-baseline', action='store_true')
 mode.add_argument('--location-contract', action='store_true')
 mode.add_argument('--guest-location', action='store_true')
+mode.add_argument('--third-party-location', action='store_true')
 parser.add_argument('--label', default='latest')
 args = parser.parse_args()
 if not args.sdk or not args.root:
@@ -75,6 +76,9 @@ guest_package = 'org.fossify.math'
 if args.guest_location:
     guest = root / 'location-consumer-build/outputs/apk/debug/locationConsumer-debug.apk'
     guest_package = 'com.soozooq.tianwaitian.locationconsumer'
+if args.third_party_location:
+    guest = root / 'guest/osmdroidRelease-v3.10.6.apk'
+    guest_package = 'com.android.gpstest.osmdroid'
 inputs = (host, test) if args.location_contract else (host, test, guest)
 if not all(p.is_file() for p in inputs):
     raise SystemExit('Build artifacts missing')
@@ -83,7 +87,8 @@ if shell('getenforce') != 'Enforcing':
 metadata = {
     'started_at_utc': datetime.now(timezone.utc).isoformat(),
     'scope': 'CLOUD_EMULATOR_ONLY_NOT_VIVO_OR_WECHAT',
-    'case': 'owned_guest_location_real_process' if args.guest_location else
+    'case': 'official_gpstest_location_ui' if args.third_party_location else
+        'owned_guest_location_real_process' if args.guest_location else
         'controlled_location_contract' if args.location_contract else
         ('system_installed_control' if args.installed_baseline else 'container_uninstalled_guest'),
     'serial': args.serial, 'api': 33, 'abi': shell('getprop ro.product.cpu.abi'),
@@ -103,11 +108,26 @@ metadata['research_source_sha256'] = {
 if args.guest_location:
     subprocess.run([sys.executable, str(spec / 'tools/inspect-location-consumer.py'),
         '--sdk', args.sdk, '--apk', str(guest), '--output', str(evidence / 'consumer-artifact.json')], check=True)
+if args.third_party_location:
+    subprocess.run([sys.executable, str(spec / 'tools/inspect-third-party-apk.py'),
+        '--sdk', args.sdk, '--apk', str(guest), '--output', str(evidence / 'third-party-artifact.json')], check=True)
 if shell('pm path ' + guest_package, check=False):
     raise SystemExit('Guest already installed in system; use a fresh research emulator')
 print('Installing standalone host/test; guest remains uninstalled in the system', flush=True)
 for apk in (host, test):
     print(run(['install', '-r', str(apk)], timeout=180).stdout.decode(errors='replace'), flush=True)
+if args.third_party_location:
+    # Dedicated emulator + own research package only. Test grants through normal system UI.
+    research_package = 'com.soozooq.tianwaitian.containerresearch'
+    shell('am force-stop ' + research_package)
+    permission_reset = {}
+    for permission in ('android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION'):
+        revoked = run(['shell', 'pm', 'revoke', research_package, permission], check=False)
+        flags = run(['shell', 'pm', 'clear-permission-flags', research_package, permission,
+                     'user-set', 'user-fixed'], check=False)
+        permission_reset[permission] = {'revoke_exit': revoked.returncode,
+            'clear_flags_exit': flags.returncode}
+    (evidence / 'permission-precondition.json').write_text(json.dumps(permission_reset, indent=2) + '\n')
 control_installed = False
 
 def remove_control_guest():
@@ -133,7 +153,8 @@ if args.installed_baseline:
     print(run(['install', str(guest)], timeout=180).stdout.decode(errors='replace'), flush=True)
     control_installed = True
 if not args.location_contract:
-    run(['push', str(guest), '/data/local/tmp/gogogo-location-consumer.apk' if args.guest_location
+    run(['push', str(guest), '/data/local/tmp/gogogo-official-gpstest.apk' if args.third_party_location
+        else '/data/local/tmp/gogogo-location-consumer.apk' if args.guest_location
         else '/data/local/tmp/gogogo-research-guest.apk'], timeout=120)
 shell('settings put global window_animation_scale 0')
 shell('settings put global transition_animation_scale 0')
@@ -141,11 +162,13 @@ shell('settings put global animator_duration_scale 0')
 shell('input keyevent KEYCODE_WAKEUP')
 shell('wm dismiss-keyguard', check=False)
 run(['logcat', '-c'])
-test_class = ('com.soozooq.tianwaitian.containerresearch.GuestLocationInstrumentedTest'
+test_class = ('com.soozooq.tianwaitian.containerresearch.ThirdPartyLocationInstrumentedTest'
+    if args.third_party_location else 'com.soozooq.tianwaitian.containerresearch.GuestLocationInstrumentedTest'
     if args.guest_location else 'top.niunaijun.bcore.fake.service.LocationContractInstrumentedTest'
     if args.location_contract else 'com.soozooq.tianwaitian.containerresearch.ExternalGuestInstrumentedTest#' +
     ('installedCalculatorControl' if args.installed_baseline else 'calculatorRunsUninstalledAndRetainsResultAfterHome'))
-print('Running public Android location calls in a real owned Guest process' if args.guest_location
+print('Running official GPSTest permission + coordinate UI check' if args.third_party_location
+    else 'Running public Android location calls in a real owned Guest process' if args.guest_location
     else 'Running controlled public-API33 location contracts' if args.location_contract
     else 'Running real third-party UI and return-from-home check', flush=True)
 instrumentation = ['shell', 'am', 'instrument', '-w', '-r', '-e', 'class', test_class]
@@ -156,8 +179,10 @@ result = run(instrumentation + [
     timeout=300, check=False)
 text = result.stdout.decode(errors='replace') + result.stderr.decode(errors='replace')
 (evidence / 'cloud-instrumentation.txt').write_text(text)
-folder = 'guest-location-evidence' if args.guest_location else 'runtime-evidence'
+folder = 'third-party-location-evidence' if args.third_party_location else \
+    'guest-location-evidence' if args.guest_location else 'runtime-evidence'
 for relative in (() if args.location_contract else
+        ('window.xml', 'screen.png', 'result.json', 'last-visible-text.json') if args.third_party_location else
         ('window.xml', 'screen.png', 'result.json', 'last-guest-ui.txt') if args.guest_location
         else ('window.xml', 'screen.png')):
     data = run(['exec-out', 'run-as', 'com.soozooq.tianwaitian.containerresearch', 'cat',
@@ -177,17 +202,18 @@ passed = result.returncode == 0 and expected_result in text and not re.search(
     r'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=|Process crashed', text)
 system_guest_after_cleanup = bool(shell('pm path ' + guest_package, check=False))
 passed = passed and cleanup_ok and not system_guest_after_cleanup
-if args.guest_location:
+if args.guest_location or args.third_party_location:
     guest_result = evidence / 'cloud-result.json'
     passed = passed and guest_result.is_file() and json.loads(guest_result.read_text()).get('passed') is True
 (evidence / 'case-result.json').write_text(json.dumps({
     'passed': passed, 'control_removed': cleanup_ok,
     'guest_system_installed_after_cleanup': system_guest_after_cleanup,
     'wechat_result': 'NOT_TESTED',
-    'location_replacement': 'OWNED_GUEST_REAL_PROCESS_ONLY' if args.guest_location else
+    'location_replacement': 'OFFICIAL_GPSTEST_UI_ONLY' if args.third_party_location else
+        'OWNED_GUEST_REAL_PROCESS_ONLY' if args.guest_location else
         'CONTROLLED_PUBLIC_API33_TEST_ONLY' if args.location_contract else 'DISABLED',
     'guest_signer_metadata': 'PASS' if passed and not args.location_contract
-        and not args.installed_baseline and not args.guest_location else 'NOT_TESTED',
+        and not args.installed_baseline and not args.guest_location and not args.third_party_location else 'NOT_TESTED',
 }, indent=2) + '\n')
 (evidence / 'cloud-runtime-check.exit').write_text('0\n' if passed else '1\n')
 print(text[-5000:], flush=True)

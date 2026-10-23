@@ -62,27 +62,28 @@ for candidate in (['blackbox', 'virtualapp'] if args.candidate == 'both' else [a
     prepared[candidate] = {'commit': entry['commit'], 'patch_sha256': hashlib.sha256(patch).hexdigest()}
 
 if not args.skip_guest and not args.verify_only:
-    entry = sources['guest']
-    directory = work / 'guest'
-    directory.mkdir(exist_ok=True)
-    target = directory / entry['filename']
-    def approved(file):
-        return file.stat().st_size == entry['size'] and hashlib.sha256(file.read_bytes()).hexdigest() == entry['sha256']
-    if target.exists():
-        if not approved(target):
-            raise SystemExit('Existing guest differs; file preserved')
-    else:
-        with tempfile.NamedTemporaryFile(dir=directory, prefix='download-', delete=False) as temp:
-            temporary = Path(temp.name)
-        try:
-            subprocess.run(['curl', '--fail', '--location', '--silent', '--show-error', '--retry', '2',
-                '--max-filesize', str(10 * 1024 * 1024), '--output', str(temporary), entry['url']], check=True)
-            if not approved(temporary):
-                raise SystemExit('Guest size/SHA-256 mismatch')
-            temporary.rename(target)
-        finally:
-            temporary.unlink(missing_ok=True)
-    prepared['guest'] = {key: entry[key] for key in ['package', 'size', 'sha256', 'source']}
+    for source_key in ['guest', 'third_party_location']:
+        entry = sources[source_key]
+        directory = work / 'guest'
+        directory.mkdir(exist_ok=True)
+        target = directory / entry['filename']
+        def approved(file):
+            return file.stat().st_size == entry['size'] and hashlib.sha256(file.read_bytes()).hexdigest() == entry['sha256']
+        if target.exists():
+            if not approved(target):
+                raise SystemExit('Existing guest differs; file preserved')
+        else:
+            with tempfile.NamedTemporaryFile(dir=directory, prefix='download-', delete=False) as temp:
+                temporary = Path(temp.name)
+            try:
+                subprocess.run(['curl', '--fail', '--location', '--silent', '--show-error', '--retry', '2',
+                    '--max-filesize', str(10 * 1024 * 1024), '--output', str(temporary), entry['url']], check=True)
+                if not approved(temporary):
+                    raise SystemExit('Guest size/SHA-256 mismatch')
+                temporary.rename(target)
+            finally:
+                temporary.unlink(missing_ok=True)
+        prepared[source_key] = {key: entry[key] for key in ['package', 'size', 'sha256', 'source']}
 if not args.verify_only:
     (work / 'prepared-sources.json').write_text(json.dumps(prepared, indent=2) + '\n')
 print(json.dumps(prepared, indent=2))

@@ -9,6 +9,12 @@
     <uses-permission android:name="${applicationId}.INTERNAL" tools:node="replace" />
     <!-- Required by the engine to bring its own virtual activity task forward. -->
     <uses-permission android:name="android.permission.REORDER_TASKS" tools:node="replace" />
+    <!-- Normal host capabilities used by the pinned third-party location/service client. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" tools:node="replace" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" tools:node="replace" />
+    <uses-permission android:name="android.permission.INTERNET" tools:node="replace" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="replace" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="replace" />
     <application android:name=".ProbeApplication" android:label="容器研究（未适配微信）"
         android:allowBackup="false" android:extractNativeLibs="true"
         android:permission="${applicationId}.INTERNAL"

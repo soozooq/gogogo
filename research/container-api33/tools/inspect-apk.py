@@ -32,7 +32,10 @@ ns = '{http://schemas.android.com/apk/res/android}'
 package = tree.attrib['package']
 assert package == 'com.soozooq.tianwaitian.containerresearch'
 permissions = sorted(e.get(ns + 'name') for e in tree.findall('uses-permission'))
-assert permissions == sorted([package + '.INTERNAL', 'android.permission.REORDER_TASKS'])
+assert permissions == sorted([package + '.INTERNAL', 'android.permission.REORDER_TASKS',
+    'android.permission.ACCESS_COARSE_LOCATION', 'android.permission.ACCESS_FINE_LOCATION',
+    'android.permission.INTERNET', 'android.permission.ACCESS_NETWORK_STATE',
+    'android.permission.FOREGROUND_SERVICE'])
 with zipfile.ZipFile(host) as apk:
     assert apk.testzip() is None
     definitions = apk_defined_classes(apk)

@@ -11,6 +11,7 @@
 | xCrash 3.1.0 | 解析后的宿主运行时依赖 | POM 标为 MIT；[上游完整声明](licenses/xCrash-LICENSE.txt)另列 BSD 风格及公共领域部分，不能只按 POM 名称省略 |
 | AndroidX、Kotlin、Guava 等 | 实际解析的运行时依赖图 | POM 声明见机器清单；Guava ListenableFuture 的 Apache-2.0 声明来自 `guava-parent:26.0-android` |
 | Fossify Calculator 1.4.0 | 官方 release 与 Git tag `1.4.0` | GPL-3.0；源码及发布地址见 `sources.json`，测试直接使用原始发布文件，不嵌入宿主 |
+| GPSTest 3.10.6（osmdroid） | 官方 `barbeau/gpstest` release，源码 `ffcf2a974e3c6b34cc3aac1c7086f467d24b8439` | Apache-2.0；[上游版权及完整许可](licenses/GPSTest-LICENSE.txt)。只下载、核验原 APK 用于云端运行，不嵌入或重签 APK；第三方自身依赖不属于宿主运行依赖图 |
 
 后续加入的 `location-consumer` 是本项目自编、独立构建的 Android 测试消费者，无第三方库依赖；它不是新的第三方兼容样本。此目录仍只发布其源码与云端证据，不提交消费者、宿主或测试 APK。
 

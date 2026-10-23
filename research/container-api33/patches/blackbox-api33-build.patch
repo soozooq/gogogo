@@ -327,7 +327,7 @@ index dc071ad..c4d702a 100644
          }
          return pi;
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java b/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java
-index 3a16522..f5bf3ac 100644
+index 3a16522..bf7f078 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java
 @@ -5,6 +5,8 @@ import android.location.LocationManager;
@@ -350,7 +350,7 @@ index 3a16522..f5bf3ac 100644
      }
  
      public boolean isEmpty() {
-@@ -79,13 +81,25 @@ public class BLocation implements Parcelable {
+@@ -79,16 +81,28 @@ public class BLocation implements Parcelable {
      }
  
      public Location convert2SystemLocation() {
@@ -376,7 +376,11 @@ index 3a16522..f5bf3ac 100644
 +        }
          Bundle extraBundle = new Bundle();
          // GPS satellite number
-         int satelliteCount = 10;
+-        int satelliteCount = 10;
++        int satelliteCount = 0; // Synthetic coordinates do not imply observed GNSS satellites.
+         extraBundle.putInt("satellites", satelliteCount);
+         extraBundle.putInt("satellitesvalue", satelliteCount);
+         location.setExtras(extraBundle);
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/frameworks/BLocationManager.java b/BCore/src/main/java/top/niunaijun/bcore/fake/frameworks/BLocationManager.java
 index 5053133..2229070 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/fake/frameworks/BLocationManager.java
@@ -393,10 +397,10 @@ index 5053133..2229070 100644
 +    }
  }
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
-index bad5396..4e969a3 100644
+index bad5396..265658f 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
-@@ -1,8 +1,8 @@
+@@ -1,9 +1,10 @@
  package top.niunaijun.bcore.fake.service;
  
  import android.content.Context;
@@ -404,21 +408,73 @@ index bad5396..4e969a3 100644
  import android.location.LocationManager;
 +import android.location.Location;
  import android.os.IInterface;
++import android.os.Build;
  import android.util.Log;
  
-@@ -22,9 +22,10 @@ import top.niunaijun.bcore.fake.frameworks.BLocationManager;
+ import java.lang.reflect.Method;
+@@ -22,9 +23,12 @@ import top.niunaijun.bcore.fake.frameworks.BLocationManager;
  import top.niunaijun.bcore.fake.hook.BinderInvocationStub;
  import top.niunaijun.bcore.fake.hook.MethodHook;
  import top.niunaijun.bcore.fake.hook.ProxyMethod;
 -import top.niunaijun.bcore.fake.service.context.LocationListenerProxy;
++import top.niunaijun.bcore.fake.hook.ProxyMethods;
  import top.niunaijun.bcore.utils.MethodParameterUtils;
  import top.niunaijun.bcore.utils.compat.BuildCompat;
 +import top.niunaijun.bcore.utils.compat.LocationCallbackCompat;
++import top.niunaijun.bcore.utils.compat.VirtualGnssStatus;
 +import top.niunaijun.bcore.BlackBoxCore;
  
  public class ILocationManagerProxy extends BinderInvocationStub {
      public static final String TAG = "ILocationManagerProxy";
-@@ -101,20 +102,37 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+@@ -60,6 +64,13 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+         @Override
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             if (BLocationManager.isFakeLocationEnable()) {
++                if (Build.VERSION.SDK_INT >= 31) {
++                    IInterface callback = LocationCallbackCompat.findInterface(args,
++                            "android.location.IGnssStatusListener");
++                    VirtualGnssStatus.register(callback, BlackBoxCore.get().getHandler(),
++                            BLocationManager::isFakeLocationEnable);
++                    return method.getReturnType() == boolean.class ? true : null;
++                }
+                 Object transport = MethodParameterUtils.getFirstParam(args, black.android.location.LocationManager.GnssStatusListenerTransport.REF.getClazz());
+ 
+                 if (transport != null) {
+@@ -95,26 +106,71 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+         }
+     }
+ 
++    @ProxyMethod("unregisterGnssStatusCallback")
++    public static class UnregisterGnssStatusCallback extends MethodHook {
++        @Override protected Object hook(Object who, Method method, Object[] args) throws Throwable {
++            if (Build.VERSION.SDK_INT >= 31) {
++                IInterface callback = LocationCallbackCompat.findInterface(args,
++                        "android.location.IGnssStatusListener");
++                VirtualGnssStatus.remove(callback.asBinder());
++            }
++            return method.invoke(who, args);
++        }
++    }
++
++    @ProxyMethods({"registerGnssNmeaCallback", "unregisterGnssNmeaCallback",
++            "addGnssMeasurementsListener", "removeGnssMeasurementsListener",
++            "addGnssNavigationMessageListener", "removeGnssNavigationMessageListener",
++            "addGnssAntennaInfoListener", "removeGnssAntennaInfoListener"})
++    public static class UnavailableVirtualMeasurements extends MethodHook {
++        @Override protected Object hook(Object who, Method method, Object[] args) throws Throwable {
++            if (Build.VERSION.SDK_INT >= 31 && BLocationManager.isFakeLocationEnable()
++                    && (method.getName().startsWith("register") || method.getName().startsWith("add"))) {
++                // Do not forward physical GNSS signals or manufacture satellite measurements.
++                return method.getReturnType() == boolean.class ? true : null;
++            }
++            // Removal remains idempotently forwarded, including registrations made before virtual mode.
++            return method.invoke(who, args);
++        }
++    }
++
+     @ProxyMethod("registerLocationListener")
+     public static class RegisterLocationListener extends MethodHook {
+ 
          @Override
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
              if (BLocationManager.isFakeLocationEnable()) {
@@ -465,7 +521,7 @@ index bad5396..4e969a3 100644
      @ProxyMethod("getLastLocation")
      public static class GetLastLocation extends MethodHook {
  
-@@ -122,7 +140,7 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+@@ -122,7 +178,7 @@ public class ILocationManagerProxy extends BinderInvocationStub {
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
              Log.d(TAG, "GetLastLocation");
              if (BLocationManager.isFakeLocationEnable()) {
@@ -474,7 +530,7 @@ index bad5396..4e969a3 100644
              }
              return method.invoke(who, args);
          }
-@@ -135,7 +153,7 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+@@ -135,7 +191,7 @@ public class ILocationManagerProxy extends BinderInvocationStub {
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
              Log.d(TAG, "GetLastKnownLocation");
              if (BLocationManager.isFakeLocationEnable()) {
@@ -483,7 +539,7 @@ index bad5396..4e969a3 100644
              }
              return method.invoke(who, args);
          }
-@@ -148,7 +166,10 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+@@ -148,7 +204,10 @@ public class ILocationManagerProxy extends BinderInvocationStub {
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
              Log.d(TAG, "GetCurrentLocation");
              if (BLocationManager.isFakeLocationEnable()) {
@@ -495,7 +551,7 @@ index bad5396..4e969a3 100644
              }
              return method.invoke(who, args);
          }
-@@ -180,7 +201,7 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+@@ -180,7 +239,7 @@ public class ILocationManagerProxy extends BinderInvocationStub {
              if (args[0] instanceof IInterface) {
                  IInterface listener = (IInterface) args[0];
                  BLocationManager.get().removeUpdates(listener.asBinder());
@@ -504,7 +560,7 @@ index bad5396..4e969a3 100644
              }
              return method.invoke(who, args);
          }
-@@ -232,7 +253,9 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+@@ -232,7 +291,9 @@ public class ILocationManagerProxy extends BinderInvocationStub {
  
          @Override
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
@@ -515,7 +571,7 @@ index bad5396..4e969a3 100644
          }
      }
  
-@@ -242,7 +265,10 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+@@ -242,7 +303,10 @@ public class ILocationManagerProxy extends BinderInvocationStub {
          @Override
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
              String provider = (String) args[0];
@@ -710,6 +766,97 @@ index 7af9fee..9ac2d40 100644
 -        black.android.content.pm.PackageParser.collectCertificates.call(parser, p, flags);
      }
  }
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/VirtualGnssStatus.java b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/VirtualGnssStatus.java
+new file mode 100644
+index 0000000..8286ed5
+--- /dev/null
++++ b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/VirtualGnssStatus.java
+@@ -0,0 +1,85 @@
++package top.niunaijun.bcore.utils.compat;
++
++import android.location.GnssStatus;
++import android.os.Handler;
++import android.os.IBinder;
++import android.os.IInterface;
++import android.os.RemoteException;
++
++import java.util.HashMap;
++import java.util.Map;
++
++/** API31+ virtual-session status. No satellites, first-fix claim, NMEA, or raw measurements. */
++public final class VirtualGnssStatus {
++    private static final Map<IBinder, Registration> registrations = new HashMap<>();
++
++    public interface Mode { boolean enabled(); }
++
++    private VirtualGnssStatus() { }
++
++    public static void register(IInterface callback, Handler handler, Mode mode) throws RemoteException {
++        Registration record = new Registration(callback, handler, mode);
++        synchronized (registrations) {
++            remove(callback.asBinder());
++            callback.asBinder().linkToDeath(record, 0);
++            registrations.put(callback.asBinder(), record);
++            if (!handler.post(record)) remove(callback.asBinder());
++        }
++    }
++
++    public static boolean remove(IBinder binder) {
++        synchronized (registrations) {
++            Registration record = registrations.remove(binder);
++            if (record == null) return false;
++            record.handler.removeCallbacks(record);
++            try { binder.unlinkToDeath(record, 0); }
++            catch (java.util.NoSuchElementException ignored) { }
++            return true;
++        }
++    }
++
++    private static final class Registration implements Runnable, IBinder.DeathRecipient {
++        final IInterface callback;
++        final Handler handler;
++        final Mode mode;
++        boolean started;
++
++        Registration(IInterface callback, Handler handler, Mode mode) {
++            this.callback = callback;
++            this.handler = handler;
++            this.mode = mode;
++        }
++
++        @Override public void binderDied() { remove(callback.asBinder()); }
++
++        @Override public void run() {
++            synchronized (registrations) {
++                if (registrations.get(callback.asBinder()) != this) return;
++            }
++            try {
++                Class<?> contract = Class.forName("android.location.IGnssStatusListener");
++                if (!mode.enabled() || !callback.asBinder().isBinderAlive()) {
++                    if (started && callback.asBinder().isBinderAlive()) {
++                        contract.getMethod("onGnssStopped").invoke(callback);
++                    }
++                    remove(callback.asBinder());
++                    return;
++                }
++                if (!started) {
++                    contract.getMethod("onGnssStarted").invoke(callback);
++                    started = true;
++                }
++                // Zero satellites is intentional: location samples are synthetic, not GNSS fixes.
++                contract.getMethod("onSvStatusChanged", GnssStatus.class)
++                        .invoke(callback, new GnssStatus.Builder().build());
++                synchronized (registrations) {
++                    if (registrations.get(callback.asBinder()) == this
++                            && !handler.postDelayed(this, 1000)) remove(callback.asBinder());
++                }
++            } catch (Exception error) {
++                android.util.Log.w("BBLocation", "Virtual GNSS status callback failed", error);
++                remove(callback.asBinder());
++            }
++        }
++    }
++}
 diff --git a/android-mirror/src/main/java/black/com/android/internal/InternalResources.java b/android-mirror/src/main/java/black/com/android/internal/InternalResources.java
 new file mode 100644
 index 0000000..7495bb1

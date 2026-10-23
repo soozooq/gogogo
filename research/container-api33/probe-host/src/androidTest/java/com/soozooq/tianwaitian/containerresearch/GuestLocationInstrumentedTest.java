@@ -117,7 +117,10 @@ public final class GuestLocationInstrumentedTest {
             assertEquals(GUEST, identity[2]);
             tap("start");
             JSONObject first = await(report -> allSamples(report, 38.0, -121.0)
-                    && report.optInt("gps_count") >= 2 && report.optInt("network_count") >= 2);
+                    && report.optInt("gps_count") >= 2 && report.optInt("network_count") >= 2
+                    && report.optInt("gnss_started") == 1 && report.optInt("gnss_status_count") >= 1);
+            assertEquals("Virtual GNSS never invents satellite observations", 0, first.getInt("gnss_satellite_count"));
+            assertEquals("No claimed physical first fix", 0, first.getInt("gnss_first_fix_count"));
             saveStage("TARGET_A", first);
 
             // Only the host config knows B. The Guest refreshes through public Android APIs.
@@ -135,6 +138,7 @@ public final class GuestLocationInstrumentedTest {
             JSONObject stable = current();
             assertEquals(stopped.getInt("gps_count"), stable.getInt("gps_count"));
             assertEquals(stopped.getInt("network_count"), stable.getInt("network_count"));
+            assertEquals(stopped.getInt("gnss_status_count"), stable.getInt("gnss_status_count"));
             saveStage("UNREGISTERED_STABLE", stable);
             tap("cancel");
             await(report -> report.optInt("cancel_attempts") == 1);
@@ -207,6 +211,7 @@ public final class GuestLocationInstrumentedTest {
             JSONObject sample = report.optJSONObject(key);
             String provider = key.endsWith("network") ? "network" : "gps";
             if (sample == null || !sample.optBoolean("present") || !sample.optBoolean("mock")
+                    || sample.optInt("extra_satellites", -1) != 0
                     || !provider.equals(sample.optString("provider"))
                     || !sample.has("lat") || !sample.has("lon")
                     || !Double.isFinite(sample.getDouble("lat")) || !Double.isFinite(sample.getDouble("lon"))
