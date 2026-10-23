@@ -156,17 +156,34 @@ if args.installed_baseline:
     print('Installing guest only for the ordinary system-app control', flush=True)
     print(run(['install', str(guest)], timeout=180).stdout.decode(errors='replace'), flush=True)
     control_installed = True
-if not args.location_contract:
-    run(['push', str(guest), '/data/local/tmp/gogogo-official-gpstest.apk' if args.third_party_location
-        else '/data/local/tmp/gogogo-location-consumer.apk' if args.guest_location
-        else '/data/local/tmp/gogogo-research-guest.apk'], timeout=120)
-if args.ordinary_entry:
-    run(['push', str(guest), '/sdcard/Download/GPSTest-3.10.6.apk'], timeout=120)
 shell('settings put global window_animation_scale 0')
 shell('settings put global transition_animation_scale 0')
 shell('settings put global animator_duration_scale 0')
 shell('input keyevent KEYCODE_WAKEUP')
 shell('wm dismiss-keyguard', check=False)
+if not args.location_contract:
+    run(['push', str(guest), '/data/local/tmp/gogogo-official-gpstest.apk' if args.third_party_location
+        else '/data/local/tmp/gogogo-location-consumer.apk' if args.guest_location
+        else '/data/local/tmp/gogogo-research-guest.apk'], timeout=120)
+if args.ordinary_entry:
+    # A fresh boot may report boot_completed before shared storage is usable.
+    # Wake/dismiss the ordinary keyguard first; never chmod or bypass storage checks.
+    storage_deadline = time.monotonic() + 90
+    ready = False
+    while time.monotonic() < storage_deadline:
+        created = run(['shell', 'mkdir', '-p', '/sdcard/Download'], check=False)
+        writable = run(['shell', 'test', '-w', '/sdcard/Download'], check=False)
+        if created.returncode == 0 and writable.returncode == 0:
+            ready = True
+            break
+        time.sleep(2)
+    (evidence / 'storage-precondition.json').write_text(json.dumps({
+        'ready': ready, 'shell_uid': shell('id -u'),
+        'scope': 'DEDICATED_EMULATOR_DOWNLOAD_DIRECTORY_ONLY_NO_PERMISSION_BYPASS',
+    }, indent=2) + '\n')
+    if not ready:
+        raise SystemExit('Shared Download directory is not ready; no import/UI result')
+    run(['push', str(guest), '/sdcard/Download/GPSTest-3.10.6.apk'], timeout=120)
 run(['logcat', '-c'])
 folder = 'third-party-location-evidence' if args.third_party_location else \
     'guest-location-evidence' if args.guest_location else 'runtime-evidence'

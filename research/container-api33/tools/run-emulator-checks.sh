@@ -23,7 +23,14 @@ if "$ANDROID_HOME/emulator/emulator" -no-window -no-audio -version > "$CONTAINER
 else
     echo "$?" > "$CONTAINER_RESEARCH_WORKDIR/evidence/emulator-version.exit"
 fi
-"$ANDROID_HOME/emulator/emulator" -avd api33-research-check -port 5580 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel off -memory 1536 -cores 2 -no-snapshot-load -no-snapshot-save > "$CONTAINER_RESEARCH_WORKDIR/evidence/emulator.log" 2>&1 &
+research_acceleration=off
+if [ "$(uname -s)" = Linux ] && [ "$research_abi" = x86_64 ]; then
+    if "$ANDROID_HOME/emulator/emulator" -no-window -accel-check > "$CONTAINER_RESEARCH_WORKDIR/evidence/acceleration-check.txt" 2>&1; then
+        research_acceleration=on
+    fi
+fi
+echo "$research_acceleration" > "$CONTAINER_RESEARCH_WORKDIR/evidence/selected-acceleration.txt"
+"$ANDROID_HOME/emulator/emulator" -avd api33-research-check -port 5580 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel "$research_acceleration" -memory 1536 -cores 2 -no-snapshot-load -no-snapshot-save > "$CONTAINER_RESEARCH_WORKDIR/evidence/emulator.log" 2>&1 &
 research_emulator_pid=$!
 trap 'kill "$research_emulator_pid" 2>/dev/null || true' EXIT
 research_deadline=$((SECONDS + 1200))

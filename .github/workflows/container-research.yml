@@ -68,6 +68,11 @@ jobs:
           python3 research/container-api33/tools/inspect-third-party-apk.py --sdk "$ANDROID_HOME" --apk "$CONTAINER_RESEARCH_WORKDIR/guest/osmdroidRelease-v3.10.6.apk" --output "$CONTAINER_RESEARCH_WORKDIR/evidence/gpstest-artifact.json"
           python3 research/container-api33/tools/license-inventory.py --graph "$CONTAINER_RESEARCH_WORKDIR/evidence/runtime-dependencies.json" --gradle-cache "${GRADLE_USER_HOME:-$HOME/.gradle}" --output "$CONTAINER_RESEARCH_WORKDIR/evidence/dependency-licenses.json"
           git rev-parse HEAD > "$CONTAINER_RESEARCH_WORKDIR/evidence/research-commit.txt"
+      - name: Allow the dedicated Linux runner to use its KVM device if available
+        run: |
+          if [ -c /dev/kvm ]; then
+            sudo chmod a+rw /dev/kvm
+          fi
       - name: Run ordinary import and calculator regression on x86_64
         run: bash research/container-api33/tools/run-emulator-checks.sh x86_64
       - name: Upload build evidence (no APK distribution)
