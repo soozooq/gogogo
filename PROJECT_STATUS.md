@@ -52,7 +52,7 @@ GPS／NETWORK 的缓存、单次回调、持续批量回调共六条路径均跟
 
 [官方目标包静态核验](research/container-api33/evidence/official-target-apk-readiness.json)：从微信／抖音官方页面取得微信 `8.0.79`、抖音 `40.8.0`，完成原包签名验证并记录摘要；两份均只有 `arm64-v8a` 原生库。这不是用户手机版本确认，也不是运行或定位成功，尚未加入普通入口或重新分发。
 
-本云端安装 ARM64 API33 镜像后，官方模拟器因 x86_64 宿主拒绝启动，见[原始限制](research/container-api33/evidence/arm64-cloud-runtime-limit.json)。这不是 ARM64 应用失败，也没有 ARM64 运行结果。新增[同分支云端流程](.github/workflows/container-research.yml)：Linux 构建／普通入口与计算器回归，另在 GitHub 的 ARM macOS 环境尝试匹配架构运行；**首次执行结果待核验**，只上传证据，不发布 APK。不能把任务已提交或构建通过写成 ARM64 兼容。
+本云端安装 ARM64 API33 镜像后，官方模拟器因 x86_64 宿主拒绝启动，见[原始限制](research/container-api33/evidence/arm64-cloud-runtime-limit.json)。这不是 ARM64 应用失败，也没有 ARM64 运行结果。新增[同分支云端流程](.github/workflows/container-research.yml)：Linux 构建／普通入口与计算器回归，另在 GitHub 的 ARM macOS 环境尝试匹配架构运行；首次运行 [39981202640](https://github.com/soozooq/gogogo/actions/runs/39981202640) 在配置校验失败（运行目录误用 runner 上下文，零个 Job）；现已改为分配 Runner 后设置目录，等待新一轮实际结果。只上传证据，不发布 APK。不能把任务已提交或构建通过写成 ARM64 兼容。
 
 下一步继续核对上述云端结果与目标软件的真实启动／业务条件。微信发送／实时共享、抖音无线及海外业务仍未完成；日常应用与 #59 未改，不要求手机用户安装或重复实验。
 

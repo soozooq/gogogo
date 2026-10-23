@@ -21,13 +21,14 @@ jobs:
     name: Build, inspect and ordinary entry (Linux)
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    env:
-      CONTAINER_RESEARCH_WORKDIR: ${{ runner.temp }}/container-research
-      ANDROID_AVD_HOME: ${{ runner.temp }}/container-research-avd
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+      - name: Set dedicated work directories after runner allocation
+        run: |
+          echo "CONTAINER_RESEARCH_WORKDIR=$RUNNER_TEMP/container-research" >> "$GITHUB_ENV"
+          echo "ANDROID_AVD_HOME=$RUNNER_TEMP/container-research-avd" >> "$GITHUB_ENV"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -62,13 +63,14 @@ jobs:
     name: ARM64 ordinary-entry attempt (macOS)
     runs-on: macos-15
     timeout-minutes: 45
-    env:
-      CONTAINER_RESEARCH_WORKDIR: ${{ runner.temp }}/container-research
-      ANDROID_AVD_HOME: ${{ runner.temp }}/container-research-avd
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
+      - name: Set dedicated work directories after runner allocation
+        run: |
+          echo "CONTAINER_RESEARCH_WORKDIR=$RUNNER_TEMP/container-research" >> "$GITHUB_ENV"
+          echo "ANDROID_AVD_HOME=$RUNNER_TEMP/container-research-avd" >> "$GITHUB_ENV"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

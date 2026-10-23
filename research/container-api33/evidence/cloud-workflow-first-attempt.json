@@ -1,0 +1,16 @@
+{
+  "schema": "GOGOGO_CLOUD_WORKFLOW_ATTEMPT_V1",
+  "scope": "CONFIGURATION_VALIDATION_ONLY_NO_JOBS_OR_RUNTIME",
+  "run_id": 39981202640,
+  "url": "https://github.com/soozooq/gogogo/actions/runs/39981202640",
+  "commit": "e55a46ee59d54f18bf90ad805d2ad8c01c816cf7",
+  "conclusion": "failure",
+  "job_count": 0,
+  "error": "Unrecognized named-value: 'runner' in jobs.<job_id>.env expressions at lines25,26,66,67",
+  "cause": "runner context is unavailable during job env evaluation before runner assignment",
+  "fix": "Set dedicated work and AVD directories in a step using RUNNER_TEMP and GITHUB_ENV instead. Keep runner.temp only in step-level artifact paths.",
+  "official_reference": "https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#context-availability",
+  "arm64_runtime": "NOT_TESTED",
+  "local_ui_result_changed": false,
+  "next_run": "PENDING_COMMIT_PUSH"
+}
