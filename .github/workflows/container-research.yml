@@ -5,7 +5,11 @@ on:
   push:
     branches: [research/container-api33-20261023]
     paths:
-      - research/container-api33/**
+      - research/container-api33/probe-host/**
+      - research/container-api33/location-consumer/**
+      - research/container-api33/patches/**
+      - research/container-api33/tools/**
+      - research/container-api33/sources.json
       - ci/verify_container_v31_artifacts.py
       - .github/workflows/container-research.yml
 
@@ -29,11 +33,24 @@ jobs:
         run: |
           echo "CONTAINER_RESEARCH_WORKDIR=$RUNNER_TEMP/container-research" >> "$GITHUB_ENV"
           echo "ANDROID_AVD_HOME=$RUNNER_TEMP/container-research-avd" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/container-research/evidence"
+          uname -a > "$RUNNER_TEMP/container-research/evidence/host-platform.txt"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '12266719'
+          packages: ''
+          log-accepted-android-sdk-licenses: false
+      - name: Expose the command-line tools path used by the verifiers
+        run: |
+          set -euo pipefail
+          test -x "$ANDROID_HOME/cmdline-tools/16.0/bin/apkanalyzer"
+          if [ ! -e "$ANDROID_HOME/cmdline-tools/latest" ]; then
+            ln -s 16.0 "$ANDROID_HOME/cmdline-tools/latest"
+          fi
       - name: Install the fixed SDK toolchain serially
         run: sdkmanager --sdk_root="$ANDROID_HOME" 'platforms;android-30' 'platforms;android-33' 'platforms;android-34' 'build-tools;33.0.2' 'ndk;25.1.8937393' 'cmake;3.22.1'
       - name: Prepare pinned source, apply reviewed patch and build
@@ -71,11 +88,24 @@ jobs:
         run: |
           echo "CONTAINER_RESEARCH_WORKDIR=$RUNNER_TEMP/container-research" >> "$GITHUB_ENV"
           echo "ANDROID_AVD_HOME=$RUNNER_TEMP/container-research-avd" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/container-research/evidence"
+          uname -a > "$RUNNER_TEMP/container-research/evidence/host-platform.txt"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '12266719'
+          packages: ''
+          log-accepted-android-sdk-licenses: false
+      - name: Expose the command-line tools path used by the verifiers
+        run: |
+          set -euo pipefail
+          test -x "$ANDROID_HOME/cmdline-tools/16.0/bin/apkanalyzer"
+          if [ ! -e "$ANDROID_HOME/cmdline-tools/latest" ]; then
+            ln -s 16.0 "$ANDROID_HOME/cmdline-tools/latest"
+          fi
       - name: Record actual host and install fixed build toolchain
         run: |
           set -euo pipefail
