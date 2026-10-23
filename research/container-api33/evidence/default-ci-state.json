@@ -1,0 +1,144 @@
+{
+  "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
+  "scope": "DEFAULT_RESEARCH_CHECKS_NOT_TARGET_APP_COMPATIBILITY",
+  "run_id": 40037932235,
+  "commit": "ab03ef55467fa75d3c9f9507977a6d379baf59af",
+  "tree": "7d214066cdea91d500d94550146da6d88fc65c4a",
+  "conclusion": "success",
+  "jobs": [
+    {
+      "id": 120701874756,
+      "name": "Build and inspect (ARM Mac)",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set dedicated work directories after runner allocation",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-java@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run android-actions/setup-android@v3",
+          "conclusion": "success"
+        },
+        {
+          "name": "Expose the command-line tools path used by the verifiers",
+          "conclusion": "success"
+        },
+        {
+          "name": "Record actual host and install fixed build toolchain",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build standalone host and driver on ARM host",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload ARM Mac build evidence (no APK distribution)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-java@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 120701875040,
+      "name": "Build, inspect and ordinary entry (Linux)",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set dedicated work directories after runner allocation",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-java@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run android-actions/setup-android@v3",
+          "conclusion": "success"
+        },
+        {
+          "name": "Expose the command-line tools path used by the verifiers",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install the fixed SDK toolchain serially",
+          "conclusion": "success"
+        },
+        {
+          "name": "Prepare pinned source, apply reviewed patch and build",
+          "conclusion": "success"
+        },
+        {
+          "name": "Inspect compiled inputs and license declarations",
+          "conclusion": "success"
+        },
+        {
+          "name": "Allow the dedicated Linux runner to use its KVM device if available",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run ordinary import and calculator regression on x86_64",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload build evidence (no APK distribution)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-java@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 120701876694,
+      "name": "Anonymous startup (official Android 12L translation)",
+      "conclusion": "skipped",
+      "steps": []
+    }
+  ],
+  "target_probe": "SKIPPED_EXPLICIT_MANUAL_OPT_IN_NOT_PASS",
+  "known_target_controls": "API30_AND_API32_ORIGINAL_SYSTEM_APPS_CRASHED_BEFORE_CONTAINER",
+  "wechat_send_and_live_location": "UNFULFILLED",
+  "douyin_wireless_and_overseas": "UNFULFILLED",
+  "native_arm64_vivo": "NOT_VERIFIED",
+  "phone_update_distributed": false
+}

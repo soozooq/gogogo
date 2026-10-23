@@ -20,7 +20,7 @@
 
 另核对 [API31／32 官方镜像的局部元数据](evidence/api31-32-translation-metadata.json)，[API32 实际启动确认转译启用，但两款原包对照仍原生崩溃](evidence/official-target-api32-baseline-limit.json)，微信报告 `Cannot process signal 11`，抖音报告 `Bad ubidi_openSized_68 call`。容器没有启动，不能归因为容器或真机失败。
 
-默认 CI 保留构建／静态审计和普通入口回归；目标转译预检改为手动选择、默认关闭，运行条件变化后再复核，跳过不算通过。失败记录完整保留，不重复相同环境。下一项技术前提是可正常运行原包的原生 ARM64 环境；当前没有连接用户手机。[官方模拟器宿主归档](evidence/official-emulator-host-archives.json)不列 Linux ARM64，ARM Mac 的 HVF 限制也仍在。尚无微信／抖音启动、定位或海外业务通过，不加入普通入口。
+[默认 CI 的 Linux 构建／审计／普通入口／计算器回归和 ARM Mac 构建均已通过](evidence/default-ci-state.json)。目标转译预检改为手动选择、默认关闭，本次跳过；运行条件变化后再复核，跳过不算目标通过。失败记录完整保留，不重复相同环境。下一项技术前提是可正常运行原包的原生 ARM64 环境；当前没有连接用户手机。[官方模拟器宿主归档](evidence/official-emulator-host-archives.json)不列 Linux ARM64，ARM Mac 的 HVF 限制也仍在。尚无微信／抖音启动、定位或海外业务通过，不加入普通入口。
 
 ## 前轮：官方 GPSTest 实际采用位置
 

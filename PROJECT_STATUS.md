@@ -11,7 +11,7 @@
 - 工程修正已完成全新云端普通入口回归：正常文件选择、原版 GPSTest 精确授权、坐标更新与停止，以及原版计算器运行。见[源码及产物绑定的通过记录](research/container-api33/evidence/cloud-ordinary-entry-pass.json)。
 - 微信／抖音的官方原包在 API30 和 API32 官方转译镜像中均正常安装后原生崩溃，**尚未启动容器，更未验证目标业务**。见[API30](research/container-api33/evidence/official-target-baseline-limit.json)与[API32 原始对照](research/container-api33/evidence/official-target-api32-baseline-limit.json)。这是当前已确认的云端验证阻塞，不据此推断真机失败。
 - 下一项技术前提是取得可正常运行这些原包的**原生 ARM64 环境**，先验普通启动，再验容器及发送／实时定位。现有工具没有连接用户手机。继续更改 GPS 注入频率、增加手机实验或重复上述镜像没有新的依据。
-- 默认 CI 继续构建、审计与普通入口回归。目标转译环境预检改为手动选择、默认关闭，只供运行条件改变后复核；**跳过不是目标兼容通过**，已失败的云端记录保留。
+- [最终默认 CI 已通过](research/container-api33/evidence/default-ci-state.json)：Linux 构建／审计／普通入口和计算器回归成功，ARM Mac 构建成功。目标转译环境预检改为手动选择、默认关闭，本次明确跳过，只供运行条件改变后复核；**跳过不是目标兼容通过**，已失败的云端记录保留。
 
 ## 只保留两个明确的工作入口
 
@@ -71,7 +71,7 @@ GPS／NETWORK 的缓存、单次回调、持续批量回调共六条路径均跟
 
 [当前官方模拟器宿主归档清单](research/container-api33/evidence/official-emulator-host-archives.json)仅列 Linux x64，ARM64 只列 macOS；现有 ARM Mac 的 HVF 限制仍在，不新开同样受限的云任务。默认 CI 不再自动重复已失败的 API30／32 对照，目标预检保留手动选项及原始失败。下一步按本文件顶部的原生 ARM64 前提继续；尚无目标启动或定位业务通过。
 
-下一步继续核对上述云端结果与目标软件的真实启动／业务条件。微信发送／实时共享、抖音无线及海外业务仍未完成；日常应用与 #59 未改，不要求手机用户安装或重复实验。
+下一步按顶部的原生 ARM64 前提继续目标软件的真实启动／业务验证。微信发送／实时共享、抖音无线及海外业务仍未完成；日常应用与 #59 未改，不要求手机用户安装或重复实验。
 
 ## 接手规则
 
