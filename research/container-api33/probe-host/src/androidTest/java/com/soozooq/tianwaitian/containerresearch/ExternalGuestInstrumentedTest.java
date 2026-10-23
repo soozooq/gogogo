@@ -3,6 +3,9 @@ package com.soozooq.tianwaitian.containerresearch;
 import static org.junit.Assert.*;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.os.Process;
@@ -18,11 +21,14 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Locale;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import top.niunaijun.bcore.fake.frameworks.BLocationManager;
+import top.niunaijun.bcore.BlackBoxCore;
 
 /** Real device-side UI assertions against an unmodified third-party release. */
 @RunWith(AndroidJUnit4.class)
@@ -94,6 +100,7 @@ public final class ExternalGuestInstrumentedTest {
             GuestImport.verify(apk);
             assertTrue(apk.setReadOnly());
             GuestImport.installVerified(apk);
+            assertOriginalGuestSignatures();
             BLocationManager.disableFakeLocation(0, GuestImport.PACKAGE);
             assertTrue("Launch must be requested", GuestImport.requestLaunch());
             calculateThree();
@@ -102,6 +109,32 @@ public final class ExternalGuestInstrumentedTest {
             assertResultIsThree();
             assertEquals("Guest must remain uninstalled in the system", "", shell("pm path org.fossify.math"));
         } finally { apk.delete(); }
+    }
+
+    private void assertOriginalGuestSignatures() throws Exception {
+        PackageInfo legacy = BlackBoxCore.getBPackageManager().getPackageInfo(GuestImport.PACKAGE,
+                PackageManager.GET_SIGNATURES, 0);
+        PackageInfo modern = BlackBoxCore.getBPackageManager().getPackageInfo(GuestImport.PACKAGE,
+                PackageManager.GET_SIGNING_CERTIFICATES, 0);
+        assertNotNull("Virtual legacy package metadata", legacy);
+        assertNotNull("Virtual modern package metadata", modern);
+        assertNotNull("Original SigningInfo", modern.signingInfo);
+        Signature[] signers = modern.signingInfo.getApkContentsSigners();
+        assertNotNull(legacy.signatures);
+        assertEquals(1, legacy.signatures.length);
+        assertEquals(1, signers.length);
+        String expected = "affdb124d3f4720c2f98dbca9eacba0514fba4306e20a2786c861c3c0d6ff292";
+        assertEquals(expected, certificateSha256(legacy.signatures[0]));
+        assertEquals(expected, certificateSha256(signers[0]));
+        System.out.println("ORIGINAL_GUEST_SIGNER_SHA256=" + expected
+                + "; legacy_and_modern_metadata=PASS; system_guest_installed=false");
+    }
+
+    private static String certificateSha256(Signature signature) throws Exception {
+        byte[] hash = MessageDigest.getInstance("SHA-256").digest(signature.toByteArray());
+        StringBuilder hex = new StringBuilder();
+        for (byte value : hash) hex.append(String.format(Locale.US, "%02x", value & 255));
+        return hex.toString();
     }
 
     private void calculateThree() {

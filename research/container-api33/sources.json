@@ -4,7 +4,10 @@
     "commit": "df6249da4b032649689a98242f147da6c5342172",
     "directory": "blackbox-api33",
     "patch": "patches/blackbox-api33-build.patch",
-    "added_files": ["android-mirror/src/main/java/black/com/android/internal/InternalResources.java"]
+    "added_files": [
+      "android-mirror/src/main/java/black/com/android/internal/InternalResources.java",
+      "BCore/src/main/java/top/niunaijun/bcore/utils/compat/LocationCallbackCompat.java"
+    ]
   },
   "virtualapp": {
     "url": "https://github.com/ISEKHON/VirtualApp.git",

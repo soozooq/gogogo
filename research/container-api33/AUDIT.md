@@ -1,6 +1,6 @@
 # 可复用基础审计
 
-本轮结论：已有可编译、能在 API 33 云端环境运行一款真实第三方 APK 的研究基础。微信／抖音兼容、现代定位替换、完整组件及权限隔离仍未完成。
+本轮结论：已有可编译、能在 API 33 云端环境运行一款真实第三方 APK 的研究基础；现代定位的部分接口契约及原签名信息已修正并完成受控验证。真实 Guest 定位 Hook 安装、微信／抖音兼容、完整组件及权限隔离仍未完成。接手从根目录 [PROJECT_STATUS.md](../../PROJECT_STATUS.md) 开始。
 
 ## 构建与普通应用运行
 
@@ -10,24 +10,28 @@
 - 最初运行发现资源镜像缺失、研究宿主遗漏 `REORDER_TASKS`，以及云端 System UI 无响应。镜像和宿主配置已修正；云端恢复后先通过原生安装对照，再验证容器。中途的启动命令、不可见按钮选择错误归类为测试脚本问题，不算作第三方应用不兼容。
 - 最终判断仅依据成功记录、APK 摘要和真实 UI；不沿用旧失败轮次的截图或状态。最初失败的完整日志仍在本地研究工作区。
 
-## Android 13 定位接口尚需改造
+## Android 13 定位接口：已修正与验证边界
 
 依据固定的 [AOSP ILocationManager](https://github.com/aosp-mirror/platform_frameworks_base/blob/d27f9960456403533af0a0d5d9f14cf71c9c8cf6/location/java/android/location/ILocationManager.aidl#L53) 与 [ILocationListener](https://github.com/aosp-mirror/platform_frameworks_base/blob/d27f9960456403533af0a0d5d9f14cf71c9c8cf6/location/java/android/location/ILocationListener.aidl)：
 
-| 检查项 | 固定候选源码中的缺口 | 后续完成标准 |
+| 检查项 | 本轮 BlackBox 修正 | 受控云端结果／边界 |
 | --- | --- | --- |
-| 单次定位 | BlackBox `GetCurrentLocation` 直接返回 `Location`；API 33 实际返回取消通道，通过 `ILocationCallback.onLocation` 交付 | 正确的返回类型、回调、取消及一次结束语义 |
-| 持续监听 | API 33 使用 `registerLocationListener`，回调为 `List<Location>` 和可空完成回调；两候选仍存在旧单点监听形状／旧注册路径 | 实际框架 Binder 回调、批量样本及注销正确 |
-| 数据年龄 | BlackBox 创建位置未设置 elapsed 时间；VirtualApp 写死 `277000000` | 合法、单调时钟一致的样本时间；不把刚收到旧值当新定位 |
-| 停止监听 | BlackBox server 在 listener 已移除时仍 `continue`，可能持续空转 | 取消、死亡、移除均停止调度并释放记录 |
-| 样本标记 | VirtualApp 直接清除 mock 标志 | 不能把未标记或旧样本当作已被目标应用正确采用的证据 |
+| 单次定位 | 返回真实框架 `ICancellationSignal`，经 `ILocationCallback.onLocation` 一次交付；无目标返回 null | 公共 API 回调及提前取消通过；不含第三方 Guest Hook 安装 |
+| 持续监听 | 拦截现代注册／注销，通过真实 `ILocationListener` 的 `List<Location>`、可空完成回调交付；携带 provider、间隔、次数与时长限制 | 框架监听对象经引擎服务 Binder 收到批量样本；次数、时长、注销及停用释放通过 |
+| 数据年龄 | 每个合成样本设置当前单调时钟，保留对应 GPS／NETWORK provider；修正 BLocation Parcel 浮点字段顺序 | 样本年龄合法且连续样本 elapsed 时间增长；不是物理 GNSS 测量 |
+| 停止调度 | 用有界延时任务替代每监听器忙循环，移除／超时／次数耗尽／Binder 死亡／关闭模式均释放记录 | 注销、次数、时长、停用通过；Binder 死亡清理代码尚无独立故障注入证据 |
+| 样本来源 | 本轮 BlackBox 合成样本明确设置 mock 标志 | API 33 `isMock()` 为 true；不隐藏来源。未采用 VirtualApp 清除标记或固定旧时间的路径 |
 
-以上为源码／契约核查，未把某一候选缺口归因于用户此前系统微信的失败。研究宿主保持虚拟定位关闭，因此计算器运行没有验证上表接口。
+[受控测试源码](probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java)在宿主测试进程构造公共 `LocationManager`，由框架创建真实回调／监听对象；测试代理显式调用四个修正后的 Hook 入口。它不冒充真实 Guest 的定位调用，也不请求系统真实定位。共 4 项检查通过，原文和输入摘要见[本轮结果](evidence/api33-location-signature-results.json)。
+
+普通研究入口和计算器运行仍保持虚拟定位关闭。不能把本轮接口修正直接归因于用户此前系统微信的失败，也不能由此断言第三方已经采用位置。PendingIntent、被动定位、GNSS 状态、全部 LocationRequest 过滤条件、GMS 融合定位及真实 Guest 进程的 Hook 安装仍未完整验证。VirtualApp fork 没有应用这些修正。
 
 ## 身份、组件与目标软件
 
-BlackBox 的证书解析在运行日志中仍出现反射调用错误。外部 APK 字节和原发布签名已在云端验证，但虚拟 PackageManager 提供的原签名信息仍需独立核验；不能用填写固定假签名解决身份解析。
+证书解析不再在现代接口之后再次调用已不存在的旧方法；现代分支执行签名验证，解析／验证错误向上传播以中止导入。`GET_SIGNATURES` 使用虚拟包自身证书，`GET_SIGNING_CERTIFICATES` 从该 Guest 的归档读取真实 SigningInfo，避免空对象构造或用另一份系统已安装版本覆盖身份。运行时代码不填写固定证书。
+
+系统未安装计算器时，原始发布文件 SHA-256、旧版 signatures 与新版 SigningInfo 均核对原证书 `affdb124d3f4720c2f98dbca9eacba0514fba4306e20a2786c861c3c0d6ff292`，真实 UI 操作及回桌面重开也再次通过。本轮相关日志没有旧证书反射错误；仅覆盖该已固定的签名输入，不代表签名轮换、多签名、分包及全部软件安装路径已通过。
 
 当前验证覆盖计算器的 Splash／Main Activity、资源、实际按钮运算和从桌面返回。Service、Provider、Intent result、通知、GMS、Native Guest、账号登录、异常隔离和 vivo 厂商行为均无完整回归。共享宿主 UID 的执行方式不等于为 Guest 创建独立 Linux 沙箱。
 
-下一步优先完成现代定位契约和原签名解析，再评估真实微信能否进入并正确使用发送位置／实时共享页面。抖音无线及海外地点覆盖需要各自的业务结果，不能由本轮替代。
+下一步应验证真实 Guest 进程的定位 Hook 安装和业务调用，以及权限／组件／GMS 兼容，再评估真实微信能否进入并正确使用发送位置／实时共享页面。抖音无线及海外地点覆盖需要各自的业务结果，不能由本轮替代。

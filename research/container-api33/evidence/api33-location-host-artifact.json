@@ -1,0 +1,20 @@
+{
+  "scope": "COMPILED_RESEARCH_HOST_NOT_WECHAT_COMPATIBILITY",
+  "package": "com.soozooq.tianwaitian.containerresearch",
+  "sha256": "e3131646a7d52c048cd6ed942492468e578f42d736075bb6b2ed52a288d1e1d0",
+  "size": 4555939,
+  "native_abis": [
+    "arm64-v8a",
+    "x86_64"
+  ],
+  "uses_permissions": [
+    "android.permission.REORDER_TASKS",
+    "com.soozooq.tianwaitian.containerresearch.INTERNAL"
+  ],
+  "default_component_permission": "com.soozooq.tianwaitian.containerresearch.INTERNAL",
+  "resource_mirror_defined": true,
+  "embedded_guest_apks": [],
+  "embedded_guest_class_definitions": [],
+  "signature_verified": true,
+  "certificate_sha256": "81b7350f2e056029168a8a3ad6d29f1c6c0a7132a2f6db9296c5a26bd135e728"
+}

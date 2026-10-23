@@ -2,6 +2,17 @@
 
 2026-10-23。此目录保存独立研究宿主、固定源码补丁与云端验证证据。天外天日常版本仍为 `2.4.31-simple-support / 2400099`；主程序、签名、定位服务及默认入口均未改动。本轮没有需要用户安装的手机更新包。
 
+项目接手只认根目录 [PROJECT_STATUS.md](../../PROJECT_STATUS.md)。本轮继续使用同一个研发分支和 Draft #60，没有按修复或检查新增分支／PR。
+
+## 本轮更新：定位契约与原签名
+
+[最新结果](evidence/api33-location-signature-results.json)绑定本轮源码、补丁及宿主／测试 APK 摘要，覆盖：
+
+- API 33 的公共 `LocationManager`：单次回调与取消、GPS／NETWORK 的新鲜且明确标记为模拟的样本、持续批量回调、注销、次数／时长限制及停用后释放，共 4 项受控检查通过。测试代理显式调用真实 Hook 入口，持续样本经过引擎的定位服务 Binder；**不包含真实 Guest 进程的 Hook 安装或第三方位置采用验证**。
+- 原版计算器：系统未安装该包时，虚拟包管理器的 `GET_SIGNATURES` 与 `GET_SIGNING_CERTIFICATES` 均返回官方 APK 的原证书；真实界面的计算与从桌面重开保留结果再次通过。该项仍保持虚拟定位关闭。
+
+本轮宿主 SHA-256 为 `e3131646a7d52c048cd6ed942492468e578f42d736075bb6b2ed52a288d1e1d0`。最初的 [results.json](evidence/results.json)、[source-snapshot.json](evidence/source-snapshot.json)和下方截图对应历史提交 `c134948`，保留原记录，不作为本轮 APK 的证据。微信／抖音／海外定位及 ARM64／vivo 仍未通过。
+
 ## 已观察到的能力
 
 在 **Android 13 / API 33、x86_64 云端模拟器**中，未改动的 Fossify 计算器 `1.4.0 / 10` 完成了两项实际界面检查：
@@ -19,13 +30,13 @@
 
 固定输入见 [sources.json](sources.json)：BlackBox `df6249da`、VirtualApp fork `b3c634ad`、原版 Fossify APK 的 SHA-256。两份候选均完成了云端构建；本轮的实际运行宿主使用 BlackBox。
 
-[BlackBox 补丁](patches/blackbox-api33-build.patch)修正了 AIDL 包名与文件／Java 类型不一致，以及资源反射镜像被 Android Gradle Plugin 当作生成的 `R` 类过滤的问题；镜像中的数组类型同步改为框架实际使用的 `int[]`。补丁已在干净的固定提交上重新应用并核对完整 diff。
+[BlackBox 补丁](patches/blackbox-api33-build.patch)保留原来的 AIDL 包名及资源镜像修正，并加入现代定位回调、取消、调度／注销、时间戳和原签名修正。沿用同一个补丁文件和固定上游提交；已从原始文件重新应用并逐文件核对本轮结果。
 
-研究宿主清除了引擎清单的大量权限继承，仅声明内部签名权限及切换自身任务所需的普通 `REORDER_TASKS`。准入范围仅限已核验的计算器发布文件。未开启虚拟定位、Root／Xposed 隐藏或守护服务。
+研究宿主清除了引擎清单的大量权限继承，仅声明内部签名权限及切换自身任务所需的普通 `REORDER_TASKS`。准入范围仅限已核验的计算器发布文件。普通入口及计算器检查保持虚拟定位关闭；受控接口检查只在测试中启用，结束即释放。未开启 Root／Xposed 隐藏或守护服务。
 
 ## 尚未跨过的门槛
 
-[API 与运行审计](AUDIT.md)保留了现代定位回调、单次定位取消、时间戳、注销及原签名解析等缺口。此处的 UI 通过不能替代定位接口通过，更不能替代微信发送位置或实时共享成功。
+[API 与运行审计](AUDIT.md)区分已经修正并受控验证的接口，以及尚未完成的真实 Guest 定位、GMS、组件及权限兼容。此处的 UI 与接口结果均不能替代微信发送位置或实时共享成功。
 
 [许可记录](THIRD_PARTY_NOTICES.md)及[运行时依赖声明清单](evidence/dependency-licenses.json)区分根许可证、传递依赖、原生代码和待补齐的发布材料。当前不将这份研究产物标为正式发行容器。
 
@@ -49,6 +60,7 @@ python3 tools/inspect-apk.py --sdk "$ANDROID_SDK_ROOT" --host "$CONTAINER_RESEAR
 ```bash
 python3 tools/run-cloud-check.py --serial emulator-5580 --label installed-control --installed-baseline
 python3 tools/run-cloud-check.py --serial emulator-5580 --label container-guest
+python3 tools/run-cloud-check.py --serial emulator-5580 --label location-contract --location-contract
 ```
 
 每轮使用独立且不允许覆盖的证据目录，记录 APK 输入摘要、真实界面、JUnit 原文和结束状态。正常安装仅用于第一项对照，之后移除；第二项要求系统中不存在该包。原始日志留在研究工作区，仓库只收录摘要、必要报告和云端截图。

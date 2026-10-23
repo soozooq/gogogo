@@ -15,7 +15,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--sdk', default=os.environ.get('ANDROID_SDK_ROOT') or os.environ.get('ANDROID_HOME'))
 parser.add_argument('--root', default=os.environ.get('CONTAINER_RESEARCH_WORKDIR'))
 parser.add_argument('--serial', default='emulator-5580')
-parser.add_argument('--installed-baseline', action='store_true')
+mode = parser.add_mutually_exclusive_group()
+mode.add_argument('--installed-baseline', action='store_true')
+mode.add_argument('--location-contract', action='store_true')
 parser.add_argument('--label', default='latest')
 args = parser.parse_args()
 if not args.sdk or not args.root:
@@ -67,18 +69,27 @@ else:
 host = root / 'probe-host-build/outputs/apk/debug/probeHost-debug.apk'
 test = root / 'probe-host-build/outputs/apk/androidTest/debug/probeHost-debug-androidTest.apk'
 guest = root / 'guest/calculator-10-foss-release.apk'
-if not all(p.is_file() for p in (host, test, guest)):
+inputs = (host, test) if args.location_contract else (host, test, guest)
+if not all(p.is_file() for p in inputs):
     raise SystemExit('Build artifacts missing')
 if shell('getenforce') != 'Enforcing':
     raise SystemExit('SELinux must remain enforcing')
 metadata = {
     'started_at_utc': datetime.now(timezone.utc).isoformat(),
     'scope': 'CLOUD_EMULATOR_ONLY_NOT_VIVO_OR_WECHAT',
-    'case': 'system_installed_control' if args.installed_baseline else 'container_uninstalled_guest',
+    'case': 'controlled_location_contract' if args.location_contract else
+        ('system_installed_control' if args.installed_baseline else 'container_uninstalled_guest'),
     'serial': args.serial, 'api': 33, 'abi': shell('getprop ro.product.cpu.abi'),
     'shell_uid': shell('id -u'), 'selinux': shell('getenforce'),
-    'artifacts': {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in (host, test, guest)},
+    'artifacts': {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs},
 }
+spec = Path(__file__).resolve().parents[1]
+source_inputs = [spec / 'sources.json', *sorted((spec / 'patches').glob('*.patch')),
+    *sorted((spec / 'tools').glob('*.*')), *sorted((spec / 'probe-host').rglob('*.java')),
+    spec / 'probe-host/build.gradle', spec / 'probe-host/src/main/AndroidManifest.xml']
+metadata['research_source_sha256'] = {
+    str(p.relative_to(spec)): hashlib.sha256(p.read_bytes()).hexdigest() for p in source_inputs
+    if p.is_file() and '__pycache__' not in p.parts}
 (evidence / 'case-inputs.json').write_text(json.dumps(metadata, indent=2) + '\n')
 if shell('pm path org.fossify.math', check=False):
     raise SystemExit('Guest already installed in system; use a fresh research emulator')
@@ -109,22 +120,26 @@ if args.installed_baseline:
     print('Installing guest only for the ordinary system-app control', flush=True)
     print(run(['install', str(guest)], timeout=180).stdout.decode(errors='replace'), flush=True)
     control_installed = True
-run(['push', str(guest), '/data/local/tmp/gogogo-research-guest.apk'], timeout=120)
+if not args.location_contract:
+    run(['push', str(guest), '/data/local/tmp/gogogo-research-guest.apk'], timeout=120)
 shell('settings put global window_animation_scale 0')
 shell('settings put global transition_animation_scale 0')
 shell('settings put global animator_duration_scale 0')
 shell('input keyevent KEYCODE_WAKEUP')
 shell('wm dismiss-keyguard', check=False)
 run(['logcat', '-c'])
-print('Running real third-party UI and return-from-home check', flush=True)
+test_class = ('top.niunaijun.bcore.fake.service.LocationContractInstrumentedTest'
+    if args.location_contract else 'com.soozooq.tianwaitian.containerresearch.ExternalGuestInstrumentedTest#' +
+    ('installedCalculatorControl' if args.installed_baseline else 'calculatorRunsUninstalledAndRetainsResultAfterHome'))
+print('Running controlled public-API33 location contracts' if args.location_contract
+    else 'Running real third-party UI and return-from-home check', flush=True)
 result = run(['shell', 'am', 'instrument', '-w', '-r', '-e', 'class',
-    'com.soozooq.tianwaitian.containerresearch.ExternalGuestInstrumentedTest#' +
-    ('installedCalculatorControl' if args.installed_baseline else 'calculatorRunsUninstalledAndRetainsResultAfterHome'),
+    test_class,
     'com.soozooq.tianwaitian.containerresearch.test/androidx.test.runner.AndroidJUnitRunner'],
     timeout=300, check=False)
 text = result.stdout.decode(errors='replace') + result.stderr.decode(errors='replace')
 (evidence / 'cloud-instrumentation.txt').write_text(text)
-for relative in ('window.xml', 'screen.png'):
+for relative in (() if args.location_contract else ('window.xml', 'screen.png')):
     data = run(['exec-out', 'run-as', 'com.soozooq.tianwaitian.containerresearch', 'cat',
         'files/runtime-evidence/' + relative], check=False)
     if data.returncode == 0:
@@ -137,14 +152,18 @@ for relative in ('window.xml', 'screen.png'):
 (evidence / 'cloud-activities.txt').write_text(shell('dumpsys activity activities', check=False))
 (evidence / 'cloud-guest-system-path.txt').write_text(shell('pm path org.fossify.math', check=False))
 cleanup_ok = remove_control_guest()
-passed = result.returncode == 0 and 'OK (1 test)' in text and not re.search(
+expected_result = 'OK (4 tests)' if args.location_contract else 'OK (1 test)'
+passed = result.returncode == 0 and expected_result in text and not re.search(
     r'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=|Process crashed', text)
 system_guest_after_cleanup = bool(shell('pm path org.fossify.math', check=False))
 passed = passed and cleanup_ok and not system_guest_after_cleanup
 (evidence / 'case-result.json').write_text(json.dumps({
     'passed': passed, 'control_removed': cleanup_ok,
     'guest_system_installed_after_cleanup': system_guest_after_cleanup,
-    'wechat_result': 'NOT_TESTED', 'location_replacement': 'DISABLED'
+    'wechat_result': 'NOT_TESTED',
+    'location_replacement': 'CONTROLLED_PUBLIC_API33_TEST_ONLY' if args.location_contract else 'DISABLED',
+    'guest_signer_metadata': 'PASS' if passed and not args.location_contract
+        and not args.installed_baseline else 'NOT_TESTED',
 }, indent=2) + '\n')
 (evidence / 'cloud-runtime-check.exit').write_text('0\n' if passed else '1\n')
 print(text[-5000:], flush=True)
