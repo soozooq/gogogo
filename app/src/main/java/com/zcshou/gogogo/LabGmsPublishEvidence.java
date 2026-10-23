@@ -29,6 +29,11 @@ public final class LabGmsPublishEvidence {
         callbackUnavailable++;
     }
 
+    /** A previously unobserved Task finally delivered its terminal callback. */
+    public synchronized void onCallbackRecovered() {
+        if (callbackUnavailable > 0L) callbackUnavailable--;
+    }
+
     public synchronized void onSynchronousFailure() {
         synchronousFailure++;
     }

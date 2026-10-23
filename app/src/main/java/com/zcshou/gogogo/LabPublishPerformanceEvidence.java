@@ -87,6 +87,13 @@ public final class LabPublishPerformanceEvidence {
         taskObserverUnknown++;
     }
 
+    /** Reclassify the one unobserved Task before recording its late terminal result. */
+    public synchronized void onCallbackRecovered() {
+        if (taskObserverUnknown == 0L) return;
+        taskObserverUnknown--;
+        pendingTasks++;
+    }
+
     public synchronized Snapshot snapshot() {
         return new Snapshot(ticks, validTickIntervals, sumTickIntervalMs,
                 maxTickIntervalMs, intervalsOver50Ms, intervalsOver100Ms,

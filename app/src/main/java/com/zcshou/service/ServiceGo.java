@@ -47,6 +47,7 @@ import com.zcshou.gogogo.LabGmsPublishGate;
 import com.zcshou.gogogo.LocationPublishGate;
 import com.zcshou.gogogo.LocationGeometry;
 import com.zcshou.gogogo.ProviderOperationQueue;
+import com.zcshou.gogogo.AsyncProviderOperationQueue;
 import com.zcshou.gogogo.LabPublishPerformanceEvidence;
 import com.zcshou.gogogo.LabServiceLifecycleJournal;
 import com.zcshou.gogogo.LabServiceTeardownSequence;
@@ -83,6 +84,16 @@ public class ServiceGo extends Service {
             });
     private final ProviderOperationQueue<PublishedLocation> mProviderOperations =
             new ProviderOperationQueue<>(PROVIDER_IO, this::publishProviderFrame);
+    private static final java.util.concurrent.ExecutorService GMS_IO =
+            java.util.concurrent.Executors.newSingleThreadExecutor(task -> {
+                Thread worker = new Thread(task, "TianwaitianGmsIO");
+                worker.setDaemon(true);
+                return worker;
+            });
+    private static final AsyncProviderOperationQueue.Dispatcher GMS_TASKS =
+            new AsyncProviderOperationQueue.Dispatcher(GMS_IO);
+    private final AsyncProviderOperationQueue<PublishedLocation> mGmsOperations =
+            new AsyncProviderOperationQueue<>(GMS_TASKS, this::dispatchGmsLocation);
     private final LocationPublishGate mLocationPublishGate = new LocationPublishGate();
     private String mLifecycleSession;
     private volatile String mProviderSnapshot = "WAITING_FOR_PROVIDER_IO";
@@ -275,7 +286,7 @@ public class ServiceGo extends Service {
     private FusedLocationProviderClient mFusedClient; // Google Play Services fused mock, null = GMS 不可用
     private volatile boolean mFusedMockEnabled = false;
     private volatile boolean mFusedShutdownRequested = false;
-    // Request ID most recently issued by THIS ServiceGo instance. Never
+    // Mode intent most recently queued by THIS ServiceGo instance. Never
     // interpret older GMS callbacks as authority over a newer service.
     private volatile long mLastGmsRequestId = 0L;
     // Read by the location HandlerThread and written during main-thread teardown.
@@ -639,98 +650,132 @@ public class ServiceGo extends Service {
                 heading.source);
     }
 
-    @SuppressLint("MissingPermission")
     private void initFusedMock() {
         mFusedShutdownRequested = false;
-        long pendingRequestId = 0L;
+        long requestId = 0L;
         try {
             mFusedClient = LocationServices.getFusedLocationProviderClient(this);
-            pendingRequestId = LabProviderReliabilityController.beginGmsRequest(
-                    this, "ENABLE_REQUESTED");
-            mLastGmsRequestId = pendingRequestId;
-            final long enableRequestId = pendingRequestId;
-            mFusedClient.setMockMode(true)
-                    .addOnSuccessListener(unused -> {
-                        if (mFusedShutdownRequested || isStop) {
-                            // A late enable may still require GMS cleanup. It
-                            // must NOT overwrite a newer Task's audit state.
-                            LabProviderReliabilityController.finishGmsRequest(
-                                    this, enableRequestId, "LATE_ENABLE_AFTER_STOP");
-                            // Do not let an obsolete ServiceGo issue a disable
-                            // for a newly started service's GMS mock session.
-                            requestGmsMockDisable("LATE_ENABLE");
-                            return;
-                        }
-                        if (LabProviderReliabilityController.finishGmsRequest(
-                                this, enableRequestId, "ENABLE_SUCCEEDED")) {
-                            mFusedMockEnabled = true;
-                        }
-                        XLog.i("SERVICEGO: FusedLocation setMockMode(true) callback");
-                    })
-                    .addOnFailureListener(e -> {
-                        LabProviderReliabilityController.finishGmsRequest(
-                                this, enableRequestId,
-                                "ENABLE_FAILED_" + e.getClass().getSimpleName());
-                        XLog.e("SERVICEGO: FusedLocation setMockMode failed: " + e.getMessage());
-                    });
-        } catch (Throwable t) {
-            String event = "ENABLE_EXCEPTION_" + t.getClass().getSimpleName();
-            if (pendingRequestId != 0L) {
-                LabProviderReliabilityController.finishGmsRequest(
-                        this, pendingRequestId, event);
+            requestId = LabProviderReliabilityController.beginGmsRequest(this, "ENABLE_QUEUED");
+            mLastGmsRequestId = requestId;
+            final long queuedId = requestId;
+            if (!mGmsOperations.runWhenOpen(done -> dispatchGmsMode(true, queuedId, "START", done))) {
+                LabProviderReliabilityController.finishGmsRequest(this, queuedId, "ENABLE_QUEUE_UNAVAILABLE");
+            }
+        } catch (RuntimeException failure) {
+            String event = "ENABLE_EXCEPTION_" + failure.getClass().getSimpleName();
+            if (requestId > 0L) {
+                LabProviderReliabilityController.finishGmsRequest(this, requestId, event);
             } else {
                 LabProviderReliabilityController.recordGmsEvent(this, event);
             }
-            // GMS may be unavailable; framework providers still work.
-            XLog.e("SERVICEGO: FusedLocation init failed (GMS not available?): " + t.getMessage());
-            mFusedClient = null;
+            mFusedClient = null; // Framework providers remain independent of GMS.
+            XLog.e("SERVICEGO: GMS initialization unavailable: " + failure.getClass().getSimpleName());
         }
     }
 
     private void requestGmsMockDisable(String reason) {
-        if (mFusedClient == null) return;
-        // No unchecked fallback: both ordinary SERVICE_STOP and late-enable
-        // compensation must respect newer ServiceGo sessions.
-        long disableRequestId = LabProviderReliabilityController.beginGmsDisableIfCurrent(
-                this, mLastGmsRequestId, "DISABLE_REQUESTED_" + reason);
-        if (disableRequestId <= 0L) {
-            // A newer ServiceGo owns the audit slot. This instance cannot
-            // submit another mock-disable request.
-            return;
-        }
-        mLastGmsRequestId = disableRequestId;
-        final long callbackRequestId = disableRequestId;
-        // The permission may be revoked while a Task is in flight.
-        boolean fine = checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
-                == android.content.pm.PackageManager.PERMISSION_GRANTED;
-        boolean coarse = checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
-                == android.content.pm.PackageManager.PERMISSION_GRANTED;
-        if (!fine && !coarse) {
-            LabProviderReliabilityController.finishGmsRequest(
-                    this, callbackRequestId,
-                    "DISABLE_BLOCKED_NO_LOCATION_PERMISSION_" + reason);
-            return;
-        }
+        if (mGmsOperations.isClosed()) return;
+        mFusedShutdownRequested = true;
+        mFusedMockEnabled = false;
+        long requestId = 0L;
         try {
-            mFusedClient.setMockMode(false)
-                    .addOnSuccessListener(unused -> {
-                        if (LabProviderReliabilityController.finishGmsRequest(
-                                ServiceGo.this, callbackRequestId,
-                                "DISABLE_SUCCEEDED_" + reason)) {
-                            mFusedMockEnabled = false;
-                        }
-                    })
-                    .addOnFailureListener(e ->
-                            LabProviderReliabilityController.finishGmsRequest(
-                                    ServiceGo.this, callbackRequestId,
-                                    "DISABLE_FAILED_" + e.getClass().getSimpleName()));
-        } catch (SecurityException e) {
-            LabProviderReliabilityController.finishGmsRequest(
-                    this, callbackRequestId, "DISABLE_DENIED_" + reason);
-        } catch (RuntimeException e) {
-            LabProviderReliabilityController.finishGmsRequest(
-                    this, callbackRequestId,
-                    "DISABLE_EXCEPTION_" + e.getClass().getSimpleName());
+            if (mFusedClient != null) {
+                requestId = LabProviderReliabilityController.beginGmsDisableIfCurrent(
+                        this, mLastGmsRequestId, "DISABLE_QUEUED_" + reason);
+                if (requestId > 0L) mLastGmsRequestId = requestId;
+            }
+        } finally {
+            final long queuedId = requestId;
+            // Reserve cleanup before the next service queues ENABLE. It waits for
+            // every old mode/location Task, even when their callbacks are stale.
+            boolean queued = mGmsOperations.close(done -> {
+                if (queuedId > 0L) dispatchGmsMode(false, queuedId, reason, done);
+                else done.run();
+            });
+            if (!queued && queuedId > 0L) {
+                LabProviderReliabilityController.finishGmsRequest(
+                        this, queuedId, "DISABLE_QUEUE_UNAVAILABLE_" + reason);
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void dispatchGmsMode(boolean enable, long requestId, String reason, Runnable done) {
+        if (mFusedClient == null || (enable && (isStop || mFusedShutdownRequested))) {
+            done.run();
+            return;
+        }
+        String mode = enable ? "ENABLE" : "DISABLE";
+        if (!enable && checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED
+                && checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            try {
+                LabProviderReliabilityController.finishGmsRequest(this, requestId,
+                        "DISABLE_BLOCKED_NO_LOCATION_PERMISSION_" + reason);
+            } finally { done.run(); }
+            return;
+        }
+        com.google.android.gms.tasks.Task<Void> task;
+        try {
+            task = mFusedClient.setMockMode(enable);
+        } catch (RuntimeException failure) {
+            try {
+                LabProviderReliabilityController.finishGmsRequest(this, requestId,
+                        mode + "_EXCEPTION_" + failure.getClass().getSimpleName());
+            } finally { done.run(); }
+            return;
+        }
+        observeGmsTask(task, result -> {
+            String event;
+            if (result.isSuccessful()) {
+                event = enable && (isStop || mFusedShutdownRequested)
+                        ? "LATE_ENABLE_AFTER_STOP" : mode + "_SUCCEEDED_" + reason;
+            } else if (result.isCanceled()) {
+                event = mode + "_CANCELLED_" + reason;
+            } else {
+                Exception failure = result.getException();
+                event = mode + "_FAILED_" + (failure == null ? "UNKNOWN" : failure.getClass().getSimpleName());
+            }
+            boolean current = LabProviderReliabilityController.finishGmsRequest(this, requestId, event);
+            if (!enable) mFusedMockEnabled = false;
+            else if (result.isSuccessful() && current && !isStop && !mFusedShutdownRequested) {
+                mFusedMockEnabled = true;
+            }
+            // No late-enable disable retry: close already queued it after this Task.
+        }, done, () -> LabProviderReliabilityController.finishGmsRequest(
+                this, requestId, mode + "_COMPLETION_UNOBSERVED"), () -> {});
+    }
+
+    /** A returned Task cannot release the FIFO until completion is observed. */
+    private void observeGmsTask(com.google.android.gms.tasks.Task<Void> task,
+            java.util.function.Consumer<com.google.android.gms.tasks.Task<Void>> terminal,
+            Runnable done, Runnable unavailable, Runnable recovered) {
+        java.util.concurrent.atomic.AtomicBoolean observed = new java.util.concurrent.atomic.AtomicBoolean();
+        java.util.concurrent.atomic.AtomicBoolean wasUnknown = new java.util.concurrent.atomic.AtomicBoolean();
+        java.util.function.Consumer<com.google.android.gms.tasks.Task<Void>> finish = result -> {
+            if (!observed.compareAndSet(false, true)) return;
+            try {
+                if (wasUnknown.getAndSet(false)) recovered.run();
+                terminal.accept(result);
+            } catch (RuntimeException evidenceError) {
+                XLog.e("SERVICEGO: GMS terminal evidence failed: " + evidenceError.getClass().getSimpleName());
+            } finally { done.run(); }
+        };
+        try {
+            task.addOnCompleteListener(GMS_IO, finish::accept);
+        } catch (RuntimeException observerError) {
+            // Already-completed Tasks can be read directly. Otherwise keep this
+            // channel blocked; a timeout is not proof the remote call finished.
+            try {
+                if (task.isComplete()) {
+                    finish.accept(task);
+                    return;
+                }
+            } catch (RuntimeException ignored) { }
+            wasUnknown.set(true);
+            GMS_TASKS.markUnobserved();
+            try { unavailable.run(); } catch (RuntimeException ignored) { }
         }
     }
 
@@ -1376,10 +1421,9 @@ public class ServiceGo extends Service {
             }
         }
 
-        // Always request the GMS mock reset, even if enable is still pending.
-        // Neither a returned Task nor onDestroy() itself proves reset success.
-        // A newer ServiceGo may already own the GMS audit generation.
-        // Normal stop must obey the same ownership gate as late-enable retry.
+        // Queue reset after every old GMS Task, including a pending enable/fix.
+        // The next service's enable waits for this reset's terminal callback.
+        // Neither queuing reset nor onDestroy() proves reset success.
         if (LabServiceTeardownSequence.run(
                 () -> requestGmsMockDisable("SERVICE_STOP")) > 0) {
             XLog.e("SERVICEGO: shutdown GMS request threw RuntimeException");
@@ -2587,14 +2631,20 @@ public class ServiceGo extends Service {
         }
     }
 
-    @SuppressLint("MissingPermission")
     private void setLocationFusedClient(PublishedLocation frame) {
         if (!frame.publish || isStop || mFusedClient == null || !mFusedMockEnabled) return;
-        // This 33-ms tick may outrun Google Play services' Binder/Task queue.
-        // Never submit another FLP mock fix before the previous Task finishes.
-        // Framework GPS/NETWORK/FUSED share this latest-frame worker dispatch.
+        mGmsOperations.submit(frame);
+    }
+
+    @SuppressLint("MissingPermission")
+    private void dispatchGmsLocation(PublishedLocation frame, Runnable done) {
+        if (!frame.publish || isStop || mFusedClient == null || !mFusedMockEnabled) {
+            done.run();
+            return;
+        }
         long token = mGmsPublishGate.begin(SystemClock.elapsedRealtime());
-        if (token == 0L) return;
+        if (token == 0L) { done.run(); return; }
+        com.google.android.gms.tasks.Task<Void> publishTask;
         try {
             Location loc = new Location("fused");
             loc.setAccuracy(Math.max(1.0f, frame.accuracy));
@@ -2609,38 +2659,33 @@ public class ServiceGo extends Service {
             loc.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
             // Returning a Task only proves submission. Its asynchronous result is
             // tracked separately; even Task success does not prove consumer delivery.
-            com.google.android.gms.tasks.Task<Void> publishTask =
-                    mFusedClient.setMockLocation(loc);
-            mGmsFusedDispatchCount++;
-            mGmsPublishEvidence.onTaskReturned();
-            mPublishPerformanceEvidence.onTaskReturned();
-            final long taskReturnedElapsed = SystemClock.elapsedRealtime();
-            mLastGmsFusedDispatchElapsed = taskReturnedElapsed;
+            publishTask = mFusedClient.setMockLocation(loc);
+        } catch (RuntimeException failure) {
             try {
-                // Direct executor keeps high-frequency evidence callbacks off the UI
-                // queue. The recorder is synchronized and the callback does no I/O.
-                publishTask.addOnCompleteListener(Runnable::run, result -> {
-                    boolean succeeded = result.isSuccessful();
-                    long completedElapsed = SystemClock.elapsedRealtime();
-                    mGmsPublishGate.complete(token, succeeded, completedElapsed);
-                    mGmsPublishEvidence.onTaskCompleted(succeeded);
-                    mPublishPerformanceEvidence.onTaskFinished(succeeded,
-                            taskReturnedElapsed, completedElapsed);
-                    if (succeeded) {
-                        mLastGmsFusedTaskSuccessElapsed = completedElapsed;
-                    }
-                });
-            } catch (RuntimeException observerError) {
-                // A returned Task without a registered observer is UNKNOWN, not failed.
                 mGmsPublishGate.complete(token, false, SystemClock.elapsedRealtime());
-                mGmsPublishEvidence.onCallbackUnavailable();
-                mPublishPerformanceEvidence.onCallbackUnavailable();
-            }
-        } catch (Throwable t) {
-            // Do not log every tick; report synchronous failures as separate evidence.
-            mGmsPublishGate.complete(token, false, SystemClock.elapsedRealtime());
-            mGmsPublishEvidence.onSynchronousFailure();
+                mGmsPublishEvidence.onSynchronousFailure();
+            } finally { done.run(); }
+            return;
         }
+        mGmsFusedDispatchCount++;
+        mGmsPublishEvidence.onTaskReturned();
+        mPublishPerformanceEvidence.onTaskReturned();
+        final long taskReturnedElapsed = SystemClock.elapsedRealtime();
+        mLastGmsFusedDispatchElapsed = taskReturnedElapsed;
+        observeGmsTask(publishTask, result -> {
+            boolean succeeded = result.isSuccessful();
+            long completedElapsed = SystemClock.elapsedRealtime();
+            mGmsPublishGate.complete(token, succeeded, completedElapsed);
+            mGmsPublishEvidence.onTaskCompleted(succeeded);
+            mPublishPerformanceEvidence.onTaskFinished(succeeded, taskReturnedElapsed, completedElapsed);
+            if (succeeded) mLastGmsFusedTaskSuccessElapsed = completedElapsed;
+        }, done, () -> {
+            mGmsPublishEvidence.onCallbackUnavailable();
+            mPublishPerformanceEvidence.onCallbackUnavailable();
+        }, () -> {
+            mGmsPublishEvidence.onCallbackRecovered();
+            mPublishPerformanceEvidence.onCallbackRecovered();
+        });
     }
 
     public class NoteActionReceiver extends BroadcastReceiver {
@@ -2688,7 +2733,8 @@ public class ServiceGo extends Service {
             return mProviderSnapshot + " · provider_io="
                     + (mProviderOperations.isClosed() ? "CLOSING" : "OPEN")
                     + " · coalesced=" + mProviderOperations.coalescedFrames()
-                    + " · io_errors=" + mProviderOperations.failures();
+                    + " · io_errors=" + mProviderOperations.failures()
+                    + " · gms_unobserved_events=" + GMS_TASKS.failures();
         }
 
         public int getProviderOrphanedCount() {
@@ -2841,7 +2887,9 @@ public class ServiceGo extends Service {
         public long getGmsFusedDispatchCount() { return mGmsFusedDispatchCount; }
         public long getGmsFusedAcceptedCount() { return mGmsPublishGate.succeeded(); }
         public long getGmsFusedFailedCount() { return mGmsPublishGate.failed(); }
-        public long getGmsFusedBackpressureCount() { return mGmsPublishGate.coalesced(); }
+        public long getGmsFusedBackpressureCount() {
+            return mGmsPublishGate.coalesced() + mGmsOperations.coalescedFrames();
+        }
         public long getGmsFusedPendingAgeMs() { return mGmsPublishGate.pendingAgeMs(SystemClock.elapsedRealtime()); }
         public long getGmsFusedLastAcceptedAgeMs() { return mGmsPublishGate.lastSuccessAgeMs(SystemClock.elapsedRealtime()); }
         public LabGmsPublishEvidence.Snapshot getGmsPublishEvidenceSnapshot() {

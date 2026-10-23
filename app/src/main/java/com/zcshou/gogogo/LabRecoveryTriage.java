@@ -107,11 +107,15 @@ public final class LabRecoveryTriage {
             return Gms.NOT_RECORDED;
         }
         if (event.startsWith("DISABLE_SUCCEEDED_")) return Gms.DISABLE_SUCCEEDED;
-        if (event.startsWith("DISABLE_REQUESTED_")) return Gms.DISABLE_REQUESTED;
+        if (event.startsWith("DISABLE_REQUESTED_")
+                || event.startsWith("DISABLE_QUEUED_")
+                || event.startsWith("DISABLE_COMPLETION_UNOBSERVED")) return Gms.DISABLE_REQUESTED;
         if (event.startsWith("DISABLE_FAILED_")
                 || event.startsWith("DISABLE_DENIED_")
                 || event.startsWith("DISABLE_BLOCKED_")
-                || event.startsWith("DISABLE_EXCEPTION_")) return Gms.DISABLE_FAILED;
+                || event.startsWith("DISABLE_EXCEPTION_")
+                || event.startsWith("DISABLE_CANCELLED_")
+                || event.startsWith("DISABLE_QUEUE_UNAVAILABLE_")) return Gms.DISABLE_FAILED;
         return Gms.ENABLE_OR_OTHER;
     }
 
@@ -140,7 +144,7 @@ public final class LabRecoveryTriage {
     private static String gmsText(Gms state) {
         switch (state) {
             case DISABLE_SUCCEEDED: return "上一次记录 DISABLE_SUCCEEDED（历史异步回调）";
-            case DISABLE_REQUESTED: return "仅记录 DISABLE_REQUESTED（尚未证实关闭成功）";
+            case DISABLE_REQUESTED: return "关闭请求等待中（排队／已请求／完成未确认，尚未证实关闭成功）";
             case DISABLE_FAILED: return "上一次关闭失败／被拒／无法继续";
             case ENABLE_OR_OTHER: return "最近事件不是关闭成功回调，结果待核查";
             default: return "尚无 GMS 事件记录";

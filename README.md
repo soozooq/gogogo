@@ -1,4 +1,4 @@
-> **定位服务修复候选版（2026-10-23）**：[停止、重启与发布顺序](docs/provider-lifecycle-ordering.md)。功能分支版本 `2.4.29-provider-lifecycle`，修复停止后旧任务重建 Provider、快速重启互相清理的竞态，并合并慢调用期间的过期坐标；保留[海外坐标与回放校验](docs/location-coordinate-correctness.md)。正常使用步骤不变，不新增实验页。此前 2.4.27 已合并主线。微信／抖音采纳位置及海外功能仍未完成验收。
+> **定位服务修复候选版（2026-10-23）**：[GMS 开启、发布与关闭顺序](docs/gms-task-ordering.md)。功能分支版本 `2.4.30-gms-ordering`，将跨服务实例的 GMS 模式切换与坐标发布按 Task 完成顺序串联，修复旧关闭请求与新开启请求重叠的问题；保留[Framework Provider 清理](docs/provider-lifecycle-ordering.md)及[海外坐标与回放校验](docs/location-coordinate-correctness.md)。正常使用步骤不变，不新增实验页。此前 2.4.27 已合并主线。微信／抖音采纳位置及海外功能仍未完成验收。
 
 > **soozooq / GoGoGo 主分支整合版说明（2026-10-13）**：本 Fork 已将 Lab 48–52 / RC1 统一合并至 `main`，并将应用桌面名称从「影梭」调整为「GoGoGo」。vivo Android 13 真机已观察到 E1/E2（GMS Task）及 E3（自有消费者 GPS/NETWORK/GMS updates）的新鲜模拟位置，正常停止清理回调有正向证据；**微信主号和 vivo 原生分身仍显示旧福建定位，不能宣称微信兼容成功**。当时版本 `2.4.0-rc2-integrated` 是个人设备测试预览，不是安全的正式发布版；旧签名材料仍在公开仓库，生产发布前需要更换签名方案。
 >

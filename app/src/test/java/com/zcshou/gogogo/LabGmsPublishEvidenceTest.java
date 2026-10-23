@@ -5,6 +5,18 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class LabGmsPublishEvidenceTest {
+    @Test public void lateTerminalResultReplacesUnknownWithoutDoubleCounting() {
+        LabGmsPublishEvidence evidence = new LabGmsPublishEvidence();
+        evidence.onTaskReturned();
+        evidence.onCallbackUnavailable();
+        evidence.onCallbackRecovered();
+        evidence.onTaskCompleted(true);
+        LabGmsPublishEvidence.Snapshot snapshot = evidence.snapshot();
+        assertEquals(1L,snapshot.submitted);
+        assertEquals(1L,snapshot.taskSucceeded);
+        assertEquals(0L,snapshot.callbackUnavailable);
+        assertEquals(0L,snapshot.pending);
+    }
     @Test
     public void returnedTaskIsNotAlreadyAcknowledged() {
         LabGmsPublishEvidence evidence = new LabGmsPublishEvidence();
