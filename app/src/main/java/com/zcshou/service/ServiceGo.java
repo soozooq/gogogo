@@ -46,6 +46,7 @@ import com.zcshou.gogogo.LabGmsPublishEvidence;
 import com.zcshou.gogogo.LabGmsPublishGate;
 import com.zcshou.gogogo.LocationPublishGate;
 import com.zcshou.gogogo.LocationGeometry;
+import com.zcshou.gogogo.ProviderOperationQueue;
 import com.zcshou.gogogo.LabPublishPerformanceEvidence;
 import com.zcshou.gogogo.LabServiceLifecycleJournal;
 import com.zcshou.gogogo.LabServiceTeardownSequence;
@@ -74,7 +75,18 @@ public class ServiceGo extends Service {
     public static final double DEFAULT_LNG = 117.027707;
     public static final double DEFAULT_ALT = 55.0D;
     public static final float DEFAULT_BEA = 0.0F;
+    private static final java.util.concurrent.ExecutorService PROVIDER_IO =
+            java.util.concurrent.Executors.newSingleThreadExecutor(task -> {
+                Thread worker = new Thread(task, "TianwaitianProviderIO");
+                worker.setDaemon(true);
+                return worker;
+            });
+    private final ProviderOperationQueue<PublishedLocation> mProviderOperations =
+            new ProviderOperationQueue<>(PROVIDER_IO, this::publishProviderFrame);
     private final LocationPublishGate mLocationPublishGate = new LocationPublishGate();
+    private String mLifecycleSession;
+    private volatile String mProviderSnapshot = "WAITING_FOR_PROVIDER_IO";
+    private volatile int mProviderOrphanSnapshot;
     private double mCurLat = DEFAULT_LAT;
     private double mCurLng = DEFAULT_LNG;
     private double mCurAlt = DEFAULT_ALT;
@@ -300,7 +312,7 @@ public class ServiceGo extends Service {
     public void onCreate() {
         super.onCreate();
         sRunning = true;
-        LabServiceLifecycleJournal.onServiceCreated(this);
+        mLifecycleSession = LabServiceLifecycleJournal.onServiceCreated(this);
         // A previous ServiceGo may still have GMS Task callbacks pending.
         // Invalidate its authority before this instance initializes providers.
         LabProviderReliabilityController.markGmsServiceSessionStarted(this);
@@ -336,27 +348,21 @@ public class ServiceGo extends Service {
         // The first complete target is selected in onStartCommand, Binder or VPN sync.
 
         mLocManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-        mProviderReliability = new LabProviderReliabilityController(this, mLocManager);
-        mProviderReliability.sweepBeforeRegistration();
+        mProviderReliability = new LabProviderReliabilityController(this, mLocManager,
+                callback -> mProviderOperations.runWhenOpen(() -> {
+                    try { callback.run(); } finally { refreshProviderSnapshot(); }
+                }));
         mRouteCheckpointStore = new LabRouteCheckpointStore(this);
         initHeadingSensor();
 
-        removeTestProviderNetwork();
-        addTestProviderNetwork();
-
-        removeTestProviderGPS();
-        addTestProviderGPS();
-
-        // Android 12+ supports a framework FUSED provider, distinct from Google FLP.
-        // A target app's use of this provider has NOT been demonstrated here.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            removeTestProviderFused();
-            addTestProviderFused();
-        }
-
-        initGoLocation();
-
         initNotification();
+        // Every service instance shares one FIFO worker. Old cleanup must finish
+        // before a new instance registers providers, without blocking the UI.
+        if (!mProviderOperations.runWhenOpen(this::initializeFrameworkProviders)) {
+            XLog.e("SERVICEGO: provider initialization could not be queued");
+            stopSelf();
+        }
+        initGoLocation();
 
         if (ENABLE_JOYSTICK_OVERLAY) {
             // No-map test build: floating joystick intentionally disabled.
@@ -364,16 +370,11 @@ public class ServiceGo extends Service {
 
         // Keep standard providers subscribed for our own lifecycle diagnostics.
         // This does NOT establish which APIs WeChat or other apps invoke.
-        initPersistentLocationListener();
+        // Persistent subscriptions are initialized after registration on PROVIDER_IO.
 
         // Independent Google Play services FLP mock path (if installed).
         // Its Task result and the target application's consumption are separate evidence.
         initFusedMock();
-        // Observe permission changes without changing any AppOps value.
-        // The observer lives only as long as this ServiceGo instance.
-        if (mProviderReliability != null) {
-            mProviderReliability.startMonitoring();
-        }
         // Owned by the existing foreground mock service: no second background service.
         // Only opts in when user deliberately enables VPN geo-follow.
         mVpnSystemTimeZone = new LabVpnSystemTimeZone(this);
@@ -742,8 +743,10 @@ public class ServiceGo extends Service {
             @Override public void onStatusChanged(String provider, int status, Bundle extras) {}
         };
         try {
-            mLocManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0f, mPersistentListener);
-            mLocManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0f, mPersistentListener);
+            mLocManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 0f,
+                    mPersistentListener, android.os.Looper.getMainLooper());
+            mLocManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0f,
+                    mPersistentListener, android.os.Looper.getMainLooper());
         } catch (SecurityException e) {
             XLog.e("SERVICEGO: ERROR - requestLocationUpdates permission missing");
         } catch (Exception e) {
@@ -1303,6 +1306,10 @@ public class ServiceGo extends Service {
         isStop = true;
         // Closing only waits for state capture, never for provider IPC.
         mLocationPublishGate.close();
+        LabServiceLifecycleJournal.onProviderCleanupQueued(this, mLifecycleSession);
+        if (!mProviderOperations.close(this::cleanupFrameworkProviders)) {
+            LabServiceLifecycleJournal.onProviderCleanupFinished(this, mLifecycleSession, true);
+        }
         if (mVpnSystemTimeZone != null) {
             mVpnSystemTimeZone.close();
             mVpnSystemTimeZone = null;
@@ -1323,8 +1330,8 @@ public class ServiceGo extends Service {
                         + e.getClass().getSimpleName());
             }
         }
-        // Stop and briefly join the publisher before removing providers to
-        // reduce a publish-vs-remove race. Avoid an unbounded main-thread wait.
+        // Stop state capture with a bounded join. Framework I/O has its own FIFO
+        // cleanup above; correctness does not depend on this thread exiting in time.
         if (mLocHandler != null) {
             try {
                 mLocHandler.removeMessages(HANDLER_MSG_ID);
@@ -1359,27 +1366,8 @@ public class ServiceGo extends Service {
             }
         }
 
-        // Each provider cleanup is independent: failure in one must not
-        // prevent the remaining providers or GMS shutdown from being attempted.
-        int providerCleanupFailures = LabServiceTeardownSequence.run(
-                this::removeTestProviderNetwork,
-                this::removeTestProviderGPS,
-                () -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        removeTestProviderFused();
-                    }
-                });
-        if (providerCleanupFailures > 0) {
-            XLog.e("SERVICEGO: teardown provider stages failed="
-                    + providerCleanupFailures);
-        }
-
-        if (mPersistentListener != null) {
-            try {
-                mLocManager.removeUpdates(mPersistentListener);
-            } catch (Exception ignored) {
-            }
-        }
+        // Framework provider cleanup and listener removal are queued after the
+        // last in-flight publisher/repair, not raced on the main thread.
 
         if (mSensorManager != null && mHeadingListener != null) {
             try {
@@ -1458,12 +1446,7 @@ public class ServiceGo extends Service {
 
         try {
             int finalizationFailures = LabServiceTeardownSequence.run(
-                    () -> {
-                        if (mProviderReliability != null) {
-                            mProviderReliability.stopMonitoring();
-                        }
-                    },
-                    () -> LabServiceLifecycleJournal.onServiceDestroyed(this));
+                    () -> LabServiceLifecycleJournal.onServiceDestroyed(this, mLifecycleSession));
             if (finalizationFailures > 0) {
                 XLog.e("SERVICEGO: teardown finalization stages failed="
                         + finalizationFailures);
@@ -1608,12 +1591,7 @@ public class ServiceGo extends Service {
                         // No default-coordinate publication while waiting for a complete target.
                         // Provider Binder calls run outside the state monitor.
                         if (frame != null && !isStop) {
-                            setLocationNetwork(frame);
-                            setLocationGPS(frame);
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                setLocationFused(frame);
-                            }
-                            setLocationFusedClient(frame);
+                            mProviderOperations.submit(frame);
                         }
                         if (!isStop) sendEmptyMessage(HANDLER_MSG_ID);
                     }
@@ -1624,6 +1602,59 @@ public class ServiceGo extends Service {
             }
         };
         mLocHandler.sendEmptyMessage(HANDLER_MSG_ID);
+    }
+
+    private void initializeFrameworkProviders() {
+        if (isStop) return;
+        try {
+            try {
+                mProviderReliability.sweepBeforeRegistration();
+            } catch (RuntimeException failure) {
+                XLog.e("SERVICEGO: provider cold sweep failed: " + failure.getClass().getSimpleName());
+            }
+            removeTestProviderNetwork();
+            addTestProviderNetwork();
+            removeTestProviderGPS();
+            addTestProviderGPS();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                removeTestProviderFused();
+                addTestProviderFused();
+            }
+            if (!isStop) {
+                initPersistentLocationListener();
+                mProviderReliability.startMonitoring();
+            }
+        } finally {
+            refreshProviderSnapshot();
+        }
+    }
+
+    private void publishProviderFrame(PublishedLocation frame) {
+        if (isStop) return;
+        setLocationNetwork(frame);
+        setLocationGPS(frame);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) setLocationFused(frame);
+        setLocationFusedClient(frame);
+    }
+
+    private void refreshProviderSnapshot() {
+        LabProviderReliabilityController controller = mProviderReliability;
+        if (controller != null) {
+            mProviderSnapshot = controller.summary();
+            mProviderOrphanSnapshot = controller.orphanedCount();
+        }
+    }
+
+    private void cleanupFrameworkProviders() {
+        int failures = LabServiceTeardownSequence.run(
+                () -> { if (mProviderReliability != null) mProviderReliability.stopMonitoring(); },
+                this::removeTestProviderNetwork,
+                this::removeTestProviderGPS,
+                () -> { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) removeTestProviderFused(); },
+                () -> { if (mPersistentListener != null) mLocManager.removeUpdates(mPersistentListener); },
+                this::refreshProviderSnapshot);
+        LabServiceLifecycleJournal.onProviderCleanupFinished(this, mLifecycleSession, failures > 0);
+        if (failures > 0) XLog.e("SERVICEGO: asynchronous framework cleanup stages failed=" + failures);
     }
 
     private void buildRouteMetrics() {
@@ -2322,6 +2353,7 @@ public class ServiceGo extends Service {
     // 注意下面临时添加 @SuppressLint("wrongconstant") 以处理 addTestProvider 参数值的 lint 错误
     @SuppressLint("wrongconstant")
     private void addTestProviderGPS() {
+        if (isStop) return;
         try {
             // 注意，由于 android api 问题，下面的参数会提示错误(以下参数是通过相关API获取的真实GPS参数，不是随便写的)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -2380,8 +2412,11 @@ public class ServiceGo extends Service {
                 mProviderReliability.retryDeferredCleanup();
             }
             XLog.e("SERVICEGO: ERROR - setLocationGPS, reinitializing provider");
-            removeTestProviderGPS();
-            addTestProviderGPS();
+            if (!isStop) {
+                removeTestProviderGPS();
+                addTestProviderGPS();
+            }
+            refreshProviderSnapshot();
         }
     }
 
@@ -2413,6 +2448,7 @@ public class ServiceGo extends Service {
     // 注意下面临时添加 @SuppressLint("wrongconstant") 以处理 addTestProvider 参数值的 lint 错误
     @SuppressLint("wrongconstant")
     private void addTestProviderNetwork() {
+        if (isStop) return;
         try {
             // 注意，由于 android api 问题，下面的参数会提示错误(以下参数是通过相关API获取的真实NETWORK参数，不是随便写的)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -2470,8 +2506,11 @@ public class ServiceGo extends Service {
                 mProviderReliability.retryDeferredCleanup();
             }
             XLog.e("SERVICEGO: ERROR - setLocationNetwork, reinitializing provider");
-            removeTestProviderNetwork();
-            addTestProviderNetwork();
+            if (!isStop) {
+                removeTestProviderNetwork();
+                addTestProviderNetwork();
+            }
+            refreshProviderSnapshot();
         }
     }
 
@@ -2501,6 +2540,7 @@ public class ServiceGo extends Service {
 
     @SuppressLint("wrongconstant")
     private void addTestProviderFused() {
+        if (isStop) return;
         try {
             mLocManager.addTestProvider(LocationManager.FUSED_PROVIDER, false, true, false,
                     false, true, true, true, ProviderProperties.POWER_USAGE_HIGH, ProviderProperties.ACCURACY_FINE);
@@ -2542,6 +2582,7 @@ public class ServiceGo extends Service {
             if (mProviderReliability != null) {
                 mProviderReliability.markPublishFailure(LocationManager.FUSED_PROVIDER, e);
             }
+            refreshProviderSnapshot();
             // fused test provider 没注上时这里会 fail,正常
         }
     }
@@ -2551,7 +2592,7 @@ public class ServiceGo extends Service {
         if (!frame.publish || isStop || mFusedClient == null || !mFusedMockEnabled) return;
         // This 33-ms tick may outrun Google Play services' Binder/Task queue.
         // Never submit another FLP mock fix before the previous Task finishes.
-        // Framework GPS/NETWORK/FUSED still publish every eligible tick.
+        // Framework GPS/NETWORK/FUSED share this latest-frame worker dispatch.
         long token = mGmsPublishGate.begin(SystemClock.elapsedRealtime());
         if (token == 0L) return;
         try {
@@ -2644,13 +2685,14 @@ public class ServiceGo extends Service {
         public String getPolicySummary() { return mPolicySummary; }
 
         public String getProviderReliabilitySummary() {
-            LabProviderReliabilityController controller = mProviderReliability;
-            return controller == null ? "UNAVAILABLE" : controller.summary();
+            return mProviderSnapshot + " · provider_io="
+                    + (mProviderOperations.isClosed() ? "CLOSING" : "OPEN")
+                    + " · coalesced=" + mProviderOperations.coalescedFrames()
+                    + " · io_errors=" + mProviderOperations.failures();
         }
 
         public int getProviderOrphanedCount() {
-            LabProviderReliabilityController controller = mProviderReliability;
-            return controller == null ? 0 : controller.orphanedCount();
+            return mProviderOrphanSnapshot;
         }
 
         public String getRouteRecoverySummary() {

@@ -13,6 +13,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Lab 20: lifecycle guard for Android test providers.
@@ -44,6 +45,13 @@ public final class LabProviderReliabilityController {
     public LabProviderReliabilityController(
             Context context,
             LocationManager locationManager) {
+        this(context, locationManager, Runnable::run);
+    }
+
+    public LabProviderReliabilityController(
+            Context context,
+            LocationManager locationManager,
+            Consumer<Runnable> callbackDispatcher) {
         this.context = context.getApplicationContext();
         this.mockOpListener = (operation, packageName) -> {
             if (!AppOpsManager.OPSTR_MOCK_LOCATION.equals(operation)
@@ -51,7 +59,7 @@ public final class LabProviderReliabilityController {
                     && !this.context.getPackageName().equals(packageName))) {
                 return;
             }
-            onMockAppOpChanged();
+            callbackDispatcher.accept(this::onMockAppOpChanged);
         };
         this.locationManager = locationManager;
         this.prefs = this.context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
