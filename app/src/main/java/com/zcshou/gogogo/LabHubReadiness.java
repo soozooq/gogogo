@@ -24,8 +24,8 @@ public final class LabHubReadiness {
 
     public static Summary summarize(LabQuickCheckReport.Snapshot snapshot) {
         if (snapshot == null) {
-            return new Summary(Attention.UNKNOWN, "当前前置条件无法读取",
-                    "打开基础快检查看详细状态；不要将未知当作已授权。");
+            return new Summary(Attention.UNKNOWN, "有些状态暂时读不到",
+                    "暂时无法读取状态，也可以直接复制日志，无需先做实验。");
         }
         if (snapshot.systemLocation == LabQuickCheckReport.Signal.NO) {
             return new Summary(Attention.NEED_ACTION, "系统定位尚未开启",
@@ -43,13 +43,13 @@ public final class LabHubReadiness {
                 || snapshot.finePermission != LabQuickCheckReport.Signal.YES
                 || snapshot.mockAppOp != LabQuickCheckReport.Signal.YES) {
             return new Summary(Attention.UNKNOWN, "有基础条件尚无法确认",
-                    "使用基础快检核对权限和 AppOps；UNKNOWN 不代表可用。");
+                    "部分权限状态暂时读不到；可以直接复制日志，无需逐项检查。");
         }
         if (snapshot.localServiceFlag) {
-            return new Summary(Attention.VERIFY_CONSUMERS, "基础条件未发现明确阻断项",
-                    "服务运行标记为 RUNNING；下一步到 Consumer Matrix 验证实际消费者。");
+            return new Summary(Attention.VERIFY_CONSUMERS, "基础设置未发现明显问题",
+                    "服务运行标记为运行中；遇到问题后直接复制日志。第三方应用的结果以实际使用为准。");
         }
-        return new Summary(Attention.VERIFY_CONSUMERS, "基础条件未发现明确阻断项",
-                "服务运行标记为 STOPPED；如需测试，请回首页手动启动，再验证消费者。");
+        return new Summary(Attention.VERIFY_CONSUMERS, "基础设置未发现明显问题",
+                "模拟服务未运行；如需模拟，请回首页选点并手动启动。仍可直接复制日志。");
     }
 }

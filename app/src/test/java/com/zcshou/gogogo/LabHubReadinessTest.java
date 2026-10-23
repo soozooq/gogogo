@@ -59,7 +59,8 @@ public class LabHubReadinessTest {
         LabHubReadiness.Summary result =
                 LabHubReadiness.summarize(device(YES, YES, YES, true));
         assertEquals(LabHubReadiness.Attention.VERIFY_CONSUMERS, result.attention);
-        assertTrue(result.detail.contains("Consumer Matrix"));
+        assertFalse(result.detail.contains("Consumer Matrix"));
+        assertTrue(result.detail.contains("复制日志"));
         assertTrue(result.detail.contains("运行标记"));
         assertFalse(result.detail.contains("微信兼容成功"));
     }
@@ -68,7 +69,7 @@ public class LabHubReadinessTest {
         LabHubReadiness.Summary result =
                 LabHubReadiness.summarize(device(YES, YES, YES, false));
         assertEquals(LabHubReadiness.Attention.VERIFY_CONSUMERS, result.attention);
-        assertTrue(result.detail.contains("STOPPED"));
+        assertTrue(result.detail.contains("未运行"));
         assertTrue(result.detail.contains("手动启动"));
     }
 

@@ -218,10 +218,32 @@ public final class LabSupportLog {
      */
     public static String generateAll(Context context, String expectedLongitude,
                                      String expectedLatitude) {
+        return generateAll(context, expectedLongitude, expectedLatitude, null);
+    }
+
+    /** Single feedback action: inspect existing caches now, then append saved history. */
+    public static String generateForFeedback(Context context) {
+        String snapshot;
+        try {
+            snapshot = LabSupportSnapshot.capture(context);
+        } catch (RuntimeException unavailable) {
+            snapshot = "SNAPSHOT_UNAVAILABLE_" + unavailable.getClass().getSimpleName();
+        }
+        if (Thread.currentThread().isInterrupted()) {
+            throw new IllegalStateException("EXPORT_CANCELLED");
+        }
+        return generateAll(context, "", "", snapshot);
+    }
+
+    private static String generateAll(Context context, String expectedLongitude,
+                                      String expectedLatitude, String currentSnapshot) {
         StringBuilder out = new StringBuilder(20_000);
         out.append("GOGOGO_COMPLETE_SUPPORT_LOG_V1\n");
         out.append("scope=read_only_current_diagnostics_and_saved_records; ")
                 .append("no_experiments_started=true; historical_results_not_rerun=true\n");
+        if (currentSnapshot != null) {
+            section(out, "CURRENT_CACHE_AND_NETWORK_AT_EXPORT", currentSnapshot);
+        }
         try {
             section(out, "LOCATION_DIAGNOSTICS",
                     generate(context, expectedLongitude, expectedLatitude));
@@ -229,6 +251,12 @@ public final class LabSupportLog {
             section(out, "LOCATION_DIAGNOSTICS",
                     "SECTION_ERROR_" + error.getClass().getSimpleName());
         }
+        section(out, "SAVED_CROSS_APP_OBSERVATIONS", savedReport(context,
+                "cross_app_location_evidence", "total_log", 56_000));
+        section(out, "SAVED_AUTOMATIC_WORKFLOW", savedReport(context,
+                "gogogo_auto_diagnostics_panel", "workflow_log", 125_000));
+        section(out, "SAVED_AUTOMATIC_REPORT", savedReport(context,
+                "gogogo_auto_diagnostics_panel", "last_report", 30_000));
         try {
             section(out, "SAVED_APPLICATION_RECORDS",
                     VirtualContainerV0Activity.collectSavedContainerReports(context));
@@ -236,8 +264,26 @@ public final class LabSupportLog {
             section(out, "SAVED_APPLICATION_RECORDS",
                     "SECTION_ERROR_" + error.getClass().getSimpleName());
         }
+        // Keep the clipboard transaction bounded; current evidence comes first.
+        if (out.length() > 200_000) {
+            out.setLength(200_000);
+            if (Character.isHighSurrogate(out.charAt(out.length() - 1))) out.setLength(out.length() - 1);
+            out.append("\n[OLDER_SAVED_RECORDS_TRUNCATED]\n");
+        }
         out.append("END_GOGOGO_COMPLETE_SUPPORT_LOG_V1\n");
         return out.toString();
+    }
+
+    private static String savedReport(Context context, String preferences, String key, int limit) {
+        try {
+            String value = context.getSharedPreferences(preferences, Context.MODE_PRIVATE)
+                    .getString(key, "");
+            if (value == null || value.isEmpty()) return "NO_RECORD; not_required_for_export=true";
+            return "scope=SAVED_HISTORY_NOT_A_NEW_TEST\n" + (value.length() <= limit ? value
+                    : "[OLDER_HISTORY_TRUNCATED]\n" + value.substring(value.length() - limit));
+        } catch (RuntimeException unavailable) {
+            return "SAVED_REPORT_UNAVAILABLE_" + unavailable.getClass().getSimpleName();
+        }
     }
 
     /** User action only. Do not upload automatically. */
@@ -250,15 +296,25 @@ public final class LabSupportLog {
     public static boolean copyWithResult(Context context, String expectedLongitude,
                                          String expectedLatitude) {
         try {
-            ClipboardManager manager = (ClipboardManager) context.getSystemService(
-                    Context.CLIPBOARD_SERVICE);
-            if (manager == null) throw new IllegalStateException("NO_CLIPBOARD");
-            manager.setPrimaryClip(ClipData.newPlainText("GoGoGo 诊断日志",
-                    generateAll(context, expectedLongitude, expectedLatitude)));
-            Toast.makeText(context, "日志已复制，直接粘贴发给 GPT 即可", Toast.LENGTH_LONG).show();
-            return true;
+            return copyPrepared(context, generateAll(context, expectedLongitude, expectedLatitude));
         } catch (Exception e) {
             Toast.makeText(context, "复制失败：" + e.getClass().getSimpleName(),
+                    Toast.LENGTH_LONG).show();
+            return false;
+        }
+    }
+
+    /** Clipboard remains a foreground user action; this never rebuilds the report. */
+    public static boolean copyPrepared(Context context, String report) {
+        try {
+            if (report == null || report.isEmpty()) throw new IllegalArgumentException("EMPTY_REPORT");
+            ClipboardManager manager = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+            if (manager == null) throw new IllegalStateException("NO_CLIPBOARD");
+            manager.setPrimaryClip(ClipData.newPlainText("GoGoGo 诊断日志", report));
+            Toast.makeText(context, "日志已复制，直接粘贴到对话即可", Toast.LENGTH_LONG).show();
+            return true;
+        } catch (RuntimeException unavailable) {
+            Toast.makeText(context, "复制失败，请再点一次：" + unavailable.getClass().getSimpleName(),
                     Toast.LENGTH_LONG).show();
             return false;
         }

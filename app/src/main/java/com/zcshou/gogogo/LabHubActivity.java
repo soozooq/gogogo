@@ -3,6 +3,7 @@ package com.zcshou.gogogo;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -34,10 +35,22 @@ public final class LabHubActivity extends AppCompatActivity {
     private boolean preflightExpanded;
     private View preflightPanel;
     private MaterialButton preflightToggle;
+    private boolean advancedExpanded;
+    private LinearLayout advancedPanel;
+    private MaterialButton advancedToggle;
+    private MaterialButton copyLogButton;
+    private TextView copyStatus;
+    private java.util.concurrent.ExecutorService exportWorker;
+    private boolean exporting;
+    private boolean resumed;
+    private int exportGeneration;
+    private String readyReport;
+    private long readyReportElapsed;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (savedInstanceState != null) {
+            advancedExpanded = savedInstanceState.getBoolean("hub_advanced_expanded", false);
             boolean[] previous = savedInstanceState.getBooleanArray(EXPANDED_STATE);
             if (previous != null) {
                 // Migrate the previous three saved groups when the fourth was added.
@@ -54,17 +67,34 @@ public final class LabHubActivity extends AppCompatActivity {
                 else oneOpen = true;
             }
         }
+        if (!advancedExpanded) {
+            java.util.Arrays.fill(expanded, false);
+            preflightExpanded = false;
+        }
         buildUi();
     }
 
     @Override protected void onResume() {
         super.onResume();
+        resumed = true;
+        if (readyReport != null && SystemClock.elapsedRealtime() - readyReportElapsed > 60_000L) {
+            readyReport = null;
+            copyLogButton.setText("一键复制完整日志");
+            copyStatus.setText("点击会重新汇总当前状态，不用先运行实验。");
+        }
         TianwaitianBottomNav.syncSelection(this, TianwaitianBottomNav.Tab.DIAGNOSTICS);
         refreshReadiness();
-        if (experimentPreflight != null && preflightExpanded) experimentPreflight.refresh();
+        if (experimentPreflight != null && advancedExpanded && preflightExpanded) experimentPreflight.refresh();
+    }
+
+    @Override protected void onPause() {
+        resumed = false;
+        super.onPause();
     }
 
     @Override protected void onDestroy() {
+        exportGeneration++;
+        if (exportWorker != null) exportWorker.shutdownNow();
         if (timedSupportCopy != null) timedSupportCopy.close();
         if (experimentPreflight != null) experimentPreflight.close();
         super.onDestroy();
@@ -73,6 +103,7 @@ public final class LabHubActivity extends AppCompatActivity {
     @Override protected void onSaveInstanceState(Bundle outState) {
         outState.putBooleanArray(EXPANDED_STATE, expanded.clone());
         outState.putBoolean(PREFLIGHT_EXPANDED_KEY, preflightExpanded);
+        outState.putBoolean("hub_advanced_expanded", advancedExpanded);
         super.onSaveInstanceState(outState);
     }
 
@@ -85,42 +116,67 @@ public final class LabHubActivity extends AppCompatActivity {
         int pad = GoGoUi.dp(this, 18);
         root.setPadding(pad, GoGoUi.dp(this, 12), pad, GoGoUi.dp(this, 24));
         scroll.addView(root);
-
-        // This is a primary tab, not a secondary detail screen. Bottom nav
-        // owns the top-level navigation; no redundant "Back" row is needed.
         root.addView(GoGoUi.brandStrip(this), GoGoUi.matchWrap());
-        root.addView(GoGoUi.heroTitle(this, "诊断中心"), GoGoUi.matchWrap());
+        root.addView(GoGoUi.heroTitle(this, "诊断与反馈"), GoGoUi.matchWrap());
         root.addView(GoGoUi.subtitle(this,
-                "设备快检、被动位置观察与高级研究。进入本页不会启动模拟。"),
-                GoGoUi.matchWrap());
-        root.addView(GoGoUi.gap(this, 10));
-        root.addView(GoGoUi.eyebrow(this, "只读总览  ·  快速检查  ·  深入排障"),
-                GoGoUi.matchWrap());
+                "照常选点和使用应用，遇到问题后回来复制一份日志即可。"), GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 14));
 
-        // One glance at the same read-only prerequisites used by Lab 31.
+        com.google.android.material.card.MaterialCardView feedback = GoGoUi.card(this);
+        LinearLayout feedbackBody = GoGoUi.cardContent(this);
+        feedback.addView(feedbackBody);
+        feedbackBody.addView(GoGoUi.sectionTitle(this, "只需复制一次"), GoGoUi.matchWrap());
+        feedbackBody.addView(GoGoUi.muted(this,
+                "自动汇总当前状态和已有记录。无需先做快检、选实验或填写表格。"), GoGoUi.matchWrap());
+        feedbackBody.addView(GoGoUi.gap(this, 12));
+        copyLogButton = GoGoUi.primaryButton(this, "一键复制完整日志", v -> copyFeedbackLog());
+        feedbackBody.addView(copyLogButton, GoGoUi.matchWrap());
+        feedbackBody.addView(GoGoUi.gap(this, 8));
+        copyStatus = GoGoUi.muted(this, "复制后直接粘贴到对话。没有旧实验记录也可以使用。");
+        feedbackBody.addView(copyStatus, GoGoUi.matchWrap());
+        root.addView(feedback, GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 12));
+
         com.google.android.material.card.MaterialCardView overview = GoGoUi.card(this);
         LinearLayout overviewBody = GoGoUi.cardContent(this);
         overview.addView(overviewBody);
-        overviewBody.addView(GoGoUi.muted(this, "当前设备 · 只读概览"),
-                GoGoUi.matchWrap());
-        overviewBody.addView(GoGoUi.gap(this, 5));
-        readinessTitle = GoGoUi.sectionTitle(this, "正在检查…");
+        overviewBody.addView(GoGoUi.muted(this, "当前状态 · 自动读取"), GoGoUi.matchWrap());
+        readinessTitle = GoGoUi.sectionTitle(this, "正在读取状态…");
         overviewBody.addView(readinessTitle, GoGoUi.matchWrap());
-        readinessDetail = GoGoUi.muted(this, "不验证微信、GMS 缓存或 Provider 清理。");
+        readinessDetail = GoGoUi.muted(this, "状态无法读取时也可以直接复制日志。");
         overviewBody.addView(readinessDetail, GoGoUi.matchWrap());
-        overviewBody.addView(GoGoUi.gap(this, 8));
-        overviewBody.addView(GoGoUi.secondaryButton(this, "刷新设备状态",
-                v -> refreshReadiness()), GoGoUi.matchWrap());
         root.addView(overview, GoGoUi.matchWrap());
+        root.addView(GoGoUi.gap(this, 16));
 
+        advancedToggle = GoGoUi.secondaryButton(this, "", v -> setAdvancedExpanded(!advancedExpanded));
+        root.addView(advancedToggle, GoGoUi.matchWrap());
+        advancedPanel = new LinearLayout(this);
+        advancedPanel.setOrientation(LinearLayout.VERTICAL);
+        root.addView(advancedPanel, GoGoUi.matchWrap());
+        setAdvancedExpanded(advancedExpanded);
+        setContentView(scroll);
+        TianwaitianBottomNav.attach(this, TianwaitianBottomNav.Tab.DIAGNOSTICS);
+    }
+
+    private void setAdvancedExpanded(boolean show) {
+        advancedExpanded = show;
+        if (show && advancedPanel.getChildCount() == 0) buildAdvancedTools(advancedPanel);
+        if (!show) collapseAllAdvanced();
+        advancedPanel.setVisibility(show ? View.VISIBLE : View.GONE);
+        advancedToggle.setText(show ? "收起高级工具" : "高级工具（通常不用）");
+        advancedToggle.setContentDescription(show ? "高级工具已展开，点击收起" : "高级工具已收起，点击展开");
+    }
+
+    private void buildAdvancedTools(LinearLayout root) {
+        root.addView(GoGoUi.muted(this, "以下是保留的手动研究工具，日常反馈不用逐项操作。"),
+                GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 12));
         root.addView(GoGoUi.navigationTile(this, "应用运行",
-                "导入一次后直接打开，结束时一次复制全部记录",
+                "自有 Demo 与兼容研究；日常定位反馈无需导入",
                 v -> open(VirtualContainerV0Activity.class)), GoGoUi.matchWrap());
 
         root.addView(GoGoUi.gap(this, 12));
-        root.addView(GoGoUi.sectionTitle(this, "先做这两项"),
+        root.addView(GoGoUi.sectionTitle(this, "手动检查（可选）"),
                 GoGoUi.matchWrap());
         root.addView(GoGoUi.muted(this,
                 "只读检查不会启动新的模拟；主动定位观察需要你另外选择。"),
@@ -145,8 +201,6 @@ public final class LabHubActivity extends AppCompatActivity {
                 v -> open(ConsumerLocationProbeActivity.class)), GoGoUi.matchWrap());
 
         root.addView(GoGoUi.gap(this, 10));
-        root.addView(GoGoUi.primaryButton(this, "📋 复制最近诊断日志（发给 GPT）",
-                v -> LabSupportLog.copy(this, "", "")), GoGoUi.matchWrap());
         timedSupportCopy = new LabTimedSupportCopy(this, () -> new String[] {"", ""});
         root.addView(GoGoUi.gap(this, 10));
         root.addView(timedSupportCopy.view(), GoGoUi.matchWrap());
@@ -199,13 +253,71 @@ public final class LabHubActivity extends AppCompatActivity {
                         IsolatedCapsuleLabActivity.class)
         });
 
-        root.addView(GoGoUi.gap(this, 18));
-        root.addView(GoGoUi.muted(this,
-                "这是工具导航，不会申请权限、启动或停止模拟。"
-                        + "真实第三方位置兼容性必须用设备实测确认。"),
-                GoGoUi.matchWrap());
-        setContentView(scroll);
-        TianwaitianBottomNav.attach(this, TianwaitianBottomNav.Tab.DIAGNOSTICS);
+    }
+
+    private void copyFeedbackLog() {
+        if (exporting) return;
+        if (readyReport != null) {
+            copyReadyReport();
+            return;
+        }
+        exporting = true;
+        final int token = ++exportGeneration;
+        copyLogButton.setEnabled(false);
+        copyLogButton.setText("正在整理日志…");
+        copyStatus.setText("正在自动汇总，请稍候；不需要打开其他实验页面。");
+        if (exportWorker == null) {
+            exportWorker = java.util.concurrent.Executors.newSingleThreadExecutor(task -> {
+                Thread worker = new Thread(task, "TianwaitianSupportExport");
+                worker.setDaemon(true);
+                return worker;
+            });
+        }
+        final android.content.Context app = getApplicationContext();
+        try {
+            exportWorker.execute(() -> {
+                String report = null;
+                String failure = null;
+                try { report = LabSupportLog.generateForFeedback(app); }
+                catch (RuntimeException error) { failure = error.getClass().getSimpleName(); }
+                final String result = report;
+                final String error = failure;
+                runOnUiThread(() -> {
+                    if (token != exportGeneration || isFinishing() || isDestroyed()) return;
+                    exporting = false;
+                    copyLogButton.setEnabled(true);
+                    if (result == null) {
+                        copyLogButton.setText("一键复制完整日志");
+                        copyStatus.setText("整理未完成，请再点一次（" + error + "）");
+                        return;
+                    }
+                    readyReport = result;
+                    readyReportElapsed = SystemClock.elapsedRealtime();
+                    if (resumed && hasWindowFocus()) copyReadyReport();
+                    else {
+                        copyLogButton.setText("复制已整理的日志");
+                        copyStatus.setText("日志已整理。回到本页后点一下复制即可。");
+                    }
+                });
+            });
+        } catch (RuntimeException rejected) {
+            exporting = false;
+            copyLogButton.setEnabled(true);
+            copyLogButton.setText("一键复制完整日志");
+            copyStatus.setText("暂时无法整理，请再点一次。");
+        }
+    }
+
+    private void copyReadyReport() {
+        if (!resumed || !hasWindowFocus()) return;
+        if (LabSupportLog.copyPrepared(this, readyReport)) {
+            readyReport = null;
+            copyLogButton.setText("一键复制完整日志");
+            copyStatus.setText("已复制。直接粘贴到对话即可，不用再复制其他实验日志。");
+        } else {
+            copyLogButton.setText("重试复制已整理的日志");
+            copyStatus.setText("日志已整理，点一下重试复制即可。");
+        }
     }
 
     /**
