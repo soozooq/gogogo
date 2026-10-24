@@ -30,6 +30,8 @@
 
 [最新实际失败](evidence/cuttlefish-firmware-network-failure.json)已通过工具预检、真实组成员及系统组装；QEMU 加载网卡选件 ROM 时缺少发行版 `efi-virtio.rom`，配置服务也因 TAP 没有 IPv4 配置中止。内核没有启动；请求的 TCG 参数记录不等于已执行 Android。工作流补充 `ipxe-qemu` 包；依照固定 [host_device_config.cpp](https://android.googlesource.com/device/google/cuttlefish/+/4b46735a8d5b752ad77f4c518708024632495a2e/common/libs/device_config/host_device_config.cpp)，专用 mobile TAP 配置实际私有 IPv4／广播，先核对已有路由避免冲突，保留其他路由，不增加 NAT／DHCP或宣称互联网可达。驱动现在检查实际 QEMU 子进程与配置服务，ADB 连接短超时只记录次数；退出时通过 PID 句柄且核对原二进制与全部参数，仅清理本次 QEMU。
 
+[后续实际运行](evidence/cuttlefish-audio-backend-failure.json)确认固件和网络配置已解决，仍在内核前因 `AC97: no default audio driver available` 退出。固定 QEMU manager 无条件加入 AC97，即使传入 `enable_audio=false`；适配器现严格核对该设备，再保留原 PCI 拓扑并指定 `AC97,audiodev=cvd_silent`／`-audiodev none,id=cvd_silent`，不依赖宿主声卡，不删除设备或修改二进制。完整实测 argv 转换及冲突参数本地检查通过，仍待真正启动结果。
+
 ## 最新进展：统一的普通导入／选点入口
 
 研究宿主现在用一个页面完成选择、导入、填坐标、打开与停止。固定计算器和 GPSTest 的清单从 `sources.json` 生成；导入核对原 APK 的大小、摘要、包名、版本、证书。已导入状态和目标会保留，修改坐标后直接再次应用；不会改动系统安装的微信、抖音或日常天外天。

@@ -21,6 +21,16 @@ def software_arguments(arguments):
         raise ValueError('Pinned same-architecture CVD arguments have changed')
     result[machine] = 'virt,accel=tcg,gic-version=2,mte=on,usb=off,dump-guest-core=off'
     result[cpu] = 'max'
+    # This pinned CVD manager always adds AC97, even with --enable_audio=false.
+    # Modern distribution QEMU needs an explicit backend when no host sound
+    # driver is installed. Keep the PCI device and select the real none backend.
+    if '-audiodev' in result or result.count('AC97') != 1:
+        raise ValueError('Expected the pinned AC97 device without another audio selector')
+    audio = result.index('AC97')
+    if audio == 0 or result[audio - 1] != '-device':
+        raise ValueError('Unexpected AC97 argument shape')
+    result[audio] = 'AC97,audiodev=cvd_silent'
+    result += ['-audiodev', 'none,id=cvd_silent']
     return result
 
 
