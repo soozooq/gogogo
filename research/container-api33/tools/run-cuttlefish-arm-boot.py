@@ -43,7 +43,10 @@ def main():
     report = {'scope': 'CUTTLEFISH_ARM64_SYSTEM_BOOT_ONLY_NOT_APP_OR_VIVO',
               'build_id': spec['build_id'], 'state': 'PENDING', 'passed': False,
               'research_commit': subprocess.check_output(['git', '-C', str(spec_dir), 'rev-parse', 'HEAD'], text=True).strip(),
-              'boot_completed': False, 'guest_images_modified': False,
+              'boot_completed': False, 'input_archives_modified': False,
+              'host_and_qemu_binaries_modified': False,
+              'official_assembly_generates_runtime_disks': True,
+              'guest_userdata_expected_to_change': True,
               'apps_tested': False, 'wechat_tested': False,
               'host_report': host_report,
               'source_sha256': {str(x.relative_to(spec_dir)): digest(x) for x in [
@@ -120,8 +123,13 @@ def main():
         wrapper_binary.chmod(0o755)
         launch_record = out / 'qemu-launch.json'
         instance = work / 'instance'
+        # The native ARM host bundle includes Bionic-based tools. Their normal
+        # runtime/cache directory must be explicit, separate from the guest.
+        android_data = work / 'host-android-data'
+        android_data.mkdir(mode=0o700)
         environment = dict(os.environ, ANDROID_HOST_OUT=str(host),
                            ANDROID_PRODUCT_OUT=str(images),
+                           ANDROID_DATA=str(android_data),
                            CVD_TCG_LAUNCH_RECORD=str(launch_record),
                            CUTTLEFISH_INSTANCE='1')
         # Explicit paths replace the generic documentation's HOME override.

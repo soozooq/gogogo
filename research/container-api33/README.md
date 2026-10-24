@@ -20,7 +20,7 @@
 
 已从官方公共 Artifact Viewer 下载同一 Android13 构建 `16596636` 的镜像、宿主工具与 manifest，[固定输入](cuttlefish-inputs.json)记录实际大小及本地计算的 SHA-256，不能冒充官方另行发布的校验和。配套 `assemble_cvd`／`run_cvd`／`cvd` 均为原生 ARM64；manifest 中对应 Cuttlefish 源码为 `4b46735a`。公共页面提供正常 Download 链接，不需要登录、API key 或交互认证，不保存临时签名链接。
 
-同一 ARM Linux 作业新增独立选项 `run_cuttlefish_arm_boot`／提交标记 `[cuttlefish-boot]`，默认关闭。先检查真实宿主前提，再用配套 `assemble_cvd → run_cvd` 阶段、显式镜像／实例／汇总路径启动一台 VM。宿主适配器严格识别固定源码产生的单个 KVM／CPU 参数，并替换为 TCG／GICv2／MTE／max，不修改系统镜像、内核、QEMU 或宿主二进制；参数变化直接中止，不在末尾叠加冲突的加速器。另安装固定官方能力声明脚本，并独立核对实际设备能力，不把该声明当作能力证明。三个专用 TAP 仅启用链路，未配置 DHCP／NAT，不证明联网。
+同一 ARM Linux 作业新增独立选项 `run_cuttlefish_arm_boot`／提交标记 `[cuttlefish-boot]`，默认关闭。先检查真实宿主前提，再用配套 `assemble_cvd → run_cvd` 阶段、显式镜像／实例／汇总路径启动一台 VM；原生宿主 Bionic 工具使用独立 `ANDROID_DATA` 运行目录，保持 HOME。宿主适配器严格识别固定源码产生的单个 KVM／CPU 参数，并替换为 TCG／GICv2／MTE／max，不修改内核、QEMU 或宿主二进制；原始下载归档保持固定，官方组装生成运行磁盘，userdata 后续正常写入。参数变化直接中止，不在末尾叠加冲突的加速器。另安装固定官方能力声明脚本，并独立核对实际设备能力，不把该声明当作能力证明。三个专用 TAP 仅启用链路，未配置 DHCP／NAT，不证明联网。
 
 启动成功必须核对完整启动、实际 API33／构建号／Cuttlefish 产品／ARM64 内核与 ABI、无 Native Bridge、普通 shell UID 2000、SELinux Enforcing，以及存活 QEMU 的二进制摘要和完整有效参数。失败保存原因与本实例日志并停止；仅上传文本／截图证据，不上传镜像／APK。当前是系统资格检查，尚无新 VM 或微信／抖音通过结果，也没有手机操作待办。
 

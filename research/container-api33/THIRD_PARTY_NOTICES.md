@@ -18,3 +18,5 @@
 清单覆盖解析后的 53 个组件节点（含本地工程）。它收集宿主运行时的 POM 及父 POM 声明，不覆盖全部构建／测试工具，也不能替代原生源文件、字体、资源、NOTICE 和完整源码提供要求的逐项核对。
 
 ISEKHON/VirtualApp 根许可证为 Apache-2.0，但所带 Cydia Substrate 源码声明 LGPL-3.0，旧 FB JNI 源码指向 BSD 风格 LICENSE 与 PATENTS，树中未同时带齐这些声明。构建通过不消除该缺口；该 fork 仍未通过本项目的分发／整合门槛。VirtualApp 原作者商业版的最新适配记录也不作为当前公开源码的授权或运行证据。
+
+云端 Cuttlefish 系统资格检查的[独立输入清单](cuttlefish-inputs.json)固定官方 Android13 构建、对应源码 manifest、宿主包和公共镜像；另固定官方 `google/android-cuttlefish` 的能力声明脚本。该脚本的 Apache-2.0 版权及许可头保留在云端下载文件中，未将其声明替代实际设备能力测量。QEMU 来自临时 Ubuntu runner 的发行版包。此处不将宿主包、系统镜像、QEMU、内核或 helper 二进制重新打包或上传为本项目产物；这不是这些运行工具全部依赖的许可审计完成证明。

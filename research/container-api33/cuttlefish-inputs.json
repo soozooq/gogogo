@@ -35,6 +35,6 @@
     "scope": "Unmodified official host-package feature declaration; actual kernel/device capability is separately measured"
   },
   "image_unpacked_bytes": 14101742377,
-  "guest_images_modified": false,
+  "input_archives_modified": false,
   "apps_included_in_research_distribution": false
 }

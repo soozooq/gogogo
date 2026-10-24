@@ -40,7 +40,7 @@ def main():
     with path.open('x') as stream:
         json.dump({'pid': os.getpid(), 'binary': binary, 'original_arguments': arguments,
                    'effective_arguments': effective, 'accelerator': 'tcg',
-                   'guest_images_modified': False}, stream, indent=2)
+                   'adapter_modifies_guest_images': False}, stream, indent=2)
     os.execv(binary, [binary] + effective)
 
 
