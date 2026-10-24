@@ -1,0 +1,46 @@
+{
+  "scope": "MAC_ARM64_ACCELERATOR_SELECTION_FAILURE_NOT_APP_RUNTIME",
+  "date_utc": "2026-10-24",
+  "commit": "c20fcc5201e93a2ff16f61c0bf7df3444a546821",
+  "run_id": 40058811870,
+  "job_id": 120767624050,
+  "artifact_id": 12546487750,
+  "artifact_sha256": "84721f73f7bac388cd219cf08612588bbaf9a4be87d44a9ab83ee7dfce482187",
+  "artifact_digest_verified": true,
+  "capability": {
+    "scope": "CAPABILITY_COMMAND_ONLY_NOT_OS_OR_APP_RUNTIME",
+    "exit": 0,
+    "command_completed": true,
+    "tcg_advertised": true,
+    "state": "TCG_ADVERTISED"
+  },
+  "boot": {
+    "scope": "SOFTWARE_ARM64_SYSTEM_BOOT_ONLY_NOT_WECHAT_OR_PHYSICAL_VIVO",
+    "state": "EMULATOR_EXITED_BEFORE_BOOT",
+    "boot_completed": false,
+    "passed": false,
+    "system_image_modified": false,
+    "target_apps_tested": false,
+    "observed_seconds": 5.79
+  },
+  "observed_qemu_options": [
+    "-machine type=virt",
+    "-enable-hvf",
+    "-machine accel=tcg",
+    "-cpu max"
+  ],
+  "observed_failure": "hvf_init_vcpu followed by HV_UNSUPPORTED before Android boot",
+  "classification": "FINAL_MACHINE_TCG_OPTION_DID_NOT_DISABLE_EARLIER_HVF_ENABLE",
+  "emulator_log_sha256": "6200c53d4d8d07a16ba6ab77eab85f730b0b0339d6fa15397984e7dff10b73f5",
+  "source_explanation": {
+    "scope": "UPSTREAM_SOURCE_REFERENCE_NOT_EXACT_SHIPPED_SDK_COMMIT",
+    "base_url": "https://android.googlesource.com/platform/external/qemu/+/refs/heads/emu-master-dev/",
+    "vl.c": "enable-hvf sets the global flag with hvf_disable(0); changing machine options does not undo that call",
+    "cpus.c": "CPU initialization selects hvf_enabled() before tcg_enabled()",
+    "android-qemu2-glue/main.cpp": "ARM host branch adds -enable-hvf based on capability, even if accel_mode is OFF"
+  },
+  "system_image_modified": false,
+  "sdk_binary_modified": false,
+  "target_apps_tested": false,
+  "next": "Do not repeat unchanged Mac arguments; continue the newer official Google API33 ARM64 full-system Linux candidate. TCG listing alone is not OS boot proof."
+}

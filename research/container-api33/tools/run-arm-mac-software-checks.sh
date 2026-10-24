@@ -41,8 +41,10 @@ values = {'disk.dataPartition.size': '6G', 'hw.lcd.width': '320',
 lines = [s for s in p.read_text().splitlines() if s.partition('=')[0].strip() not in values]
 p.write_text('\n'.join(lines + [k + '=' + v for k, v in values.items()]) + '\n')
 PY
-# The ARM glue can add -enable-hvf even for -accel off. Explicitly select the
-# software accelerator in the final QEMU machine options; leave the OS untouched.
+# Request TCG explicitly, but do not infer the selected accelerator from this flag.
+# SDK 37.2.12 still initialized HVF on the tested Mac runner (see the recorded
+# selection failure). Only the actual boot gate permits subsequent app checks.
+# Do not repeat this opt-in on an unchanged runner/SDK merely to increase counts.
 "$ANDROID_HOME/emulator/emulator" -avd api33-arm64-software -port 5580 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel off -memory 2048 -cores 2 -no-snapshot-load -no-snapshot-save -show-kernel -verbose -qemu -machine accel=tcg -cpu max > "$CONTAINER_RESEARCH_WORKDIR/evidence/arm64-software-emulator.log" 2>&1 &
 research_emulator_pid=$!
 trap 'kill "$research_emulator_pid" 2>/dev/null || true' EXIT

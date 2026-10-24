@@ -10,7 +10,7 @@
 
 2026-10-24 新核查：[ARM64 整机软件模拟记录](research/container-api33/evidence/full-arm64-software-linux-check.json)已实际进入 ARM64 内核／Android 系统服务，ADB 确认 ARM64 应用 ABI、Native Bridge 为 0、UID 2000 与 SELinux Enforcing。不过，官方 API33 AOSP 镜像在本云端两种软件 CPU 配置下均出现 ART／system_server 原生崩溃循环，完整启动未通过，目标应用没有安装。早期启动器拒绝与转译崩溃不能扩大成“所有 ARM64 整机模拟均不可用”。
 
-新增显式选择 TCG 的 ARM Mac 核查，先查官方二进制是否提供 TCG，再核验完整启动、架构和权限；系统服务连续崩溃会停止，未通过不执行应用检查。依据上游启动源码，ARM 分支可能仍为 `accel off` 添加 HVF 参数，所以本轮在最终 QEMU 机器选项中明确指定 `accel=tcg`，不是重做原来的 HVF 启动。新增核查尚待云端结果；原版应用和系统镜像保持原样。
+[ARM Mac 新核查已执行](research/container-api33/evidence/mac-arm64-tcg-selection-failure.json)：修正探测脚本的 SDK 库路径后，官方二进制列出了 TCG，但实际启动同时带有 `-enable-hvf`；最终机器参数 `accel=tcg` 没有阻止 HVF 初始化，仍在系统启动前报 `HV_UNSUPPORTED`。这是加速器选择失败，不能写成 TCG 不可用或目标应用失败，不重复未改变的参数。当前继续核查构建较新的官方 Google API33 ARM64 镜像在 Linux 上的整机软件启动；必须完整启动并核验身份后才执行应用检查。原包、系统镜像和 SDK 二进制保持原样。
 
 - 工程修正已完成全新云端普通入口回归：正常文件选择、原版 GPSTest 精确授权、坐标更新与停止，以及原版计算器运行。见[源码及产物绑定的通过记录](research/container-api33/evidence/cloud-ordinary-entry-pass.json)。
 - 微信／抖音的官方原包在 API30 和 API32 官方转译镜像中均正常安装后原生崩溃，**尚未启动容器，更未验证目标业务**。见[API30](research/container-api33/evidence/official-target-baseline-limit.json)与[API32 原始对照](research/container-api33/evidence/official-target-api32-baseline-limit.json)。这是当前已确认的云端验证阻塞，不据此推断真机失败。
