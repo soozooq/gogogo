@@ -36,6 +36,8 @@
 
 该目录修正后，[下一项真实故障](research/container-api33/evidence/cuttlefish-host-timezone-failure.json)为同一原生工具缺少 `ANDROID_TZDATA_ROOT`，仍在 VM 前。已按实际 manifest 对应的 Bionic tzcode 源码一次补齐全部三个根目录，使用宿主包自带的真实时区数据库，并统一传给组装、runner 和所有 ADB 子进程；新增 avbtool／ADB 预检，尚待新 CI 实测。
 
+[工具预检及组装已实际通过](research/container-api33/evidence/cuttlefish-firmware-network-failure.json)。随后 QEMU 因宿主缺少 `efi-virtio.rom` 退出，配置服务也因专用 TAP 无 IPv4 配置中止；内核日志为空，仍无 Android 启动。原驱动只检查 launcher 存活，后来由 ADB 超时结束，已补上实际 QEMU 子进程检查与配置服务故障检查。新增发行版固件包，并按固定配置服务源码为自有 TAP 选择不冲突的真实私有地址及广播；没有配置 NAT／DHCP，不代表联网或抖音无线通过。下一轮待实测。
+
 同时修正了虚拟模式下三个基站 getter 的明确缺口：缺少 BCell 时不再查询真实基站，内部 BCell 列表不再直接当作框架对象返回；关闭模拟时沿原查询路径。[新增两项受控 Android13 代理回归已在云端通过](research/container-api33/evidence/radio-privacy-contract-results.json)，测试使用受控基站服务计数，未读取真实基站。它不证明 Guest Hook 安装或第三方采用，也不能认定微信失败根因或无线兼容。见[审计范围](research/container-api33/AUDIT.md)。
 
 `qualify-arm64-software-boot.py` 要求明确选择 API32／33、完整启动、ARM64 内核／主 ABI、无 x86 ABI、Native Bridge 为 0、UID 2000、SELinux Enforcing。除 ADB 的 system_server 取证外，新增可选控制台检查，在 ADB 未启动时也识别两个不同 system_server／keystore2 原生崩溃；重复同一 PID、等待服务的文字不会误算。实际 API32 故障和解析边界已验证。原包驱动的 full-arm64 与转译模式仍各自复核环境；定位关闭，停在欢迎／隐私页，不接受条款或登录，没有目标运行结果。
@@ -56,7 +58,7 @@
 
 ## 验证状态与用户失败证据
 
-[最近完成的 CI](research/container-api33/evidence/default-ci-state.json) `40082724586`，实测提交 `d1439c0`：Linux 构建／审计、普通入口 10.388 秒、计算器 5.841 秒、新增两项受控基站代理回归及 ARM Mac 构建成功。已下载证据 ZIP 并核对摘要、实测提交和 32 项研究源码摘要。ARM Linux 宿主前提来自上一提交 `dbb640a` 的独立记录，本次该检查跳过；两者都不是 ARM64 Android Guest 运行。已失败的转译与 Mac 运行检查本次跳过，**跳过不是目标兼容通过**。
+[最近完成的 CI](research/container-api33/evidence/default-ci-state.json) `40085793909`，实测提交 `8526594`：默认 Linux 构建／审计、普通入口 13.797 秒、计算器 6.215 秒、两项受控基站代理回归及 ARM Mac 构建成功。已下载证据 ZIP 并核对摘要、实测提交和每轮 35 项研究源码摘要。**同一工作流的可选 ARM 系统启动失败，整体 CI 为失败**：工具预检／组装通过，QEMU 缺少网卡固件及配置服务的 IPv4 失败见上文，没有 Android Guest 或应用通过。已失败的旧转译及 Mac 运行检查仍跳过，**跳过不是目标兼容通过**。本轮宿主配置和故障检查修正尚待新 CI，不能借用旧通过记录。
 
 用户给出的 VPN 开／关日志中，复制时 GPS／NETWORK／GMS 缓存都接近模拟目标，但微信截图及用户反馈仍失败。导出时快照不是微信前台期间的连续采样，10 月 13 日旧实验不是本轮结果。脱敏验收在 #59 顶部，实际地址截图没有上传公共仓库。
 

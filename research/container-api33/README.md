@@ -20,13 +20,15 @@
 
 已从官方公共 Artifact Viewer 下载同一 Android13 构建 `16596636` 的镜像、宿主工具与 manifest，[固定输入](cuttlefish-inputs.json)记录实际大小及本地计算的 SHA-256，不能冒充官方另行发布的校验和。配套 `assemble_cvd`／`run_cvd`／`cvd` 均为原生 ARM64；manifest 中对应 Cuttlefish 源码为 `4b46735a`。公共页面提供正常 Download 链接，不需要登录、API key 或交互认证，不保存临时签名链接。
 
-同一 ARM Linux 作业新增独立选项 `run_cuttlefish_arm_boot`／提交标记 `[cuttlefish-boot]`，默认关闭。先检查真实宿主前提，再用配套 `assemble_cvd → run_cvd` 阶段、显式镜像／实例／汇总路径启动一台 VM；原生宿主 Bionic 工具使用独立 `ANDROID_DATA` 运行目录，保持 HOME。宿主适配器严格识别固定源码产生的单个 KVM／CPU 参数，并替换为 TCG／GICv2／MTE／max，不修改内核、QEMU 或宿主二进制；原始下载归档保持固定，官方组装生成运行磁盘，userdata 后续正常写入。参数变化直接中止，不在末尾叠加冲突的加速器。另安装固定官方能力声明脚本，并独立核对实际设备能力，不把该声明当作能力证明。三个专用 TAP 仅启用链路，未配置 DHCP／NAT，不证明联网。
+同一 ARM Linux 作业新增独立选项 `run_cuttlefish_arm_boot`／提交标记 `[cuttlefish-boot]`，默认关闭。先检查真实宿主前提，再用配套 `assemble_cvd → run_cvd` 阶段、显式镜像／实例／汇总路径启动一台 VM；原生宿主 Bionic 工具使用独立 `ANDROID_DATA` 运行目录，保持 HOME。宿主适配器严格识别固定源码产生的单个 KVM／CPU 参数，并替换为 TCG／GICv2／MTE／max，不修改内核、QEMU 或宿主二进制；原始下载归档保持固定，官方组装生成运行磁盘，userdata 后续正常写入。参数变化直接中止，不在末尾叠加冲突的加速器。另安装固定官方能力声明脚本，并独立核对实际设备能力，不把该声明当作能力证明。三个专用 TAP 使用独立接口，其中 mobile TAP 按配置服务要求提供本地 IPv4／广播；未配置 DHCP／NAT，不证明联网。
 
 启动成功必须核对完整启动、实际 API33／构建号／Cuttlefish 产品／ARM64 内核与 ABI、无 Native Bridge、普通 shell UID 2000、SELinux Enforcing，以及存活 QEMU 的二进制摘要和完整有效参数。失败保存原因与本实例日志并停止；仅上传文本／截图证据，不上传镜像／APK。当前是系统资格检查，尚无新 VM 或微信／抖音通过结果，也没有手机操作待办。
 
 原生宿主工具的实际时区初始化故障已追到 manifest 对应的 [Bionic tzcode](https://android.googlesource.com/platform/bionic/+/6e03489e7a4ec5b34b202a3fa4f868a4fdfc3bda/libc/tzcode/bionic.cpp)：宿主分支依次使用 `ANDROID_DATA`、`ANDROID_TZDATA_ROOT`、`ANDROID_ROOT`，未设置会中止。当前使用独立可写缓存、真实宿主根目录及该宿主包自带的 tzdata，统一传给全部宿主子进程；先执行 avbtool／ADB 的正常版本预检。原始失败和修正前输入摘要保留，工具预检也不代替 Android 启动。
 
 固定源码的 [ValidateHostConfiguration](https://android.googlesource.com/device/google/cuttlefish/+/4b46735a8d5b752ad77f4c518708024632495a2e/host/libs/vm_manager/host_configuration.cpp)另要求实际 `cvdnetwork`／`kvm` 组成员资格。工作流正常创建／加入这些组，再以同一个普通 runner 用户刷新补充组；主流程核对 UID 及实际组，VM 不以 root 用户运行。组名不提供 KVM 硬件；设备检查、有效 TCG 参数和无 KVM 的证据独立保留，没有修改或绕过该验证器。
+
+[最新实际失败](evidence/cuttlefish-firmware-network-failure.json)已通过工具预检、真实组成员及系统组装；QEMU 加载网卡选件 ROM 时缺少发行版 `efi-virtio.rom`，配置服务也因 TAP 没有 IPv4 配置中止。内核没有启动；请求的 TCG 参数记录不等于已执行 Android。工作流补充 `ipxe-qemu` 包；依照固定 [host_device_config.cpp](https://android.googlesource.com/device/google/cuttlefish/+/4b46735a8d5b752ad77f4c518708024632495a2e/common/libs/device_config/host_device_config.cpp)，专用 mobile TAP 配置实际私有 IPv4／广播，先核对已有路由避免冲突，保留其他路由，不增加 NAT／DHCP或宣称互联网可达。驱动现在检查实际 QEMU 子进程与配置服务，ADB 连接短超时只记录次数；退出时通过 PID 句柄且核对原二进制与全部参数，仅清理本次 QEMU。
 
 ## 最新进展：统一的普通导入／选点入口
 

@@ -37,10 +37,15 @@ def main():
     temporary = Path(os.environ['RUNNER_TEMP']).resolve()
     if not path.is_relative_to(temporary):
         raise SystemExit('Launch record must stay in this runner temporary directory')
-    with path.open('x') as stream:
+    pending = path.with_name(path.name + '.pending')
+    with pending.open('x') as stream:
         json.dump({'pid': os.getpid(), 'binary': binary, 'original_arguments': arguments,
                    'effective_arguments': effective, 'accelerator': 'tcg',
                    'adapter_modifies_guest_images': False}, stream, indent=2)
+    # Publish only the completed record. The boot watcher must not read a
+    # half-written JSON file, and an existing launch record must not be replaced.
+    os.link(pending, path)
+    pending.unlink()
     os.execv(binary, [binary] + effective)
 
 

@@ -1,46 +1,84 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
-  "scope": "DEFAULT_RESEARCH_CHECKS_NOT_TARGET_APP_COMPATIBILITY",
-  "run_id": 40082724586,
-  "commit": "d1439c04763f8218283223d45e61d78ad5f8056f",
-  "tree": "5f1dba65d6ca7675bdfe83360138a7dfc9d18a51",
-  "conclusion": "success",
+  "scope": "DEFAULT_CHECKS_PASS_WITH_SEPARATE_HOST_BOOT_FAILURE_NOT_TARGET_COMPATIBILITY",
+  "run_id": 40085793909,
+  "commit": "8526594d9adf60bf6934916c7148afbba6bc69b4",
+  "tree": "86a8f4357ed047383c85d37c42df5dcb9ab70e3a",
+  "conclusion": "failure",
   "jobs": [
     {
-      "id": 120839413088,
+      "id": 120848340870,
+      "name": "Inspect ARM Linux host and optional Cuttlefish boot",
+      "conclusion": "failure"
+    },
+    {
+      "id": 120848341089,
       "name": "Build and inspect (ARM Mac)",
       "conclusion": "success"
     },
     {
-      "id": 120839413266,
+      "id": 120848341120,
       "name": "Build, inspect and ordinary entry (Linux)",
       "conclusion": "success"
     },
     {
-      "id": 120839413828,
+      "id": 120848342161,
       "name": "Anonymous startup (official Android 12L translation)",
-      "conclusion": "skipped"
-    },
-    {
-      "id": 120839414057,
-      "name": "Inspect ARM Linux Cuttlefish host (no VM)",
       "conclusion": "skipped"
     }
   ],
-  "cuttlefish_host_probe": "SKIPPED_THIS_RUN_PREVIOUS_DBB640A_HOST_ONLY_VERIFIED",
+  "cuttlefish_host_probe": "PREREQUISITES_AND_TOOL_PREFLIGHT_AND_ASSEMBLY_PASSED_QEMU_FIRMWARE_EXIT_BEFORE_KERNEL",
   "cuttlefish_host_result": "cuttlefish-arm-linux-host-result.json",
   "target_probe": "SKIPPED_EXPLICIT_MANUAL_OPT_IN_NOT_PASS",
   "arm64_mac_runtime_probe": "SKIPPED_DEFAULT_FALSE_NOT_PASS",
-  "full_arm64_guest_apps": "NOT_RUN_API33_ART_AND_API32_KEYSTORE_SYSTEM_BOOT_FAILED",
+  "full_arm64_guest_apps": "NOT_RUN_CUTTLEFISH_QEMU_EXIT_BEFORE_KERNEL_PRIOR_SDK_BOOT_FAILURES_PRESERVED",
   "wechat_send_and_live_location": "UNFULFILLED",
   "douyin_wireless_and_overseas": "UNFULFILLED",
   "physical_arm64_vivo": "NOT_VERIFIED",
   "phone_update_distributed": false,
   "previous_default_run": {
-    "run_id": 40080900517,
-    "commit": "dbb640a0019b166e88d7e32903a85826d2519f3e",
+    "run_id": 40082724586,
+    "commit": "d1439c04763f8218283223d45e61d78ad5f8056f",
     "conclusion": "success"
   },
   "controlled_radio_proxy": "PASS_TWO_CONTROLLED_TESTS_NOT_GUEST_OR_RADIO_SDK_PROOF",
-  "radio_result": "radio-privacy-contract-results.json"
+  "radio_result": "radio-privacy-contract-results.json",
+  "default_checks_conclusion": "success",
+  "linux_artifact": {
+    "id": 12556883780,
+    "sha256": "a6b9b88ca7f95612d6efe70fc41d8d97d25c1954dc960fb98670815d4d6226bd",
+    "digest_verified": true,
+    "commit_verified": true,
+    "every_case_source_map_verified_against_commit": true
+  },
+  "default_case_results": {
+    "x86_64-radio-privacy": {
+      "passed": true,
+      "tests": 2,
+      "research_inputs_verified": 35,
+      "instrumentation_summary": [
+        "Time: 0.032",
+        "OK (2 tests)"
+      ]
+    },
+    "x86_64-ordinary-entry": {
+      "passed": true,
+      "tests": 1,
+      "research_inputs_verified": 35,
+      "instrumentation_summary": [
+        "Time: 13.797",
+        "OK (1 test)"
+      ]
+    },
+    "x86_64-calculator": {
+      "passed": true,
+      "tests": 1,
+      "research_inputs_verified": 35,
+      "instrumentation_summary": [
+        "Time: 6.215",
+        "OK (1 test)"
+      ]
+    }
+  },
+  "cuttlefish_boot_result": "cuttlefish-firmware-network-failure.json"
 }

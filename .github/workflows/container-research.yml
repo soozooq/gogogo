@@ -176,7 +176,7 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/cuttlefish-host"
           sudo apt-get update > "$RUNNER_TEMP/cuttlefish-host/package-install.txt" 2>&1
-          sudo apt-get install --no-install-recommends -y qemu-system-arm kmod iproute2 >> "$RUNNER_TEMP/cuttlefish-host/package-install.txt" 2>&1
+          sudo apt-get install --no-install-recommends -y qemu-system-arm ipxe-qemu kmod iproute2 >> "$RUNNER_TEMP/cuttlefish-host/package-install.txt" 2>&1
           # The pinned host package validates these real memberships even for TCG.
           # Group membership does not supply KVM; actual device availability stays recorded.
           sudo groupadd --force cvdnetwork

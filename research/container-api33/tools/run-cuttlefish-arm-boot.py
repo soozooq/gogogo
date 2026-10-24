@@ -3,6 +3,7 @@
 import argparse
 import grp
 import hashlib
+import ipaddress
 import json
 import os
 from pathlib import Path
@@ -22,6 +23,27 @@ import zipfile
 def digest(path):
     with path.open('rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def private_tap_network(routes):
+    existing = [ipaddress.ip_network(x['dst'], strict=False) for x in routes
+                if x.get('dst', 'default') not in ['default', '0.0.0.0/0']]
+    for candidate in ['192.168.252.0/30', '192.168.253.0/30', '172.30.255.0/30']:
+        proposed = ipaddress.ip_network(candidate)
+        if not any(proposed.overlaps(network) for network in existing):
+            return proposed
+    raise RuntimeError('No free dedicated private TAP subnet; existing routes preserved')
+
+
+def owned_qemu_active(record):
+    process = Path('/proc') / str(record['pid'])
+    try:
+        return (process / 'exe').resolve(strict=True) == Path('/usr/bin/qemu-system-aarch64').resolve() \
+            and (process / 'cmdline').read_bytes().split(b'\0')[:-1] == [record['binary'].encode()] \
+                + [x.encode() for x in record['effective_arguments']] \
+            and (process / 'stat').read_text().rsplit(')', 1)[1].split()[0] != 'Z'
+    except (FileNotFoundError, ProcessLookupError, PermissionError):
+        return False
 
 
 def main():
@@ -57,10 +79,16 @@ def main():
     start = time.monotonic()
     process_log = None
     environment = dict(os.environ)
+    launch_record = out / 'qemu-launch.json'
 
     def command(argv, name, timeout=60, check=True, **kwargs):
         kwargs.setdefault('env', environment)
-        result = subprocess.run(argv, capture_output=True, timeout=timeout, **kwargs)
+        try:
+            result = subprocess.run(argv, capture_output=True, timeout=timeout, **kwargs)
+        except subprocess.TimeoutExpired as error:
+            (out / (name + '.txt')).write_bytes((error.stdout or b'') + (error.stderr or b'')
+                                               + b'\nCOMMAND_TIMEOUT\n')
+            raise
         (out / (name + '.txt')).write_bytes(result.stdout + result.stderr)
         if check and result.returncode:
             raise RuntimeError(name + ' failed with exit ' + str(result.returncode))
@@ -76,6 +104,12 @@ def main():
                                                 for name in ['cvdnetwork', 'kvm']}
         if not all(report['host_package_groups_active'].values()):
             raise RuntimeError('Required real host package memberships are not active')
+        firmware = next((x for x in [Path('/usr/share/qemu/efi-virtio.rom'),
+                                    Path('/usr/lib/ipxe/qemu/efi-virtio.rom'),
+                                    Path('/usr/share/ipxe/qemu/efi-virtio.rom')] if x.is_file()), None)
+        if firmware is None:
+            raise RuntimeError('Install the distribution ipxe-qemu firmware; efi-virtio.rom is missing')
+        report['network_boot_rom'] = {'path': str(firmware.resolve()), 'sha256': digest(firmware)}
         if shutil.disk_usage(work).free < 40 * 1024**3:
             raise RuntimeError('At least 40 GiB free is required before downloading/extracting')
         downloads = work / 'downloads'
@@ -142,13 +176,22 @@ def main():
             command(['sudo', '-n', 'ip', 'tuntap', 'add', 'dev', interface,
                      'mode', 'tap', 'user', str(os.getuid())], 'create-' + interface)
             command(['sudo', '-n', 'ip', 'link', 'set', interface, 'up'], 'up-' + interface)
-        report['network_scope'] = 'Dedicated TAP devices up; no DHCP/NAT configured or Internet proof'
+        # The actual config_server source accepts an IPv4/broadcast on the mobile
+        # TAP itself. Choose a free private /30, without changing existing routes.
+        routes = json.loads(subprocess.check_output(
+            ['ip', '-j', '-4', 'route', 'show', 'table', 'all'], env=environment))
+        network = private_tap_network(routes)
+        gateway = str(network.network_address + 1)
+        command(['sudo', '-n', 'ip', 'address', 'add', gateway + '/30', 'broadcast',
+                 str(network.broadcast_address), 'dev', 'cvd-mtap-01'], 'mobile-tap-ipv4')
+        report['network_scope'] = 'Dedicated local IPv4/broadcast on TAP; no DHCP/NAT or Internet proof'
+        report['mobile_tap_ipv4'] = {'gateway': gateway, 'prefix': 30,
+                                     'broadcast': str(network.broadcast_address)}
         wrapper = work / 'qemu'
         wrapper.mkdir()
         wrapper_binary = wrapper / 'qemu-system-aarch64'
         shutil.copyfile(spec_dir / 'tools/cuttlefish-tcg-qemu.py', wrapper_binary)
         wrapper_binary.chmod(0o755)
-        launch_record = out / 'qemu-launch.json'
         instance = work / 'instance'
         environment.update(ANDROID_PRODUCT_OUT=str(images),
                            CVD_TCG_LAUNCH_RECORD=str(launch_record))
@@ -185,12 +228,40 @@ def main():
             if runner.poll() is not None:
                 report.update(state='CVD_EXITED_BEFORE_BOOT', launcher_exit=runner.returncode)
                 break
+            if launch_record.is_file():
+                launched = json.loads(launch_record.read_text())
+                report['qemu_launch_requested'] = True
+                qemu_process = Path('/proc') / str(launched['pid'])
+                try:
+                    state = (qemu_process / 'stat').read_text().rsplit(')', 1)[1].split()[0]
+                    if state == 'Z':
+                        report['state'] = 'QEMU_EXITED_BEFORE_BOOT'
+                        break
+                    binary = (qemu_process / 'exe').resolve(strict=True)
+                    if binary == Path('/usr/bin/qemu-system-aarch64').resolve():
+                        argv = (qemu_process / 'cmdline').read_bytes().split(b'\0')[:-1]
+                        if argv != [launched['binary'].encode()] + [x.encode() for x in launched['effective_arguments']]:
+                            raise RuntimeError('Live QEMU arguments differ from the owned launch record')
+                        if 'qemu_live_process_verified' not in report:
+                            if digest(binary) != host_report['qemu']['sha256']:
+                                raise RuntimeError('Live QEMU executable differs from actual host probe')
+                            report['qemu_live_process_verified'] = True
+                except (FileNotFoundError, ProcessLookupError):
+                    report['state'] = 'QEMU_EXITED_BEFORE_BOOT'
+                    break
+            text = (out / 'run-cvd.txt').read_bytes()[-1024 * 1024:]
+            if b'Could not open device config' in text:
+                report['state'] = 'HOST_CONFIG_SERVER_FAILED_BEFORE_BOOT'
+                break
             now = time.monotonic()
             if now - last_notice >= 30:
                 print('Waiting for real Cuttlefish ARM64 boot:', round(now - start), flush=True)
                 last_notice = now
             if now - last_adb >= 15:
-                command([str(adb), 'connect', serial], 'adb-connect', check=False)
+                try:
+                    command([str(adb), 'connect', serial], 'adb-connect', timeout=8, check=False)
+                except subprocess.TimeoutExpired:
+                    report['adb_connect_timeout_count'] = report.get('adb_connect_timeout_count', 0) + 1
                 last_adb = now
             try:
                 if shell(['getprop', 'sys.boot_completed']).stdout.strip() == b'1':
@@ -232,7 +303,7 @@ def main():
             report['qemu'] = {'pid': launched['pid'], 'binary': str(actual_binary),
                               'sha256': digest(actual_binary),
                               'arguments_match_launch_record': (qemu_process / 'cmdline').read_bytes().split(b'\0')[:-1]
-                                  == [str(actual_binary).encode()] + [x.encode() for x in launched['effective_arguments']]}
+                                  == [launched['binary'].encode()] + [x.encode() for x in launched['effective_arguments']]}
             abis = properties['ro.product.cpu.abilist'].split(',')
             report['passed'] = properties['ro.build.version.sdk'] == '33' \
                 and properties['ro.build.version.incremental'] == spec['build_id'] \
@@ -261,6 +332,27 @@ def main():
                 runner.wait(timeout=10)
             except ProcessLookupError:
                 pass
+        if launch_record.is_file():
+            record = json.loads(launch_record.read_text())
+            pidfd = None
+            try:
+                pidfd = os.pidfd_open(record['pid'])
+                if owned_qemu_active(record):
+                    signal.pidfd_send_signal(pidfd, signal.SIGTERM)
+                    stop_deadline = time.monotonic() + 5
+                    while owned_qemu_active(record) and time.monotonic() < stop_deadline:
+                        time.sleep(0.2)
+                    if owned_qemu_active(record):
+                        signal.pidfd_send_signal(pidfd, signal.SIGKILL)
+                        time.sleep(0.5)
+            except ProcessLookupError:
+                pass
+            finally:
+                if pidfd is not None:
+                    os.close(pidfd)
+            report['qemu_process_stopped'] = not owned_qemu_active(record)
+            if not report['qemu_process_stopped']:
+                report.update(passed=False, cleanup_error='Owned QEMU process did not stop')
         if process_log:
             process_log.close()
         # Preserve only this instance's text logs; images and APKs are not uploaded.
