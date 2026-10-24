@@ -21,6 +21,7 @@ import androidx.test.uiautomator.StaleObjectException;
 import androidx.test.uiautomator.Until;
 
 import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -166,7 +167,13 @@ public final class ThirdPartyLocationInstrumentedTest {
     private String shell(String command) throws Exception {
         try (InputStream input = new ParcelFileDescriptor.AutoCloseInputStream(
                 InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand(command))) {
-            return new String(input.readAllBytes(), StandardCharsets.UTF_8).trim();
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            byte[] buffer = new byte[8192]; int n;
+            while ((n = input.read(buffer)) != -1) {
+                assertTrue("Bounded cloud shell output", bytes.size() + n <= 4 * 1024 * 1024);
+                bytes.write(buffer, 0, n);
+            }
+            return new String(bytes.toByteArray(), StandardCharsets.UTF_8).trim();
         }
     }
 

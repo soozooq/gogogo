@@ -16,6 +16,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--sdk', default=os.environ.get('ANDROID_SDK_ROOT') or os.environ.get('ANDROID_HOME'))
 parser.add_argument('--root', default=os.environ.get('CONTAINER_RESEARCH_WORKDIR'))
 parser.add_argument('--serial', default='emulator-5580')
+parser.add_argument('--api', choices=['32', '33'], default='33')
 mode = parser.add_mutually_exclusive_group()
 mode.add_argument('--installed-baseline', action='store_true')
 mode.add_argument('--location-contract', action='store_true')
@@ -26,6 +27,8 @@ parser.add_argument('--label', default='latest')
 args = parser.parse_args()
 if args.ordinary_entry and not args.third_party_location:
     raise SystemExit('--ordinary-entry requires --third-party-location')
+if args.api != '33' and (args.location_contract or args.guest_location):
+    raise SystemExit('The owned location contract cases remain API33 only')
 if not args.sdk or not args.root:
     raise SystemExit('Specify --sdk/--root or ANDROID_SDK_ROOT/CONTAINER_RESEARCH_WORKDIR')
 if not re.fullmatch(r'emulator-\d+', args.serial):
@@ -55,13 +58,13 @@ while time.monotonic() < deadline:
     except subprocess.TimeoutExpired:
         pass
     if time.monotonic() - last_notice >= 30:
-        print('Waiting for software-emulated Android 13 boot', flush=True)
+        print('Waiting for software-emulated Android API ' + args.api + ' boot', flush=True)
         last_notice = time.monotonic()
     time.sleep(2)
 else:
     raise SystemExit('Android did not boot; no runtime result')
-if shell('getprop ro.kernel.qemu') != '1' or shell('getprop ro.build.version.sdk') != '33':
-    raise SystemExit('Not the required API 33 research emulator')
+if shell('getprop ro.kernel.qemu') != '1' or shell('getprop ro.build.version.sdk') != args.api:
+    raise SystemExit('Not the explicitly selected research emulator API')
 run(['unroot'], check=False)
 for _ in range(30):
     try:
@@ -94,7 +97,7 @@ metadata = {
         'owned_guest_location_real_process' if args.guest_location else
         'controlled_location_contract' if args.location_contract else
         ('system_installed_control' if args.installed_baseline else 'container_uninstalled_guest'),
-    'serial': args.serial, 'api': 33, 'abi': shell('getprop ro.product.cpu.abi'),
+    'serial': args.serial, 'api': int(args.api), 'abi': shell('getprop ro.product.cpu.abi'),
     'shell_uid': shell('id -u'), 'selinux': shell('getenforce'),
     'artifacts': {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs},
 }
@@ -201,7 +204,7 @@ print('Running official GPSTest permission + coordinate UI check' if args.third_
     else 'Running public Android location calls in a real owned Guest process' if args.guest_location
     else 'Running controlled public-API33 location contracts' if args.location_contract
     else 'Running real third-party UI and return-from-home check', flush=True)
-instrumentation = ['shell', 'am', 'instrument', '-w', '-r', '-e', 'class', test_class]
+instrumentation = ['shell', 'am', 'instrument', '-w', '-r', '-e', 'api', args.api, '-e', 'class', test_class]
 if args.guest_location:
     instrumentation += ['-e', 'consumer_sha256', hashlib.sha256(guest.read_bytes()).hexdigest()]
 result = run(instrumentation + [

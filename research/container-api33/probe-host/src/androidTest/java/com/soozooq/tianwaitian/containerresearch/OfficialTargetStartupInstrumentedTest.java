@@ -70,19 +70,33 @@ public final class OfficialTargetStartupInstrumentedTest {
         assertEquals("2000", shell("id -u"));
         assertEquals("1", shell("getprop ro.kernel.qemu"));
         String api = InstrumentationRegistry.getArguments().getString("api");
-        assertTrue("Explicit qualified cloud image API", "30".equals(api) || "32".equals(api));
+        String runtime = InstrumentationRegistry.getArguments().getString("runtime", "official-translation");
+        boolean fullArm64 = "full-arm64".equals(runtime);
+        assertTrue("Explicit qualified cloud image and runtime",
+                fullArm64 ? ("32".equals(api) || "33".equals(api)) : "official-translation".equals(runtime)
+                        && ("30".equals(api) || "32".equals(api)));
         assertEquals(api, shell("getprop ro.build.version.sdk"));
+        assertEquals("1", shell("getprop sys.boot_completed"));
         assertEquals("Enforcing", shell("getenforce"));
         assertEquals("", shell("pm path " + pkg));
         assertTrue("Actual image must advertise ARM64 app support",
                 shell("getprop ro.product.cpu.abilist").contains("arm64-v8a"));
         String bridge = shell("getprop ro.dalvik.vm.native.bridge");
-        assertTrue("Native Bridge must be enabled", !bridge.isEmpty() && !"0".equals(bridge));
+        if (fullArm64) {
+            assertEquals("arm64-v8a", shell("getprop ro.product.cpu.abi"));
+            assertEquals("aarch64", shell("uname -m"));
+            assertFalse(shell("getprop ro.product.cpu.abilist").contains("x86"));
+            assertTrue("Full ARM64 must not use translation", bridge.isEmpty() || "0".equals(bridge));
+        } else {
+            assertTrue("Native Bridge must be enabled", !bridge.isEmpty() && !"0".equals(bridge));
+        }
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         File folder = new File(context.getFilesDir(), "target-startup-" + key);
         assertTrue(folder.isDirectory() || folder.mkdirs());
         File apk = new File(context.getFilesDir(), "pinned-target.apk");
-        JSONObject report = new JSONObject().put("scope", "CLOUD_TRANSLATED_STARTUP_ONLY_NOT_API33_OR_VIVO")
+        JSONObject report = new JSONObject().put("scope", fullArm64
+                ? "FULL_ARM64_EMULATOR_STARTUP_ONLY_NOT_PHYSICAL_VIVO_OR_LOCATION_BUSINESS"
+                : "CLOUD_TRANSLATED_STARTUP_ONLY_NOT_API33_OR_VIVO").put("runtime", runtime)
                 .put("target", key).put("package", pkg).put("sha256", sha).put("api", api)
                 .put("location_enabled", false).put("terms_accepted", false).put("login_attempted", false)
                 .put("passed", false);

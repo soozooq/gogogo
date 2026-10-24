@@ -1,86 +1,56 @@
 # 天外天接手入口
 
-更新时间：2026-10-24。先读本文件，再读对应源码；旧实验记录只作历史证据。
+更新时间：2026-10-24。本文件是唯一接手入口；旧日志、旧分支和实验数量不能替代当前结果。
 
 ## 目标与设备约束
 
-目标仍是微信发送位置／实时共享、抖音不依赖以太网的定位，以及海外地点功能。用户只有一部 Android 13 手机，没有 Root、没有电脑。用户已授权继续研发，要求减少重复实验和分支。**目前微信发送位置和实时共享均未成功，抖音及海外目标也未完成。**
+用户只有一部 Android 13／vivo 手机，没有 Root、没有电脑。目标是微信发送位置／实时共享、抖音不依赖以太网的定位及海外地点功能。**这些目标均未完成；微信两个入口已有用户失败反馈。** 不让用户重复旧实验，不把构建或缓存成功当作微信采用位置。
 
-## 当前结论与下一步
+## 唯一继续研发分支
 
-2026-10-24 新核查：[ARM64 整机软件模拟记录](research/container-api33/evidence/full-arm64-software-linux-check.json)已实际进入 ARM64 内核／Android 系统服务，ADB 确认 ARM64 应用 ABI、Native Bridge 为 0、UID 2000 与 SELinux Enforcing。不过，官方 API33 AOSP 镜像在本云端两种软件 CPU 配置下均出现 ART／system_server 原生崩溃循环，完整启动未通过，目标应用没有安装。早期启动器拒绝与转译崩溃不能扩大成“所有 ARM64 整机模拟均不可用”。
-
-[ARM Mac 新核查已执行](research/container-api33/evidence/mac-arm64-tcg-selection-failure.json)：修正探测脚本的 SDK 库路径后，官方二进制列出了 TCG，但实际启动同时带有 `-enable-hvf`；最终机器参数 `accel=tcg` 没有阻止 HVF 初始化，仍在系统启动前报 `HV_UNSUPPORTED`。这是加速器选择失败，不能写成 TCG 不可用或目标应用失败，不重复未改变的参数。当前继续核查构建较新的官方 Google API33 ARM64 镜像在 Linux 上的整机软件启动；必须完整启动并核验身份后才执行应用检查。原包、系统镜像和 SDK 二进制保持原样。
-
-- 工程修正已完成全新云端普通入口回归：正常文件选择、原版 GPSTest 精确授权、坐标更新与停止，以及原版计算器运行。见[源码及产物绑定的通过记录](research/container-api33/evidence/cloud-ordinary-entry-pass.json)。
-- 微信／抖音的官方原包在 API30 和 API32 官方转译镜像中均正常安装后原生崩溃，**尚未启动容器，更未验证目标业务**。见[API30](research/container-api33/evidence/official-target-baseline-limit.json)与[API32 原始对照](research/container-api33/evidence/official-target-api32-baseline-limit.json)。这是当前已确认的云端验证阻塞，不据此推断真机失败。
-- 下一项技术前提是取得可正常运行这些原包的**原生 ARM64 设备或已完整核验的 ARM64 整机环境**，先验普通启动，再验容器及发送／实时定位。现有工具没有连接用户手机。继续更改 GPS 注入频率、增加手机实验或重复未变的失败配置没有新的依据。
-- [前轮默认 CI 已通过](research/container-api33/evidence/default-ci-state.json)：Linux 构建／审计／普通入口和计算器回归成功，ARM Mac 构建成功。目标转译环境预检改为手动选择、默认关闭，本次明确跳过，只供运行条件改变后复核；**跳过不是目标兼容通过**，已失败的云端记录保留。
-
-## 只保留两个明确的工作入口
-
-| 角色 | 分支与 PR | 当前用途 |
+| 角色 | 分支与 PR | 状态 |
 | --- | --- | --- |
-| 日常应用候选 | `fix/location-input-validation` · [Draft #59](https://github.com/soozooq/gogogo/pull/59) | `2.4.31-simple-support / 2400099`，提交 `2620b741dd6a971143577737c64ebc4496120d77`；用户正在使用的诊断简化版 |
-| 当前继续研发 | **`research/container-api33-20261023` · [Draft #60](https://github.com/soozooq/gogogo/pull/60)** | 接在 #59 上的唯一容器研发分支；本轮和后续容器修正继续提交这里，不再按每次实验建分支 |
+| 继续研发 | **`research/container-api33-20261023` · [Draft #60](https://github.com/soozooq/gogogo/pull/60)** | 本分支 HEAD 是后续研发主线，继续提交这里 |
+| 日常候选 | `fix/location-input-validation` · [Draft #59](https://github.com/soozooq/gogogo/pull/59) | 固定 `2620b741dd6a971143577737c64ebc4496120d77`，`2.4.31-simple-support / 2400099`；本轮未改 |
 
-`main` 是已合入的旧基线 `0762f60`，不是上述候选版或当前研发进度。其他旧分支／旧工作区不作为继续开发入口；没有删除或改写它们。两份 PR 仍为 Draft，未合并。未经核对，不要用旧工作区覆盖这里，或把容器模块接进日常应用。
+`main` 仍是旧基线 `0762f60`，不是研发进度。保留其他工作区及其未提交内容，不删除分支、强推、重置他人工作区或自动合并。研究模块没有接进日常应用，没有新研究手机包需要安装。
 
-## 已证实的进度
+## 当前阻塞与下一步
 
-- [容器源码和复现入口](research/container-api33/README.md)：固定 BlackBox 源码加可复核补丁，独立研究宿主，未修改日常应用的版本、签名或默认入口。
-- [已保存的云端证据](research/container-api33/evidence/results.json)：Android 13 x86_64 上，未修改的 Fossify 计算器在系统未安装时由容器运行，真实界面计算 `1+2=3`，回桌面重开后结果保留；另有原生安装对照。
-- ARM64 仅完成构建，尚无 ARM64／vivo 容器运行证据。Guest 与宿主共享 UID，不是独立 Linux 安全沙箱。
-- 用户给出的 VPN 开／关日志中，导出时 GPS／NETWORK／GMS 缓存均接近模拟目标；截图及用户反馈仍显示微信失败。缓存成功不能代表微信采用了位置，旧实验不能算本轮实测。
+目标原包只有 ARM64 原生库。目前还没有得到可正常运行它们的 ARM64 Android 环境，目标容器启动／定位业务尚未执行。云端环境没有连接用户手机。
 
-## 已完成的接口与原签名修正
+- [API30](research/container-api33/evidence/official-target-baseline-limit.json)／[API32 官方转译对照](research/container-api33/evidence/official-target-api32-baseline-limit.json)：微信、抖音原包普通安装成功后，均在容器外原生崩溃。微信调用栈涉及 libowl／Native Bridge，精确原因未定；抖音报告 ubidi_openSized_66／68。不是容器或真机失败证明。
+- [API33 AOSP 整机 ARM64 软件核查](research/container-api33/evidence/full-arm64-software-linux-check.json)：官方 Linux SDK 实际有 ARM64 TCG 后端，切换标准机器参数后进入 ARM64 内核及系统服务；两种 CPU 配置均发生 ART／system_server 原生崩溃，完整启动未通过。
+- [ARM Mac 新核查](research/container-api33/evidence/mac-arm64-tcg-selection-failure.json)：修正探测库路径后，二进制确实列出 TCG，但最终 `accel=tcg` 没有取消此前启用的 HVF，仍报 `HV_UNSUPPORTED`。不能据此认定 TCG 没实现；不重复相同参数。
+- [较新 Google API33 ARM64 rev17](research/container-api33/evidence/google-api33-full-arm64-software-check.json)：两核及单核／单 TCG 线程均记录到两个不同 system_server 的 ART 崩溃，完整启动未通过，没有安装目标原包。单核沿用失败启动后的自有 userdata，基础系统／内核／SDK 二进制未改；不能称作另一份全新 userdata 证明。单核配置没有解决该故障，精确根因仍未知。
 
-已在同一研发分支修正 Android 13 单次定位的回调／取消、持续监听的批量回调／注销、次数／时长限制及样本单调时间。云端通过 4 项受控接口检查：公共 `LocationManager` 使用真实框架回调对象，测试代理调用被修正的 Hook 入口，持续样本经过引擎的定位服务 Binder。这不验证第三方 Guest 的 Hook 安装或微信采用位置。
+当前仅继续一个改变系统版本的候选：官方 Android 12L／API32 ARM64 镜像。它必须先完整启动并核验身份，再跑普通 GPSTest 入口与计算器，随后做原版微信／抖音普通安装及容器对照。即使通过，也只能记为 API32 整机环境，不是 Android 13／vivo 成功。不重复已失败的相同镜像和参数，不增加手机实验或隐藏失败。
 
-原签名路径已修正：证书解析失败会中止导入；虚拟 PackageManager 的旧版／新版签名接口均在系统未安装计算器时返回原 APK 的证书。计算器实际 `1+2=3`、回桌面再打开保留结果也再次通过。见[该轮绑定源码和 APK 摘要的结果（4be23be）](research/container-api33/evidence/api33-location-signature-results.json)。此前的计算器记录保留为历史，不冒充后续结果。
+`qualify-arm64-software-boot.py` 要求明确选择 API32／33、完整启动、ARM64 内核／主 ABI、无 x86 ABI、Native Bridge 为 0、UID 2000、SELinux Enforcing；两个不同 system_server 原生崩溃即停止。原包驱动新增 `--runtime full-arm64` 并显式选择 API；Python 与设备端均复核身份。原有转译模式仍只接受 API30／32。原包检查仍先普通启动，再容器，定位关闭，停在欢迎／隐私页，不接受条款或登录；没有目标运行结果。
 
-## 当前这轮：真实 Guest 定位调用链已通过
+## 已证实的工程进度
 
-独立构建的[自有定位消费者](research/container-api33/location-consumer/README.md)在系统未安装时进入真实 Guest 进程，宿主 PID `2892`、Guest PID `2959`，系统记录仍为同一宿主 UID `10126`。消费者没有引擎／宿主依赖、反射或预设目标坐标，通过普通 `getSystemService` 调用 Android API；本轮没有测试代理或直接调用 Hook。
+| 实际证据 | 已覆盖的范围 |
+| --- | --- |
+| [容器运行记录](research/container-api33/evidence/results.json) | Android 13 x86_64，原版计算器在系统未安装时运行，真实界面完成 1+2=3，回桌面重开保留结果 |
+| [回调与原签名修正](research/container-api33/evidence/api33-location-signature-results.json) | 单次回调／取消、持续批量监听／注销、次数／时长、单调时间、Parcel 字段；原 APK 证书查询，解析失败中止导入 |
+| [独立自有 Guest](research/container-api33/evidence/owned-guest-location-results.json) | 真实 Guest 通过普通 LocationManager 调用，GPS／NETWORK 六条路径跟随 A→B，停止后计数稳定，取消后零回调 |
+| [官方原版 GPSTest](research/container-api33/evidence/official-gpstest-location-results.json) | 正常精确权限授权，实际界面采用 A→B；API31+ GNSS 修正旧隐藏类崩溃，只报告零卫星，无 first-fix／伪造 NMEA |
+| [普通入口回归](research/container-api33/evidence/cloud-ordinary-entry-pass.json) | 正常系统文件选择、导入、精确授权、同一 Guest 进程更新坐标及停止；全新 GitHub KVM 10.563 秒，计算器 5.778 秒，绑定实测源码与 APK |
 
-GPS／NETWORK 的缓存、单次回调、持续批量回调共六条路径均跟随目标 A→B；同一进程继续接收新目标，停止后两路计数稳定，取消单次后的回调为零。云端检查 18.919 秒通过。见[本轮源码／APK 绑定、Guest 原始报告与 JUnit](research/container-api33/evidence/owned-guest-location-results.json)。这属于**自编消费者**结果，不是第三方定位 SDK 或微信成功。
+研究宿主已统一为“选择应用 → 导入原版 APK 一次 → 填坐标并打开”，再次应用更新目标，提供停止，保存导入状态与坐标。仅准入固定计算器与 GPSTest，核对大小、SHA-256、包名、版本及原证书；微信／抖音没有加入普通入口，也未改签或重新分发。
 
-前两次自动化未通过的记录没有丢弃：一次误以为进程必须保留宿主名称，另一次刷新动作未确认而超时。修正 PID／UID 核验及流式界面的同步和读序号确认后完成本轮检查；不把这些失败归因于微信或定位引擎。
+上述应用运行证据仍在 x86_64；ARM64 目前完成构建，尚无 ARM64／vivo Guest 运行通过记录。自有消费者、GPSTest、GMS、腾讯／字节 SDK 和目标软件业务不能混为一项。样本保留 mock 标记；Guest 与宿主共享 UID，不是独立 UID 安全沙箱。
 
-## 随后完成：官方第三方 GPSTest 采用位置
+## 验证状态与用户失败证据
 
-官方未改动的 GPSTest `3.10.6 / 24100`（osmdroid）在系统未安装该包时进入容器，经过正常 Android 精确定位授权，实际界面从 `38.125,-121.875` 更新到 `-33.86,151.20`。测试没有向 Guest 传入目标坐标、替换测试代理或直接调用 Hook。APK 字节摘要与官方 release 一致，保留原签名。[输入、可见文本、JUnit 与失败记录](research/container-api33/evidence/official-gpstest-location-results.json)绑定当轮 23 项源码摘要；31.322 秒通过。
+[最新默认 CI](research/container-api33/evidence/default-ci-state.json) `40060063936`，实测提交 `b39a9b4`：Linux 构建／审计／普通入口与计算器回归成功，ARM Mac 构建成功；已失败的转译预检和 Mac 运行核查默认关闭，本次跳过，**跳过不是目标兼容通过**。新增 ARM64 模式另有本地编译证据，不把旧 CI 重标成新模式运行。
 
-真实第三方触发了旧 GNSS 内部类在 Android 13 上不存在的崩溃，现已改用框架回调接口；虚拟会话只报告零颗卫星，不报告 first-fix，不制造 NMEA／原始观测值。自有 Guest 的相关回归同时核对六条定位路径、mock 标记、零卫星和停止注销，通过 24.271 秒。第一次引擎崩溃和第二次自动化包名筛选超时均保留，没有算成成功。宿主按需新增普通定位、网络、前台服务能力，授权属于真实宿主 UID，不伪造权限。
+用户给出的 VPN 开／关日志中，复制时 GPS／NETWORK／GMS 缓存都接近模拟目标，但微信截图及用户反馈仍失败。导出时快照不是微信前台期间的连续采样，10 月 13 日旧实验不是本轮结果。脱敏验收在 #59 顶部，实际地址截图没有上传公共仓库。
 
-这证明了一款真实第三方定位应用的前台采用，**不代表腾讯／字节 SDK、GMS、微信、抖音或 ARM64／vivo 成功**。该轮普通研究入口尚只准入计算器；随后完成的统一入口如下。
+## 接手操作
 
-## 当前最新：统一入口已实际跑通，继续转向目标架构
-
-研究宿主已统一为「选择应用 → 导入原版 APK 一次 → 填坐标并打开」，再次应用可以更新目标；提供获取对应原版文件与停止按钮，重新进入保留已导入状态和坐标。不再增加实验页。准入清单由 `sources.json` 构建生成，仅含固定计算器与 GPSTest；导入检查字节大小、SHA-256、包名、版本及原始证书，不改签、不接收任意 APK。
-
-[普通入口完整检查](research/container-api33/evidence/unified-entry-results.json)在云端通过 **63.652 秒**：操作真实系统文件选择器和精确定位授权界面，完全通过普通宿主界面设置 A→B，GPSTest 同一个实际进程更新坐标；停止后 Guest 进程消失且虚拟模式关闭。没有直接调用定位控制器替代界面。一次中途失败属于文件选择器的模糊文字选择，已修正为明确的侧栏条目；驱动现在清空自己的旧证据目录，避免混入历史截图或报告。
-
-[官方目标包静态核验](research/container-api33/evidence/official-target-apk-readiness.json)：从微信／抖音官方页面取得微信 `8.0.79`、抖音 `40.8.0`，完成原包签名验证并记录摘要；两份均只有 `arm64-v8a` 原生库。这不是用户手机版本确认，也不是运行或定位成功，尚未加入普通入口或重新分发。
-
-本云端安装 ARM64 API33 镜像后，官方模拟器因 x86_64 宿主拒绝启动，见[原始限制](research/container-api33/evidence/arm64-cloud-runtime-limit.json)。随后[GitHub ARM Mac 实际构建通过](research/container-api33/evidence/cloud-arm-mac-build-and-vm-limit.json)，但其 M1 虚拟机即使指定 `accel off` 仍在 HVF 初始化报 `HV_UNSUPPORTED`，系统没有启动。这是基础环境限制，仍没有 ARM64／vivo 的应用运行证据；不重复该云机器上已确认受限的启动。
-
-[GitHub Linux 的全新源码构建及静态核验也通过](research/container-api33/evidence/cloud-linux-build-and-probe-failure.json)，53 项运行依赖的许可声明无未解析项。运行脚本在获取模拟器版本时误选 GUI 二进制，因缺少 libpulse 在启动系统前退出；现已改为同样的无窗口参数，版本探测只记结果，真正的启动／UI 才决定成功。首次工作流上下文、废弃 SDK 包、Mac 目录差异的失败记录均保留，未算成运行通过。
-
-[同分支工作流](.github/workflows/container-research.yml)执行 Linux 构建／普通入口与计算器回归，ARM Mac 只验证构建；只上传证据，不发布 APK。Linux 的 KVM 启动和存储准备已经通过；随后实际失败发生在系统文件选择器的抽屉遮住文件时，尚未返回宿主开始导入，见[失败分类与修正](research/container-api33/evidence/cloud-picker-occlusion-failure.json)。普通入口现默认打开下载目录，驱动等抽屉关闭和选择器返回；证据采集先检查文件存在，防止把读取失败文字保存成报告或图片。重新运行已通过选择器返回、普通导入和虚拟包存在断言，随后[卡在 GPSTest 首次启动的更新说明](research/container-api33/evidence/cloud-fresh-gpstest-dialog-failure.json)，不是定位引擎失败。已按实际 XML 修正其 `button3 / CLOSE` 关闭动作。[全新 GitHub KVM 流程](research/container-api33/evidence/cloud-ordinary-entry-pass.json)随后通过：普通导入、精确授权、A→B、同一 Guest 进程和停止共 10.563 秒，原版计算器回归 5.778 秒；源码逐项与实测提交 `21e862c` 的 Git 对象核对，宿主摘要与两轮输入一致。它补充了历史 63.652 秒结果，仍不代表微信或抖音。
-
-[实际启动的官方 Google API33 镜像](research/container-api33/evidence/google-api33-nativebridge-check.json)只有 x86_64，Native Bridge 为 0；没有得到原版 ARM64 微信／抖音的运行证据。[API30 官方镜像实际启动](research/container-api33/evidence/google-api30-nativebridge-check.json)，普通 shell 为 UID 2000、SELinux Enforcing，确认 ARM64 ABI 与内置 `libndk_translation.so`，未修改系统或安装外部转译库。新增仅供专用云端模拟器使用的原版目标启动预检：先普通安装对照，再容器启动，固定原 APK 与证书，定位保持关闭，停在欢迎或隐私页，不接受条款或登录。宿主使用平台公开的安装 ABI 选项选择 ARM64，并核对实际包状态，避免混合 ISA 导致的假结论。[KVM 实际对照结果](research/container-api33/evidence/official-target-baseline-limit.json)：两份原包正常安装均成功，但在进入容器前，微信于 `libowl.so`／Native Bridge 调用栈发生 SIGSEGV，抖音被转译库以 `Bad ubidi_openSized_66 call` 中止。两者都未达到欢迎／隐私页，所以容器检查未执行；不能归因为容器或真机失败，不重复相同 API30 环境。
-
-[API31／32 官方归档的局部元数据](research/container-api33/evidence/api31-32-translation-metadata.json)仍声明 ARM64 与转译版本 0.2.3，但默认 `native.bridge=0`，须以实际启动属性判定。[API32 实际 KVM 对照](research/container-api33/evidence/official-target-api32-baseline-limit.json)确认内置转译确实启用，但两款原包仍在正常系统安装后崩溃：微信的转译调用栈报告 `Cannot process signal 11`，抖音报告 `Bad ubidi_openSized_68 call`。容器检查再次没有执行，精确根因不扩大推断；这不能算真机失败。原包及系统镜像均未修改。
-
-[当前官方模拟器宿主归档清单](research/container-api33/evidence/official-emulator-host-archives.json)仅列 Linux x64，ARM64 只列 macOS；现有 ARM Mac 的 HVF 限制仍在，不新开同样受限的云任务。默认 CI 不再自动重复已失败的 API30／32 对照，目标预检保留手动选项及原始失败。下一步按本文件顶部的原生 ARM64 前提继续；尚无目标启动或定位业务通过。
-
-下一步按顶部的原生 ARM64 前提继续目标软件的真实启动／业务验证。微信发送／实时共享、抖音无线及海外业务仍未完成；日常应用与 #59 未改，不要求手机用户安装或重复实验。
-
-## 接手规则
-
-1. 以本分支源码、最新提交和 #60 为研发主线；不要从旧 `main`、旧 APK 或实验数量推断当前进度。
-2. 优先完成实际代码和云端验证；不要让用户重复旧实验。本轮没有手机更新包需要安装。
-3. [API／运行审计](research/container-api33/AUDIT.md)和[许可记录](research/container-api33/THIRD_PARTY_NOTICES.md)保留未完成项。普通第三方应用、定位契约、自有测试和目标软件结果须分别报告。
-4. 构建研究框架用仓库外工作目录和 [tools/run-build.sh](research/container-api33/tools/run-build.sh)，保留代理／CA；不要把下载框架或生成二进制提交进仓库。
-5. 不自动合并 PR、删除旧分支、重置其他工作区，或把研究 APK 当作可用微信容器交给手机用户。
+1. 使用本分支与 #60，日常候选仍留 #59；不要从旧 main／APK 覆盖进度。
+2. 固定源码与补丁、构建、复现命令见 [研究说明](research/container-api33/README.md)；另见 [API 审计](research/container-api33/AUDIT.md)及[许可记录](research/container-api33/THIRD_PARTY_NOTICES.md)。
+3. 仓库外构建目录使用 `CONTAINER_RESEARCH_WORKDIR` 与 `tools/run-build.sh`，保留代理／CA，SDK 安装串行，生成物不入库。
+4. 保留实际失败和证据范围；未经原包启动、容器与具体业务验证，不发布“微信已成功”的手机包，不增加用户操作步骤。

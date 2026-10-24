@@ -10,6 +10,10 @@
 
 `tools/run-arm-mac-software-checks.sh` 的[实际核查](evidence/mac-arm64-tcg-selection-failure.json)显示，修正探测时的 SDK 库路径后，二进制确实列出 TCG；但最终 `accel=tcg` 参数未取消此前启用的 HVF，系统仍在启动前报 `HV_UNSUPPORTED`。这不是目标应用结果，也不能推断 TCG 没有实现。该工具默认关闭，只供运行条件变化后手动复核，不重复相同 Mac 参数。当前转向较新的官方 Google API33 ARM64 镜像；`qualify-arm64-software-boot.py` 要求完整启动和身份核验，未通过不得执行应用检查。不增加手机实验页或发布手机包。
 
+[Google API33 ARM64 rev17 实测](evidence/google-api33-full-arm64-software-check.json)的两核和单核／单 TCG 线程均记录到两个不同 system_server 的 ART 原生崩溃，完整启动未通过，原版应用没有安装。单核沿用失败启动后的自有 userdata，不能称作另一份全新 userdata 证明；基础系统和 SDK 二进制均未修改。当前只继续官方 API32 ARM64 候选，以区分系统版本；通过也不算 API33／vivo 结果。
+
+原包启动驱动新增显式 `--runtime full-arm64` 模式，API32／33 须明确选择：Python 和设备端驱动均要求完整启动、ARM64 内核与主 ABI、无 x86 ABI、Native Bridge 为 0、普通 UID 和 SELinux Enforcing；原有 API30／32 转译模式仍单独保留。尚未执行原包检查。普通入口／计算器驱动同样显式选择 API，原有自编定位契约仍限 API33；旧系统的 UI 测试读流改用有限缓冲，不依赖 API33 的 `readAllBytes`。通过环境核查后才可使用 `run-target-startup-check.py --runtime full-arm64 --api 32 --target wechat --label <新记录名>`，再测抖音；仍先验证系统普通安装，容器定位保持关闭，不接受条款或登录，不加入普通准入清单。
+
 ## 最新进展：统一的普通导入／选点入口
 
 研究宿主现在用一个页面完成选择、导入、填坐标、打开与停止。固定计算器和 GPSTest 的清单从 `sources.json` 生成；导入核对原 APK 的大小、摘要、包名、版本、证书。已导入状态和目标会保留，修改坐标后直接再次应用；不会改动系统安装的微信、抖音或日常天外天。

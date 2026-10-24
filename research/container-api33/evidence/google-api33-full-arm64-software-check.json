@@ -1,0 +1,138 @@
+{
+  "scope": "FULL_SYSTEM_ARM64_SOFTWARE_BOOT_ONLY_NOT_TARGET_APPS_OR_PHYSICAL_VIVO",
+  "date_utc": "2026-10-24",
+  "image": {
+    "sdk_package": "system-images;android-33;google_apis;arm64-v8a",
+    "source_properties": "Pkg.Desc=System Image arm64-v8a with Google APIs.\nPkg.Revision=17\nPkg.Dependencies=emulator#30.7.3\nAndroidVersion.ApiLevel=33\nSystemImage.Abi=arm64-v8a\nSystemImage.TagId=google_apis\nSystemImage.TagDisplay=Google APIs\nSystemImage.GpuSupport=true\nAddon.VendorId=google\nAddon.VendorDisplay=Google Inc.\n\n",
+    "files": {
+      "kernel-ranchu": {
+        "size": 21242145,
+        "sha256": "251891dabb9155fcd2dc5ffc01f96fc442414ed77b53f64e2e7d457bdcb7a374"
+      },
+      "ramdisk.img": {
+        "size": 1679820,
+        "sha256": "71535ca2337aec4eee07a4cca644aee856a0fe250656e619ec872e6d1522b5d9"
+      },
+      "vendor.img": {
+        "size": 105906176,
+        "sha256": "d13aa4f150237f57348354854e35cf4a839da30152e8683f20713b6fb0c8b13b"
+      },
+      "system.img": {
+        "size": 8601468928,
+        "sha256": "a445656a68c5ddbc31c21d38c06418756cc6f794bb410a040203043f13d67691"
+      }
+    },
+    "checksum_scope": "Self-computed installed input hashes; not an independent published checksum",
+    "system_image_modified": false,
+    "kernel_modified": false
+  },
+  "sdk_backend_sha256": "e85ab5c7ed7608d78cd3a2c1c9a6f6fbb0939d75d6449ef64eac3483009312d2",
+  "case06": {
+    "configuration": {
+      "machine": "virt",
+      "accelerator_request": "tcg",
+      "cpu": "max",
+      "virtual_cores": 2,
+      "fresh_userdata_at_start": true
+    },
+    "qualification": {
+      "scope": "SOFTWARE_ARM64_SYSTEM_BOOT_ONLY_NOT_WECHAT_OR_PHYSICAL_VIVO",
+      "state": "SYSTEM_SERVER_NATIVE_CRASH_LOOP",
+      "boot_completed": false,
+      "passed": false,
+      "system_image_modified": false,
+      "target_apps_tested": false,
+      "system_server_crash_pids": [
+        509,
+        1564
+      ],
+      "observed_seconds": 1026.775
+    },
+    "partial_properties": {
+      "sys.boot_completed": "",
+      "ro.build.version.sdk": "33",
+      "ro.build.fingerprint": "google/sdk_gphone64_arm64/emu64a:13/TE1A.240213.009/12342917:userdebug/dev-keys",
+      "ro.product.cpu.abi": "arm64-v8a",
+      "ro.product.cpu.abilist": "arm64-v8a",
+      "ro.dalvik.vm.native.bridge": "0",
+      "ro.kernel.qemu": "1",
+      "shell_uid": "2000",
+      "selinux": "Enforcing",
+      "kernel_arch": "aarch64",
+      "online_cpus": "0-1"
+    },
+    "observed_fatal": "ART artQuickResolutionTrampoline / Unexpected call into trampoline: iget-object; FingerprintService and AppsFilter",
+    "evidence_sha256": {
+      "google33-full-arm64-06/result.json": "ff545abdccd0e2efef329896099ba35061a555f684e59d47151a1cd9b109deee",
+      "google33-full-arm64-06/partial-properties.json": "f9192e9b4aad6951bce297214748fe63988bc4be2b20490f8c36a506636a8974",
+      "google33-full-arm64-06/main-final.txt": "9f39004781e14967549005cc3e22439c43782efdc105436a942286b979e7d021",
+      "google33-full-arm64-06/system-final.txt": "8f1fe8ddf6b15bd7f9b46a5dbd429cf26a66c135d5e98c112d54c87f49fb2325",
+      "google33-full-arm64-06/crash-final.txt": "179ee7471716237f71aa5482cf8f6a0d6705261e2b5de4d2b8d4f7cbabac0d2d",
+      "google33-full-arm64-06/config.ini": "15f255f0c6f422a1f45ec7dcb9b19b8840960c6efeeaa4405d710a151a64cc5e",
+      "google33-full-arm64-06/hardware-qemu.ini": "374f96f787e37734929e48a95451396bb1227f3df5b7a1b83e652e933ecf8074",
+      "google33-arm64-full-06.log": "1cc699d3560c105802931c134ba1138e836b67f6e2fa00d7304e3ceb643c4b18"
+    },
+    "original_apps_installed": false,
+    "container_tests_run": false
+  },
+  "single_cpu_follow_up": {
+    "state": "COMPLETED_SYSTEM_SERVER_NATIVE_CRASH_LOOP",
+    "configuration": {
+      "machine": "virt",
+      "accelerator_request": "tcg,thread=single",
+      "cpu": "max",
+      "virtual_cores": 1,
+      "userdata": "Retained from failed pre-app first boot in case06; not a new fresh-userdata proof"
+    },
+    "hypothesis": "Conservative single-CPU/single-TCG-thread configuration tests whether the observed runtime abort depends on CPU concurrency; no causal claim before results",
+    "base_images_modified": false,
+    "sdk_binary_modified": false,
+    "qualification": {
+      "scope": "SOFTWARE_ARM64_SYSTEM_BOOT_ONLY_NOT_WECHAT_OR_PHYSICAL_VIVO",
+      "state": "SYSTEM_SERVER_NATIVE_CRASH_LOOP",
+      "boot_completed": false,
+      "passed": false,
+      "system_image_modified": false,
+      "target_apps_tested": false,
+      "system_server_crash_pids": [
+        482,
+        753
+      ],
+      "observed_seconds": 150.511
+    },
+    "partial_properties": {
+      "sys.boot_completed": "",
+      "ro.build.version.sdk": "33",
+      "ro.build.fingerprint": "google/sdk_gphone64_arm64/emu64a:13/TE1A.240213.009/12342917:userdebug/dev-keys",
+      "ro.product.cpu.abi": "arm64-v8a",
+      "ro.product.cpu.abilist": "arm64-v8a",
+      "ro.dalvik.vm.native.bridge": "0",
+      "ro.kernel.qemu": "1",
+      "shell_uid": "2000",
+      "selinux": "Enforcing",
+      "kernel_arch": "aarch64",
+      "online_cpus": "0"
+    },
+    "evidence_sha256": {
+      "google33-full-arm64-07-single/result.json": "c5dc85eef2d3d0c975cd7610d8e4a0adc25607aa11400f280381aa64169e455a",
+      "google33-full-arm64-07-single/partial-properties.json": "d35f36645e8daefde97c87b56f295968daa75ce1fe560058e1fa1a6316a24d14",
+      "google33-full-arm64-07-single/main-final.txt": "ab258d442ee86230ed93c2d6a4b46bf0822c6bd97675cb6c71c2716580716add",
+      "google33-full-arm64-07-single/system-final.txt": "992adfdd5011f69b3ae3453504148b8778caa7c572bb8a1abc6a928723361bba",
+      "google33-full-arm64-07-single/crash-final.txt": "aa9482ba83029b62e3f776e252a7a61563a3b768a8d6103bbb58104977fdb3aa",
+      "google33-full-arm64-07-single/config.ini": "15f255f0c6f422a1f45ec7dcb9b19b8840960c6efeeaa4405d710a151a64cc5e",
+      "google33-full-arm64-07-single/hardware-qemu.ini": "3a217ec09210957f11f66fe27789576eb749c4aaf865214c10156bba92e93888",
+      "google33-arm64-full-07-single.log": "f466001236c2396cd5f14acc3ddc9175fadcf72adb4c44d43c1dd1c55a420ce8"
+    },
+    "original_apps_installed": false,
+    "container_tests_run": false,
+    "conclusion": "The same ART abort also occurred with one virtual CPU and single-thread TCG. The tested conservative CPU configuration did not qualify the OS; exact root cause remains unknown."
+  },
+  "target_apps_tested": false,
+  "location_business_tested": false,
+  "qualifier_source": {
+    "commit": "b39a9b499c2497fa4d145552108800b4209850a7",
+    "path": "research/container-api33/tools/qualify-arm64-software-boot.py",
+    "sha256": "958c82077d58f5db0fd23fdcfcadeb03d35989c6afb042b80a3826f685826ddc"
+  },
+  "next": "Official API32 ARM64 software guest is a separate Android 12L startup qualification, not Android 13/vivo compatibility. No unchanged API33 retry."
+}

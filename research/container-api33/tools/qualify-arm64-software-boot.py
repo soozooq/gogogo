@@ -13,6 +13,7 @@ p.add_argument('--sdk', required=True)
 p.add_argument('--serial', required=True)
 p.add_argument('--emulator-pid', type=int, required=True)
 p.add_argument('--output', required=True)
+p.add_argument('--api', choices=['32', '33'], default='33')
 a = p.parse_args()
 if not re.fullmatch(r'emulator-\d+', a.serial) or a.emulator_pid < 2:
     raise SystemExit('Dedicated emulator required')
@@ -20,6 +21,7 @@ out = Path(a.output)
 out.mkdir(parents=True, exist_ok=False)
 adb = [str(Path(a.sdk) / 'platform-tools/adb'), '-s', a.serial]
 report = {'scope': 'SOFTWARE_ARM64_SYSTEM_BOOT_ONLY_NOT_WECHAT_OR_PHYSICAL_VIVO',
+          'requested_api': int(a.api),
           'state': 'PENDING', 'boot_completed': False, 'passed': False,
           'system_image_modified': False, 'target_apps_tested': False}
 
@@ -74,7 +76,7 @@ try:
             'ro.dalvik.vm.native.bridge', 'ro.kernel.qemu']}
         report.update(properties=props, shell_uid=shell(['id', '-u']),
                       selinux=shell(['getenforce']), kernel_arch=shell(['uname', '-m']))
-        passed = props['ro.build.version.sdk'] == '33' and props['ro.kernel.qemu'] == '1' \
+        passed = props['ro.build.version.sdk'] == a.api and props['ro.kernel.qemu'] == '1' \
             and props['ro.product.cpu.abi'] == 'arm64-v8a' \
             and 'arm64-v8a' in props['ro.product.cpu.abilist'].split(',') \
             and not any('x86' in abi for abi in props['ro.product.cpu.abilist'].split(',')) \

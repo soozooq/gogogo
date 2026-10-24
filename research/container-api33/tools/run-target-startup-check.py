@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Dedicated official-translation emulator only. Anonymous startup, no account actions."""
+"""Qualified dedicated emulator only. Anonymous startup, no account actions."""
 import argparse
 import hashlib
 import json
@@ -16,8 +16,12 @@ p.add_argument('--sdk', default=os.environ.get('ANDROID_SDK_ROOT') or os.environ
 p.add_argument('--serial', default='emulator-5580')
 p.add_argument('--label', required=True)
 p.add_argument('--target', choices=['wechat', 'douyin'], required=True)
-p.add_argument('--api', choices=['30', '32'], default='32')
+p.add_argument('--runtime', choices=['official-translation', 'full-arm64'], default='official-translation')
+p.add_argument('--api', choices=['30', '32', '33'])
 a = p.parse_args()
+a.api = a.api or ('33' if a.runtime == 'full-arm64' else '32')
+if (a.runtime == 'full-arm64' and a.api not in ['32', '33']) or (a.runtime == 'official-translation' and a.api not in ['30', '32']):
+    raise SystemExit('Select API32/33 full ARM64 or API30/32 official translation explicitly')
 if not a.root or not a.sdk or not re.fullmatch(r'emulator-\d+', a.serial):
     raise SystemExit('Dedicated emulator SDK/workdir required')
 if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_-]{0,63}', a.label):
@@ -46,11 +50,18 @@ for _ in range(20):
 if shell('id -u') != '2000' or shell('getenforce') != 'Enforcing':
     raise SystemExit('Ordinary shell + SELinux required')
 props = {k: shell('getprop ' + k) for k in ['sys.boot_completed', 'ro.build.fingerprint',
-    'ro.product.cpu.abilist', 'ro.dalvik.vm.native.bridge']}
+    'ro.product.cpu.abi', 'ro.product.cpu.abilist', 'ro.dalvik.vm.native.bridge']}
+props.update(kernel_arch=shell('uname -m'), shell_uid=shell('id -u'), selinux=shell('getenforce'))
 (evidence / 'image.json').write_text(json.dumps(props, indent=2) + '\n')
-if props['sys.boot_completed'] != '1' or 'arm64-v8a' not in props['ro.product.cpu.abilist'].split(',') \
-        or props['ro.dalvik.vm.native.bridge'] in ['', '0']:
-    raise SystemExit('Actual image is not ready with ARM64 translation; no target result')
+abis = props['ro.product.cpu.abilist'].split(',')
+if props['sys.boot_completed'] != '1' or 'arm64-v8a' not in abis:
+    raise SystemExit('Actual image is not fully booted with ARM64 app support; no target result')
+if a.runtime == 'full-arm64':
+    if props['ro.product.cpu.abi'] != 'arm64-v8a' or props['kernel_arch'] != 'aarch64' \
+            or any('x86' in abi for abi in abis) or props['ro.dalvik.vm.native.bridge'] not in ['', '0']:
+        raise SystemExit('Actual image is not full ARM64 without translation; no target result')
+elif props['ro.dalvik.vm.native.bridge'] in ['', '0']:
+    raise SystemExit('Actual image has no enabled official translation; no target result')
 readiness = json.loads((spec / 'evidence/official-target-apk-readiness.json').read_text())
 entry = next(x for x in readiness['targets'] if x['source_key'] == a.target)
 pkg = entry['package']
@@ -67,7 +78,9 @@ if sha != entry['sha256']:
 host = work / 'probe-host-build/outputs/apk/debug/probeHost-debug.apk'
 test = work / 'probe-host-build/outputs/apk/androidTest/debug/probeHost-debug-androidTest.apk'
 if not host.is_file() or not test.is_file(): raise SystemExit('Build the standalone host and driver first')
-inputs = {'scope': 'OFFICIAL_ANDROID_TRANSLATION_STARTUP_ONLY_NOT_API33_OR_VIVO',
+inputs = {'scope': 'FULL_ARM64_EMULATOR_STARTUP_ONLY_NOT_PHYSICAL_VIVO_OR_LOCATION_BUSINESS'
+    if a.runtime == 'full-arm64' else 'OFFICIAL_ANDROID_TRANSLATION_STARTUP_ONLY_NOT_API33_OR_VIVO',
+    'runtime': a.runtime,
     'target': entry, 'image': props, 'requested_api': int(a.api),
     'artifacts': {str(x.relative_to(work)): hashlib.sha256(x.read_bytes()).hexdigest() for x in [host, test, apk]},
     'research_source_sha256': {str(x.relative_to(spec)): hashlib.sha256(x.read_bytes()).hexdigest()
@@ -143,8 +156,8 @@ try:
     created_control = not (removed.returncode == 0 and b'Success' in removed.stdout)
     if created_control or shell('pm path ' + pkg, check=False): raise RuntimeError('Owned control cleanup incomplete')
     if not stage: raise RuntimeError('No baseline UI confirmation; do not classify virtual compatibility')
-    # Request the platform's supported ARM64 ABI for our unchanged multi-ABI host,
-    # so host and ARM-only guest run under the same official Native Bridge.
+    # Request and verify the platform's supported ARM64 ABI for our unchanged
+    # multi-ABI host. Full ARM64 mode does not install or require a Native Bridge.
     run(['install', '-r', '--abi', 'arm64-v8a', str(host)], timeout=180)
     host_package = shell('dumpsys package com.soozooq.tianwaitian.containerresearch')
     (evidence / 'host-package.txt').write_text(host_package + '\n')
@@ -155,7 +168,8 @@ try:
     run(['push', str(apk), '/data/local/tmp/gogogo-official-target.apk'], timeout=180)
     run(['shell', 'run-as', 'com.soozooq.tianwaitian.containerresearch', 'rm', '-rf', 'files/target-startup-' + a.target])
     run(['logcat', '-c'])
-    test_result = run(['shell', 'am', 'instrument', '-w', '-r', '-e', 'target', a.target, '-e', 'api', a.api, '-e', 'class',
+    test_result = run(['shell', 'am', 'instrument', '-w', '-r', '-e', 'target', a.target, '-e', 'api', a.api,
+        '-e', 'runtime', a.runtime, '-e', 'class',
         'com.soozooq.tianwaitian.containerresearch.OfficialTargetStartupInstrumentedTest#pinnedOfficialTargetColdStartup',
         'com.soozooq.tianwaitian.containerresearch.test/androidx.test.runner.AndroidJUnitRunner'], timeout=420, check=False)
     transcript = test_result.stdout + test_result.stderr

@@ -17,6 +17,7 @@ import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject2;
 import androidx.test.uiautomator.Until;
 import java.io.File;
+import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -49,12 +50,24 @@ public final class ExternalGuestInstrumentedTest {
     private String shell(String command) throws Exception {
         try (InputStream stream = new ParcelFileDescriptor.AutoCloseInputStream(
                 InstrumentationRegistry.getInstrumentation().getUiAutomation().executeShellCommand(command))) {
-            return new String(stream.readAllBytes(), StandardCharsets.UTF_8).trim();
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            byte[] buffer = new byte[8192]; int n;
+            while ((n = stream.read(buffer)) != -1) {
+                assertTrue("Bounded cloud shell output", bytes.size() + n <= 4 * 1024 * 1024);
+                bytes.write(buffer, 0, n);
+            }
+            return new String(bytes.toByteArray(), StandardCharsets.UTF_8).trim();
         }
     }
 
+    private void assertSelectedApi() {
+        String api = InstrumentationRegistry.getArguments().getString("api", "33");
+        assertTrue("Explicit supported cloud API", "32".equals(api) || "33".equals(api));
+        assertEquals("Actual runtime must match the selected API", Integer.parseInt(api), Build.VERSION.SDK_INT);
+    }
+
     @Test public void installedCalculatorControl() throws Exception {
-        assertEquals(33, Build.VERSION.SDK_INT);
+        assertSelectedApi();
         assertTrue("Installed-app control requires the real system package", !shell("pm path org.fossify.math").isEmpty());
         startInstalledCalculator();
         calculateThree();
@@ -75,7 +88,7 @@ public final class ExternalGuestInstrumentedTest {
     }
 
     @Test public void calculatorRunsUninstalledAndRetainsResultAfterHome() throws Exception {
-        assertEquals("API 33 runtime required", 33, Build.VERSION.SDK_INT);
+        assertSelectedApi();
         assertTrue("Host must execute as an application UID", Process.myUid() >= 10000);
         assertEquals("Cloud setup must use ordinary adb shell", "2000", shell("id -u"));
         assertEquals("Guest must not be installed in the system", "", shell("pm path org.fossify.math"));
