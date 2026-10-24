@@ -5,8 +5,25 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
+
+
+def public_open(url, timeout):
+    for attempt in range(3):
+        try:
+            return urllib.request.urlopen(url, timeout=timeout)
+        except urllib.error.HTTPError as error:
+            # Retry transient public service failures only. Authentication/access
+            # rejection is final; changing credentials or routes is not a retry.
+            if error.code not in [429, 500, 502, 503, 504] or attempt == 2:
+                raise
+            print('Temporary public artifact HTTP', error.code,
+                  '; retry', attempt + 2, 'of 3', flush=True)
+            error.close()
+            time.sleep(2 ** (attempt + 1))
 
 
 def download(spec, entry, directory):
@@ -18,7 +35,7 @@ def download(spec, entry, directory):
         return
     # The public HTML embeds the same short-lived URL as its Download button.
     # Do not save or print that URL, scrape API keys, or use an authenticated session.
-    with urllib.request.urlopen(spec['public_page'] + entry['name'], timeout=45) as response:
+    with public_open(spec['public_page'] + entry['name'], timeout=45) as response:
         html = response.read(256 * 1024).decode()
     match = re.search(r'var JSVariables = (\{[^\n]+\});', html)
     if not match:
@@ -36,7 +53,7 @@ def download(spec, entry, directory):
     digest = hashlib.sha256()
     total = 0
     try:
-        with urllib.request.urlopen(metadata['artifactUrl'], timeout=90) as response, temporary.open('xb') as output:
+        with public_open(metadata['artifactUrl'], timeout=90) as response, temporary.open('xb') as output:
             if int(response.headers.get('Content-Length', '0')) != entry['size']:
                 raise RuntimeError('Unexpected official artifact length')
             while block := response.read(1024 * 1024):
