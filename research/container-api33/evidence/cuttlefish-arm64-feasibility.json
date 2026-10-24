@@ -1,0 +1,60 @@
+{
+  "scope": "SOURCE_AND_HOST_FEASIBILITY_REVIEW_ONLY_NOT_ANDROID_BOOT",
+  "stage": "PENDING_NATIVE_ARM_LINUX_HOST_DIAGNOSTIC",
+  "sources": [
+    {
+      "project": "device/google/cuttlefish",
+      "branch": "android13-release",
+      "commit": "753a6fbdab7f61d7efd96aff64983c25da7009e7",
+      "path": "host/libs/vm_manager/qemu_manager.cpp",
+      "sha256": "b89cccf60783b0d2a1c67f9a6812468aeba7977c959591564774100f5452ce24",
+      "url": "https://android.googlesource.com/device/google/cuttlefish/+/753a6fbdab7f61d7efd96aff64983c25da7009e7/host/libs/vm_manager/qemu_manager.cpp"
+    },
+    {
+      "project": "device/google/cuttlefish",
+      "branch": "main",
+      "commit": "a1162ca7a4e6297f1699b65052a8c2dd466fd518",
+      "path": "host/libs/vm_manager/qemu_manager.cpp",
+      "sha256": "10afe2e7cd25c03e511d7d021c2fb5233858b526f8276b38071f89b66dcea13a",
+      "url": "https://android.googlesource.com/device/google/cuttlefish/+/a1162ca7a4e6297f1699b65052a8c2dd466fd518/host/libs/vm_manager/qemu_manager.cpp"
+    }
+  ],
+  "official_get_started": "https://source.android.com/docs/devices/cuttlefish/get-started",
+  "official_recipe": "Generic getting-started guide requires KVM and matching guest images/host tools from one build; its HOME override recipe is not used",
+  "source_findings": [
+    "Android13 QEMU manager contains a cross-architecture ARM TCG path with virt/GICv2 and ARM64 MTE",
+    "Same-architecture path selects KVM and host CPU; an actual software launch must explicitly configure and verify TCG rather than infer it from help",
+    "Linux manager requests vhost-vsock; current main also contains a Slirp network mode"
+  ],
+  "local_environment": {
+    "arch": "x86_64",
+    "kernel": "6.18.55",
+    "kvm_node": false,
+    "tun_node": false,
+    "vhost_vsock_node": false,
+    "registered_tun_driver": true,
+    "registered_vhost_vsock_driver": false,
+    "docker_daemon_ready": true,
+    "docker_containers_started": false,
+    "cuttlefish_images_downloaded": false
+  },
+  "next_host_probe": {
+    "runner": "ubuntu-24.04-arm",
+    "official_runner_reference": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners",
+    "scope": "Record native ARM QEMU TCG, vhost-vsock ioctl, local vsock bind and tun access; no Android launch",
+    "local_arch_negative_case": {
+      "state": "HOST_ARCH_NOT_ARM_LINUX",
+      "eligible_for_boot_attempt": false,
+      "script_sha256": "ea085ba1454b8c2c53f3c1760b3018751af412eb7c19c5d36ae0def0454333d5"
+    }
+  },
+  "remaining": [
+    "Actual ARM Linux host prerequisites",
+    "Public matching Android13 images and host-tool availability/architecture",
+    "Isolated instance/system paths without overriding HOME",
+    "Actual OS boot and identity before any app test"
+  ],
+  "android_boot_tested": false,
+  "target_apps_tested": false,
+  "physical_vivo_tested": false
+}

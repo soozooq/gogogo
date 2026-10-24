@@ -26,7 +26,7 @@
 
 [官方 Android 12L／API32 ARM64 实测](research/container-api33/evidence/google-api32-full-arm64-software-check.json)也未通过：全新 userdata 下，`max` 和 SDK 标准 `cortex-a53` CPU 均出现 keystore2 原生崩溃循环，ADB 尚未就绪。前一例依据真实控制台故障人工提前停止，后一例由新增控制台检查自动判失败；不能混写成模拟器自行退出或启动耗时为零。原包和普通入口均未执行。当前没有仍在运行的 VM 或待结束的应用检查。
 
-用户再次要求继续后，下一项仅为官方 Cuttlefish／不同 QEMU 路径的源码可行性核查：先确认无 KVM 的本环境是否受支持及官方镜像是否可取得，再决定实现，尚无下载、启动或通过记录。不重复已失败的 SDK 配置，不增加手机实验。任何后续运行仍须先完整启动、核对实际架构和普通权限，再验证原包与具体业务。
+用户再次要求继续后，已核对[官方 Cuttlefish 的另一条 QEMU 路径](research/container-api33/evidence/cuttlefish-arm64-feasibility.json)：Android13 源码含跨架构 ARM TCG 分支，但还需要宿主接口及匹配的镜像／工具。本云端缺少 vhost-vsock 接口，下一步用已有 GitHub 公共 ARM Linux runner 只检查前提；尚未下载 Cuttlefish 镜像或启动系统。新诊断默认关闭，不增加手机实验。任何后续运行仍须先完整启动、核对实际架构和普通权限，再验证原包与具体业务。
 
 `qualify-arm64-software-boot.py` 要求明确选择 API32／33、完整启动、ARM64 内核／主 ABI、无 x86 ABI、Native Bridge 为 0、UID 2000、SELinux Enforcing。除 ADB 的 system_server 取证外，新增可选控制台检查，在 ADB 未启动时也识别两个不同 system_server／keystore2 原生崩溃；重复同一 PID、等待服务的文字不会误算。实际 API32 故障和解析边界已验证。原包驱动的 full-arm64 与转译模式仍各自复核环境；定位关闭，停在欢迎／隐私页，不接受条款或登录，没有目标运行结果。
 
@@ -46,7 +46,7 @@
 
 ## 验证状态与用户失败证据
 
-[最新默认 CI](research/container-api33/evidence/default-ci-state.json) `40061738582`，实测提交 `da1cb95`：Linux 构建／审计／普通入口与计算器回归成功，ARM Mac 构建成功；已失败的转译预检和 Mac 运行核查默认关闭，本次跳过，**跳过不是目标兼容通过**。显式 API32／33 驱动已本地及 CI 编译，API32 应用路径因系统失败没有执行；新增控制台判错另有实际故障与解析边界验证。
+[最新默认 CI](research/container-api33/evidence/default-ci-state.json) `40079023555`，实测提交 `06f269f`：Linux 构建／审计／普通入口与计算器回归成功，ARM Mac 构建成功；已失败的转译预检和 Mac 运行核查默认关闭，本次跳过，**跳过不是目标兼容通过**。显式 API32／33 驱动已本地及 CI 编译，API32 应用路径因系统失败没有执行；控制台判错另有实际故障与解析边界验证。新增 ARM Linux 宿主诊断尚待单独结果，不算 Android 运行。
 
 用户给出的 VPN 开／关日志中，复制时 GPS／NETWORK／GMS 缓存都接近模拟目标，但微信截图及用户反馈仍失败。导出时快照不是微信前台期间的连续采样，10 月 13 日旧实验不是本轮结果。脱敏验收在 #59 顶部，实际地址截图没有上传公共仓库。
 

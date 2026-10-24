@@ -16,6 +16,8 @@
 
 原包启动驱动新增显式 `--runtime full-arm64` 模式，API32／33 须明确选择：Python 和设备端驱动均要求完整启动、ARM64 内核与主 ABI、无 x86 ABI、Native Bridge 为 0、普通 UID 和 SELinux Enforcing；原有 API30／32 转译模式仍单独保留。尚未执行原包检查。普通入口／计算器驱动同样显式选择 API，原有自编定位契约仍限 API33；旧系统的 UI 测试读流改用有限缓冲，不依赖 API33 的 `readAllBytes`。通过环境核查后才可使用 `run-target-startup-check.py --runtime full-arm64 --api 32 --target wechat --label <新记录名>`，再测抖音；仍先验证系统普通安装，容器定位保持关闭，不接受条款或登录，不加入普通准入清单。
 
+[Cuttlefish 源码前提](evidence/cuttlefish-arm64-feasibility.json)另有固定上游提交：ARM TCG 分支存在，不能把 SDK 失败扩大成所有整机路径均不可用。当前仅新增同一工作流内的原生 ARM Linux **宿主诊断**，默认关闭，手动选项或提交标记 `[cuttlefish-host]` 可触发；`inspect-cuttlefish-arm-host.py` 记录原生 QEMU、vhost-vsock 能力读取、局部 vsock 绑定与 tun 访问，不启动 Android、不下载 APK。必要设备准备只允许在该临时 GitHub runner 中执行。诊断收集成功和 `eligible_for_boot_attempt` 是不同字段，后续必须明确检查该字段，不能把绿色收集任务当作 Android／微信成功。只用独立实例路径，不覆盖 HOME。
+
 ## 最新进展：统一的普通导入／选点入口
 
 研究宿主现在用一个页面完成选择、导入、填坐标、打开与停止。固定计算器和 GPSTest 的清单从 `sources.json` 生成；导入核对原 APK 的大小、摘要、包名、版本、证书。已导入状态和目标会保留，修改坐标后直接再次应用；不会改动系统安装的微信、抖音或日常天外天。

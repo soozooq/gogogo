@@ -1,72 +1,13 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
   "scope": "DEFAULT_RESEARCH_CHECKS_NOT_TARGET_APP_COMPATIBILITY",
-  "run_id": 40061738582,
-  "commit": "da1cb9547ebf47ede599deb8909673b2c4aff429",
-  "tree": "34e20b01da9dac0eb0902ab6908d9ecadb0c4eb3",
+  "run_id": 40079023555,
+  "commit": "06f269fbca8f8e256dd4a3cc9e12a0efc436e538",
+  "tree": "8bbff3c498b6e43f459703d28d172883badc5937",
   "conclusion": "success",
   "jobs": [
     {
-      "id": 120776524521,
-      "name": "Build and inspect (ARM Mac)",
-      "conclusion": "success",
-      "steps": [
-        {
-          "name": "Set up job",
-          "conclusion": "success"
-        },
-        {
-          "name": "Run actions/checkout@v5",
-          "conclusion": "success"
-        },
-        {
-          "name": "Set dedicated work directories after runner allocation",
-          "conclusion": "success"
-        },
-        {
-          "name": "Run actions/setup-java@v4",
-          "conclusion": "success"
-        },
-        {
-          "name": "Run android-actions/setup-android@v3",
-          "conclusion": "success"
-        },
-        {
-          "name": "Expose the command-line tools path used by the verifiers",
-          "conclusion": "success"
-        },
-        {
-          "name": "Record actual host and install fixed build toolchain",
-          "conclusion": "success"
-        },
-        {
-          "name": "Build standalone host and driver on ARM host",
-          "conclusion": "success"
-        },
-        {
-          "name": "Qualify ARM64 software guest (explicit research opt-in)",
-          "conclusion": "skipped"
-        },
-        {
-          "name": "Upload ARM Mac build evidence (no APK distribution)",
-          "conclusion": "success"
-        },
-        {
-          "name": "Post Run actions/setup-java@v4",
-          "conclusion": "success"
-        },
-        {
-          "name": "Post Run actions/checkout@v5",
-          "conclusion": "success"
-        },
-        {
-          "name": "Complete job",
-          "conclusion": "success"
-        }
-      ]
-    },
-    {
-      "id": 120776524787,
+      "id": 120828490907,
       "name": "Build, inspect and ordinary entry (Linux)",
       "conclusion": "success",
       "steps": [
@@ -133,7 +74,66 @@
       ]
     },
     {
-      "id": 120776525464,
+      "id": 120828491081,
+      "name": "Build and inspect (ARM Mac)",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/checkout@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set dedicated work directories after runner allocation",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run actions/setup-java@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run android-actions/setup-android@v3",
+          "conclusion": "success"
+        },
+        {
+          "name": "Expose the command-line tools path used by the verifiers",
+          "conclusion": "success"
+        },
+        {
+          "name": "Record actual host and install fixed build toolchain",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build standalone host and driver on ARM host",
+          "conclusion": "success"
+        },
+        {
+          "name": "Qualify ARM64 software guest (explicit research opt-in)",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Upload ARM Mac build evidence (no APK distribution)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/setup-java@v4",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Run actions/checkout@v5",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 120828491716,
       "name": "Anonymous startup (official Android 12L translation)",
       "conclusion": "skipped",
       "steps": []
@@ -147,8 +147,8 @@
   "native_arm64_vivo": "NOT_VERIFIED",
   "phone_update_distributed": false,
   "previous_default_run": {
-    "run_id": 40060063936,
-    "commit": "b39a9b499c2497fa4d145552108800b4209850a7",
+    "run_id": 40061738582,
+    "commit": "da1cb9547ebf47ede599deb8909673b2c4aff429",
     "conclusion": "success"
   }
 }
