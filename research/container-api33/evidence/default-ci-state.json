@@ -1,33 +1,33 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
   "scope": "DEFAULT_RESEARCH_CHECKS_NOT_TARGET_APP_COMPATIBILITY",
-  "run_id": 40080900517,
-  "commit": "dbb640a0019b166e88d7e32903a85826d2519f3e",
-  "tree": "2e8c85abed4f0ad5fb90f75b04c835492f6858f1",
+  "run_id": 40082724586,
+  "commit": "d1439c04763f8218283223d45e61d78ad5f8056f",
+  "tree": "5f1dba65d6ca7675bdfe83360138a7dfc9d18a51",
   "conclusion": "success",
   "jobs": [
     {
-      "id": 120834063179,
+      "id": 120839413088,
       "name": "Build and inspect (ARM Mac)",
       "conclusion": "success"
     },
     {
-      "id": 120834063292,
-      "name": "Inspect ARM Linux Cuttlefish host (no VM)",
-      "conclusion": "success"
-    },
-    {
-      "id": 120834063309,
+      "id": 120839413266,
       "name": "Build, inspect and ordinary entry (Linux)",
       "conclusion": "success"
     },
     {
-      "id": 120834064147,
+      "id": 120839413828,
       "name": "Anonymous startup (official Android 12L translation)",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 120839414057,
+      "name": "Inspect ARM Linux Cuttlefish host (no VM)",
       "conclusion": "skipped"
     }
   ],
-  "cuttlefish_host_probe": "HOST_PREREQUISITES_PRESENT_NOT_ANDROID_BOOT",
+  "cuttlefish_host_probe": "SKIPPED_THIS_RUN_PREVIOUS_DBB640A_HOST_ONLY_VERIFIED",
   "cuttlefish_host_result": "cuttlefish-arm-linux-host-result.json",
   "target_probe": "SKIPPED_EXPLICIT_MANUAL_OPT_IN_NOT_PASS",
   "arm64_mac_runtime_probe": "SKIPPED_DEFAULT_FALSE_NOT_PASS",
@@ -37,8 +37,10 @@
   "physical_arm64_vivo": "NOT_VERIFIED",
   "phone_update_distributed": false,
   "previous_default_run": {
-    "run_id": 40079023555,
-    "commit": "06f269fbca8f8e256dd4a3cc9e12a0efc436e538",
+    "run_id": 40080900517,
+    "commit": "dbb640a0019b166e88d7e32903a85826d2519f3e",
     "conclusion": "success"
-  }
+  },
+  "controlled_radio_proxy": "PASS_TWO_CONTROLLED_TESTS_NOT_GUEST_OR_RADIO_SDK_PROOF",
+  "radio_result": "radio-privacy-contract-results.json"
 }

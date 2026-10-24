@@ -70,4 +70,4 @@ GPS／NETWORK 的缓存、单次回调和持续批量回调均从 A 跟随到 B�
 
 修正限定这三个已覆盖 getter：模拟开启时，单个位置返回空 CellIdentity／旧接口空 Bundle，两个列表返回空列表；不编造基站或运营商身份。关闭模拟时保留原有查询路径。没有更改物理网络、VPN、mock 标记或原包证书，也没有申请新的手机权限。
 
-新增自动化使用真实 Android13 ITelephony 接口类型及记录调用次数的受控服务，检查“没有模拟基站时不调用真实服务”和关闭后的正常转发；另检查空列表及旧 Bundle 返回形状。它是受控代理契约，尚待设备端运行，不能当作 Guest Hook 安装、腾讯／字节 SDK 采用或微信成功。异步 cell-info 更新、全部无线接口与第三方实际决策不在这三个 getter 的结果内。
+新增自动化使用真实 Android13 ITelephony 接口类型及记录调用次数的受控服务，检查“没有模拟基站时不调用真实服务”和关闭后的正常转发；另检查空列表及旧 Bundle 返回形状。两项已在提交 `d1439c0` 的云端 Android13 x86_64 中通过，JUnit `OK (2 tests)`，证据 ZIP 摘要与 32 项研究源码摘要已核对，见[实际结果](evidence/radio-privacy-contract-results.json)。测试没有请求真实基站；它是受控代理契约，不能当作 Guest Hook 安装、腾讯／字节 SDK 采用或微信成功。异步 cell-info 更新、全部无线接口与第三方实际决策不在这三个 getter 的结果内。
