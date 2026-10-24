@@ -1,0 +1,34 @@
+{
+  "scope": "CVD_BOOTLOADER_TIMEOUT_NOT_LINUX_ANDROID_OR_APP_SUCCESS",
+  "commit": "07b632afb9b1783a0e274b18eb5398e6fa7fb794",
+  "run_id": 40100070033,
+  "job_id": 120890217951,
+  "artifact_id": 12563261560,
+  "artifact_sha256": "14c5b54822f56b7e429203ad7a2ca08f6c1590305e39f3d2243588831ccfd026",
+  "artifact_digest_verified": true,
+  "source_sha256_verified_against_commit": {
+    "tools/run-cuttlefish-arm-boot.py": "dc8768c6a2b1c596ec1abf640a0afe699ffc9719ff02044c8f06f5a452f6716a",
+    "tools/cuttlefish-tcg-qemu.py": "97e40054e0a0949469a2744cc5ecaf3b9734f51a1d0dbcf924a3b36177cee05c",
+    "tools/fetch-cuttlefish-inputs.py": "c73b6bec3171125521e8b37d30fb1c99559ceecf2fe31eb4d57744bc1dd78423",
+    "cuttlefish-inputs.json": "c7b479f49cc567d65aee12c5aba8eb745ac9cd5ea0ec641af07dc6e9b78803ba"
+  },
+  "state": "BOOT_TIMEOUT",
+  "qemu_live_process_verified": true,
+  "qemu_process_stopped": true,
+  "highest_observed_stage": "U-Boot banner and DRAM:3GiB",
+  "firmware_version": "2022.01-15068-g240b124907 / Apr14,2022",
+  "guest_kernel_boot_observed": false,
+  "boot_completed": false,
+  "adb_connect_timeout_count": 52,
+  "logcat_bytes": 0,
+  "overall_observed_seconds": 1324.93,
+  "qemu_machine": "virt,accel=tcg,gic-version=2,mte=on,usb=off,dump-guest-core=off",
+  "qemu_audio": [
+    "-audiodev",
+    "none,id=cvd_silent"
+  ],
+  "termination": "Owned cleanup after the bounded wait, not a spontaneous QEMU exit or a proven kernel crash",
+  "cause": "UNKNOWN_NO_PC_OR_QMP_SNAPSHOT_COLLECTED",
+  "apps_tested": false,
+  "next": "Collect read-only QMP status/registers and CPU state to identify the bootloader wait before changing CPU/firmware or extending timeouts; no unchanged full-wait rerun."
+}

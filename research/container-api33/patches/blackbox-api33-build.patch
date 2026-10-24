@@ -641,6 +641,74 @@ index 33686f0..8dd420e 100644
              }
              return method.invoke(who, args);
          }
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IWifiManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IWifiManagerProxy.java
+index 98e849a..71c6d32 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IWifiManagerProxy.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IWifiManagerProxy.java
+@@ -3,14 +3,15 @@ package top.niunaijun.bcore.fake.service;
+ import android.content.Context;
+ import android.net.wifi.ScanResult;
+ import android.net.wifi.WifiInfo;
++import android.os.Build;
+ import android.util.Log;
+ 
+ import java.lang.reflect.Method;
+ import java.util.ArrayList;
+ 
+ import black.android.net.wifi.IWifiManager;
+-import black.android.net.wifi.WifiSsid;
+ import black.android.os.ServiceManager;
++import top.niunaijun.bcore.fake.frameworks.BLocationManager;
+ import top.niunaijun.bcore.fake.hook.BinderInvocationStub;
+ import top.niunaijun.bcore.fake.hook.MethodHook;
+ import top.niunaijun.bcore.fake.hook.ProxyMethod;
+@@ -39,32 +40,31 @@ public class IWifiManagerProxy extends BinderInvocationStub {
+ 
+     @ProxyMethod("getConnectionInfo")
+     public static class GetConnectionInfo extends MethodHook {
+-        /*
+-         * It doesn't have public method to set BSSID and SSID fields in WifiInfo class,
+-         * So the reflection framework invocation appeared.
+-         * commented by BlackBoxing at 2022/03/08
+-         */
+         @Override
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             WifiInfo wifiInfo = (WifiInfo) method.invoke(who, args);
+-            black.android.net.wifi.WifiInfo.mBSSID.set(wifiInfo, "ac:62:5a:82:65:c4");
+-            black.android.net.wifi.WifiInfo.mMacAddress.set(wifiInfo, "ac:62:5a:82:65:c4");
+-            black.android.net.wifi.WifiInfo.mWifiSsid.set(wifiInfo, WifiSsid.createFromAsciiEncoded.call("BlackBox_Wifi"));
+-            return wifiInfo;
++            if (wifiInfo == null || !BLocationManager.isFakeLocationEnable()) {
++                return wifiInfo;
++            }
++            if (Build.VERSION.SDK_INT >= 31) {
++                // Use the framework's own redaction on a copy. Never mutate the
++                // base object or invent a router identity, even when disconnected.
++                return wifiInfo.makeCopy(wifiInfo.getApplicableRedactions());
++            }
++            // Older frameworks have no public copy/redaction contract.
++            return null;
+         }
+     }
+ 
+     @ProxyMethod("getScanResults")
+     public static class GetScanResults extends MethodHook {
+-        /*
+-         * It doesn't have public method to set BSSID and SSID fields in WifiInfo class,
+-         * So the reflection framework invocation appeared.
+-         * commented by BlackBoxing at 2022/03/08
+-         */
+         @Override
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             Log.d(TAG, "GetScanResults");
+-            return new ArrayList<ScanResult>();
++            if (BLocationManager.isFakeLocationEnable()) {
++                return new ArrayList<ScanResult>();
++            }
++            return method.invoke(who, args);
+         }
+     }
+ }
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java
 index b2c7548..6873030 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java

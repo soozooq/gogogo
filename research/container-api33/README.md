@@ -129,3 +129,7 @@ python3 tools/run-cloud-check.py --serial emulator-5580 --label owned-guest-loca
 ```
 
 每轮使用独立且不允许覆盖的证据目录，记录源码／APK 摘要、真实界面、JUnit 原文和结束状态。正常安装仅用于第一项对照，之后移除；容器检查要求系统中不存在对应包。`--guest-location` 只在云端测试中准入本次独立构建并校验摘要的消费者，默认宿主入口的计算器准入规则不变。原始日志留在研究工作区，仓库只收录摘要、必要报告和云端截图。
+
+[Cuttlefish 后续实际结果](evidence/cuttlefish-uboot-timeout.json)已进入 U-Boot 并显示 3GiB 内存，但限定等待后没有观察到 Linux／Android 启动或 ADB 就绪。QEMU 二进制／完整有效参数及存活状态已核对，最后由清理停止；不能写成完整系统运行或自发崩溃。下一步收集只读 QMP／寄存器及 CPU 状态，定位固件停留点，避免重复相同配置的完整等待。
+
+[Wi-Fi 核心修正实测](evidence/wifi-radio-privacy-contract-results.json)处理空值及关闭模式，采用 Android 标准脱敏副本、保留原对象、关闭时正常转发，移除固定路由器标识。新增三项加原基站共五项在 API33 x86_64 软件模拟器中 OK (5 tests)，1.335 秒；核对 35 项源码和两份 APK 摘要，VM 已停止。仅受控代理，没有真实 Wi-Fi 查询、Guest／SDK 采用或微信／抖音业务证明；旧 API 分支和 GitHub 独立回归另行验证。

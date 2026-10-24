@@ -1,0 +1,89 @@
+{
+  "scope": "FIVE_CONTROLLED_ANDROID33_CELL_WIFI_PROXY_CONTRACTS_NOT_GUEST_OR_TARGET_COMPATIBILITY",
+  "source_provenance": "Measured worktree input SHA256 values, published unchanged with this report; measured before publication commit",
+  "code_parent_commit": "07b632afb9b1783a0e274b18eb5398e6fa7fb794",
+  "started_at_utc": "2026-10-24T14:14:45.883068+00:00",
+  "runtime": {
+    "api": 33,
+    "abi": "x86_64",
+    "shell_uid": "2000",
+    "selinux": "Enforcing"
+  },
+  "environment": "Dedicated SDK default API33 x86_64 revision2, SDK emulator37.2.12, software TCG; local cloud workspace, no physical phone",
+  "tests": {
+    "class": "top.niunaijun.bcore.fake.service.RadioPrivacyContractInstrumentedTest",
+    "result": "OK (5 tests)",
+    "passed": 5,
+    "seconds": 1.335,
+    "cellular_cases": 2,
+    "wifi_cases": 3
+  },
+  "wifi_verified": [
+    "Platform redaction copy hides synthetic SSID/BSSID/network id and preserves RSSI and the original object",
+    "Null connection info stays null in virtual and closed modes",
+    "Virtual scan list is empty without invoking the controlled base; closed mode returns the same controlled base list"
+  ],
+  "actual_radio_or_wifi_queries": false,
+  "runtime_permissions_changed": false,
+  "dedicated_emulator_stopped": true,
+  "source_inputs_verified": 35,
+  "research_source_sha256": {
+    "sources.json": "50a6b0a01003f5c2f0f3af8cc996f4cb3d02f6ec4b4728820b73add7188f8f82",
+    "patches/blackbox-api33-build.patch": "a93fb853f661b58a226c8a59f531f4bc4cc47815e9c39afd3933204683be90e5",
+    "tools/build-environment.init.gradle": "5d47c36a41ae28792b6c47d4cf1a464935bcfdcfbdd4334ae9f710789f056ab7",
+    "tools/cuttlefish-tcg-qemu.py": "97e40054e0a0949469a2744cc5ecaf3b9734f51a1d0dbcf924a3b36177cee05c",
+    "tools/fetch-cuttlefish-inputs.py": "c73b6bec3171125521e8b37d30fb1c99559ceecf2fe31eb4d57744bc1dd78423",
+    "tools/inspect-apk.py": "7f4fd8679f834013d3f38357c7ad2ee7ed3ecc7fd744ca4a3b05217673094b4d",
+    "tools/inspect-cuttlefish-arm-host.py": "ea085ba1454b8c2c53f3c1760b3018751af412eb7c19c5d36ae0def0454333d5",
+    "tools/inspect-location-consumer.py": "ecca05b3505ab8d7dc9c4a8f5800d408c3a84e25f8b5a962e2c0193f92526c69",
+    "tools/inspect-third-party-apk.py": "71c8f791c5febeed03221355508ca081f50f1bdb8ec802683644376d8adfd73a",
+    "tools/license-inventory.py": "db7967954a98c7e041d7b4a53f81a46703b5069661b15ef9ddff002c2ea2b2ed",
+    "tools/prepare.py": "42d315726e798fea95c316efdfba893d8f57c89403b7ffe04b6a2bac2e782e95",
+    "tools/qualify-arm64-software-boot.py": "d3bbc2fbebcbc381dd73712f08ccc1a31815c64202471b29a17b03627bb30066",
+    "tools/run-arm-mac-software-checks.sh": "4cff7f26be72beb5200d3bea7bc253cdd7d7dc784f356de1bace3394dbb98c0a",
+    "tools/run-build.sh": "ba7a3e3d5b233ca4200ac1f7bb160c0be5eb3686323caa992826022cfac045ad",
+    "tools/run-cloud-check.py": "217e9886148b735ad8efcb1745b31f7b74f13e8a8f972c358a3065fc5ce1af31",
+    "tools/run-cuttlefish-arm-boot.py": "dc8768c6a2b1c596ec1abf640a0afe699ffc9719ff02044c8f06f5a452f6716a",
+    "tools/run-emulator-checks.sh": "82b29e3cbf908b1598633ce6c3adb5c92fe6b613ec54b39d6f23920c7de3b498",
+    "tools/run-target-emulator-checks.sh": "29f9c09f8eda49468402891db9902d2ab15f467b45dadfc587f1ca969dd8ee0b",
+    "tools/run-target-startup-check.py": "48749c39a262f7dd64b2c4a7b13d9d6366c1c6af14e594f2804fd20a17808193",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ExternalGuestInstrumentedTest.java": "d5a0ac0d64876e8c398a15bb2a67e5dfebe27585562d58e989da4d10c902d8fd",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/GuestLocationInstrumentedTest.java": "86b45c72096eeb021d311840f0d74039354afa798075cbc37e77f61bdf0e2b24",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/OfficialTargetStartupInstrumentedTest.java": "c9299cfc08f0f67c7740eb117eb519d3880d43da62de218ff567196e5a52e5fc",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ThirdPartyLocationInstrumentedTest.java": "c3f7335a56b66a15533d87b193ac362602e3f08feceb4f11fae1cb2e5736ba88",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java": "b36cd994d40fa173fcd3c0830d688a102e0f63bf24584e3e1b6aa2e723f36e54",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/RadioPrivacyContractInstrumentedTest.java": "dad922464c6ff52a2e0db148b6dff3a594ae5ed2a9c0cbebdc01ecd7bd30449a",
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/GuestImport.java": "9605255f9bf5e8681384146a52a89c35d93f9220e40625deeef9cd71d1a77fc9",
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeActivity.java": "f79b0f86217b2430699f1d3b3fbc0bee6b3c48afa9d3f2f0a8d8c752b8c61bc6",
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeApplication.java": "bcaf641d21a388213fc43fe6536cff4263c6e9c8ef9c87036fc903c12613deac",
+    "probe-host/build.gradle": "a270a468887e2104e4717bffc75583226e5de7e8a029237392cd443f6d70e660",
+    "probe-host/src/main/AndroidManifest.xml": "d61356d22146dbcbb9dd5fbd22b2987fa77b7751ee24e6ac08ee431a0936b6e8",
+    "probe-host/src/main/res/values/ids.xml": "44bdab15a5b1a9cb5ae3059c592ad3897bdf672ff2ea177e73603e531b3d8079",
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/LocationActivity.java": "81507dbca1d8b73b1d1164ed8233cb819fa43d5f1745535c9b592ce67df5fcb4",
+    "location-consumer/src/main/AndroidManifest.xml": "6a499d492d06531472f1d617631a680bd27a13f70eea5fca5e8c511ca78f2c9e",
+    "location-consumer/src/main/res/values/ids.xml": "d432b392a5beb2beffbc7a54cd0879df48a9aaf45c002b64cc81b30663d14c24",
+    "location-consumer/build.gradle": "21b119ff0a4988cd666b87090fe88778c43c05dc7ce4b8b3f61f3aa232a46dcc"
+  },
+  "apk_sha256": {
+    "probe-host-build/outputs/apk/debug/probeHost-debug.apk": "7aed9ddab4876e3b25faf009d8eb3eb69081d6a8f5f059feb2443103aaae4629",
+    "probe-host-build/outputs/apk/androidTest/debug/probeHost-debug-androidTest.apk": "56a0f18d013aad5cd220ff7fc98efb49ced1f0612d315bd9e5bc9417b4075c60"
+  },
+  "case_result": {
+    "passed": true,
+    "control_removed": true,
+    "guest_system_installed_after_cleanup": false,
+    "wechat_result": "NOT_TESTED",
+    "location_replacement": "NOT_TESTED_RADIO_PROXY_ONLY",
+    "radio_privacy": "CONTROLLED_PROXY_ONLY",
+    "guest_signer_metadata": "NOT_TESTED"
+  },
+  "excludes": [
+    "Real Guest hook dispatch or actual Wi-Fi permission behavior",
+    "Async network callbacks or all wireless interfaces",
+    "API versions before31",
+    "Tencent/ByteDance/GMS adoption",
+    "WeChat send/live or Douyin wireless/overseas compatibility",
+    "ARM64 or physical vivo"
+  ],
+  "phone_update_distributed": false
+}

@@ -71,3 +71,11 @@ GPS／NETWORK 的缓存、单次回调和持续批量回调均从 A 跟随到 B�
 修正限定这三个已覆盖 getter：模拟开启时，单个位置返回空 CellIdentity／旧接口空 Bundle，两个列表返回空列表；不编造基站或运营商身份。关闭模拟时保留原有查询路径。没有更改物理网络、VPN、mock 标记或原包证书，也没有申请新的手机权限。
 
 新增自动化使用真实 Android13 ITelephony 接口类型及记录调用次数的受控服务，检查“没有模拟基站时不调用真实服务”和关闭后的正常转发；另检查空列表及旧 Bundle 返回形状。两项已在提交 `d1439c0` 的云端 Android13 x86_64 中通过，JUnit `OK (2 tests)`，证据 ZIP 摘要与 32 项研究源码摘要已核对，见[实际结果](evidence/radio-privacy-contract-results.json)。测试没有请求真实基站；它是受控代理契约，不能当作 Guest Hook 安装、腾讯／字节 SDK 采用或微信成功。异步 cell-info 更新、全部无线接口与第三方实际决策不在这三个 getter 的结果内。
+
+## Wi-Fi 空值与关闭模式
+
+继续审查发现，原 `getConnectionInfo` 无条件改写返回对象中的 SSID／BSSID／MAC，返回空值时也会继续反射写入；`getScanResults` 则在关闭虚拟定位时仍返回空列表。它会改变关闭模式的正常查询，也可能在无连接信息时崩溃。这是容器源码缺口，不是此前用户系统微信失败的因果证明。
+
+修正后，关闭模式和空连接信息保持原返回；虚拟模式在 API31+ 使用公开的 `WifiInfo.makeCopy(getApplicableRedactions())` 返回标准脱敏副本，保留原对象及不需要脱敏的链路字段，不制造路由器身份。旧系统缺少该公开契约时返回空连接信息；旧 API 分支尚未运行验证。扫描列表仅在虚拟模式为空，关闭时沿原调用路径。不改变系统 Wi-Fi／VPN、权限、mock 标记或原证书。
+
+新增三项受控 Android13 检查使用真实 IWifiManager 方法类型和合成 WifiInfo／ScanResult，验证脱敏字段与原对象不变、空连接信息、关闭后的正常转发；没有查询真实 Wi-Fi。宿主和共五项基站／Wi-Fi 测试已编译，并在独立云端工作区的 API33 x86_64 软件模拟器中实际 OK (5 tests)，1.335 秒；35 项源码及两份 APK 摘要逐一核对，专用 VM 已停止，见[实际结果](evidence/wifi-radio-privacy-contract-results.json)。它不覆盖真实 Guest Hook 安装、实际 Wi-Fi 权限、异步网络回调、腾讯／字节 SDK 或无线定位业务；GitHub 的独立回归仍待新提交。
