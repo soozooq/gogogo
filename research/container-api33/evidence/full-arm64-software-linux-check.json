@@ -1,0 +1,157 @@
+{
+  "scope": "FULL_SYSTEM_ARM64_SOFTWARE_EMULATION_PARTIAL_BOOT_NOT_APP_COMPATIBILITY",
+  "date_utc": "2026-10-24",
+  "backend": {
+    "scope": "OFFICIAL_BINARY_HELP_ONLY_NOT_GUEST_BOOT_PROOF",
+    "binary_relative_to_sdk": "emulator/qemu/linux-x86_64/qemu-system-aarch64-headless",
+    "size": 25919960,
+    "sha256": "e85ab5c7ed7608d78cd3a2c1c9a6f6fbb0939d75d6449ef64eac3483009312d2",
+    "file": "/workspace/scratch/android-build/sdk/emulator/qemu/linux-x86_64/qemu-system-aarch64-headless: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, for GNU/Linux 2.6.24, BuildID[sha1]=62494d06b043a8dd6f73479fd565931ec0787f7a, stripped",
+    "help_exit": 0,
+    "sdk_package": "emulator",
+    "sdk_version": "37.2.12",
+    "system_image_candidate": "system-images;android-33;default;arm64-v8a",
+    "system_image_modified": false,
+    "kernel_modified": false,
+    "native_bridge_installed": false,
+    "references": [
+      {
+        "url": "https://developer.android.com/studio/releases/emulator",
+        "scope": "Historical Linux ARM64 host source cross-compilation note; not proof that this binary boots this guest"
+      },
+      {
+        "url": "https://groups.google.com/g/android-emulator-dev/c/m6gfYxHuJro",
+        "date": "2015-12",
+        "scope": "Maintainer explanation of launcher environment; direct engine invocation described as error-prone and not recommended; not current-version compatibility proof"
+      }
+    ]
+  },
+  "image": {
+    "sdk_image": {
+      "package": "system-images;android-33;default;arm64-v8a"
+    },
+    "source_properties": "Pkg.Desc=Android SDK System Image\nPkg.UserSrc=false\nPkg.Revision=2\nPkg.Dependencies=emulator#29.1.11\nAndroidVersion.ApiLevel=33\nAndroidVersion.ExtensionLevel=${PLATFORM_SDK_EXTENSION_VERSION}\nAndroidVersion.IsBaseSdk=${PLATFORM_IS_BASE_SDK}\nSystemImage.Abi=arm64-v8a\nSystemImage.GpuSupport=true\nSystemImage.TagId=default\nSystemImage.TagDisplay=Default Android System Image\n",
+    "files": {
+      "kernel-ranchu": {
+        "size": 21455246,
+        "sha256": "cc047f90e4a9d761f8d0ef9396e1e9cf88bd7f8c201fb13bb709bc2290be2085"
+      },
+      "ramdisk.img": {
+        "size": 4472282,
+        "sha256": "d97353513f4a9990f920ec5ec118252b9ebc44552e7fa742bb2b223d8c6425b0"
+      },
+      "vendor.img": {
+        "size": 93323264,
+        "sha256": "0c480e3bc2ba320bdfb2c61a8795bcd320c29f7d0554c6cd657dd1d5f4951027"
+      },
+      "system.img": {
+        "size": 4306501632,
+        "sha256": "a2a5eccce9411da7a286c86f38d9cc2c9a071c8c52c6f350e0811a48975b591a"
+      }
+    },
+    "base_images_modified": false
+  },
+  "cases": [
+    {
+      "log": "arm64-direct-01.log",
+      "sha256": "46884e87b967eb594e9ba723742336334f50d23207b56f7be4b9f144e2d540f8",
+      "classification": "NO_PCI_BUS_FOR_VIRTIO_SND",
+      "target_apps_tested": false
+    },
+    {
+      "log": "arm64-direct-02.log",
+      "sha256": "0e1a4b2067db6c8ae717688f3e3f32535b35fa9117f7fd3aa32257c3fe1bcaf4",
+      "classification": "NO_PCI_BUS_FOR_HDA",
+      "target_apps_tested": false
+    },
+    {
+      "log": "arm64-direct-03.log",
+      "sha256": "67b82ed1dfb38fbe83297db6c1aabed40b5de78272b3d954ced7cdbf044aadc4",
+      "classification": "NO_PCI_BUS_FOR_HDA_DESPITE_AUDIO_DISABLED",
+      "target_apps_tested": false
+    },
+    {
+      "log": "arm64-direct-04.log",
+      "sha256": "9db899e7db4e385f9d68ff1626e4805e63098a2e71d27ebbf8771a81b738f6a9",
+      "classification": "PARTIAL_ARM64_BOOT_SYSTEM_SERVER_ART_ABORT",
+      "target_apps_tested": false
+    },
+    {
+      "log": "arm64-direct-05-max.log",
+      "sha256": "71a5279342ff18827cba603b3609a8e37aee12ef052058bc54a2153e5df89196",
+      "classification": "FRESH_MAX_CPU_SYSTEM_SERVER_ART_ABORT",
+      "target_apps_tested": false
+    }
+  ],
+  "observed_direct_04": {
+    "scope": "PARTIAL_ARM64_GUEST_BOOT_NOT_READY_FOR_APP_TESTS",
+    "attempt": "direct-04",
+    "cpu": "cortex-a57",
+    "machine": "virt",
+    "observed_kernel_arch": "aarch64",
+    "observed_primary_abi": "arm64-v8a",
+    "observed_native_bridge": "0",
+    "observed_shell_uid": "2000",
+    "observed_selinux": "Enforcing",
+    "boot_completed": false,
+    "system_server_restarted_repeatedly": true,
+    "observed_abort": "ART Unexpected call into trampoline; b/74410240, FingerprintService and AppsFilter threads",
+    "additional_crash": "dex2oat64 compiling arm boot image SIGSEGV",
+    "root_cause": "UNDETERMINED",
+    "target_apks_installed": false,
+    "container_tested": false,
+    "system_image_modified": false,
+    "next": "One fresh-AVD qualification with the QEMU max software CPU model; no OS/ART patches or failure suppression"
+  },
+  "observed_direct_05": {
+    "scope": "FULL_ARM64_SOFTWARE_SYSTEM_HEALTH_FAILURE_NOT_APP_FAILURE",
+    "attempt": "direct-05-max",
+    "cpu": "max",
+    "fresh_avd": true,
+    "boot_completed": false,
+    "system_server_crash_records": 5,
+    "failure": "ART b/74410240 system_server native abort repeated with fresh max CPU configuration",
+    "targets_installed": false,
+    "container_tested": false,
+    "root_cause": "UNDETERMINED",
+    "observed_native_crash_abi": "arm64",
+    "property_snapshot_in_this_attempt": "NOT_CAPTURED"
+  },
+  "system_server_crash_evidence": {
+    "arm64-direct-04-all-crashes.txt": {
+      "sha256": "264fedc8293f76edb91ee4f490fe6538a50eaa45ab39242c6cb3259ad8cfe738",
+      "distinct_system_server_pids": [
+        580,
+        928,
+        1179
+      ]
+    },
+    "arm64-direct-05-max-crashes-final.txt": {
+      "sha256": "4265dde651dc7a48a74043d9156c89a87dd0cfefe510d343c576fc9ccc1b9adf",
+      "distinct_system_server_pids": [
+        581,
+        997,
+        1265,
+        1525,
+        1788
+      ]
+    }
+  },
+  "image_hash_scope": "Self-computed after read-only system/vendor-drive qualification; not an independently published checksum",
+  "root_cause": "UNDETERMINED; runtime errors are not classified as target or container failures",
+  "next_probe": "ARM Mac explicit -machine accel=tcg -cpu max; capability help must advertise TCG before image install",
+  "source_references": [
+    {
+      "url": "https://android.googlesource.com/platform/external/qemu/+/refs/heads/emu-master-dev/android-qemu2-glue/main.cpp",
+      "retrieved_sha256": "9469dc908eb4d1b1866b94bdc87f7816a65dc18070986af4728cc3beb5131cb9",
+      "scope": "Mutable upstream source inspection guides arguments; does not establish exact shipped SDK source commit"
+    },
+    {
+      "url": "https://android.googlesource.com/platform/art/+/android13-release/runtime/entrypoints/quick/quick_trampoline_entrypoints.cc",
+      "scope": "Actual guest logs show Unexpected call into trampoline; no ART patches or watchdog relaxation applied"
+    }
+  ],
+  "wechat_douyin": "NOT_INSTALLED_OR_TESTED",
+  "physical_arm64_vivo": "NOT_VERIFIED",
+  "location_business": "UNFULFILLED"
+}

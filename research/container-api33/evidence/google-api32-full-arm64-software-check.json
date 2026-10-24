@@ -1,0 +1,200 @@
+{
+  "scope": "API32_FULL_ARM64_SYSTEM_BOOT_FAILURE_NOT_TARGET_APP_COMPATIBILITY",
+  "date_utc": "2026-10-24",
+  "image": {
+    "sdk_package": "system-images;android-32;google_apis;arm64-v8a",
+    "source_properties": "Pkg.Desc=System Image arm64-v8a with Google APIs.\nPkg.Revision=4\nPkg.Dependencies=emulator#30.7.3\nAndroidVersion.ApiLevel=32\nSystemImage.Abi=arm64-v8a\nSystemImage.TagId=google_apis\nSystemImage.TagDisplay=Google APIs\nSystemImage.GpuSupport=true\nAddon.VendorId=google\nAddon.VendorDisplay=Google Inc.\n\n",
+    "files": {
+      "kernel-ranchu": {
+        "size": 20030539,
+        "sha256": "d747551acd49132202c15f13b9a8d787f95356f5c4040397888e925a7f4d3749"
+      },
+      "ramdisk.img": {
+        "size": 4283083,
+        "sha256": "e82e5f5d541de133679c5892b4f03e9df3074fbd0d39e0e012366a21effc9c76"
+      },
+      "vendor.img": {
+        "size": 146800640,
+        "sha256": "ce9b362aa8bdbb7e9a10da1e5ea88f74ea340f3613051dccddae903d32c49169"
+      },
+      "system.img": {
+        "size": 4306501632,
+        "sha256": "8428c469f6e3a6056f68ad2fd175e61a70ca6e6cffa58ee0b444a6616a39d26f"
+      }
+    },
+    "checksum_scope": "Self-computed installed input hashes; not an independent published checksum",
+    "system_image_modified": false,
+    "kernel_modified": false
+  },
+  "sdk_backend_sha256": "e85ab5c7ed7608d78cd3a2c1c9a6f6fbb0939d75d6449ef64eac3483009312d2",
+  "cases": {
+    "max_single_cpu": {
+      "qualification": {
+        "scope": "SOFTWARE_ARM64_SYSTEM_BOOT_ONLY_NOT_WECHAT_OR_PHYSICAL_VIVO",
+        "requested_api": 32,
+        "state": "EMULATOR_EXITED_BEFORE_BOOT",
+        "boot_completed": false,
+        "passed": false,
+        "system_image_modified": false,
+        "target_apps_tested": false,
+        "observed_seconds": 250.155
+      },
+      "launch_inputs": {
+        "scope": "API32_FULL_ARM64_VM_LAUNCH_INPUTS_ONLY_NOT_OS_BOOT_PROOF",
+        "source_commit": "da1cb9547ebf47ede599deb8909673b2c4aff429",
+        "sdk_package": "system-images;android-32;google_apis;arm64-v8a",
+        "source_properties": "Pkg.Desc=System Image arm64-v8a with Google APIs.\nPkg.Revision=4\nPkg.Dependencies=emulator#30.7.3\nAndroidVersion.ApiLevel=32\nSystemImage.Abi=arm64-v8a\nSystemImage.TagId=google_apis\nSystemImage.TagDisplay=Google APIs\nSystemImage.GpuSupport=true\nAddon.VendorId=google\nAddon.VendorDisplay=Google Inc.\n\n",
+        "fresh_userdata": true,
+        "virtual_cores": 1,
+        "accelerator_request": "tcg,thread=single",
+        "cpu": "max",
+        "machine": "virt",
+        "config_sha256": "6dc20bdbc18ef64630f070fe900173c32303ee07a35b282000090e463fbd7596",
+        "qualifier_sha256": "3df18009877b287deeec908ae66eb062dcfe9cdc32d87a38ef1f476169f240f4"
+      },
+      "evidence_sha256": {
+        "google32-full-arm64-08/result.json": "aac9b809e3bb7c4a5e3d1d2ba4a5004a8e433589b94fb7ccad974202c0d81aa2",
+        "google32-full-arm64-08/config.ini": "6dc20bdbc18ef64630f070fe900173c32303ee07a35b282000090e463fbd7596",
+        "google32-full-arm64-08/hardware-qemu.ini": "4ca6f60c2ba82462dba17bb4d256b023140c5612aa9cd8acf7b4559709c84340",
+        "google32-full-arm64-launch-inputs.json": "3155c44070cee6804e47af3e3c0cbad24addc9b9cd351ac16b29f80c4b902cbc",
+        "google32-arm64-full-08.log": "c3dcd324501086d0b2921527d0a2c7f91839ffdcfd4866954213546305ee7fb0",
+        "google32-full-arm64-08/observed-outcome.json": "c451bda0243cd145ac1f82db5c57e36f071f2369d8e3eaf690828478807821dc"
+      },
+      "properties": "NOT_CAPTURED_ADB_NOT_READY",
+      "target_apps_started": false,
+      "container_tests_run": false,
+      "operator_early_stop": {
+        "scope": "OBSERVED_CONSOLE_FAILURE_AND_OPERATOR_EARLY_STOP_NOT_SPONTANEOUS_VM_EXIT",
+        "state": "CRITICAL_KEYSTORE2_NATIVE_CRASH_LOOP",
+        "critical_crash_pids": {
+          "keystore2": [
+            188,
+            214,
+            230,
+            246,
+            262,
+            278,
+            294,
+            310,
+            326,
+            342,
+            358,
+            374,
+            390,
+            406,
+            422,
+            438,
+            454,
+            470,
+            486,
+            502,
+            518,
+            534,
+            550,
+            566,
+            582,
+            598,
+            614,
+            630,
+            646,
+            662,
+            678,
+            694,
+            710,
+            726,
+            742,
+            758,
+            774,
+            790,
+            806,
+            822,
+            838,
+            854,
+            870,
+            886,
+            902,
+            918,
+            934,
+            950,
+            966,
+            982,
+            998,
+            1014,
+            1030,
+            1046,
+            1062,
+            1078,
+            1094
+          ]
+        },
+        "target_apps_started": false,
+        "adb_properties": "NOT_CAPTURED_ADB_NOT_READY",
+        "reason": "Repeated keystore2 SIGSEGV before Android/ADB readiness; terminate this owned VM rather than wait the full boot timeout",
+        "next_cpu_model_check": "Fresh AVD with the standard cortex-a53 CPU instead of max; no causal claim before results"
+      },
+      "classification": "Keystore2 native SIGSEGV loop observed in console before ADB readiness; operator stopped the VM, causing the original ADB-only qualifier to report emulator exit. Not a spontaneous emulator exit."
+    },
+    "standard_cortex_a53_single_cpu": {
+      "qualification": {
+        "scope": "SOFTWARE_ARM64_SYSTEM_BOOT_ONLY_NOT_WECHAT_OR_PHYSICAL_VIVO",
+        "requested_api": 32,
+        "state": "CRITICAL_SYSTEM_SERVICE_NATIVE_CRASH_LOOP",
+        "boot_completed": false,
+        "passed": false,
+        "system_image_modified": false,
+        "target_apps_tested": false,
+        "console_critical_crash_pids": {
+          "keystore2": [
+            188,
+            214,
+            230,
+            246,
+            262,
+            278,
+            294,
+            310,
+            326
+          ]
+        },
+        "observed_seconds": 0.0
+      },
+      "launch_inputs": {
+        "scope": "API32_CORTEX_A53_FULL_ARM64_VM_LAUNCH_INPUTS_ONLY_NOT_OS_BOOT_PROOF",
+        "base_source_commit": "da1cb9547ebf47ede599deb8909673b2c4aff429",
+        "source_worktree_dirty": true,
+        "dirty_files": [
+          "research/container-api33/tools/qualify-arm64-software-boot.py"
+        ],
+        "qualifier_sha256": "d3bbc2fbebcbc381dd73712f08ccc1a31815c64202471b29a17b03627bb30066",
+        "sdk_package": "system-images;android-32;google_apis;arm64-v8a",
+        "fresh_userdata": true,
+        "virtual_cores": 1,
+        "accelerator_request": "tcg,thread=single",
+        "cpu": "cortex-a53",
+        "machine": "virt",
+        "config_sha256": "6dc20bdbc18ef64630f070fe900173c32303ee07a35b282000090e463fbd7596"
+      },
+      "evidence_sha256": {
+        "google32-full-arm64-09-a53/result.json": "51259a7e387d87daea7cdbc451af55057cc5a2e7bff3491aa6a0cc417a224a42",
+        "google32-full-arm64-09-a53/config.ini": "6dc20bdbc18ef64630f070fe900173c32303ee07a35b282000090e463fbd7596",
+        "google32-full-arm64-09-a53/hardware-qemu.ini": "4ca6f60c2ba82462dba17bb4d256b023140c5612aa9cd8acf7b4559709c84340",
+        "google32-full-arm64-a53-launch-inputs.json": "521e380c236bf9a26142bdae832d9fd624605d077fa16bec1d528ba50f76771c",
+        "google32-arm64-full-09-a53.log": "c8fcba7cbb5c317d7d3b62188eb1ac97bf9d52e28adf0c4de911e23417891e47",
+        "google32-full-arm64-09-a53/console-native-crashes.txt": "38bec324850eb9c9fd62fe5814f81ed3e47b9b46e2c959a63623c596f2c08209"
+      },
+      "properties": "NOT_CAPTURED_ADB_NOT_READY",
+      "target_apps_started": false,
+      "container_tests_run": false,
+      "classification": "The console-aware qualifier automatically rejected distinct keystore2 native crashes before any ADB or application stage.",
+      "timing_scope": "0.0 seconds is the checker reading an already accumulated failing console, not VM startup duration."
+    }
+  },
+  "exact_root_cause": "UNKNOWN; CPU model change did not qualify the OS",
+  "system_image_modified": false,
+  "kernel_modified": false,
+  "sdk_binary_modified": false,
+  "wechat_tested": false,
+  "douyin_tested": false,
+  "ordinary_core_tests_run": false,
+  "current_boundary": "No qualified full ARM64 emulator available in this session. Preserve existing x86_64 passes; do not repeat unchanged failed configurations or claim Android13/vivo or business success."
+}

@@ -1,0 +1,71 @@
+{
+  "scope": "ORIGINAL_FIRMWARE_ONLY_CONTROL_NO_ANDROID_IMAGES_APPS_OR_VIVO",
+  "host_arch": "x86_64",
+  "android_images_attached": false,
+  "apps_tested": false,
+  "qemu_version": "8.2.2 / Ubuntu1.18 AMD64 package",
+  "qemu_sha256": "b511b60cc31479b71dfdd589e6c981ae37b20ef0e75adc5a57bb0d6737e9b30c",
+  "firmware_sha256": "fd4e31fedfa149d634440f94b081ed1ae50efb8d2f3fd21d20476a977c9b4bca",
+  "firmware_unchanged": true,
+  "inputs": "Unmodified official Ubuntu 8.2.2+ds-0ubuntu1.18 AMD64 package and the exact original CVD U-Boot. Local package/binary hashes; dependency hashes matched official package indexes. Not the native ARM host binary.",
+  "qemu_package_sha256": "06184a21b9c8dc573ab6d255e9826cc4732df90e56bd65c52e92ad640af4d60a",
+  "only_case_argument_difference": "-cpu max versus -cpu max,lpa2=off; dedicated output/socket paths differ",
+  "common_machine": "virt,accel=tcg,gic-version=2,mte=on,usb=off,dump-guest-core=off",
+  "ram_mb": 3072,
+  "cpus": 2,
+  "disks_or_network_devices_attached": false,
+  "cases": [
+    {
+      "cpu": "max",
+      "snapshot_seconds": [
+        5.06,
+        7.064
+      ],
+      "pcs": [
+        "00000000ff86da00",
+        "00000000ff86da00"
+      ],
+      "uart_prefix": "\n\nU-Boot 2022.01-15068-g240b124907 (Apr 14 2022 - 14:14:27 +0000)\n\nDRAM:  3 GiB\n",
+      "uart_sha256": "8787b81f04dde5b6cc338cf4697ddb8b357711878a074fd36f6b146604b82497",
+      "firmware_banner_count": 1,
+      "model_line_observed": false,
+      "owned_process_stopped": true
+    },
+    {
+      "cpu": "max,lpa2=off",
+      "snapshot_seconds": [
+        5.056,
+        7.059
+      ],
+      "pcs": [
+        "00000000ff86c83c",
+        "00000000ff86c83c"
+      ],
+      "uart_prefix": "\n\nU-Boot 2022.01-15068-g240b124907 (Apr 14 2022 - 14:14:27 +0000)\n\nDRAM:  3 GiB\nModel: linux,dummy-virt\nNo supplementary environment\nresetting ...\n\n\nU-Boot 2022.01-15068-g240b124907 (Apr 14 2022 - 14:14:27 +0000)\n\nDRAM:  3 GiB\nModel: linux,dummy-virt\nNo supplementary environment\n",
+      "uart_sha256": "21443bc9a95e5e93c575b2124235bc64a1ba0f21608f1743d30dd4df93d746ff",
+      "firmware_banner_count": 51,
+      "model_line_observed": true,
+      "owned_process_stopped": true
+    }
+  ],
+  "old_firmware_stall_reproduced_with_identical_native_ci_registers": true,
+  "native_reference_run_id": 40103018384,
+  "interpretation": "Turning off LPA2 eliminates the initial firmware stall in this minimal control. With no system or supplementary environment disks attached, the next observed outcome is an expected firmware reset loop, not Android boot.",
+  "android_boot_qualified": false,
+  "full_cuttlefish_fix_confirmed": false,
+  "observer_issue": "Actual ARM HMP rejects $pc and its build omits ARM disassembly. Numeric raw-word reads now work; virtual read fails while physical words match the original synchronous exception entry.",
+  "raw_summary_sha256": "df82c37f9e007cdd00c47480b29a55c659142ca8a296d5d8ba16d80b1c8081f5",
+  "numeric_observer_followup": {
+    "scope": "SECOND_LOCAL_MINIMAL_FIRMWARE_ONLY_NOT_NATIVE_ANDROID",
+    "virtual_words": "00000000ff86da00: Cannot access memory\r\n",
+    "physical_words": "00000000ff86da00: 0xa9bf7bfd 0x97ffff83 0x94000294 0x17ffffc0\r\n00000000ff86da10: 0xd503201f 0xd503201f 0xd503201f 0xd503201f\r\n",
+    "original_firmware_offset": "0x2a00",
+    "physical_bytes_match_original": true,
+    "relocation_base_in_this_control": "0xff86b000",
+    "instruction_decode": "stp x29,x30,[sp,#-16]!; bl _exception_entry; bl do_sync; b exception_exit",
+    "both_local_processes_stopped": true,
+    "raw_summary_sha256": "d9a5382469feba53847143004894d130ede8b3515c8b9a1e0cdc3d34990e1f11"
+  },
+  "native_initial_stall_cleared": true,
+  "native_followup": "cuttlefish-post-firmware-anr.json"
+}

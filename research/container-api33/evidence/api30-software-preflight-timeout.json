@@ -1,0 +1,19 @@
+{
+  "scope": "LOCAL_SOFTWARE_VM_PRECONDITION_TIMEOUT_NOT_TARGET_COMPATIBILITY",
+  "case": "api30-wechat-startup-local-01",
+  "image_report": "google-api30-nativebridge-check.json",
+  "result": {
+    "scope": "OFFICIAL_ANDROID11_TRANSLATION_STARTUP_ONLY_NOT_LOCATION_OR_VIVO",
+    "baseline": "NOT_RUN",
+    "container": "NOT_RUN",
+    "location_business": "NOT_TESTED",
+    "accounts_used": false,
+    "error": "TimeoutExpired: Command '['/workspace/scratch/android-build/sdk/platform-tools/adb', '-s', 'emulator-5580', 'shell', 'input keyevent KEYCODE_WAKEUP']' timed out after 30 seconds",
+    "passed": false,
+    "system_package_after_cleanup": false
+  },
+  "actual_target_install_attempted": false,
+  "actual_target_ui_observed": false,
+  "location_business": "NOT_TESTED",
+  "next": "Dedicated GitHub KVM job on the official image; no repeated local TCG attempt or phone experiment"
+}

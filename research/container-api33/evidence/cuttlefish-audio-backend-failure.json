@@ -1,0 +1,33 @@
+{
+  "scope": "QEMU_AUDIO_BACKEND_CONFIGURATION_FAILURE_BEFORE_KERNEL_NOT_ANDROID_OR_APP_FAILURE",
+  "commit": "ad1d7f9b7ce569745fbb627e036e349adc09cbf5",
+  "run_id": 40099404040,
+  "job_id": 120888265788,
+  "artifact_id": 12562327508,
+  "artifact_sha256": "5afbe8d8b95d4adc82de7c265ac99bccb419e03835d14d202b3a7a0e8f1dcd96",
+  "artifact_digest_verified": true,
+  "source_sha256_verified_against_commit": {
+    "tools/run-cuttlefish-arm-boot.py": "dc8768c6a2b1c596ec1abf640a0afe699ffc9719ff02044c8f06f5a452f6716a",
+    "tools/cuttlefish-tcg-qemu.py": "791cb7362333b7135f3ebbbd02345b9105611fa73b12d504a179a7d25a88a928",
+    "tools/fetch-cuttlefish-inputs.py": "c73b6bec3171125521e8b37d30fb1c99559ceecf2fe31eb4d57744bc1dd78423",
+    "cuttlefish-inputs.json": "c7b479f49cc567d65aee12c5aba8eb745ac9cd5ea0ec641af07dc6e9b78803ba"
+  },
+  "state": "QEMU_EXITED_BEFORE_BOOT",
+  "host_tool_preflights_passed": true,
+  "network_boot_rom": {
+    "path": "/usr/lib/ipxe/qemu/efi-virtio.rom",
+    "sha256": "606518e1cfa5afd4ceac95ea309a7e385d60fb17ae0b684cee948d73ab255dfc"
+  },
+  "mobile_tap_ipv4": {
+    "gateway": "192.168.252.1",
+    "prefix": 30,
+    "broadcast": "192.168.252.3"
+  },
+  "network_config_server_failure_seen": false,
+  "qemu_error": "-device AC97: no default audio driver available",
+  "qemu_process_stopped": true,
+  "kernel_log_bytes": 0,
+  "boot_completed": false,
+  "apps_tested": false,
+  "followup": "Pinned manager adds AC97 despite enable_audio=false. Preserve that PCI device and explicitly attach QEMU none backend; no host sound device, guest/kernel/binary edit or app compatibility claim."
+}

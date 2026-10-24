@@ -1,0 +1,17 @@
+{
+  "scope": "FILE_PICKER_OCCLUSION_NOT_ENGINE_IMPORT_FAILURE",
+  "run_id": 39989126551,
+  "job_id": 120536000283,
+  "commit": "9885c8f8b178e959ae19dc17856e7b9aff017456",
+  "test_seconds": 63.356,
+  "failure": "Ordinary import completed assertion timed out",
+  "observed_window": "DocumentsUI still open; Open from drawer overlays Recent list containing GPSTest APK. No evidence that file selection returned to host or import began.",
+  "cause": "Click selector matched the underlying file before drawer transition completed.",
+  "fix": "Ordinary product opens the Download directory using public EXTRA_INITIAL_URI; driver checks drawer closed and picker return before import assertion.",
+  "official_reference": "https://developer.android.com/reference/android/provider/DocumentsContract#EXTRA_INITIAL_URI",
+  "evidence_integrity_fix": "Check remote output file existence before exec-out cat; exec-out may return0 for a missing remote file and copy an error message as an apparent JSON/PNG.",
+  "artifact_id": 12516747930,
+  "artifact_sha256": "9cb29be04e9db12b6e3b4aeb81f574a9035cecc195a3bf67e9d304ada42b35b5",
+  "engine_location_result": "NOT_TESTED",
+  "next_run": "PENDING_PUSH"
+}

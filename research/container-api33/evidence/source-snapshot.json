@@ -1,0 +1,16 @@
+{
+  "patches/blackbox-api33-build.patch": "a09a1e1f8cecbdc331deab774186120012351ec5c629b2c93000ce0e6c006dcc",
+  "probe-host/build.gradle": "ace461c2eb6937a7447ea63cc602fb08c0f4c99f8da0de501bbb52047a897fe0",
+  "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ExternalGuestInstrumentedTest.java": "24a07d7f12b11b4e375c20f3e6b3219942c75c6bc13877b8dc102e42c764f5c9",
+  "probe-host/src/main/AndroidManifest.xml": "6f414973acb3df08880b18a0ea85caa4e8a77145ad0b4692e892cae3d33abcfe",
+  "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/GuestImport.java": "d9352a39d22ae77fae282c935f4f45b61b9498b346d6b85780fd51c2b5e1eb97",
+  "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeActivity.java": "1a94711cd2bf3d5c4f3d451af663aea1cbf1a045281d6608a9dd86ee44bc4d12",
+  "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeApplication.java": "bcaf641d21a388213fc43fe6536cff4263c6e9c8ef9c87036fc903c12613deac",
+  "sources.json": "9ff2932c95c8f2c92a2d7876be1cad886ae18cf3b607e2ad1dd8f4a09d56f76a",
+  "tools/build-environment.init.gradle": "91d540143534254cb847711dbe2b0becfef4856a553df2bfbfa017afb3926c09",
+  "tools/inspect-apk.py": "b5f23956668389f7a360889142c12f1010e6963d8fddb56a7d795aa27e3565c4",
+  "tools/license-inventory.py": "db7967954a98c7e041d7b4a53f81a46703b5069661b15ef9ddff002c2ea2b2ed",
+  "tools/prepare.py": "bd32f6d43c07da330c31918357974b692bf047781a37fb5ec8442c118e323a61",
+  "tools/run-build.sh": "ba7a3e3d5b233ca4200ac1f7bb160c0be5eb3686323caa992826022cfac045ad",
+  "tools/run-cloud-check.py": "345f70abe87511c40fa6fb73b49dd63ef1e841240a8e9d31eb897809e0ebdfaf"
+}

@@ -1,0 +1,3 @@
+# Preserve upstream license text and meaningful unified-diff context spaces.
+licenses/*.txt -whitespace
+patches/*.patch -whitespace

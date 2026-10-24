@@ -1,0 +1,60 @@
+{
+  "scope": "OFFICIAL_SDK_HOST_ARCHIVE_METADATA_NOT_RUNTIME",
+  "source": "https://dl.google.com/android/repository/repository2-3.xml",
+  "source_sha256": "f2bc624c8e1dc14c320fdf17e49a5501c35934948e46a444df8b36a138a03e1e",
+  "rows": [
+    {
+      "revision": "37.3.5",
+      "channel": "channel-2",
+      "archives": [
+        {
+          "host_os": "linux",
+          "host_arch": "x64",
+          "archive": "emulator-linux_x64-16632760.zip"
+        },
+        {
+          "host_os": "macosx",
+          "host_arch": "x64",
+          "archive": "emulator-darwin_x64-16632760.zip"
+        },
+        {
+          "host_os": "macosx",
+          "host_arch": "aarch64",
+          "archive": "emulator-darwin_aarch64-16632760.zip"
+        },
+        {
+          "host_os": "windows",
+          "host_arch": "x64",
+          "archive": "emulator-windows_x64-16632760.zip"
+        }
+      ]
+    },
+    {
+      "revision": "37.2.12",
+      "channel": "channel-0",
+      "archives": [
+        {
+          "host_os": "linux",
+          "host_arch": "x64",
+          "archive": "emulator-linux_x64-16428233.zip"
+        },
+        {
+          "host_os": "macosx",
+          "host_arch": "x64",
+          "archive": "emulator-darwin_x64-16428233.zip"
+        },
+        {
+          "host_os": "macosx",
+          "host_arch": "aarch64",
+          "archive": "emulator-darwin_aarch64-16428233.zip"
+        },
+        {
+          "host_os": "windows",
+          "host_arch": "x64",
+          "archive": "emulator-windows_x64-16428233.zip"
+        }
+      ]
+    }
+  ],
+  "linux_aarch64_archive_listed": false
+}

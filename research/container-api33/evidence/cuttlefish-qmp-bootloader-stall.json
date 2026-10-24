@@ -1,0 +1,123 @@
+{
+  "scope": "CVD_STABLE_BOOTLOADER_PC_NOT_LINUX_ANDROID_OR_APP_SUCCESS",
+  "commit": "6ffc21e08e52601f51edab728985896f130a7bd3",
+  "run_id": 40103018384,
+  "job_id": 120898860443,
+  "artifact_id": 12563652940,
+  "artifact_sha256": "2d25513f23c8b4a552bc4c655cab17cc7389ea4694657eec8f360d1ddc005c03",
+  "artifact_digest_verified": true,
+  "source_sha256_verified_against_commit": {
+    "tools/run-cuttlefish-arm-boot.py": "2a925c6763d4cf60ab8393f073466c3124db2c05c1d7c0bea9d0ba357752eb48",
+    "tools/cuttlefish-tcg-qemu.py": "97e40054e0a0949469a2744cc5ecaf3b9734f51a1d0dbcf924a3b36177cee05c",
+    "tools/fetch-cuttlefish-inputs.py": "c73b6bec3171125521e8b37d30fb1c99559ceecf2fe31eb4d57744bc1dd78423",
+    "cuttlefish-inputs.json": "c7b479f49cc567d65aee12c5aba8eb745ac9cd5ea0ec641af07dc6e9b78803ba"
+  },
+  "state": "BOOT_TIMEOUT",
+  "boot_wait_limit_seconds": 300,
+  "overall_observed_seconds": 433.487,
+  "highest_observed_stage": "U-Boot banner and DRAM:3GiB",
+  "guest_kernel_boot_observed": false,
+  "boot_completed": false,
+  "logcat_bytes": 0,
+  "qemu_live_process_verified": true,
+  "qemu_process_stopped": true,
+  "termination": "Owned cleanup after bounded wait, not a spontaneous process exit",
+  "qmp_commands": [
+    "qmp_capabilities",
+    "query-status",
+    "query-cpus-fast",
+    "human-monitor-command: info registers"
+  ],
+  "all_five_register_dumps_identical": true,
+  "snapshots": [
+    {
+      "elapsed_seconds": 141.433,
+      "status": "running",
+      "pc": "00000000ff86da00",
+      "lr": "00000000ff86cc44",
+      "x0": "ffffffff80803518",
+      "pstate": "020003c5 ---- EL1h  SVCR=00000000 --  BTYPE=0     FPCR=00000000 FPSR=00000000",
+      "qemu_cpu_ticks": {
+        "user": 2274,
+        "system": 14,
+        "clock_ticks_per_second": 100
+      }
+    },
+    {
+      "elapsed_seconds": 203.054,
+      "status": "running",
+      "pc": "00000000ff86da00",
+      "lr": "00000000ff86cc44",
+      "x0": "ffffffff80803518",
+      "pstate": "020003c5 ---- EL1h  SVCR=00000000 --  BTYPE=0     FPCR=00000000 FPSR=00000000",
+      "qemu_cpu_ticks": {
+        "user": 8435,
+        "system": 15,
+        "clock_ticks_per_second": 100
+      }
+    },
+    {
+      "elapsed_seconds": 272.116,
+      "status": "running",
+      "pc": "00000000ff86da00",
+      "lr": "00000000ff86cc44",
+      "x0": "ffffffff80803518",
+      "pstate": "020003c5 ---- EL1h  SVCR=00000000 --  BTYPE=0     FPCR=00000000 FPSR=00000000",
+      "qemu_cpu_ticks": {
+        "user": 15341,
+        "system": 15,
+        "clock_ticks_per_second": 100
+      }
+    },
+    {
+      "elapsed_seconds": 341.181,
+      "status": "running",
+      "pc": "00000000ff86da00",
+      "lr": "00000000ff86cc44",
+      "x0": "ffffffff80803518",
+      "pstate": "020003c5 ---- EL1h  SVCR=00000000 --  BTYPE=0     FPCR=00000000 FPSR=00000000",
+      "qemu_cpu_ticks": {
+        "user": 22247,
+        "system": 15,
+        "clock_ticks_per_second": 100
+      }
+    },
+    {
+      "elapsed_seconds": 410.258,
+      "status": "running",
+      "pc": "00000000ff86da00",
+      "lr": "00000000ff86cc44",
+      "x0": "ffffffff80803518",
+      "pstate": "020003c5 ---- EL1h  SVCR=00000000 --  BTYPE=0     FPCR=00000000 FPSR=00000000",
+      "qemu_cpu_ticks": {
+        "user": 29154,
+        "system": 15,
+        "clock_ticks_per_second": 100
+      }
+    }
+  ],
+  "qmp_raw_sha256": "b6cdc684f29356e6fc824f7b0045cb7ace358148010c74e7f7d4d4db07b9abe5",
+  "observed_interpretation": "QEMU remained running and accumulated 268.8 user CPU seconds across 268.825 wall seconds; stable PC is not evidence of mere slow boot. Fault cause not directly observed.",
+  "static_followup": {
+    "prebuilt_revision": "ada6070f8abeb310ede535da879a88c922b5c4c9",
+    "prebuilt_binary_matches_host_package_byte_for_byte": true,
+    "bootloader_sha256": "fd4e31fedfa149d634440f94b081ed1ae50efb8d2f3fd21d20476a977c9b4bca",
+    "system_map_sha256": "80b41713268e71541197ae82584c3e694895685a9864062f7a77fae49cace92d",
+    "source_revision": "240b124907",
+    "source_url": "https://android.googlesource.com/platform/external/u-boot/+/240b124907/arch/arm/include/asm/armv8/mmu.h",
+    "cache_source_url": "https://android.googlesource.com/platform/external/u-boot/+/240b124907/arch/arm/cpu/armv8/cache_v8.c",
+    "prebuilt_url": "https://android.googlesource.com/device/google/cuttlefish_prebuilts/+/ada6070f8abeb310ede535da879a88c922b5c4c9/bootloader/qemu_aarch64/",
+    "finding": "TCR_EL1_RSVD is signed (1 << 31); get_tcr returns sign-extended high bits matching observed X0=ffffffff80803518. QEMU v8.2.2 max exposes LPA2, so DS and descriptor address interpretation differ from the older format.",
+    "qemu_feature_source": "https://github.com/qemu/qemu/blob/v8.2.2/target/arm/tcg/cpu64.c",
+    "qemu_translation_source": "https://github.com/qemu/qemu/blob/v8.2.2/target/arm/ptw.c",
+    "candidate_relocation_base": "0xff86b000",
+    "candidate_mapping": "PC then maps to vectors+0x200 (0x2a00), LR to mmu_setup+0xac (0x1c44); consistent with recursive synchronous abort during MMU setup. Relocation/system registers were not directly measured.",
+    "hypothesis_status": "STATIC_EVIDENCE_NOT_YET_DYNAMICALLY_CONFIRMED",
+    "next_change": "Expose max,lpa2=off while keeping original firmware/images; add read-only current-PC disassembly. Independent cloud boot still required."
+  },
+  "apps_tested": false,
+  "physical_vivo_tested": false,
+  "phone_experiments_added": false,
+  "wechat_send_and_live_location": "UNFULFILLED",
+  "douyin_wireless_and_overseas": "UNFULFILLED"
+}

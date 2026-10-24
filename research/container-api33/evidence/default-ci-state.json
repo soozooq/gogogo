@@ -1,0 +1,105 @@
+{
+  "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
+  "scope": "DEFAULT_RESEARCH_CHECKS_ONLY_NOT_TARGET_APP_COMPATIBILITY",
+  "run_id": 40102349634,
+  "commit": "24584ae82dba6b80e02b1086f28b4cafe82bc6aa",
+  "tree": "8e6c2d6f456e229d6a34c1de13fbd0d19c31ceaa",
+  "conclusion": "success",
+  "jobs": [
+    {
+      "id": 120896914644,
+      "name": "Build, inspect and ordinary entry (Linux)",
+      "conclusion": "success"
+    },
+    {
+      "id": 120896914883,
+      "name": "Build and inspect (ARM Mac)",
+      "conclusion": "success"
+    },
+    {
+      "id": 120896915658,
+      "name": "Inspect ARM Linux host and optional Cuttlefish boot",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 120896915772,
+      "name": "Anonymous startup (official Android 12L translation)",
+      "conclusion": "skipped"
+    }
+  ],
+  "cuttlefish_host_probe": "SKIPPED_THIS_RUN_PREVIOUS_07B632A_UBOOT_TIMEOUT_NOT_ANDROID_BOOT",
+  "cuttlefish_host_result": "cuttlefish-arm-linux-host-result.json",
+  "target_probe": "SKIPPED_EXPLICIT_MANUAL_OPT_IN_NOT_PASS",
+  "arm64_mac_runtime_probe": "SKIPPED_DEFAULT_FALSE_NOT_PASS",
+  "full_arm64_guest_apps": "NOT_RUN_CUTTLEFISH_UBOOT_WAIT_AND_PRIOR_SDK_BOOT_FAILURES",
+  "wechat_send_and_live_location": "UNFULFILLED",
+  "douyin_wireless_and_overseas": "UNFULFILLED",
+  "physical_arm64_vivo": "NOT_VERIFIED",
+  "phone_update_distributed": false,
+  "previous_default_run": {
+    "run_id": 40085793909,
+    "commit": "8526594d9adf60bf6934916c7148afbba6bc69b4",
+    "conclusion": "failure"
+  },
+  "controlled_radio_proxy": "PASS_FIVE_CONTROLLED_CELL_WIFI_TESTS_NOT_GUEST_OR_ACTUAL_RADIO_PROOF",
+  "radio_result": "wifi-radio-privacy-contract-results.json",
+  "default_checks_conclusion": "success",
+  "linux_artifact": {
+    "id": 12563616415,
+    "sha256": "a21636a08dae8772a8a814c5ad50c851e166a92637709e86a28f4046a910dc05",
+    "digest_verified": true,
+    "commit_verified": true,
+    "every_case_source_map_verified_against_commit": true
+  },
+  "default_case_results": {
+    "x86_64-radio-privacy": {
+      "passed": true,
+      "tests": 5,
+      "source_inputs_verified": 35,
+      "junit": [
+        "Time: 0.055",
+        "OK (5 tests)"
+      ]
+    },
+    "x86_64-ordinary-entry": {
+      "passed": true,
+      "tests": 1,
+      "source_inputs_verified": 35,
+      "junit": [
+        "Time: 12",
+        "OK (1 test)"
+      ]
+    },
+    "x86_64-calculator": {
+      "passed": true,
+      "tests": 1,
+      "source_inputs_verified": 35,
+      "junit": [
+        "Time: 5.543",
+        "OK (1 test)"
+      ]
+    }
+  },
+  "cuttlefish_boot_result": "cuttlefish-uboot-timeout.json",
+  "earlier_optional_cuttlefish_run": {
+    "run_id": 40103018384,
+    "commit": "6ffc21e08e52601f51edab728985896f130a7bd3",
+    "conclusion": "failure",
+    "state": "BOOT_TIMEOUT",
+    "result": "cuttlefish-qmp-bootloader-stall.json",
+    "boot_completed": false,
+    "apps_tested": false,
+    "default_run_above_is_historical_not_this_run": true
+  },
+  "later_optional_cuttlefish_run": {
+    "run_id": 40104761802,
+    "commit": "de74ecdd141f94003fb0d9ea89964045019b6df3",
+    "conclusion": "failure",
+    "recorded_state": "BOOT_TIMEOUT",
+    "observed_failure": "NETWORKSTACK_ANR_THEN_SYSTEM_SERVER_JAVA_FATAL",
+    "result": "cuttlefish-post-firmware-anr.json",
+    "boot_completed": false,
+    "apps_tested": false,
+    "default_run_above_is_historical_not_this_run": true
+  }
+}

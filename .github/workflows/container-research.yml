@@ -1,0 +1,265 @@
+name: Container research
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_translated_target_probe:
+        description: 'Opt in only after changing the control environment; recorded API30/32 originals crash before container startup'
+        required: false
+        default: false
+        type: boolean
+      run_arm64_software_probe:
+        description: 'Qualify an ARM64 software guest with explicit TCG, then run ordinary UI if boot succeeds'
+        required: false
+        default: false
+        type: boolean
+      inspect_cuttlefish_arm_host:
+        description: 'Record native ARM Linux QEMU and Cuttlefish host prerequisites; does not boot Android'
+        required: false
+        default: false
+        type: boolean
+      run_cuttlefish_arm_boot:
+        description: 'Boot one pinned Android13 ARM64 Cuttlefish instance using explicit TCG; no app tests'
+        required: false
+        default: false
+        type: boolean
+  push:
+    branches: [research/container-api33-20261023]
+    paths:
+      - research/container-api33/probe-host/**
+      - research/container-api33/location-consumer/**
+      - research/container-api33/patches/**
+      - research/container-api33/tools/**
+      - research/container-api33/tests/**
+      - research/container-api33/sources.json
+      - research/container-api33/cuttlefish-inputs.json
+      - ci/verify_container_v31_artifacts.py
+      - .github/workflows/container-research.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: container-research-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build, inspect and ordinary entry (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Check cloud startup driver controls without a device
+        run: python3 -m unittest discover -s research/container-api33/tests -v
+      - name: Set dedicated work directories after runner allocation
+        run: |
+          echo "CONTAINER_RESEARCH_WORKDIR=$RUNNER_TEMP/container-research" >> "$GITHUB_ENV"
+          echo "ANDROID_AVD_HOME=$RUNNER_TEMP/container-research-avd" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/container-research/evidence"
+          uname -a > "$RUNNER_TEMP/container-research/evidence/host-platform.txt"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '12266719'
+          packages: ''
+          log-accepted-android-sdk-licenses: false
+      - name: Expose the command-line tools path used by the verifiers
+        run: |
+          set -euo pipefail
+          if [ ! -x "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" ]; then
+            test -x "$ANDROID_HOME/cmdline-tools/16.0/bin/apkanalyzer"
+            test ! -e "$ANDROID_HOME/cmdline-tools/latest"
+            ln -s 16.0 "$ANDROID_HOME/cmdline-tools/latest"
+          fi
+          test -x "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
+      - name: Install the fixed SDK toolchain serially
+        run: sdkmanager --sdk_root="$ANDROID_HOME" 'platforms;android-30' 'platforms;android-33' 'platforms;android-34' 'build-tools;33.0.2' 'ndk;25.1.8937393' 'cmake;3.22.1'
+      - name: Prepare pinned source, apply reviewed patch and build
+        run: |
+          set -euo pipefail
+          python3 research/container-api33/tools/prepare.py --workdir "$CONTAINER_RESEARCH_WORKDIR" --candidate blackbox
+          bash research/container-api33/tools/run-build.sh blackbox :BCore:assembleDebug :probeHost:assembleDebug :probeHost:assembleDebugAndroidTest :locationConsumer:assembleDebug :probeHost:writeResearchDependencyInventory
+      - name: Inspect compiled inputs and license declarations
+        run: |
+          set -euo pipefail
+          python3 research/container-api33/tools/inspect-apk.py --sdk "$ANDROID_HOME" --host "$CONTAINER_RESEARCH_WORKDIR/probe-host-build/outputs/apk/debug/probeHost-debug.apk" --output "$CONTAINER_RESEARCH_WORKDIR/evidence/host-artifact.json"
+          python3 research/container-api33/tools/inspect-location-consumer.py --sdk "$ANDROID_HOME" --apk "$CONTAINER_RESEARCH_WORKDIR/location-consumer-build/outputs/apk/debug/locationConsumer-debug.apk" --output "$CONTAINER_RESEARCH_WORKDIR/evidence/consumer-artifact.json"
+          python3 research/container-api33/tools/inspect-third-party-apk.py --sdk "$ANDROID_HOME" --apk "$CONTAINER_RESEARCH_WORKDIR/guest/osmdroidRelease-v3.10.6.apk" --output "$CONTAINER_RESEARCH_WORKDIR/evidence/gpstest-artifact.json"
+          python3 research/container-api33/tools/license-inventory.py --graph "$CONTAINER_RESEARCH_WORKDIR/evidence/runtime-dependencies.json" --gradle-cache "${GRADLE_USER_HOME:-$HOME/.gradle}" --output "$CONTAINER_RESEARCH_WORKDIR/evidence/dependency-licenses.json"
+          git rev-parse HEAD > "$CONTAINER_RESEARCH_WORKDIR/evidence/research-commit.txt"
+      - name: Allow the dedicated Linux runner to use its KVM device if available
+        run: |
+          if [ -c /dev/kvm ]; then
+            sudo chmod a+rw /dev/kvm
+          fi
+      - name: Run ordinary import and calculator regression on x86_64
+        run: bash research/container-api33/tools/run-emulator-checks.sh x86_64
+      - name: Upload build evidence (no APK distribution)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-research-linux-evidence-${{ github.run_number }}
+          path: ${{ runner.temp }}/container-research/evidence/
+          if-no-files-found: ignore
+
+  arm-mac-build:
+    name: Build and inspect (ARM Mac)
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Set dedicated work directories after runner allocation
+        run: |
+          echo "CONTAINER_RESEARCH_WORKDIR=$RUNNER_TEMP/container-research" >> "$GITHUB_ENV"
+          echo "ANDROID_AVD_HOME=$RUNNER_TEMP/container-research-avd" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/container-research/evidence"
+          uname -a > "$RUNNER_TEMP/container-research/evidence/host-platform.txt"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '12266719'
+          packages: ''
+          log-accepted-android-sdk-licenses: false
+      - name: Expose the command-line tools path used by the verifiers
+        run: |
+          set -euo pipefail
+          if [ ! -x "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" ]; then
+            test -x "$ANDROID_HOME/cmdline-tools/16.0/bin/apkanalyzer"
+            test ! -e "$ANDROID_HOME/cmdline-tools/latest"
+            ln -s 16.0 "$ANDROID_HOME/cmdline-tools/latest"
+          fi
+          test -x "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
+      - name: Record actual host and install fixed build toolchain
+        run: |
+          set -euo pipefail
+          mkdir -p "$CONTAINER_RESEARCH_WORKDIR/evidence"
+          uname -a > "$CONTAINER_RESEARCH_WORKDIR/evidence/host-platform.txt"
+          test "$(uname -m)" = arm64
+          sdkmanager --sdk_root="$ANDROID_HOME" 'platforms;android-30' 'platforms;android-33' 'platforms;android-34' 'build-tools;33.0.2' 'ndk;25.1.8937393' 'cmake;3.22.1'
+      - name: Build standalone host and driver on ARM host
+        run: |
+          set -euo pipefail
+          python3 research/container-api33/tools/prepare.py --workdir "$CONTAINER_RESEARCH_WORKDIR" --candidate blackbox
+          bash research/container-api33/tools/run-build.sh blackbox :probeHost:assembleDebug :probeHost:assembleDebugAndroidTest
+          python3 research/container-api33/tools/inspect-apk.py --sdk "$ANDROID_HOME" --host "$CONTAINER_RESEARCH_WORKDIR/probe-host-build/outputs/apk/debug/probeHost-debug.apk" --output "$CONTAINER_RESEARCH_WORKDIR/evidence/host-artifact.json"
+          git rev-parse HEAD > "$CONTAINER_RESEARCH_WORKDIR/evidence/research-commit.txt"
+      - name: Qualify ARM64 software guest (explicit research opt-in)
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_arm64_software_probe) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[arm64-software]')) }}
+        run: bash research/container-api33/tools/run-arm-mac-software-checks.sh
+      - name: Upload ARM Mac build evidence (no APK distribution)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-research-arm-mac-build-evidence-${{ github.run_number }}
+          path: ${{ runner.temp }}/container-research/evidence/
+          if-no-files-found: ignore
+
+  cuttlefish-arm-host:
+    name: Inspect ARM Linux host and optional Cuttlefish boot
+    if: ${{ (github.event_name == 'workflow_dispatch' && (inputs.inspect_cuttlefish_arm_host || inputs.run_cuttlefish_arm_boot)) || (github.event_name == 'push' && (contains(github.event.head_commit.message, '[cuttlefish-host]') || contains(github.event.head_commit.message, '[cuttlefish-boot]'))) }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: ${{ contains(github.event.head_commit.message, '[cuttlefish-startup]') && 85 || 50 }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Install native QEMU and module inspection tools
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/cuttlefish-host"
+          sudo apt-get update > "$RUNNER_TEMP/cuttlefish-host/package-install.txt" 2>&1
+          sudo apt-get install --no-install-recommends -y qemu-system-arm ipxe-qemu kmod iproute2 >> "$RUNNER_TEMP/cuttlefish-host/package-install.txt" 2>&1
+          # The pinned host package validates these real memberships even for TCG.
+          # Group membership does not supply KVM; actual device availability stays recorded.
+          sudo groupadd --force cvdnetwork
+          sudo groupadd --force kvm
+          sudo usermod --append --groups cvdnetwork,kvm "$(id -un)"
+      - name: Record actual host capabilities without launching a guest
+        run: python3 research/container-api33/tools/inspect-cuttlefish-arm-host.py --prepare-host --output "$RUNNER_TEMP/cuttlefish-host/probe"
+      - name: Check original startup control logic without a device
+        run: python3 -m unittest discover -s research/container-api33/tests -v
+      - name: Qualify pinned Android13 ARM64 system and optional original startup
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_cuttlefish_arm_boot) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[cuttlefish-boot]')) }}
+        # Refresh supplementary groups as the SAME ordinary runner user; retain proxy/CA.
+        run: sudo -n -E -u "$(id -un)" -- python3 research/container-api33/tools/run-cuttlefish-arm-boot.py --host-report "$RUNNER_TEMP/cuttlefish-host/probe/report.json" --workdir "$RUNNER_TEMP/cuttlefish-arm-boot" --boot-seconds ${{ contains(github.event.head_commit.message, '[cuttlefish-diagnose]') && '300' || '2400' }} ${{ contains(github.event.head_commit.message, '[cuttlefish-startup]') && '--original-baselines' || '' }}
+      - name: Upload host and optional boot diagnostics (no images or APK)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cuttlefish-arm-host-${{ github.run_number }}
+          path: |
+            ${{ runner.temp }}/cuttlefish-host/
+            ${{ runner.temp }}/cuttlefish-arm-boot/evidence/
+          if-no-files-found: ignore
+
+  official-target-startup:
+    name: Anonymous startup (official Android 12L translation)
+    # Keep the failed evidence. Unchanged, incompatible controls cannot test the container.
+    # This is an optional environment qualification, never a passing target-compatibility gate.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_translated_target_probe }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Set dedicated work directories after runner allocation
+        run: |
+          echo "CONTAINER_RESEARCH_WORKDIR=$RUNNER_TEMP/container-research" >> "$GITHUB_ENV"
+          echo "ANDROID_AVD_HOME=$RUNNER_TEMP/container-research-avd" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/container-research/evidence"
+          uname -a > "$RUNNER_TEMP/container-research/evidence/host-platform.txt"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '12266719'
+          packages: ''
+          log-accepted-android-sdk-licenses: false
+      - name: Expose the command-line tools path used by the verifiers
+        run: |
+          set -euo pipefail
+          if [ ! -x "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" ]; then
+            test -x "$ANDROID_HOME/cmdline-tools/16.0/bin/apkanalyzer"
+            test ! -e "$ANDROID_HOME/cmdline-tools/latest"
+            ln -s 16.0 "$ANDROID_HOME/cmdline-tools/latest"
+          fi
+          test -x "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
+      - name: Install the fixed SDK toolchain serially
+        run: sdkmanager --sdk_root="$ANDROID_HOME" 'platforms;android-30' 'platforms;android-33' 'platforms;android-34' 'build-tools;33.0.2' 'ndk;25.1.8937393' 'cmake;3.22.1'
+      - name: Prepare pinned source, apply reviewed patch and build
+        run: |
+          set -euo pipefail
+          python3 research/container-api33/tools/prepare.py --workdir "$CONTAINER_RESEARCH_WORKDIR" --candidate blackbox
+          bash research/container-api33/tools/run-build.sh blackbox :BCore:assembleDebug :probeHost:assembleDebug :probeHost:assembleDebugAndroidTest
+      - name: Record this source and inspect the unchanged multi-ABI host
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD > "$CONTAINER_RESEARCH_WORKDIR/evidence/research-commit.txt"
+          python3 research/container-api33/tools/inspect-apk.py --sdk "$ANDROID_HOME" --host "$CONTAINER_RESEARCH_WORKDIR/probe-host-build/outputs/apk/debug/probeHost-debug.apk" --output "$CONTAINER_RESEARCH_WORKDIR/evidence/host-artifact.json"
+      - name: Allow this dedicated runner to use KVM
+        run: |
+          test -c /dev/kvm
+          sudo chmod a+rw /dev/kvm
+      - name: Compare original installed and container anonymous startup
+        run: bash research/container-api33/tools/run-target-emulator-checks.sh
+      - name: Upload anonymous startup evidence (no APK distribution)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-research-target-startup-evidence-${{ github.run_number }}
+          path: ${{ runner.temp }}/container-research/evidence/
+          if-no-files-found: ignore

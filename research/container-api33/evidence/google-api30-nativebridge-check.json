@@ -1,0 +1,19 @@
+{
+  "scope": "ACTUAL_OFFICIAL_API30_PROPERTIES_NOT_TARGET_RUNTIME",
+  "package": "system-images;android-30;google_apis;x86_64",
+  "revision": 16,
+  "properties": {
+    "sys.boot_completed": "1",
+    "ro.build.fingerprint": "google/sdk_gphone_x86_64/generic_x86_64_arm64:11/RSR1.240422.006/12134477:userdebug/dev-keys",
+    "ro.product.cpu.abilist": "x86_64,x86,arm64-v8a,armeabi-v7a,armeabi",
+    "ro.dalvik.vm.native.bridge": "libndk_translation.so",
+    "ro.build.version.sdk": "30",
+    "ro.kernel.qemu": "1"
+  },
+  "shell_uid": "2000",
+  "selinux": "Enforcing",
+  "library": "/system/lib64/libndk_translation.so",
+  "system_image_modified": false,
+  "external_translator_installed": false,
+  "location_business": "NOT_TESTED"
+}

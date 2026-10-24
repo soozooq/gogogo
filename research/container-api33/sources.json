@@ -1,0 +1,44 @@
+{
+  "blackbox": {
+    "url": "https://github.com/ccgjson/BlackBox.git",
+    "commit": "df6249da4b032649689a98242f147da6c5342172",
+    "directory": "blackbox-api33",
+    "patch": "patches/blackbox-api33-build.patch",
+    "added_files": [
+      "android-mirror/src/main/java/black/com/android/internal/InternalResources.java",
+      "BCore/src/main/java/top/niunaijun/bcore/utils/compat/LocationCallbackCompat.java",
+      "BCore/src/main/java/top/niunaijun/bcore/utils/compat/VirtualGnssStatus.java"
+    ]
+  },
+  "virtualapp": {
+    "url": "https://github.com/ISEKHON/VirtualApp.git",
+    "commit": "b3c634ad7941765df3da84a207aca94b7861afae",
+    "directory": "virtualapp-api33"
+  },
+  "guest": {
+    "url": "https://github.com/FossifyOrg/Calculator/releases/download/1.4.0/calculator-10-foss-release.apk",
+    "filename": "calculator-10-foss-release.apk",
+    "package": "org.fossify.math",
+    "size": 7047681,
+    "sha256": "7c5443c22d6d62c67dfe80df33ea9161ff0fa440f92590bcb45d7008b57613ed",
+    "certificate_sha256": "affdb124d3f4720c2f98dbca9eacba0514fba4306e20a2786c861c3c0d6ff292",
+    "version_name": "1.4.0",
+    "version_code": 10,
+    "license": "GPL-3.0",
+    "source": "https://github.com/FossifyOrg/Calculator/tree/1.4.0"
+  },
+  "aosp_api33": "d27f9960456403533af0a0d5d9f14cf71c9c8cf6",
+  "third_party_location": {
+    "url": "https://github.com/barbeau/gpstest/releases/download/v3.10.6/osmdroidRelease-v3.10.6.apk",
+    "filename": "osmdroidRelease-v3.10.6.apk",
+    "package": "com.android.gpstest.osmdroid",
+    "size": 3457918,
+    "sha256": "897b91fe6a1ea0c3a7f6e2b041d5ace0d582941f67cf454fb7778f031d89ce41",
+    "certificate_sha256": "67e04383a96a83476426adcbdd95c4c75d78028a5c4ada75c00334b1c7a5d706",
+    "version_name": "3.10.6",
+    "version_code": 24100,
+    "license": "Apache-2.0",
+    "source_commit": "ffcf2a974e3c6b34cc3aac1c7086f467d24b8439",
+    "source": "https://github.com/barbeau/gpstest/tree/ffcf2a974e3c6b34cc3aac1c7086f467d24b8439"
+  }
+}

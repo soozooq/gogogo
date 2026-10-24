@@ -1,0 +1,56 @@
+{
+  "scope": "ACTUAL_NATIVE_ARM_LINUX_HOST_PREREQUISITES_NOT_ANDROID_BOOT",
+  "commit": "dbb640a0019b166e88d7e32903a85826d2519f3e",
+  "run_id": 40080900517,
+  "job_id": 120834063292,
+  "artifact_id": 12555106800,
+  "artifact_sha256": "bee7c91981bbb71f355e362f1373d32d9aa8547c7209ecc56866b087191cf462",
+  "artifact_digest_verified": true,
+  "script_matches_git_object": true,
+  "report": {
+    "scope": "ARM_LINUX_HOST_PREREQUISITES_ONLY_NOT_ANDROID_OR_APP_COMPATIBILITY",
+    "state": "HOST_PREREQUISITES_PRESENT",
+    "probe_completed": true,
+    "eligible_for_boot_attempt": true,
+    "guest_boot_tested": false,
+    "apps_tested": false,
+    "wechat_tested": false,
+    "host_system": "Linux",
+    "host_arch": "aarch64",
+    "kernel_release": "6.17.0-1022-azure",
+    "uid": 1001,
+    "script_sha256": "ea085ba1454b8c2c53f3c1760b3018751af412eb7c19c5d36ae0def0454333d5",
+    "module_load_exit": {
+      "vhost_vsock": 0,
+      "tun": 0
+    },
+    "kvm_device_exists": false,
+    "disk_free_bytes": 115197128704,
+    "memory_bytes": 16722006016,
+    "qemu": {
+      "binary": "/usr/bin/qemu-system-aarch64",
+      "sha256": "e19e11bd054ccf0f3cfcea8e0acdcc4288de6abd2ed6c30f743092c362eb2673",
+      "elf_machine": 183,
+      "version_exit": 0,
+      "accelerators_exit": 0,
+      "tcg_advertised": true
+    },
+    "device_access": {
+      "vhost_vsock": {
+        "char_device": true,
+        "open_read_write": true,
+        "get_features_succeeded": true,
+        "features_hex": "0x33d000002"
+      },
+      "tun": {
+        "char_device": true,
+        "open_read_write": true
+      }
+    },
+    "vsock_socket_bind": {
+      "succeeded": true
+    }
+  },
+  "qemu_version": "QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)\nCopyright (c) 2003-2023 Fabrice Bellard and the QEMU Project developers",
+  "remaining": "Matching Android13 image and host-tool qualification, software QEMU launch and OS identity, then apps. No Android or WeChat result."
+}

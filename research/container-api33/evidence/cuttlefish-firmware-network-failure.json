@@ -1,0 +1,43 @@
+{
+  "scope": "HOST_FIRMWARE_AND_LOCAL_NETWORK_CONFIG_FAILURE_BEFORE_GUEST_KERNEL_NOT_ANDROID_OR_APP_FAILURE",
+  "commit": "8526594d9adf60bf6934916c7148afbba6bc69b4",
+  "run_id": 40085793909,
+  "job_id": 120848340870,
+  "artifact_id": 12556843775,
+  "artifact_sha256": "2ea3bc15569ceac7e67012e56ca2e10de485d5d2c8965c9d940be97259059f3e",
+  "artifact_digest_verified": true,
+  "source_sha256_verified_against_commit": {
+    "tools/run-cuttlefish-arm-boot.py": "f979da862719fd8efb0199d63e0ee9b2f81a528e321b608d702233c38fd9c5ab",
+    "tools/cuttlefish-tcg-qemu.py": "7bc6e340e3533471e3518e48722022c55d68e27083884d8d8642eb455a2ccf65",
+    "tools/fetch-cuttlefish-inputs.py": "c73b6bec3171125521e8b37d30fb1c99559ceecf2fe31eb4d57744bc1dd78423",
+    "cuttlefish-inputs.json": "c7b479f49cc567d65aee12c5aba8eb745ac9cd5ea0ec641af07dc6e9b78803ba"
+  },
+  "host_tool_preflights": {
+    "avbtool": "1.2.0",
+    "adb": "33.0.1-16596636",
+    "passed": true
+  },
+  "host_package_groups_active": {
+    "cvdnetwork": true,
+    "kvm": true
+  },
+  "host_timezone_sha256": "e59a68844f61767bf36d8ddadf9286f1f73306ed8db0eff1253968ebbd45854c",
+  "assembly_completed": true,
+  "qemu_launch_record_sha256": "bb098b81fd86979adbcd4090bd5efb95c0aa127d9379ece639f58210db98a36a",
+  "qemu_requested_machine": "virt,accel=tcg,gic-version=2,mte=on,usb=off,dump-guest-core=off",
+  "qemu_requested_cpu": "max",
+  "qemu_launcher_log_exit": 1,
+  "qemu_error": "failed to find romfile efi-virtio.rom",
+  "config_server_error": "Unable to obtain the network configuration; Could not open device config; signal 6",
+  "kernel_log_bytes": 0,
+  "harness_terminal_error": "TimeoutExpired: Command '['/home/runner/work/_temp/cuttlefish-arm-boot/host/bin/adb', 'connect', '127.0.0.1:6520']' timed out after 60 seconds",
+  "note": "The launcher stayed alive after its QEMU child exited. A later ADB-connect timeout ended the probe, masking both earlier host failures. No boot or app result.",
+  "followup": [
+    "Install the distribution ipxe-qemu firmware",
+    "Configure a real nonconflicting private IPv4/broadcast on the dedicated mobile TAP, as supported by pinned host_device_config.cpp",
+    "Check actual child process liveness and host config failure before waiting for ADB; retain bounded connect timeouts",
+    "Stop only the QEMU process matching this run binary and complete recorded arguments"
+  ],
+  "boot_completed": false,
+  "apps_tested": false
+}

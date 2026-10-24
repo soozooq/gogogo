@@ -1,0 +1,19 @@
+{
+  "scope": "CLOUD_INFRASTRUCTURE_LIMIT_NOT_ARM64_APP_FAILURE",
+  "date_utc": "2026-10-23",
+  "host_architecture": "x86_64",
+  "emulator_version": "37.2.12.0 build16428233",
+  "sdk_image": {
+    "package": "system-images;android-33;default;arm64-v8a",
+    "revision": 2,
+    "installation_completed": true
+  },
+  "command": "emulator -avd api33-arm64-container-check -port 5582 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel off -memory 1024 -cores 1 -no-snapshot-load -no-snapshot-save",
+  "exit_code": 1,
+  "output": "INFO         | Android emulator version 37.2.12.0 (build_id 16428233) (CL:N/A)\nINFO         | Graphics backend: gfxstream\nINFO         | Found systemPath /workspace/scratch/android-build/sdk/system-images/android-33/default/arm64-v8a/\nFATAL        | Avd's CPU Architecture 'arm64' is not supported by the QEMU2 emulator on x86_64 host. System image must match the host architecture.\n\n",
+  "guest_booted": false,
+  "arm64_runtime": "NOT_TESTED",
+  "vivo_runtime": "NOT_TESTED",
+  "host_apk_arm64_build": "PASS_BUILD_ONLY",
+  "reason": "Official emulator requires system image architecture to match this x86_64 host. No native bridge or architecture bypass was installed."
+}
