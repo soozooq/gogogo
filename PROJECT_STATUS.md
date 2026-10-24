@@ -34,6 +34,8 @@
 
 [下一轮下载全部通过](research/container-api33/evidence/cuttlefish-host-data-failure.json)，原生 ARM64 二进制及专用 TAP 已核对，随后官方工具在组装阶段因未设置 `ANDROID_DATA` 中止，VM 仍未启动。已为宿主 Bionic 工具补充独立运行缓存目录，未覆盖 HOME；原始输入归档保持固定，官方组装生成运行磁盘及后续 userdata 变化另行注明，不冒充输入镜像字节始终不变。
 
+该目录修正后，[下一项真实故障](research/container-api33/evidence/cuttlefish-host-timezone-failure.json)为同一原生工具缺少 `ANDROID_TZDATA_ROOT`，仍在 VM 前。已按实际 manifest 对应的 Bionic tzcode 源码一次补齐全部三个根目录，使用宿主包自带的真实时区数据库，并统一传给组装、runner 和所有 ADB 子进程；新增 avbtool／ADB 预检，尚待新 CI 实测。
+
 同时修正了虚拟模式下三个基站 getter 的明确缺口：缺少 BCell 时不再查询真实基站，内部 BCell 列表不再直接当作框架对象返回；关闭模拟时沿原查询路径。[新增两项受控 Android13 代理回归已在云端通过](research/container-api33/evidence/radio-privacy-contract-results.json)，测试使用受控基站服务计数，未读取真实基站。它不证明 Guest Hook 安装或第三方采用，也不能认定微信失败根因或无线兼容。见[审计范围](research/container-api33/AUDIT.md)。
 
 `qualify-arm64-software-boot.py` 要求明确选择 API32／33、完整启动、ARM64 内核／主 ABI、无 x86 ABI、Native Bridge 为 0、UID 2000、SELinux Enforcing。除 ADB 的 system_server 取证外，新增可选控制台检查，在 ADB 未启动时也识别两个不同 system_server／keystore2 原生崩溃；重复同一 PID、等待服务的文字不会误算。实际 API32 故障和解析边界已验证。原包驱动的 full-arm64 与转译模式仍各自复核环境；定位关闭，停在欢迎／隐私页，不接受条款或登录，没有目标运行结果。

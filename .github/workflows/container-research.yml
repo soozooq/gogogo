@@ -177,11 +177,17 @@ jobs:
           mkdir -p "$RUNNER_TEMP/cuttlefish-host"
           sudo apt-get update > "$RUNNER_TEMP/cuttlefish-host/package-install.txt" 2>&1
           sudo apt-get install --no-install-recommends -y qemu-system-arm kmod iproute2 >> "$RUNNER_TEMP/cuttlefish-host/package-install.txt" 2>&1
+          # The pinned host package validates these real memberships even for TCG.
+          # Group membership does not supply KVM; actual device availability stays recorded.
+          sudo groupadd --force cvdnetwork
+          sudo groupadd --force kvm
+          sudo usermod --append --groups cvdnetwork,kvm "$(id -un)"
       - name: Record actual host capabilities without launching a guest
         run: python3 research/container-api33/tools/inspect-cuttlefish-arm-host.py --prepare-host --output "$RUNNER_TEMP/cuttlefish-host/probe"
       - name: Boot pinned Android13 ARM64 system (explicit opt-in, no apps)
         if: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_cuttlefish_arm_boot) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[cuttlefish-boot]')) }}
-        run: python3 research/container-api33/tools/run-cuttlefish-arm-boot.py --host-report "$RUNNER_TEMP/cuttlefish-host/probe/report.json" --workdir "$RUNNER_TEMP/cuttlefish-arm-boot"
+        # Refresh supplementary groups as the SAME ordinary runner user; retain proxy/CA.
+        run: sudo -n -E -u "$(id -un)" -- python3 research/container-api33/tools/run-cuttlefish-arm-boot.py --host-report "$RUNNER_TEMP/cuttlefish-host/probe/report.json" --workdir "$RUNNER_TEMP/cuttlefish-arm-boot"
       - name: Upload host and optional boot diagnostics (no images or APK)
         if: always()
         uses: actions/upload-artifact@v4

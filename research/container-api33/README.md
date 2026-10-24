@@ -24,6 +24,10 @@
 
 启动成功必须核对完整启动、实际 API33／构建号／Cuttlefish 产品／ARM64 内核与 ABI、无 Native Bridge、普通 shell UID 2000、SELinux Enforcing，以及存活 QEMU 的二进制摘要和完整有效参数。失败保存原因与本实例日志并停止；仅上传文本／截图证据，不上传镜像／APK。当前是系统资格检查，尚无新 VM 或微信／抖音通过结果，也没有手机操作待办。
 
+原生宿主工具的实际时区初始化故障已追到 manifest 对应的 [Bionic tzcode](https://android.googlesource.com/platform/bionic/+/6e03489e7a4ec5b34b202a3fa4f868a4fdfc3bda/libc/tzcode/bionic.cpp)：宿主分支依次使用 `ANDROID_DATA`、`ANDROID_TZDATA_ROOT`、`ANDROID_ROOT`，未设置会中止。当前使用独立可写缓存、真实宿主根目录及该宿主包自带的 tzdata，统一传给全部宿主子进程；先执行 avbtool／ADB 的正常版本预检。原始失败和修正前输入摘要保留，工具预检也不代替 Android 启动。
+
+固定源码的 [ValidateHostConfiguration](https://android.googlesource.com/device/google/cuttlefish/+/4b46735a8d5b752ad77f4c518708024632495a2e/host/libs/vm_manager/host_configuration.cpp)另要求实际 `cvdnetwork`／`kvm` 组成员资格。工作流正常创建／加入这些组，再以同一个普通 runner 用户刷新补充组；主流程核对 UID 及实际组，VM 不以 root 用户运行。组名不提供 KVM 硬件；设备检查、有效 TCG 参数和无 KVM 的证据独立保留，没有修改或绕过该验证器。
+
 ## 最新进展：统一的普通导入／选点入口
 
 研究宿主现在用一个页面完成选择、导入、填坐标、打开与停止。固定计算器和 GPSTest 的清单从 `sources.json` 生成；导入核对原 APK 的大小、摘要、包名、版本、证书。已导入状态和目标会保留，修改坐标后直接再次应用；不会改动系统安装的微信、抖音或日常天外天。

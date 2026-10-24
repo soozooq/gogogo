@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """One dedicated native ARM CI instance. System boot only; never an app result."""
 import argparse
+import grp
 import hashlib
 import json
 import os
@@ -55,8 +56,10 @@ def main():
     runner = None
     start = time.monotonic()
     process_log = None
+    environment = dict(os.environ)
 
     def command(argv, name, timeout=60, check=True, **kwargs):
+        kwargs.setdefault('env', environment)
         result = subprocess.run(argv, capture_output=True, timeout=timeout, **kwargs)
         (out / (name + '.txt')).write_bytes(result.stdout + result.stderr)
         if check and result.returncode:
@@ -66,6 +69,13 @@ def main():
     try:
         if not host_report.get('eligible_for_boot_attempt'):
             raise RuntimeError('Actual host prerequisites did not pass')
+        actual_groups = set(os.getgroups()) | {os.getegid()}
+        if os.getuid() != host_report['uid'] or os.getuid() == 0:
+            raise RuntimeError('Run as the same ordinary host probe user, not root')
+        report['host_package_groups_active'] = {name: grp.getgrnam(name).gr_gid in actual_groups
+                                                for name in ['cvdnetwork', 'kvm']}
+        if not all(report['host_package_groups_active'].values()):
+            raise RuntimeError('Required real host package memberships are not active')
         if shutil.disk_usage(work).free < 40 * 1024**3:
             raise RuntimeError('At least 40 GiB free is required before downloading/extracting')
         downloads = work / 'downloads'
@@ -89,6 +99,23 @@ def main():
                     or int.from_bytes(header[18:20], 'little') != spec['host_elf_machine']:
                 raise RuntimeError('Matching host binary identity/architecture rejected: ' + name)
         report['host_binaries_verified'] = True
+        # Bionic's host tzcode requires all three roots. Use the actual timezone
+        # database shipped in this host archive, not an empty placeholder.
+        android_data = work / 'host-android-data'
+        android_data.mkdir(mode=0o700)
+        timezone_root = work / 'host-tzdata'
+        timezone_file = timezone_root / 'etc/tz/tzdata'
+        timezone_file.parent.mkdir(parents=True)
+        shutil.copyfile(host / 'usr/share/zoneinfo/tzdata', timezone_file)
+        environment.update(ANDROID_HOST_OUT=str(host), ANDROID_DATA=str(android_data),
+                           ANDROID_ROOT=str(host), ANDROID_TZDATA_ROOT=str(timezone_root),
+                           CUTTLEFISH_INSTANCE='1')
+        report['host_timezone_sha256'] = digest(timezone_file)
+        report['host_runtime_roots'] = {k: environment[k] for k in [
+            'ANDROID_HOST_OUT', 'ANDROID_DATA', 'ANDROID_ROOT', 'ANDROID_TZDATA_ROOT']}
+        command([str(host / 'bin/avbtool'), 'version'], 'host-avbtool-preflight')
+        command([str(host / 'bin/adb'), 'version'], 'host-adb-preflight')
+        report['host_tool_preflights_passed'] = True
         images = work / 'images'
         images.mkdir()
         with zipfile.ZipFile(downloads / spec['artifacts'][1]['name']) as archive:
@@ -123,15 +150,8 @@ def main():
         wrapper_binary.chmod(0o755)
         launch_record = out / 'qemu-launch.json'
         instance = work / 'instance'
-        # The native ARM host bundle includes Bionic-based tools. Their normal
-        # runtime/cache directory must be explicit, separate from the guest.
-        android_data = work / 'host-android-data'
-        android_data.mkdir(mode=0o700)
-        environment = dict(os.environ, ANDROID_HOST_OUT=str(host),
-                           ANDROID_PRODUCT_OUT=str(images),
-                           ANDROID_DATA=str(android_data),
-                           CVD_TCG_LAUNCH_RECORD=str(launch_record),
-                           CUTTLEFISH_INSTANCE='1')
+        environment.update(ANDROID_PRODUCT_OUT=str(images),
+                           CVD_TCG_LAUNCH_RECORD=str(launch_record))
         # Explicit paths replace the generic documentation's HOME override.
         flags = ['--system_image_dir=' + str(images), '--instance_dir=' + str(instance),
                  '--assembly_dir=' + str(work / 'assembly'), '--vm_manager=qemu_cli',
@@ -159,7 +179,7 @@ def main():
 
         def shell(arguments, timeout=12):
             return subprocess.run([str(adb), '-s', serial, 'shell'] + arguments,
-                                  capture_output=True, timeout=timeout)
+                                  capture_output=True, timeout=timeout, env=environment)
 
         while time.monotonic() < deadline:
             if runner.poll() is not None:
@@ -178,7 +198,7 @@ def main():
                     break
                 if now - last_crash >= 30:
                     crash = subprocess.run([str(adb), '-s', serial, 'logcat', '-d', '-b', 'crash'],
-                                           capture_output=True, timeout=12).stdout
+                                           capture_output=True, timeout=12, env=environment).stdout
                     (out / 'platform-crash-log.txt').write_bytes(crash)
                     pids = sorted({int(x) for x in re.findall(
                         rb'pid:\s*(\d+),[^\n]*>>>\s*system_server\s*<<<', crash)})
@@ -254,7 +274,7 @@ def main():
                     destination.write_bytes(source.read())
         report['observed_seconds'] = round(time.monotonic() - start, 3)
         (out / 'result.json').write_text(json.dumps(report, indent=2) + '\n')
-        print(json.dumps({k: report[k] for k in ['state', 'passed', 'boot_completed', 'apps_tested', 'observed_seconds']}, indent=2), flush=True)
+        print(json.dumps({k: report[k] for k in ['state', 'passed', 'boot_completed', 'apps_tested', 'observed_seconds', 'error'] if k in report}, indent=2), flush=True)
     return 0 if report['passed'] else 1
 
 
