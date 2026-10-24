@@ -8,12 +8,22 @@ import re
 import subprocess
 import time
 
+def critical_crash_pids(data):
+    """Count native tombstone headers, never service-wait messages or repeats."""
+    found = {}
+    for pid, process in re.findall(
+            rb'pid:\s*(\d+),[^\n]*>>>\s*(system_server|/system/bin/keystore2)\s*<<<', data):
+        name = process.decode().rsplit('/', 1)[-1]
+        found.setdefault(name, set()).add(int(pid))
+    return {name: sorted(pids) for name, pids in found.items()}
+
 p = argparse.ArgumentParser()
 p.add_argument('--sdk', required=True)
 p.add_argument('--serial', required=True)
 p.add_argument('--emulator-pid', type=int, required=True)
 p.add_argument('--output', required=True)
 p.add_argument('--api', choices=['32', '33'], default='33')
+p.add_argument('--console-log', help='This dedicated VM console log; detects native failures before ADB starts')
 a = p.parse_args()
 if not re.fullmatch(r'emulator-\d+', a.serial) or a.emulator_pid < 2:
     raise SystemExit('Dedicated emulator required')
@@ -35,7 +45,7 @@ def shell(args):
     return r.stdout.decode(errors='replace').strip()
 
 start = time.monotonic()
-last_health = last_notice = 0
+last_health = last_notice = last_console = 0
 try:
     while time.monotonic() - start < 1200:
         try:
@@ -43,6 +53,20 @@ try:
         except ProcessLookupError:
             report['state'] = 'EMULATOR_EXITED_BEFORE_BOOT'
             break
+        if a.console_log and time.monotonic() - last_console >= 30:
+            console = Path(a.console_log)
+            if console.is_file():
+                with console.open('rb') as stream:
+                    stream.seek(0, os.SEEK_END)
+                    stream.seek(max(0, stream.tell() - 2 * 1024 * 1024))
+                    data = stream.read()
+                pids = critical_crash_pids(data)
+                report['console_critical_crash_pids'] = pids
+                if any(len(values) >= 2 for values in pids.values()):
+                    (out / 'console-native-crashes.txt').write_bytes(data)
+                    report['state'] = 'CRITICAL_SYSTEM_SERVICE_NATIVE_CRASH_LOOP'
+                    break
+            last_console = time.monotonic()
         try:
             if shell(['getprop', 'sys.boot_completed']) == '1':
                 report['boot_completed'] = True

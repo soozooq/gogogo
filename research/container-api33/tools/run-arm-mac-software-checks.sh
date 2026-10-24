@@ -48,6 +48,6 @@ PY
 "$ANDROID_HOME/emulator/emulator" -avd api33-arm64-software -port 5580 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel off -memory 2048 -cores 2 -no-snapshot-load -no-snapshot-save -show-kernel -verbose -qemu -machine accel=tcg -cpu max > "$CONTAINER_RESEARCH_WORKDIR/evidence/arm64-software-emulator.log" 2>&1 &
 research_emulator_pid=$!
 trap 'kill "$research_emulator_pid" 2>/dev/null || true' EXIT
-python3 "$spec_root/tools/qualify-arm64-software-boot.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --emulator-pid "$research_emulator_pid" --output "$CONTAINER_RESEARCH_WORKDIR/evidence/arm64-software-boot"
+python3 "$spec_root/tools/qualify-arm64-software-boot.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --emulator-pid "$research_emulator_pid" --console-log "$CONTAINER_RESEARCH_WORKDIR/evidence/arm64-software-emulator.log" --output "$CONTAINER_RESEARCH_WORKDIR/evidence/arm64-software-boot"
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label arm64-software-ordinary-entry --third-party-location --ordinary-entry
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label arm64-software-calculator

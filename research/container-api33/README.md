@@ -10,7 +10,9 @@
 
 `tools/run-arm-mac-software-checks.sh` 的[实际核查](evidence/mac-arm64-tcg-selection-failure.json)显示，修正探测时的 SDK 库路径后，二进制确实列出 TCG；但最终 `accel=tcg` 参数未取消此前启用的 HVF，系统仍在启动前报 `HV_UNSUPPORTED`。这不是目标应用结果，也不能推断 TCG 没有实现。该工具默认关闭，只供运行条件变化后手动复核，不重复相同 Mac 参数。当前转向较新的官方 Google API33 ARM64 镜像；`qualify-arm64-software-boot.py` 要求完整启动和身份核验，未通过不得执行应用检查。不增加手机实验页或发布手机包。
 
-[Google API33 ARM64 rev17 实测](evidence/google-api33-full-arm64-software-check.json)的两核和单核／单 TCG 线程均记录到两个不同 system_server 的 ART 原生崩溃，完整启动未通过，原版应用没有安装。单核沿用失败启动后的自有 userdata，不能称作另一份全新 userdata 证明；基础系统和 SDK 二进制均未修改。当前只继续官方 API32 ARM64 候选，以区分系统版本；通过也不算 API33／vivo 结果。
+[Google API33 ARM64 rev17 实测](evidence/google-api33-full-arm64-software-check.json)的两核和单核／单 TCG 线程均记录到两个不同 system_server 的 ART 原生崩溃，完整启动未通过，原版应用没有安装。单核沿用失败启动后的自有 userdata，不能称作另一份全新 userdata 证明；基础系统和 SDK 二进制均未修改。
+
+[Google API32 ARM64 rev8 实测](evidence/google-api32-full-arm64-software-check.json)的全新 userdata／`max` 和标准 `cortex-a53` CPU 均在 ADB 就绪前发生 keystore2 原生崩溃循环，普通入口和目标应用未执行。新增 `qualify-arm64-software-boot.py --console-log <本 VM 启动日志>` 可从两个不同 PID 的真实原生崩溃头提前判失败；忽略同 PID 重复及等待服务的文字。后一例已自动停止检查，`0.0s` 是读取已有故障日志的检查耗时，不是系统启动耗时。前一例为观测故障后人工停止，不冒充自行退出。不重复相同 SDK 配置；当前只核查另一官方整机路径的源码前提，尚无新环境通过。
 
 原包启动驱动新增显式 `--runtime full-arm64` 模式，API32／33 须明确选择：Python 和设备端驱动均要求完整启动、ARM64 内核与主 ABI、无 x86 ABI、Native Bridge 为 0、普通 UID 和 SELinux Enforcing；原有 API30／32 转译模式仍单独保留。尚未执行原包检查。普通入口／计算器驱动同样显式选择 API，原有自编定位契约仍限 API33；旧系统的 UI 测试读流改用有限缓冲，不依赖 API33 的 `readAllBytes`。通过环境核查后才可使用 `run-target-startup-check.py --runtime full-arm64 --api 32 --target wechat --label <新记录名>`，再测抖音；仍先验证系统普通安装，容器定位保持关闭，不接受条款或登录，不加入普通准入清单。
 
