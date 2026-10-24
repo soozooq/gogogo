@@ -1,6 +1,7 @@
 """Controlled ADB fixtures, never an actual Android or target-app result."""
 import hashlib
 import importlib.util
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -16,6 +17,101 @@ module_spec.loader.exec_module(baselines)
 
 
 class OriginalBaselineControlTest(unittest.TestCase):
+    def test_install_phases_hash_gate_and_owned_session_abandon(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            apk = root / 'original.apk'
+            apk.write_bytes(b'controlled-original')
+            entry = {'source_key': 'wechat', 'size': apk.stat().st_size,
+                     'sha256': hashlib.sha256(apk.read_bytes()).hexdigest()}
+            for mode in ['ready', 'transfer_timeout', 'hash_mismatch', 'write_failed', 'commit_timeout']:
+                with self.subTest(mode=mode):
+                    calls, result = [], {}
+                    out = root / mode
+                    out.mkdir()
+
+                    def run(command, **kwargs):
+                        calls.append(command)
+                        output, code = b'', 0
+                        if command[:3] == ['shell', 'mktemp', '-d']:
+                            output = b'/data/local/tmp/gogogo-original-wechat-fixture123'
+                        elif command[0] == 'push' and mode == 'transfer_timeout':
+                            raise subprocess.TimeoutExpired(command, kwargs['timeout'], output=b'partial transfer')
+                        elif command[:2] == ['shell', 'sha256sum']:
+                            output = (('0' * 64 if mode == 'hash_mismatch' else entry['sha256']) + ' base.apk').encode()
+                        elif command[:3] == ['shell', 'pm', 'install-create']:
+                            output = b'Success: created install session [501]'
+                        elif command[:3] == ['shell', 'pm', 'install-write']:
+                            output, code = (b'Failure [FIXTURE]', 1) if mode == 'write_failed' else (b'Success', 0)
+                        elif command[:3] == ['shell', 'pm', 'install-commit']:
+                            if mode == 'commit_timeout':
+                                raise subprocess.TimeoutExpired(command, kwargs['timeout'], output=b'partial commit')
+                            output = b'Success'
+                        elif command[:3] == ['shell', 'pm', 'install-abandon']:
+                            self.assertEqual('501', command[-1])
+                            output = b'Success'
+                        return subprocess.CompletedProcess(command, code, output, b'')
+
+                    with patch('builtins.print'):
+                        if mode == 'ready':
+                            baselines.staged_original_install(run, apk, entry, out, result)
+                        else:
+                            with self.assertRaises((RuntimeError, subprocess.TimeoutExpired)):
+                                baselines.staged_original_install(run, apk, entry, out, result)
+                    self.assertEqual(mode == 'ready', result['installation']['commit_confirmed'])
+                    abandoned = any(c[:3] == ['shell', 'pm', 'install-abandon'] for c in calls)
+                    self.assertEqual(mode in ['write_failed', 'commit_timeout'], abandoned)
+                    if mode in ['transfer_timeout', 'hash_mismatch']:
+                        self.assertFalse(any(c[:3] == ['shell', 'pm', 'install-create'] for c in calls))
+                    self.assertTrue(any(c[:3] == ['shell', 'rm', '-rf'] for c in calls))
+                    if mode == 'transfer_timeout':
+                        self.assertIn(b'partial transfer', (out / 'install-transfer.txt').read_bytes())
+
+    def test_container_requires_real_result_signer_runtime_and_cleanup(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            apk = root / 'original.apk'
+            apk.write_bytes(b'controlled-original')
+            entry = {'source_key': 'wechat', 'package': 'com.tencent.mm',
+                     'sha256': hashlib.sha256(apk.read_bytes()).hexdigest()}
+            for mode in ['ready', 'wrong_signer', 'wrong_runtime', 'wrong_package',
+                         'junit_failed', 'cleanup_failed', 'preexisting', 'wrong_abi']:
+                with self.subTest(mode=mode):
+                    calls = []
+                    observed = {'passed': True, 'runtime': 'cuttlefish-arm64', 'package': entry['package'],
+                                'sha256': entry['sha256'], 'original_signer': True, 'location_enabled': False}
+                    if mode == 'wrong_signer': observed['original_signer'] = False
+                    if mode == 'wrong_runtime': observed['runtime'] = 'official-translation'
+                    if mode == 'wrong_package': observed['package'] = 'unrelated'
+
+                    def adb(argv, **kwargs):
+                        command = argv[3:]
+                        calls.append(command)
+                        output, code = b'', 0
+                        if command[:3] == ['shell', 'pm', 'path']:
+                            if mode == 'preexisting': output = b'package:/preserve.apk'
+                        elif command[:3] == ['shell', 'dumpsys', 'package']:
+                            output = b'primaryCpuAbi=x86_64' if mode == 'wrong_abi' else b'primaryCpuAbi=arm64-v8a'
+                        elif command[:3] == ['shell', 'am', 'instrument']:
+                            output = b'FAILURES!!!' if mode == 'junit_failed' else b'OK (1 test)'
+                        elif command[:2] == ['exec-out', 'run-as']:
+                            output = json.dumps(observed).encode() if command[-1].endswith('result.json') else b'fixture'
+                        elif command[0] == 'uninstall':
+                            code = int(mode == 'cleanup_failed')
+                            output = b'Failure [FIXTURE]' if code else b'Success'
+                        return subprocess.CompletedProcess(argv, code, output, b'')
+
+                    with patch.object(baselines.subprocess, 'run', side_effect=adb):
+                        result = baselines.container_startup(Path('/controlled/adb'), '127.0.0.1:6520',
+                            apk, entry, root, root / mode, dict(os.environ))
+                    self.assertEqual(mode == 'ready', result['passed'])
+                    if mode == 'preexisting':
+                        self.assertFalse(any(c[0] in ['install', 'uninstall'] for c in calls))
+                    if mode == 'wrong_abi':
+                        self.assertFalse(any(c[:3] == ['shell', 'am', 'instrument'] for c in calls))
+                    self.assertFalse(any(c[:3] in [['shell', 'input', 'tap'], ['shell', 'input', 'text']]
+                                         for c in calls))
+
     def test_stale_or_different_qualification_never_downloads_apps(self):
         with tempfile.TemporaryDirectory() as folder:
             work = Path(folder) / 'dedicated-instance'
@@ -72,11 +168,21 @@ class OriginalBaselineControlTest(unittest.TestCase):
                             output = ('different' if mode == 'identity_changed' else value).encode()
                         elif command == ['shell', 'uname', '-m']:
                             output = b'aarch64'
+                        elif command == ['shell', 'am', 'get-started-user-state', '0']:
+                            output = b'RUNNING_UNLOCKED'
                         elif command[:3] == ['shell', 'pm', 'path']:
                             output = b'package:/preexisting.apk' if mode == 'preexisting' else b''
-                        elif command[0] == 'install':
+                        elif command[:3] == ['shell', 'mktemp', '-d']:
+                            output = b'/data/local/tmp/gogogo-original-wechat-fixture123'
+                        elif command[:2] == ['shell', 'sha256sum']:
+                            output = (entry['sha256'] + '  ' + command[-1]).encode()
+                        elif command[:3] == ['shell', 'pm', 'install-create']:
+                            output = b'Success: created install session [501]'
+                        elif command[:3] in [['shell', 'pm', 'install-write'], ['shell', 'pm', 'install-abandon']]:
+                            output = b'Success'
+                        elif command[:3] == ['shell', 'pm', 'install-commit']:
                             if mode == 'install_timed_out':
-                                raise subprocess.TimeoutExpired(argv, 180)
+                                raise subprocess.TimeoutExpired(argv, 900)
                             code = int(mode == 'install_failed')
                             output = b'Failure [FIXTURE]' if code else b'Success'
                         elif command[:4] == ['shell', 'cmd', 'package', 'resolve-activity']:
@@ -94,7 +200,7 @@ class OriginalBaselineControlTest(unittest.TestCase):
                             output = b'Failure [FIXTURE]' if code else b'Success'
                         return subprocess.CompletedProcess(argv, code, output, b'')
 
-                    with patch.object(baselines.subprocess, 'run', side_effect=adb):
+                    with patch.object(baselines.subprocess, 'run', side_effect=adb), patch('builtins.print'):
                         result = baselines.installed_baseline(Path('/controlled/adb'), '127.0.0.1:6520',
                             apk, entry, root / mode, environment, properties)
                     self.assertEqual(mode == 'welcome', result['passed'])

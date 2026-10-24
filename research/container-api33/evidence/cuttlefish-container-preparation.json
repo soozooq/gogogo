@@ -1,0 +1,40 @@
+{
+  "scope": "PREPARATION_AND_LOCAL_COMPILE_ONLY_NOT_CONTAINER_OR_TARGET_RUNTIME",
+  "source_parent": "8311ed043ad3682763f7ea4c74a845ea675eadf9",
+  "own_apk_build_passed": true,
+  "build_seconds": 9,
+  "own_build": {
+    "scope": "LOCAL_COMPILE_ONLY_NOT_CVD_OR_ORIGINAL_APP_RUNTIME",
+    "artifacts": {
+      "probe-host-build/outputs/apk/debug/probeHost-debug.apk": {
+        "size": 4788851,
+        "sha256": "7aed9ddab4876e3b25faf009d8eb3eb69081d6a8f5f059feb2443103aaae4629"
+      },
+      "probe-host-build/outputs/apk/androidTest/debug/probeHost-debug-androidTest.apk": {
+        "size": 455187,
+        "sha256": "0ac7b180fee4da380dbb61933718263b485734841b0a1ac8a27accc4d3200ad5"
+      }
+    },
+    "java_test_source_sha256": "bfbbd2fadc8f89868668fcfa04c555d9665a5384fa56eeb5fa51158fc3d77dfd"
+  },
+  "controlled_driver_tests": {
+    "tests": 10,
+    "passed": true,
+    "scope": "FAKE_ADB_PROTOCOL_AND_OWN_TRANSPORT_ONLY_NOT_ANDROID_RUN",
+    "covers": [
+      "same-commit/source and exact own-file transport",
+      "preserve preexisting packages",
+      "ordinary user identity and owned VM gate",
+      "staged transfer versus installer phases",
+      "remote hash mismatch stops before session",
+      "write/commit failures abandon only returned owned session",
+      "partial timeout output retention",
+      "package-scoped UI and correct runtime/signer/JUnit/cleanup gates"
+    ]
+  },
+  "container_mode": "PREPARED_EXPLICIT_OPT_IN_NOT_EXECUTED",
+  "target_apks_uploaded_or_modified": false,
+  "phone_candidate": false,
+  "container_arm64_runtime_passed": false,
+  "location_business_tested": false
+}

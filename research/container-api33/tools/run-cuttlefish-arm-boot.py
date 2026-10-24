@@ -110,7 +110,10 @@ def main():
                    help='300 is a bounded bootloader diagnostic; neither duration implies OS success')
     p.add_argument('--original-baselines', action='store_true',
                    help='After qualification only: ordinary original welcome/privacy UI; no container or accounts')
+    p.add_argument('--container-apks', help='Exact same-CI own host/test pair; also requires --original-baselines')
     args = p.parse_args()
+    if args.container_apks and not args.original_baselines:
+        p.error('--container-apks requires the original ordinary controls first')
     if os.environ.get('GITHUB_ACTIONS') != 'true' or platform.system() != 'Linux' \
             or platform.machine() not in ['aarch64', 'arm64']:
         raise SystemExit('Use the dedicated native ARM Linux workflow, never a phone')
@@ -137,11 +140,15 @@ def main():
                   Path(__file__), spec_dir / 'tools/cuttlefish-tcg-qemu.py',
                   spec_dir / 'tools/fetch-cuttlefish-inputs.py', spec_dir / 'cuttlefish-inputs.json',
                   spec_dir / 'tools/cuttlefish_target_baselines.py',
+                  spec_dir / 'tools/ci_owned_apks.py',
                   spec_dir / 'evidence/official-target-apk-readiness.json']}}
     report['original_baselines_requested'] = args.original_baselines
     report['software_hw_timeout_multiplier_requested'] = 50
     if args.original_baselines:
         report['scope'] = 'CUTTLEFISH_SYSTEM_AND_INSTALLED_ORIGINAL_STARTUP_NOT_CONTAINER_LOCATION_OR_VIVO'
+    report['container_startups_requested'] = bool(args.container_apks)
+    if args.container_apks:
+        report['scope'] = 'CUTTLEFISH_SYSTEM_AND_ORIGINAL_CONTAINER_STARTUP_NOT_LOCATION_OR_VIVO'
     runner = None
     start = time.monotonic()
     process_log = None
@@ -162,6 +169,14 @@ def main():
         return result
 
     try:
+        if args.container_apks:
+            from ci_owned_apks import verify
+            own_apks = Path(args.container_apks).resolve()
+            temporary = Path(os.environ['RUNNER_TEMP']).resolve()
+            if own_apks == temporary or not own_apks.is_relative_to(temporary):
+                raise RuntimeError('Own-build transport must stay in this runner temporary directory')
+            verify(own_apks, spec_dir, report['research_commit'])
+            report['own_apk_transport_manifest_sha256'] = digest(own_apks / 'manifest.json')
         if not host_report.get('eligible_for_boot_attempt'):
             raise RuntimeError('Actual host prerequisites did not pass')
         actual_groups = set(os.getgroups()) | {os.getegid()}
@@ -432,9 +447,20 @@ def main():
                 report['apps_tested'] = any(x.get('launch_requested') for x in baseline['results'].values())
                 report['wechat_tested'] = baseline['results']['wechat'].get('launch_requested', False)
                 report['location_business_tested'] = False
-                report['passed'] = baseline['passed']
-                report['state'] = 'QUALIFIED_BOOT_AND_ORIGINAL_UI' if baseline['passed'] \
-                    else 'ORIGINAL_BASELINE_NOT_CONFIRMED'
+                if args.container_apks:
+                    # Each target needs its own confirmed ordinary control; one
+                    # target failing does not stop the other's independent check.
+                    from cuttlefish_target_baselines import run_container_controls
+                    container = run_container_controls(work, spec_dir, report, launched,
+                                                       environment, own_apks, baseline)
+                    report['container_startups_passed'] = container['passed']
+                    report['passed'] = baseline['passed'] and container['passed']
+                    report['state'] = 'QUALIFIED_BOOT_AND_CONTAINER_UI' if report['passed'] \
+                        else 'ORIGINAL_OR_CONTAINER_STARTUP_NOT_CONFIRMED'
+                else:
+                    report['passed'] = baseline['passed']
+                    report['state'] = 'QUALIFIED_BOOT_AND_ORIGINAL_UI' if baseline['passed'] \
+                        else 'ORIGINAL_BASELINE_NOT_CONFIRMED'
         elif report['state'] == 'WAITING_FOR_BOOT':
             report['state'] = 'BOOT_TIMEOUT'
     except Exception as error:

@@ -4,6 +4,8 @@
 
 项目接手只认根目录 [PROJECT_STATUS.md](../../PROJECT_STATUS.md)。本轮继续使用同一个研发分支和 Draft #60，没有按修复或检查新增分支／PR。
 
+**当前实测**：[原生 ARM64 Android13 完整启动已合格](evidence/cuttlefish-qualified-boot-install-timeout.json)，包括固定构建、无转译、普通 UID2000、SELinux Enforcing、实际超时倍数50及存活 QEMU 身份。两款原包都在默认 `adb install` 的180秒内未完成，尚未打开应用；欢迎页、容器和位置业务均未通过。以下早期系统失败保留为历史，不替代该最新结果。
+
 ## 2026-10-24：补充 ARM64 整机软件模拟核查
 
 [实际 Linux 核查](evidence/full-arm64-software-linux-check.json)已越过启动器限制，在官方未修改的 API33 ARM64 镜像里读到 ARM64 内核／应用 ABI、Native Bridge 0、UID 2000、SELinux Enforcing。随后 ART／system_server 原生崩溃，完整启动未通过；新 CPU 配置和全新 AVD 也复现，目标应用与容器均未测试。
@@ -22,7 +24,7 @@
 
 同一 ARM Linux 作业新增独立选项 `run_cuttlefish_arm_boot`／提交标记 `[cuttlefish-boot]`，默认关闭。先检查真实宿主前提，再用配套 `assemble_cvd → run_cvd` 阶段、显式镜像／实例／汇总路径启动一台 VM；原生宿主 Bionic 工具使用独立 `ANDROID_DATA` 运行目录，保持 HOME。宿主适配器严格识别固定源码产生的单个 KVM／CPU 参数，并替换为 TCG／GICv2／MTE／`max,lpa2=off`，不修改内核、QEMU 或宿主二进制；原始下载归档保持固定，官方组装生成运行磁盘，userdata 后续正常写入。参数变化直接中止，不在末尾叠加冲突的加速器。另安装固定官方能力声明脚本，并独立核对实际设备能力，不把该声明当作能力证明。三个专用 TAP 使用独立接口，其中 mobile TAP 按配置服务要求提供本地 IPv4／广播；未配置 DHCP／NAT，不证明联网。
 
-启动成功必须核对完整启动、实际 API33／构建号／Cuttlefish 产品／ARM64 内核与 ABI、无 Native Bridge、普通 shell UID 2000、SELinux Enforcing，以及存活 QEMU 的二进制摘要和完整有效参数。失败保存原因与本实例日志并停止；仅上传文本／截图证据，不上传镜像／APK。当前是系统资格检查，尚无新 VM 或微信／抖音通过结果，也没有手机操作待办。
+启动成功必须核对完整启动、实际 API33／构建号／Cuttlefish 产品／ARM64 内核与 ABI、无 Native Bridge、普通 shell UID 2000、SELinux Enforcing，以及存活 QEMU 的二进制摘要和完整有效参数。失败保存原因与本实例日志并停止。系统及原包证据产物只上传文本／截图，不包含目标原包或镜像。可选的自有宿主／测试对传递见文末，独立于手机候选发布。
 
 可选的 `[cuttlefish-boot] [cuttlefish-startup]` 在同一驱动明确选择 `--original-baselines`：仅在本次系统身份完全合格后，复核存活 QEMU 和实际 ADB 身份，下载并核对两款既有固定原包，依次正常安装、读取欢迎／隐私页及清理。此阶段不需要 Android SDK 构建工具或研究宿主 APK，因此可在原生 ARM Linux 上运行；现有 SDK／容器驱动的设备限制没有放宽。失败或超时的安装也纳入清理，原先存在的系统包保持原状。宿主 Bionic 根目录、代理和 CA 环境一致传递给每次 ADB。只上传证据，没有登录、同意条款、点击应用界面或位置业务；不代表目标容器兼容。`tests/test_cuttlefish_target_baselines.py` 的四项受控检查及八种 ADB 情况本地通过，实际原包尚未执行。加上 QMP／明确致命日志识别共七项受控检查通过；系统未合格时不会下载或安装原包。
 
@@ -142,4 +144,8 @@ GitHub `40102349634 / 24584ae` 的独立回归也已通过：五项基站／Wi-F
 
 [最小原固件对照](evidence/uboot-lpa2-firmware-control.json)在相同 Ubuntu QEMU 8.2.2／AMD64 二进制及原始固件中，仅关闭 LPA2 即越过该卡点。默认模式全部寄存器与原生 ARM CI 完全相同；数值 PC 的虚拟读取失败，物理 32 字节匹配原固件 `vectors+0x200`。没有附加 Android 镜像／磁盘，后续因缺少环境而重置，不称为 Android 启动。所有本地 QEMU 已停止。实际后端不支持 `$pc`，也不提供 ARM 反汇编；现只读数值 PC 的原始字，按原输入离线解码。
 
-[原生 ARM 后续实测 `40104761802 / de74ecd`](evidence/cuttlefish-post-firmware-anr.json)已进入 Linux 5.15.206 和 Android 服务，但网络栈服务执行 ANR 后被杀，引发 system_server Java `Lost network stack` 及 zygote 重启，完整启动未通过、原包未执行。ZIP、四项源码和实际 CPU 已核对，VM 已停止。新配置使用固定上游 `BootconfigArgsFromConfig` 的软件模拟超时倍数 50：上游仅按跨架构自动选择，本次同架构 TCG 适配遗漏该选择；通过受支持的 `extra_bootconfig_args` 请求，不改系统二进制或取消检查。Vendor init 将其映射到 `ro.hw_timeout_multiplier`，Build 读取，ActiveServices 的 20 秒服务时限乘以该值。系统资格新增核验实际值 50，外层 2400 秒仍有限定，明确系统进程 Java 致命异常／内核 panic 提前停止。新配置仍待独立实际验证；任何欢迎页也不等于微信／抖音业务成功。
+[原生 ARM 后续实测 `40104761802 / de74ecd`](evidence/cuttlefish-post-firmware-anr.json)已进入 Linux 5.15.206 和 Android 服务，但网络栈服务执行 ANR 后被杀，引发 system_server Java `Lost network stack` 及 zygote 重启，完整启动未通过、原包未执行。ZIP、四项源码和实际 CPU 已核对，VM 已停止。新配置使用固定上游 `BootconfigArgsFromConfig` 的软件模拟超时倍数 50：上游仅按跨架构自动选择，本次同架构 TCG 适配遗漏该选择；通过受支持的 `extra_bootconfig_args` 请求，不改系统二进制或取消检查。Vendor init 将其映射到 `ro.hw_timeout_multiplier`，Build 读取，ActiveServices 的 20 秒服务时限乘以该值。系统资格新增核验实际值 50，外层 2400 秒仍有限定，明确系统进程 Java 致命异常／内核 panic 提前停止。该配置随后已独立通过系统资格，见下段；任何欢迎页也不等于微信／抖音业务成功。
+
+[`40107227047 / 8311ed0` 的独立结果](evidence/cuttlefish-qualified-boot-install-timeout.json)已确认上述配置实际生效并通过完整系统资格。随后两款原包安装均在180秒超时；目标应用未启动，卸载失败及未记录安装会话的缺口如实保留，VM 已停止。当前安装驱动先等待 `am get-started-user-state 0` 返回 `RUNNING_UNLOCKED`，将禁用传输压缩的文件传输、远端 SHA256、标准 `pm install-create/write/commit` 分开计时保存回执与超时前输出，失败放弃本次已记录会话。单次安装阶段总等待限定1500秒，仍需真实 ARM 验证，不推断180秒内是传输还是解析阻塞。
+
+后续容器衔接使用明确的 `[cuttlefish-boot] [cuttlefish-container]` 标记，默认不执行：同一工作流 Linux 作业构建的自有宿主／测试对，以提交、完整研究源码和每份大小／SHA绑定，通过单日保留的独立 CI 产物传给 ARM 作业。仅含自有构建对与 manifest，原始微信／抖音不会进入该产物；它不是日常手机更新包。仍须先通过本次系统身份及该目标的普通安装对照，再调用既有匿名启动测试；CVD 模式再次核对固定构建／产品／安全状态，SDK 模式保留原限制。一个目标普通对照失败，只跳过该目标容器检查。此衔接仅本地编译通过，尚无实际容器 ARM64 结果，手机发行及许可材料门槛见 [来源记录](THIRD_PARTY_NOTICES.md)。

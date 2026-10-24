@@ -68,13 +68,21 @@ public final class OfficialTargetStartupInstrumentedTest {
             cert = "5182ae3b1b85337bb182cf24882449f84447ded18e296a747a9f6a0a2622512e";
         } else { fail("Only the two pinned original cloud inputs are admitted"); return; }
         assertEquals("2000", shell("id -u"));
-        assertEquals("1", shell("getprop ro.kernel.qemu"));
         String api = InstrumentationRegistry.getArguments().getString("api");
         String runtime = InstrumentationRegistry.getArguments().getString("runtime", "official-translation");
-        boolean fullArm64 = "full-arm64".equals(runtime);
+        boolean cuttlefish = "cuttlefish-arm64".equals(runtime);
+        boolean fullArm64 = cuttlefish || "full-arm64".equals(runtime);
         assertTrue("Explicit qualified cloud image and runtime",
-                fullArm64 ? ("32".equals(api) || "33".equals(api)) : "official-translation".equals(runtime)
+                cuttlefish ? "33".equals(api) : fullArm64 ? ("32".equals(api) || "33".equals(api)) : "official-translation".equals(runtime)
                         && ("30".equals(api) || "32".equals(api)));
+        if (cuttlefish) {
+            assertEquals("cutf_cvm", shell("getprop ro.hardware"));
+            assertEquals("aosp_cf_arm64_phone", shell("getprop ro.product.name"));
+            assertEquals("16596636", shell("getprop ro.build.version.incremental"));
+            assertEquals("50", shell("getprop ro.hw_timeout_multiplier"));
+        } else {
+            assertEquals("1", shell("getprop ro.kernel.qemu"));
+        }
         assertEquals(api, shell("getprop ro.build.version.sdk"));
         assertEquals("1", shell("getprop sys.boot_completed"));
         assertEquals("Enforcing", shell("getenforce"));
@@ -94,7 +102,8 @@ public final class OfficialTargetStartupInstrumentedTest {
         File folder = new File(context.getFilesDir(), "target-startup-" + key);
         assertTrue(folder.isDirectory() || folder.mkdirs());
         File apk = new File(context.getFilesDir(), "pinned-target.apk");
-        JSONObject report = new JSONObject().put("scope", fullArm64
+        JSONObject report = new JSONObject().put("scope", cuttlefish
+                ? "CVD_ARM64_CONTAINER_STARTUP_ONLY_NOT_LOCATION_OR_PHYSICAL_VIVO" : fullArm64
                 ? "FULL_ARM64_EMULATOR_STARTUP_ONLY_NOT_PHYSICAL_VIVO_OR_LOCATION_BUSINESS"
                 : "CLOUD_TRANSLATED_STARTUP_ONLY_NOT_API33_OR_VIVO").put("runtime", runtime)
                 .put("target", key).put("package", pkg).put("sha256", sha).put("api", api)
@@ -130,7 +139,7 @@ public final class OfficialTargetStartupInstrumentedTest {
             report.put("original_signer", true);
             Intent launch = BlackBoxCore.getBPackageManager().getLaunchIntentForPackage(pkg, 0);
             assertNotNull(launch); BlackBoxCore.get().startActivity(launch, 0);
-            long deadline = SystemClock.elapsedRealtime() + 90000;
+            long deadline = SystemClock.elapsedRealtime() + (cuttlefish ? 180000 : 90000);
             String stage = null;
             while (SystemClock.elapsedRealtime() < deadline) {
                 List<String> text = new ArrayList<>();
