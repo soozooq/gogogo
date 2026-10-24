@@ -1,0 +1,16 @@
+{
+  "scope": "CAPABILITY_PROBE_HARNESS_LOADER_FAILURE_NOT_RUNTIME_RESULT",
+  "commit": "4045d9626c105811caf2869b9262ae59d44f0f0f",
+  "run_id": 40058386088,
+  "job_id": 120766333651,
+  "artifact_id": 12546675970,
+  "artifact_sha256": "e3756405c21b7a3e650c19b2c68705bf3011f0116517297b84d67fbbf005ed56",
+  "artifact_digest_verified": true,
+  "exit": 134,
+  "failure": "dyld: @rpath/libemugl_common.dylib not found during bare backend -accel help",
+  "cause": "Research script did not supply SDK DYLD_LIBRARY_PATH normally set by emulator launcher",
+  "fix": "Scope the SDK lib64/Qt library paths and launcher directory to capability command; record command failure separately from TCG capability",
+  "tcg_support": "UNKNOWN",
+  "android_boot_attempted": false,
+  "app_tested": false
+}
