@@ -1,6 +1,6 @@
 # 天外天接手入口
 
-更新时间：2026-10-23。先读本文件，再读对应源码；旧实验记录只作历史证据。
+更新时间：2026-10-24。先读本文件，再读对应源码；旧实验记录只作历史证据。
 
 ## 目标与设备约束
 
@@ -8,10 +8,14 @@
 
 ## 当前结论与下一步
 
+2026-10-24 新核查：[ARM64 整机软件模拟记录](research/container-api33/evidence/full-arm64-software-linux-check.json)已实际进入 ARM64 内核／Android 系统服务，ADB 确认 ARM64 应用 ABI、Native Bridge 为 0、UID 2000 与 SELinux Enforcing。不过，官方 API33 AOSP 镜像在本云端两种软件 CPU 配置下均出现 ART／system_server 原生崩溃循环，完整启动未通过，目标应用没有安装。早期启动器拒绝与转译崩溃不能扩大成“所有 ARM64 整机模拟均不可用”。
+
+新增显式选择 TCG 的 ARM Mac 核查，先查官方二进制是否提供 TCG，再核验完整启动、架构和权限；系统服务连续崩溃会停止，未通过不执行应用检查。依据上游启动源码，ARM 分支可能仍为 `accel off` 添加 HVF 参数，所以本轮在最终 QEMU 机器选项中明确指定 `accel=tcg`，不是重做原来的 HVF 启动。新增核查尚待云端结果；原版应用和系统镜像保持原样。
+
 - 工程修正已完成全新云端普通入口回归：正常文件选择、原版 GPSTest 精确授权、坐标更新与停止，以及原版计算器运行。见[源码及产物绑定的通过记录](research/container-api33/evidence/cloud-ordinary-entry-pass.json)。
 - 微信／抖音的官方原包在 API30 和 API32 官方转译镜像中均正常安装后原生崩溃，**尚未启动容器，更未验证目标业务**。见[API30](research/container-api33/evidence/official-target-baseline-limit.json)与[API32 原始对照](research/container-api33/evidence/official-target-api32-baseline-limit.json)。这是当前已确认的云端验证阻塞，不据此推断真机失败。
-- 下一项技术前提是取得可正常运行这些原包的**原生 ARM64 环境**，先验普通启动，再验容器及发送／实时定位。现有工具没有连接用户手机。继续更改 GPS 注入频率、增加手机实验或重复上述镜像没有新的依据。
-- [最终默认 CI 已通过](research/container-api33/evidence/default-ci-state.json)：Linux 构建／审计／普通入口和计算器回归成功，ARM Mac 构建成功。目标转译环境预检改为手动选择、默认关闭，本次明确跳过，只供运行条件改变后复核；**跳过不是目标兼容通过**，已失败的云端记录保留。
+- 下一项技术前提是取得可正常运行这些原包的**原生 ARM64 设备或已完整核验的 ARM64 整机环境**，先验普通启动，再验容器及发送／实时定位。现有工具没有连接用户手机。继续更改 GPS 注入频率、增加手机实验或重复未变的失败配置没有新的依据。
+- [前轮默认 CI 已通过](research/container-api33/evidence/default-ci-state.json)：Linux 构建／审计／普通入口和计算器回归成功，ARM Mac 构建成功。目标转译环境预检改为手动选择、默认关闭，本次明确跳过，只供运行条件改变后复核；**跳过不是目标兼容通过**，已失败的云端记录保留。
 
 ## 只保留两个明确的工作入口
 

@@ -4,6 +4,12 @@
 
 项目接手只认根目录 [PROJECT_STATUS.md](../../PROJECT_STATUS.md)。本轮继续使用同一个研发分支和 Draft #60，没有按修复或检查新增分支／PR。
 
+## 2026-10-24：补充 ARM64 整机软件模拟核查
+
+[实际 Linux 核查](evidence/full-arm64-software-linux-check.json)已越过启动器限制，在官方未修改的 API33 ARM64 镜像里读到 ARM64 内核／应用 ABI、Native Bridge 0、UID 2000、SELinux Enforcing。随后 ART／system_server 原生崩溃，完整启动未通过；新 CPU 配置和全新 AVD 也复现，目标应用与容器均未测试。
+
+`tools/run-arm-mac-software-checks.sh` 将在 ARM Mac 上显式请求 TCG，先检查二进制能力，再通过 `qualify-arm64-software-boot.py` 核验系统。只有完整启动和身份条件通过，才执行已有普通入口回归。默认关闭，研究提交标记 `[arm64-software]` 或手动工作流选项可触发；原 HVF 与应用转译失败保留，不混算结果。新核查尚待实际执行，不增加手机实验页或发布手机包。
+
 ## 最新进展：统一的普通导入／选点入口
 
 研究宿主现在用一个页面完成选择、导入、填坐标、打开与停止。固定计算器和 GPSTest 的清单从 `sources.json` 生成；导入核对原 APK 的大小、摘要、包名、版本、证书。已导入状态和目标会保留，修改坐标后直接再次应用；不会改动系统安装的微信、抖音或日常天外天。
