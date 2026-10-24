@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One dedicated native ARM CI instance. System boot only; never an app result."""
+"""Qualify one owned ARM CI VM; optionally observe system-installed originals."""
 import argparse
 import grp
 import hashlib
@@ -47,6 +47,14 @@ def owned_qemu_active(record):
         return False
 
 
+def boot_log_failure(data):
+    if b'Kernel panic - not syncing:' in data:
+        return 'GUEST_KERNEL_PANIC'
+    if re.search(rb'AndroidRuntime:\s+\*\*\* FATAL EXCEPTION IN SYSTEM PROCESS: main', data):
+        return 'ANDROID_SYSTEM_PROCESS_JAVA_FATAL'
+    return None
+
+
 def qmp_boot_snapshot(path):
     """Observe this instance only. Commands never stop/resume/reset/change the VM."""
     result = {'read_only': True, 'commands': {}}
@@ -54,8 +62,8 @@ def qmp_boot_snapshot(path):
                 ('cpus', {'execute': 'query-cpus-fast'}),
                 ('registers', {'execute': 'human-monitor-command',
                                'arguments': {'command-line': 'info registers'}}),
-                ('instructions', {'execute': 'human-monitor-command',
-                                  'arguments': {'command-line': 'x /8i $pc'}})]
+                ('instruction_words', {'execute': 'human-monitor-command'}),
+                ('physical_instruction_words', {'execute': 'human-monitor-command'})]
     try:
         with socket.socket(socket.AF_UNIX) as connection:
             connection.settimeout(2)
@@ -66,6 +74,20 @@ def qmp_boot_snapshot(path):
                     raise RuntimeError('Expected the QMP greeting')
                 result['greeting'] = greeting
                 for name, request in [('capabilities', {'execute': 'qmp_capabilities'}), *commands]:
+                    if name in ['instruction_words', 'physical_instruction_words']:
+                        # This ARM HMP backend does not expose a $pc expression.
+                        # Accept only a complete numeric PC from our register dump;
+                        # no free-form monitor command or address is accepted.
+                        registers = result['commands'].get('registers', {}).get('return')
+                        pc = re.search(r'\bPC=([0-9a-fA-F]{16})(?![0-9a-fA-F])', registers) \
+                            if isinstance(registers, str) else None
+                        if pc is None:
+                            result['commands'][name] = {'error': 'NO_NUMERIC_PC_IN_REGISTER_RESPONSE'}
+                            continue
+                        # Distribution QEMU may omit ARM's disassembler too.
+                        # Read eight raw words; decode offline against the input.
+                        prefix = 'xp' if name == 'physical_instruction_words' else 'x'
+                        request['arguments'] = {'command-line': prefix + ' /8wx 0x' + pc[1]}
                     request['id'] = name
                     stream.write(json.dumps(request).encode() + b'\r\n')
                     for _ in range(12):
@@ -84,8 +106,10 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument('--workdir', required=True)
     p.add_argument('--host-report', required=True)
-    p.add_argument('--boot-seconds', type=int, choices=[300, 1200], default=1200,
+    p.add_argument('--boot-seconds', type=int, choices=[300, 1200, 2400], default=2400,
                    help='300 is a bounded bootloader diagnostic; neither duration implies OS success')
+    p.add_argument('--original-baselines', action='store_true',
+                   help='After qualification only: ordinary original welcome/privacy UI; no container or accounts')
     args = p.parse_args()
     if os.environ.get('GITHUB_ACTIONS') != 'true' or platform.system() != 'Linux' \
             or platform.machine() not in ['aarch64', 'arm64']:
@@ -111,7 +135,13 @@ def main():
               'host_report': host_report,
               'source_sha256': {str(x.relative_to(spec_dir)): digest(x) for x in [
                   Path(__file__), spec_dir / 'tools/cuttlefish-tcg-qemu.py',
-                  spec_dir / 'tools/fetch-cuttlefish-inputs.py', spec_dir / 'cuttlefish-inputs.json']}}
+                  spec_dir / 'tools/fetch-cuttlefish-inputs.py', spec_dir / 'cuttlefish-inputs.json',
+                  spec_dir / 'tools/cuttlefish_target_baselines.py',
+                  spec_dir / 'evidence/official-target-apk-readiness.json']}}
+    report['original_baselines_requested'] = args.original_baselines
+    report['software_hw_timeout_multiplier_requested'] = 50
+    if args.original_baselines:
+        report['scope'] = 'CUTTLEFISH_SYSTEM_AND_INSTALLED_ORIGINAL_STARTUP_NOT_CONTAINER_LOCATION_OR_VIVO'
     runner = None
     start = time.monotonic()
     process_log = None
@@ -239,7 +269,11 @@ def main():
                  '--cpus=2', '--memory_mb=3072', '--start_webrtc=false', '--enable_audio=false',
                  '--start_gnss_proxy=false', '--guest_enforce_security=true',
                  '--report_anonymous_usage_stats=n', '--daemon=false', '--use_allocd=false',
-                 '--vhost_net=false', '--restart_subprocesses=false']
+                 '--vhost_net=false', '--restart_subprocesses=false',
+                 # The upstream non-native TCG path sets this same multiplier.
+                 # Our same-architecture adapter selects TCG after assembly, so
+                 # request it explicitly through the supported bootconfig flag.
+                 '--extra_bootconfig_args=androidboot.hw_timeout_multiplier=50']
         report['assembly_flags'] = flags
         files = '\n'.join(str(x) for x in sorted(images.iterdir())) + '\n'
         assembled = command([str(host / 'bin/assemble_cvd')] + flags, 'assemble',
@@ -254,7 +288,7 @@ def main():
         adb = host / 'bin/adb'
         serial = '127.0.0.1:6520'
         report.update(state='WAITING_FOR_BOOT', serial=serial)
-        last_notice = last_adb = last_crash = last_monitor = 0
+        last_notice = last_adb = last_crash = last_monitor = last_console = 0
         deadline = time.monotonic() + args.boot_seconds
 
         def shell(arguments, timeout=12):
@@ -291,6 +325,22 @@ def main():
                 report['state'] = 'HOST_CONFIG_SERVER_FAILED_BEFORE_BOOT'
                 break
             now = time.monotonic()
+            if now - last_console >= 30:
+                for name in ['kernel.log', 'logcat']:
+                    console = instance / 'instances/cvd-1/logs' / name
+                    if console.is_file():
+                        with console.open('rb') as stream:
+                            stream.seek(0, os.SEEK_END)
+                            stream.seek(max(0, stream.tell() - 1024 * 1024))
+                            data = stream.read()
+                        failure = boot_log_failure(data)
+                        if failure:
+                            report.update(state=failure, fatal_observed_in=name)
+                            (out / 'boot-fatal-evidence.txt').write_bytes(data)
+                            break
+                last_console = now
+                if report['state'] != 'WAITING_FOR_BOOT':
+                    break
             if report.get('qemu_live_process_verified') and now - last_monitor >= 60:
                 snapshot = qmp_boot_snapshot(instance / 'instances/cvd-1/internal/qemu_monitor.sock')
                 snapshot['elapsed_seconds'] = round(now - start, 3)
@@ -314,7 +364,12 @@ def main():
                     report['adb_connect_timeout_count'] = report.get('adb_connect_timeout_count', 0) + 1
                 last_adb = now
             try:
-                if shell(['getprop', 'sys.boot_completed']).stdout.strip() == b'1':
+                boot_property = shell(['getprop', 'sys.boot_completed'])
+                if boot_property.returncode == 0 and 'early_hw_timeout_multiplier' not in report:
+                    timeout_property = shell(['getprop', 'ro.hw_timeout_multiplier'])
+                    if timeout_property.returncode == 0:
+                        report['early_hw_timeout_multiplier'] = timeout_property.stdout.decode().strip()
+                if boot_property.returncode == 0 and boot_property.stdout.strip() == b'1':
                     report['boot_completed'] = True
                     break
                 if now - last_crash >= 30:
@@ -343,7 +398,7 @@ def main():
             properties = {key: shell(['getprop', key]).stdout.decode().strip() for key in [
                 'ro.build.version.sdk', 'ro.build.version.incremental', 'ro.build.fingerprint',
                 'ro.product.name', 'ro.hardware', 'ro.product.cpu.abi', 'ro.product.cpu.abilist',
-                'ro.dalvik.vm.native.bridge', 'sys.boot_completed']}
+                'ro.dalvik.vm.native.bridge', 'ro.hw_timeout_multiplier', 'sys.boot_completed']}
             report.update(properties=properties, kernel_arch=shell(['uname', '-m']).stdout.decode().strip(),
                           shell_uid=shell(['id', '-u']).stdout.decode().strip(),
                           selinux=shell(['getenforce']).stdout.decode().strip())
@@ -362,16 +417,29 @@ def main():
                 and properties['ro.product.cpu.abi'] == 'arm64-v8a' \
                 and 'arm64-v8a' in abis and not any('x86' in x for x in abis) \
                 and properties['ro.dalvik.vm.native.bridge'] in ['', '0'] \
+                and properties['ro.hw_timeout_multiplier'] == '50' \
                 and report['kernel_arch'] == 'aarch64' and report['shell_uid'] == '2000' \
                 and report['selinux'] == 'Enforcing' \
                 and actual_binary == Path('/usr/bin/qemu-system-aarch64').resolve() \
                 and report['qemu']['sha256'] == host_report['qemu']['sha256'] \
                 and report['qemu']['arguments_match_launch_record']
             report['state'] = 'QUALIFIED_BOOT' if report['passed'] else 'BOOT_IDENTITY_REJECTED'
+            report['system_boot_passed'] = report['passed']
+            if report['passed'] and args.original_baselines:
+                from cuttlefish_target_baselines import run_original_baselines
+                baseline = run_original_baselines(work, spec_dir, report, launched, environment)
+                report['original_baselines_passed'] = baseline['passed']
+                report['apps_tested'] = any(x.get('launch_requested') for x in baseline['results'].values())
+                report['wechat_tested'] = baseline['results']['wechat'].get('launch_requested', False)
+                report['location_business_tested'] = False
+                report['passed'] = baseline['passed']
+                report['state'] = 'QUALIFIED_BOOT_AND_ORIGINAL_UI' if baseline['passed'] \
+                    else 'ORIGINAL_BASELINE_NOT_CONFIRMED'
         elif report['state'] == 'WAITING_FOR_BOOT':
             report['state'] = 'BOOT_TIMEOUT'
     except Exception as error:
-        report.update(state='PREPARATION_OR_PROBE_ERROR', error=type(error).__name__ + ': ' + str(error)[:1000])
+        report.update(state='PREPARATION_OR_PROBE_ERROR', passed=False,
+                      error=type(error).__name__ + ': ' + str(error)[:1000])
     finally:
         if runner and runner.poll() is None:
             try:
@@ -415,9 +483,13 @@ def main():
                     source.seek(max(0, source.tell() - 4 * 1024 * 1024))
                     destination.write_bytes(source.read())
         report['observed_seconds'] = round(time.monotonic() - start, 3)
+        report['requested_stages_passed'] = report['passed'] and (not args.original_baselines
+                                                                or report.get('original_baselines_passed') is True)
         (out / 'result.json').write_text(json.dumps(report, indent=2) + '\n')
-        print(json.dumps({k: report[k] for k in ['state', 'passed', 'boot_completed', 'apps_tested', 'observed_seconds', 'error'] if k in report}, indent=2), flush=True)
-    return 0 if report['passed'] else 1
+        print(json.dumps({k: report[k] for k in ['state', 'passed', 'requested_stages_passed', 'boot_completed',
+                                               'apps_tested', 'original_baselines_passed', 'observed_seconds',
+                                               'error'] if k in report}, indent=2), flush=True)
+    return 0 if report['requested_stages_passed'] else 1
 
 
 if __name__ == '__main__':

@@ -81,12 +81,23 @@
     }
   },
   "cuttlefish_boot_result": "cuttlefish-uboot-timeout.json",
-  "later_optional_cuttlefish_run": {
+  "earlier_optional_cuttlefish_run": {
     "run_id": 40103018384,
     "commit": "6ffc21e08e52601f51edab728985896f130a7bd3",
     "conclusion": "failure",
     "state": "BOOT_TIMEOUT",
     "result": "cuttlefish-qmp-bootloader-stall.json",
+    "boot_completed": false,
+    "apps_tested": false,
+    "default_run_above_is_historical_not_this_run": true
+  },
+  "later_optional_cuttlefish_run": {
+    "run_id": 40104761802,
+    "commit": "de74ecdd141f94003fb0d9ea89964045019b6df3",
+    "conclusion": "failure",
+    "recorded_state": "BOOT_TIMEOUT",
+    "observed_failure": "NETWORKSTACK_ANR_THEN_SYSTEM_SERVER_JAVA_FATAL",
+    "result": "cuttlefish-post-firmware-anr.json",
     "boot_completed": false,
     "apps_tested": false,
     "default_run_above_is_historical_not_this_run": true

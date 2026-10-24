@@ -1,74 +1,60 @@
 # 天外天接手入口
 
-更新时间：2026-10-24。本文件是唯一接手入口；旧日志、旧分支和实验数量不能替代当前结果。
+更新时间：2026-10-24。此文件定义当前进度；旧 main、旧日志和实验数量不能替代实际结果。
 
-## 目标与设备约束
+## 目标与唯一研发分支
 
-用户只有一部 Android 13／vivo 手机，没有 Root、没有电脑。目标是微信发送位置／实时共享、抖音不依赖以太网的定位及海外地点功能。**这些目标均未完成；微信两个入口已有用户失败反馈。** 不让用户重复旧实验，不把构建或缓存成功当作微信采用位置。
+用户只有一部 Android13／vivo 手机，**没有 Root、没有电脑**。微信发送位置／实时共享已有用户失败反馈；抖音不依赖以太网及海外定位也**尚未完成**。不让用户重复旧实验，不把缓存或自有测试通过写成第三方采用。
 
-## 唯一继续研发分支
-
-| 角色 | 分支与 PR | 状态 |
+| 角色 | 分支与 PR | 约束 |
 | --- | --- | --- |
-| 继续研发 | **`research/container-api33-20261023` · [Draft #60](https://github.com/soozooq/gogogo/pull/60)** | 本分支 HEAD 是后续研发主线，继续提交这里 |
+| 继续研发 | **`research/container-api33-20261023` · [Draft #60](https://github.com/soozooq/gogogo/pull/60)** | 本分支 HEAD 是唯一研发主线，继续提交这里 |
 | 日常候选 | `fix/location-input-validation` · [Draft #59](https://github.com/soozooq/gogogo/pull/59) | 固定 `2620b741dd6a971143577737c64ebc4496120d77`，`2.4.31-simple-support / 2400099`；本轮未改 |
 
-`main` 仍是旧基线 `0762f60`，不是研发进度。保留其他工作区及其未提交内容，不删除分支、强推、重置他人工作区或自动合并。研究模块没有接进日常应用，没有新研究手机包需要安装。
+`main` 的 `0762f60` 是旧基线。保留其他工作区及未提交内容，不新增分支／PR、删除分支、强推、重置他人工作区或自动合并。研究模块未接进日常程序，没有研究手机包待安装。
 
-## 当前阻塞与下一步
+## 当前卡点：原生 ARM64 系统资格
 
-目标原包只有 ARM64 原生库。目前还没有得到可正常运行它们的 ARM64 Android 环境，目标容器启动／定位业务尚未执行。云端环境没有连接用户手机。
+原版微信／抖音输入都只有 ARM64 库。尚未得到可正常运行它们的 ARM64 Android 环境，**目标原包容器启动及定位业务未执行**。云端没有连接用户手机。
 
-- [API30](research/container-api33/evidence/official-target-baseline-limit.json)／[API32 官方转译对照](research/container-api33/evidence/official-target-api32-baseline-limit.json)：微信、抖音原包普通安装成功后，均在容器外原生崩溃。微信调用栈涉及 libowl／Native Bridge，精确原因未定；抖音报告 ubidi_openSized_66／68。不是容器或真机失败证明。
-- [API33 AOSP 整机 ARM64 软件核查](research/container-api33/evidence/full-arm64-software-linux-check.json)：官方 Linux SDK 实际有 ARM64 TCG 后端，切换标准机器参数后进入 ARM64 内核及系统服务；两种 CPU 配置均发生 ART／system_server 原生崩溃，完整启动未通过。
-- [ARM Mac 新核查](research/container-api33/evidence/mac-arm64-tcg-selection-failure.json)：修正探测库路径后，二进制确实列出 TCG，但最终 `accel=tcg` 没有取消此前启用的 HVF，仍报 `HV_UNSUPPORTED`。不能据此认定 TCG 没实现；不重复相同参数。
-- [较新 Google API33 ARM64 rev17](research/container-api33/evidence/google-api33-full-arm64-software-check.json)：两核及单核／单 TCG 线程均记录到两个不同 system_server 的 ART 崩溃，完整启动未通过，没有安装目标原包。单核沿用失败启动后的自有 userdata，基础系统／内核／SDK 二进制未改；不能称作另一份全新 userdata 证明。单核配置没有解决该故障，精确根因仍未知。
+当前走固定官方 Android13 Cuttlefish 构建 `16596636`，同一构建的原生 ARM64 宿主工具、镜像与 manifest 已下载核对。[输入摘要](research/container-api33/cuttlefish-inputs.json)为本地计算，非官方独立校验和。宿主没有 KVM，使用明确 TCG；实际组成员、Bionic 三个根目录、发行版网卡 ROM、专用 TAP IPv4／广播、静音音频后端及 QEMU 存活检查均已处理。没有配置 DHCP／NAT，也没有互联网或无线业务证明。
 
-[官方 Android 12L／API32 ARM64 实测](research/container-api33/evidence/google-api32-full-arm64-software-check.json)也未通过：全新 userdata 下，`max` 和 SDK 标准 `cortex-a53` CPU 均出现 keystore2 原生崩溃循环，ADB 尚未就绪。前一例依据真实控制台故障人工提前停止，后一例由新增控制台检查自动判失败；不能混写成模拟器自行退出或启动耗时为零。原包和普通入口均未执行。当前没有仍在运行的 VM 或待结束的应用检查。
+最新完成的 [ARM 实测 `40104761802 / de74ecd`](research/container-api33/evidence/cuttlefish-post-firmware-anr.json)已越过固件卡点，进入 Linux 5.15.206 和 Android 服务，但**完整启动仍未通过**。网络栈服务执行 ANR 后被杀，随后 `system_server` 因 `Lost network stack` 发生 Java 致命异常并触发进程重启；原驱动最终枚举为 BOOT_TIMEOUT，不能改写成 ART 原生崩溃。ZIP、四项源码摘要、实际 CPU 和清理已核对，VM 已停止；原包未安装。
 
-用户再次要求继续后，已核对[官方 Cuttlefish 的另一条 QEMU 路径](research/container-api33/evidence/cuttlefish-arm64-feasibility.json)，并取得[原生 ARM Linux 宿主实际检查结果](research/container-api33/evidence/cuttlefish-arm-linux-host-result.json)：QEMU 8.2.2、vhost-vsock、局部 vsock 绑定和 tun 均可用，115GB 可用空间、16GB 内存；没有 KVM，后续仍须明确选择软件运行。此结果只是宿主前提，不是 Android 启动。当前核对匹配的 Android13 镜像／工具，尚无 Cuttlefish Guest 或目标应用结果，不增加手机实验。
+先前 [QMP 固件卡点](research/container-api33/evidence/cuttlefish-qmp-bootloader-stall.json)为五组完全相同的寄存器／`PC=0xff86da00`。旧固件有符号 TCR 位与 LPA2 冲突的分析已由[最小原固件对照](research/container-api33/evidence/uboot-lpa2-firmware-control.json)支持：同一 QEMU／原固件只关闭 LPA2 后继续执行，默认模式精确复现全部原生 CI 寄存器。另实际读取到物理 PC 的 32 字节，与原固件同步异常入口逐字节相同，虚拟读取失败。原生 ARM 上 `max,lpa2=off` 也已实际进入内核。此修复没有修改原始固件、镜像或宿主二进制。
 
-已下载并核对同一官方 Android13 构建 `16596636` 的镜像、原生 ARM64 宿主工具与 manifest，[输入摘要](research/container-api33/cuttlefish-inputs.json)是实际下载后本地计算，非官方独立校验和。新增同一工作流的可选 `[cuttlefish-boot]` 系统启动检查：替换冲突的 KVM 选择为明确 TCG，保持原始镜像与二进制，使用独立路径、真实构建／架构／普通权限／有效进程参数核验。未配置 Guest DHCP／NAT，没有联网或应用结果；新启动待实际执行，不能复用上一轮宿主通过作为 Android 通过。
+当前新增官方软件运行超时配置：固定上游只在跨架构时自动设置 `hw_timeout_multiplier=50`，本次同架构 TCG 选择较晚而遗漏。现在通过受支持 bootconfig 请求相同值，并在系统资格里核对实际 `ro.hw_timeout_multiplier=50`；保留 Enforcing、UID2000、ABI 和完整启动检查。按已测冷启动耗时将等待限定为 2400 秒，明确系统进程 Java 致命异常或内核 panic 会提前停止；新配置待实际验证。QMP 改读数值 PC 的原始指令字，避免实际后端不支持 `$pc`／反汇编的问题。
 
-[首次云端启动任务](research/container-api33/evidence/cuttlefish-first-download-failure.json)在完成宿主包下载后，镜像的官方公共页面返回 HTTP503，VM 尚未准备或启动。这是下载阶段失败，不是 Android 崩溃；已增加仅针对临时服务错误的三次内重试，403／404 等仍直接停止，不改变凭据、路由或 TLS。
+同一驱动已接好可选原包普通安装对照：系统完全合格后才下载固定原包，复核当前身份和同一存活 QEMU，依次安装、只读欢迎／隐私页及清理；无需研究宿主 APK 或账号。七项本地受控检查包含八种 ADB 情况、旧报告／错误连接拒绝、已有应用保留、安装超时清理、界面归属及 QMP 协议；**这些是驱动逻辑检查，原包尚未执行**。
 
-[下一轮下载全部通过](research/container-api33/evidence/cuttlefish-host-data-failure.json)，原生 ARM64 二进制及专用 TAP 已核对，随后官方工具在组装阶段因未设置 `ANDROID_DATA` 中止，VM 仍未启动。已为宿主 Bionic 工具补充独立运行缓存目录，未覆盖 HOME；原始输入归档保持固定，官方组装生成运行磁盘及后续 userdata 变化另行注明，不冒充输入镜像字节始终不变。
+不重复相同旧环境：[API30](research/container-api33/evidence/official-target-baseline-limit.json)／[API32 转译](research/container-api33/evidence/official-target-api32-baseline-limit.json)原包在容器外原生崩溃；[AOSP ARM64 SDK](research/container-api33/evidence/full-arm64-software-linux-check.json)和[Google API33](research/container-api33/evidence/google-api33-full-arm64-software-check.json)有 ART／system_server 崩溃；[Google API32](research/container-api33/evidence/google-api32-full-arm64-software-check.json)有 keystore2 崩溃；[ARM Mac](research/container-api33/evidence/mac-arm64-tcg-selection-failure.json)仍错误启用 HVF。不能把这些扩大为所有 ARM64 路径不可能，也不能当作 vivo 失败。
 
-该目录修正后，[下一项真实故障](research/container-api33/evidence/cuttlefish-host-timezone-failure.json)为同一原生工具缺少 `ANDROID_TZDATA_ROOT`，仍在 VM 前。已按实际 manifest 对应的 Bionic tzcode 源码一次补齐全部三个根目录，使用宿主包自带的真实时区数据库，并统一传给组装、runner 和所有 ADB 子进程；新增 avbtool／ADB 预检，尚待新 CI 实测。
+## 已证实的工程范围
 
-[工具预检及组装已实际通过](research/container-api33/evidence/cuttlefish-firmware-network-failure.json)。随后 QEMU 因宿主缺少 `efi-virtio.rom` 退出，配置服务也因专用 TAP 无 IPv4 配置中止；内核日志为空，仍无 Android 启动。原驱动只检查 launcher 存活，后来由 ADB 超时结束，已补上实际 QEMU 子进程检查与配置服务故障检查。新增发行版固件包，并按固定配置服务源码为自有 TAP 选择不冲突的真实私有地址及广播；没有配置 NAT／DHCP，不代表联网或抖音无线通过。下一轮待实测。
+以下实际运行证据均为 Android13 **x86_64**，不是 ARM64／vivo 或目标业务通过。
 
-[固件及本地网络修正已通过下一轮](research/container-api33/evidence/cuttlefish-audio-backend-failure.json)，随后处理 AC97 音频后端。[实测进入 U-Boot](research/container-api33/evidence/cuttlefish-uboot-timeout.json)后，新增的[五组实际 QMP 快照](research/container-api33/evidence/cuttlefish-qmp-bootloader-stall.json)显示全部寄存器不变、PC 固定 `0xff86da00`，同时持续消耗 CPU；没有 Linux／Android 或 ADB，清理由本轮执行。原始符号表的对应固件已与宿主包逐字节核对；静态源码发现旧 `TCR_EL1_RSVD` 符号扩展会设置新 LPA2 的 DS 位，与现象相符，但异常寄存器及实际重定位地址未直接测得，根因仍待动态核验。适配器现只关闭 `max` 的 LPA2 特性，保持原版固件／镜像，另补当前 PC 的只读反汇编；独立启动待执行，不把假设当作修复通过。
-
-同时修正了虚拟模式下三个基站 getter 的明确缺口：缺少 BCell 时不再查询真实基站，内部 BCell 列表不再直接当作框架对象返回；关闭模拟时沿原查询路径。[新增两项受控 Android13 代理回归已在云端通过](research/container-api33/evidence/radio-privacy-contract-results.json)，测试使用受控基站服务计数，未读取真实基站。它不证明 Guest Hook 安装或第三方采用，也不能认定微信失败根因或无线兼容。见[审计范围](research/container-api33/AUDIT.md)。
-
-另修正容器 Wi-Fi 查询：空连接信息正常返回，关闭虚拟定位时不再改写 SSID／BSSID 或屏蔽扫描列表；API31+ 虚拟模式使用 Android 标准脱敏副本，原对象保持不变，不制造路由器身份。[新增三项 API33 检查与原基站共五项实际通过](research/container-api33/evidence/wifi-radio-privacy-contract-results.json)，独立软件模拟器 1.335 秒，GitHub 独立运行 0.055 秒；均为 x86_64，35 项源码及实际 APK 摘要已核对，专用 VM 已停止。旧 API 空返回分支、真实 Guest／权限／SDK 及无线业务仍未验证，不归因于用户原来的微信失败。
-
-`qualify-arm64-software-boot.py` 要求明确选择 API32／33、完整启动、ARM64 内核／主 ABI、无 x86 ABI、Native Bridge 为 0、UID 2000、SELinux Enforcing。除 ADB 的 system_server 取证外，新增可选控制台检查，在 ADB 未启动时也识别两个不同 system_server／keystore2 原生崩溃；重复同一 PID、等待服务的文字不会误算。实际 API32 故障和解析边界已验证。原包驱动的 full-arm64 与转译模式仍各自复核环境；定位关闭，停在欢迎／隐私页，不接受条款或登录，没有目标运行结果。
-
-## 已证实的工程进度
-
-| 实际证据 | 已覆盖的范围 |
+| 实测 | 已覆盖 |
 | --- | --- |
-| [容器运行记录](research/container-api33/evidence/results.json) | Android 13 x86_64，原版计算器在系统未安装时运行，真实界面完成 1+2=3，回桌面重开保留结果 |
-| [回调与原签名修正](research/container-api33/evidence/api33-location-signature-results.json) | 单次回调／取消、持续批量监听／注销、次数／时长、单调时间、Parcel 字段；原 APK 证书查询，解析失败中止导入 |
-| [独立自有 Guest](research/container-api33/evidence/owned-guest-location-results.json) | 真实 Guest 通过普通 LocationManager 调用，GPS／NETWORK 六条路径跟随 A→B，停止后计数稳定，取消后零回调 |
-| [官方原版 GPSTest](research/container-api33/evidence/official-gpstest-location-results.json) | 正常精确权限授权，实际界面采用 A→B；API31+ GNSS 修正旧隐藏类崩溃，只报告零卫星，无 first-fix／伪造 NMEA |
-| [普通入口回归](research/container-api33/evidence/cloud-ordinary-entry-pass.json) | 正常系统文件选择、导入、精确授权、同一 Guest 进程更新坐标及停止；全新 GitHub KVM 10.563 秒，计算器 5.778 秒，绑定实测源码与 APK |
+| [原版计算器](research/container-api33/evidence/results.json) | 系统未安装时容器运行，实际界面 1+2=3，回桌面重开保留结果 |
+| [定位契约与原签名](research/container-api33/evidence/api33-location-signature-results.json) | 单次／取消、持续批量／注销、次数／时长、单调时间及 Parcel；原 APK 证书查询，解析失败拒绝导入 |
+| [独立自有 Guest](research/container-api33/evidence/owned-guest-location-results.json) | 普通 LocationManager 六条 GPS／NETWORK 路径 A→B；停止稳定，取消零回调 |
+| [官方 GPSTest](research/container-api33/evidence/official-gpstest-location-results.json) | 正常精确权限、真实界面采用 A→B；GNSS 零卫星，不伪造 first-fix／NMEA |
+| [普通导入入口](research/container-api33/evidence/cloud-ordinary-entry-pass.json) | 系统文件选择、导入、精确授权、同进程更新与停止 |
+| [五项基站／Wi-Fi 受控检查](research/container-api33/evidence/wifi-radio-privacy-contract-results.json) | 缺失基站不回退真实数据；Wi-Fi 空值、关闭模式及标准脱敏副本，原对象不变、无固定路由器标识 |
 
-研究宿主已统一为“选择应用 → 导入原版 APK 一次 → 填坐标并打开”，再次应用更新目标，提供停止，保存导入状态与坐标。仅准入固定计算器与 GPSTest，核对大小、SHA-256、包名、版本及原证书；微信／抖音没有加入普通入口，也未改签或重新分发。
+普通入口已统一为“选择应用 → 原版导入一次 → 填坐标并打开”，再次应用更新目标，提供停止和状态保存。仅准入固定计算器与 GPSTest，核对大小、SHA-256、包名、版本及原证书；微信／抖音未加入，也未改签或分发。
 
-上述应用运行证据仍在 x86_64；ARM64 目前完成构建，尚无 ARM64／vivo Guest 运行通过记录。自有消费者、GPSTest、GMS、腾讯／字节 SDK 和目标软件业务不能混为一项。样本保留 mock 标记；Guest 与宿主共享 UID，不是独立 UID 安全沙箱。
+五项无线信息检查使用受控代理和合成对象，没有读取真实无线信息；不证明 Guest Hook 安装、实际权限或腾讯／字节 SDK 采用，也不能归因于用户原来的微信失败。API31+ Wi-Fi 使用公开标准脱敏接口，旧 API 空返回分支未实测。样本保留 mock 标记；Guest 与宿主共享 UID，不是独立 UID 安全沙箱。详见[审计](research/container-api33/AUDIT.md)。
 
-## 验证状态与用户失败证据
+## 验证及用户失败证据
 
-[最近核对完整证据的默认检查](research/container-api33/evidence/default-ci-state.json) `40102349634 / 24584ae` 整体成功：Linux 构建／审计、普通入口 12 秒、计算器 5.543 秒、五项受控基站／Wi-Fi 检查及 ARM Mac 构建成功；证据 ZIP、提交及每轮 35 项源码摘要已核对。本次 ARM 启动及旧转译作业跳过，跳过不是目标兼容通过。后续可选 ARM 运行 `40103018384 / 6ffc21e` 整体失败，300 秒诊断保存了上述固定 PC；原始 ZIP 与四项驱动源码摘要已核对。它没有改变此前默认回归的证据，也没有完整系统或应用通过。
+[最近完整核对的默认 CI](research/container-api33/evidence/default-ci-state.json)为 `40102349634 / 24584ae`：整体成功，五项代理 0.055 秒、普通入口 12 秒、计算器 5.543 秒及 ARM Mac 构建；ZIP、提交及每轮 35 项源码摘要均核对。ARM 启动与旧转译本次跳过，**跳过不是通过**。后续 `40103018384`／`40104761802` 都因可选 ARM 启动失败而整体失败；后一轮 Linux／Mac 默认作业仍成功，但不冒充完整系统通过。
 
-用户给出的 VPN 开／关日志中，复制时 GPS／NETWORK／GMS 缓存都接近模拟目标，但微信截图及用户反馈仍失败。导出时快照不是微信前台期间的连续采样，10 月 13 日旧实验不是本轮结果。脱敏验收在 #59 顶部，实际地址截图没有上传公共仓库。
+用户 10 月 23 日 VPN 开／关日志中，导出时 GPS／NETWORK／GMS 缓存新鲜且接近模拟目标，但微信截图及反馈失败。导出快照不是微信前台连续采样；10 月 13 日旧实验不是本轮结果。#59 顶部保留脱敏失败验收及日常版本产物验证，实际地址截图没有上传公共仓库。更新 #59 时只改标记的后续研发段，保留此前正文。
 
-## 接手操作
+## 继续操作
 
-1. 使用本分支与 #60，日常候选仍留 #59；不要从旧 main／APK 覆盖进度。
-2. 固定源码与补丁、构建、复现命令见 [研究说明](research/container-api33/README.md)；另见 [API 审计](research/container-api33/AUDIT.md)及[许可记录](research/container-api33/THIRD_PARTY_NOTICES.md)。
-3. 仓库外构建目录使用 `CONTAINER_RESEARCH_WORKDIR` 与 `tools/run-build.sh`，保留代理／CA，SDK 安装串行，生成物不入库。
-4. 保留实际失败和证据范围；未经原包启动、容器与具体业务验证，不发布“微信已成功”的手机包，不增加用户操作步骤。
+1. 沿本分支核对最新 ARM 作业实际结果，下载证据并核对 ZIP、提交、源码与真实 QEMU 参数；不要在它结束前推送源文件，同一工作流会取消旧任务。完整启动仍须验证 API33／构建、ARM64／无转译、UID2000、Enforcing 及软件超时配置。
+2. 若系统合格，再在同一驱动启用已准备的原包普通安装对照。只有原包对照通过后才进入容器匿名启动；欢迎／隐私页不等于位置业务成功。不接受条款、登录或发送消息。
+3. 若系统失败，按实际内核／QMP 证据定位下一处，不盲调 CPU／重复完整等待，不增加手机实验。保留失败、受控测试和目标业务之间的区别。
+4. 构建命令见[研究说明](research/container-api33/README.md)，许可见[记录](research/container-api33/THIRD_PARTY_NOTICES.md)。使用仓库外 `CONTAINER_RESEARCH_WORKDIR`、`tools/run-build.sh`；保留代理／CA，SDK 安装串行，生成物不入库。

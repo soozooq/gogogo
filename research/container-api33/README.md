@@ -24,6 +24,8 @@
 
 启动成功必须核对完整启动、实际 API33／构建号／Cuttlefish 产品／ARM64 内核与 ABI、无 Native Bridge、普通 shell UID 2000、SELinux Enforcing，以及存活 QEMU 的二进制摘要和完整有效参数。失败保存原因与本实例日志并停止；仅上传文本／截图证据，不上传镜像／APK。当前是系统资格检查，尚无新 VM 或微信／抖音通过结果，也没有手机操作待办。
 
+可选的 `[cuttlefish-boot] [cuttlefish-startup]` 在同一驱动明确选择 `--original-baselines`：仅在本次系统身份完全合格后，复核存活 QEMU 和实际 ADB 身份，下载并核对两款既有固定原包，依次正常安装、读取欢迎／隐私页及清理。此阶段不需要 Android SDK 构建工具或研究宿主 APK，因此可在原生 ARM Linux 上运行；现有 SDK／容器驱动的设备限制没有放宽。失败或超时的安装也纳入清理，原先存在的系统包保持原状。宿主 Bionic 根目录、代理和 CA 环境一致传递给每次 ADB。只上传证据，没有登录、同意条款、点击应用界面或位置业务；不代表目标容器兼容。`tests/test_cuttlefish_target_baselines.py` 的四项受控检查及八种 ADB 情况本地通过，实际原包尚未执行。加上 QMP／明确致命日志识别共七项受控检查通过；系统未合格时不会下载或安装原包。
+
 原生宿主工具的实际时区初始化故障已追到 manifest 对应的 [Bionic tzcode](https://android.googlesource.com/platform/bionic/+/6e03489e7a4ec5b34b202a3fa4f868a4fdfc3bda/libc/tzcode/bionic.cpp)：宿主分支依次使用 `ANDROID_DATA`、`ANDROID_TZDATA_ROOT`、`ANDROID_ROOT`，未设置会中止。当前使用独立可写缓存、真实宿主根目录及该宿主包自带的 tzdata，统一传给全部宿主子进程；先执行 avbtool／ADB 的正常版本预检。原始失败和修正前输入摘要保留，工具预检也不代替 Android 启动。
 
 固定源码的 [ValidateHostConfiguration](https://android.googlesource.com/device/google/cuttlefish/+/4b46735a8d5b752ad77f4c518708024632495a2e/host/libs/vm_manager/host_configuration.cpp)另要求实际 `cvdnetwork`／`kvm` 组成员资格。工作流正常创建／加入这些组，再以同一个普通 runner 用户刷新补充组；主流程核对 UID 及实际组，VM 不以 root 用户运行。组名不提供 KVM 硬件；设备检查、有效 TCG 参数和无 KVM 的证据独立保留，没有修改或绕过该验证器。
@@ -134,6 +136,10 @@ python3 tools/run-cloud-check.py --serial emulator-5580 --label owned-guest-loca
 
 [Wi-Fi 核心修正实测](evidence/wifi-radio-privacy-contract-results.json)处理空值及关闭模式，采用 Android 标准脱敏副本、保留原对象、关闭时正常转发，移除固定路由器标识。新增三项加原基站共五项在 API33 x86_64 软件模拟器中 OK (5 tests)，1.335 秒；核对 35 项源码和两份 APK 摘要，VM 已停止。仅受控代理，没有真实 Wi-Fi 查询、Guest／SDK 采用或微信／抖音业务证明；旧 API 分支和 GitHub 独立回归另行验证。
 
-GitHub `40102349634 / 24584ae` 的独立回归也已通过：五项基站／Wi-Fi 0.055 秒、普通入口 12 秒、计算器 5.543 秒及 ARM Mac 构建；已下载并核对 ZIP、提交及每轮全部 35 项源码。ARM 系统运行本次跳过，不当作通过。Cuttlefish 驱动通过 QMP 只查询状态、CPU、寄存器及当前 PC 的八条指令，并记录 CPU 时间；不暂停、恢复、重置或改动 VM。`[cuttlefish-boot] [cuttlefish-diagnose]` 在同一作业选择 300 秒观测，普通启动仍默认 1200 秒；该限制和观测结果均不替代 OS 资格检查。
+GitHub `40102349634 / 24584ae` 的独立回归也已通过：五项基站／Wi-Fi 0.055 秒、普通入口 12 秒、计算器 5.543 秒及 ARM Mac 构建；已下载并核对 ZIP、提交及每轮全部 35 项源码。ARM 系统运行本次跳过，不当作通过。Cuttlefish 驱动通过 QMP 只查询状态、CPU、寄存器及数值 PC 的八个原始指令字（虚拟及物理只读），并记录 CPU 时间；不暂停、恢复、重置或改动 VM。`[cuttlefish-boot] [cuttlefish-diagnose]` 在同一作业选择 300 秒观测，软件运行按已测冷启动改为限定 2400 秒；该限制和观测结果均不替代 OS 资格检查。
 
-[`40103018384 / 6ffc21e` 的实际诊断](evidence/cuttlefish-qmp-bootloader-stall.json)再次超时，五组寄存器完全相同，PC 为 `0xff86da00`，268.825 秒间增加 268.8 秒 QEMU 用户 CPU 时间。固件原始符号表与相同二进制已从 manifest 固定的 prebuilt 取得并核对。旧 U-Boot `get_tcr()` 使用有符号的 `(1 << 31)`，会将高位符号扩展；观测到的 X0 与此相符。QEMU 8.2.2 的 `max` 默认开启 LPA2，赋予 DS／描述符共享位新的地址含义。候选重定位下 PC 对应同步异常入口、LR 对应 `mmu_setup`；重定位和异常寄存器仍未直接读得，不能宣布根因确证。下一轮仅改为 `max,lpa2=off`，不改固件或镜像，等待独立动态核验。
+[`40103018384 / 6ffc21e` 的实际诊断](evidence/cuttlefish-qmp-bootloader-stall.json)再次超时，五组寄存器完全相同，PC 为 `0xff86da00`，268.825 秒间增加 268.8 秒 QEMU 用户 CPU 时间。固件原始符号表与相同二进制已从 manifest 固定的 prebuilt 取得并核对。旧 U-Boot `get_tcr()` 使用有符号的 `(1 << 31)`，会将高位符号扩展；观测到的 X0 与此相符。QEMU 8.2.2 的 `max` 默认开启 LPA2，赋予 DS／描述符共享位新的地址含义。候选重定位下 PC 对应同步异常入口、LR 对应 `mmu_setup`；重定位和异常寄存器仍未直接读得，不能宣布根因确证。后续 `max,lpa2=off` 不改固件或镜像，实际结果见下段。
+
+[最小原固件对照](evidence/uboot-lpa2-firmware-control.json)在相同 Ubuntu QEMU 8.2.2／AMD64 二进制及原始固件中，仅关闭 LPA2 即越过该卡点。默认模式全部寄存器与原生 ARM CI 完全相同；数值 PC 的虚拟读取失败，物理 32 字节匹配原固件 `vectors+0x200`。没有附加 Android 镜像／磁盘，后续因缺少环境而重置，不称为 Android 启动。所有本地 QEMU 已停止。实际后端不支持 `$pc`，也不提供 ARM 反汇编；现只读数值 PC 的原始字，按原输入离线解码。
+
+[原生 ARM 后续实测 `40104761802 / de74ecd`](evidence/cuttlefish-post-firmware-anr.json)已进入 Linux 5.15.206 和 Android 服务，但网络栈服务执行 ANR 后被杀，引发 system_server Java `Lost network stack` 及 zygote 重启，完整启动未通过、原包未执行。ZIP、四项源码和实际 CPU 已核对，VM 已停止。新配置使用固定上游 `BootconfigArgsFromConfig` 的软件模拟超时倍数 50：上游仅按跨架构自动选择，本次同架构 TCG 适配遗漏该选择；通过受支持的 `extra_bootconfig_args` 请求，不改系统二进制或取消检查。Vendor init 将其映射到 `ro.hw_timeout_multiplier`，Build 读取，ActiveServices 的 20 秒服务时限乘以该值。系统资格新增核验实际值 50，外层 2400 秒仍有限定，明确系统进程 Java 致命异常／内核 panic 提前停止。新配置仍待独立实际验证；任何欢迎页也不等于微信／抖音业务成功。

@@ -1,0 +1,65 @@
+{
+  "scope": "CVD_LINUX_ANDROID_SERVICES_THEN_ANR_NOT_FULL_BOOT_OR_TARGET_SUCCESS",
+  "commit": "de74ecdd141f94003fb0d9ea89964045019b6df3",
+  "run_id": 40104761802,
+  "job_id": 120904041593,
+  "artifact_id": 12565031269,
+  "artifact_sha256": "0a90e317d200ad494b9c88f03f0ac4ab999e7c9ef82187f6afb17f2f8b188da6",
+  "artifact_digest_verified": true,
+  "source_sha256_verified_against_commit": {
+    "tools/run-cuttlefish-arm-boot.py": "3a897479824d0c4644dc8faed2ae6542c836511429baa2b995c248b298f0f315",
+    "tools/cuttlefish-tcg-qemu.py": "09383784ba253869bdb473578780449fb7a6aaea96709a068c67efc8ace1e737",
+    "tools/fetch-cuttlefish-inputs.py": "c73b6bec3171125521e8b37d30fb1c99559ceecf2fe31eb4d57744bc1dd78423",
+    "cuttlefish-inputs.json": "c7b479f49cc567d65aee12c5aba8eb745ac9cd5ea0ec641af07dc6e9b78803ba"
+  },
+  "recorded_driver_state": "BOOT_TIMEOUT",
+  "boot_wait_limit_seconds": 1200,
+  "observed_seconds_including_preparation": 1339.648,
+  "qemu_live_process_verified": true,
+  "qemu_process_stopped": true,
+  "cpu": "max,lpa2=off",
+  "initial_firmware_stall_cleared_in_native_arm": true,
+  "guest_kernel_boot_observed": true,
+  "kernel_version": "[    0.000000][    T0] Linux version 5.15.206-android13-8-00037-g112bd5b46028-ab16582698 (build-user@build-host) (Android (8508608, based on r450784e) clang version 14.0.7 (https://android.googlesource.com/toolchain/llvm-project 4c603efb0cca074e9238af8b4106c30add4418f6), LLD 14.0.7) #1 SMP PREEMPT Mon Oct 12 03:47:20 UTC 2026",
+  "android_framework_started": true,
+  "boot_completed": false,
+  "properties_after_complete_boot": "NOT_COLLECTED_BECAUSE_SYS_BOOT_COMPLETED_NEVER_OBSERVED",
+  "kernel_panic_or_native_tombstone_observed": false,
+  "failure_chain": "NetworkStack service execution ANR -> ActivityManager kills its process -> system_server Java IllegalStateException Lost network stack -> zygote restarts. No exact critical-fatal console gate existed in this driver, so its final enum is BOOT_TIMEOUT.",
+  "selected_actual_events": [
+    "10-24 15:15:58.370   680   749 I ActivityManager: Start proc 2380:com.android.networkstack.process/1073 for service {com.android.networkstack/com.android.server.NetworkStackService}",
+    "10-24 15:17:16.689   680  2303 E ActivityManager: ANR in com.android.networkstack.process",
+    "10-24 15:17:16.689   680  2303 E ActivityManager: Reason: executing service com.android.networkstack/com.android.server.NetworkStackService",
+    "10-24 15:17:17.034   680  2303 I ActivityManager: Killing 2380:com.android.networkstack.process/1073 (adj -800): bg anr",
+    "10-24 15:17:56.471   680   680 E AndroidRuntime: *** FATAL EXCEPTION IN SYSTEM PROCESS: main",
+    "10-24 15:17:56.471   680   680 E AndroidRuntime: java.lang.IllegalStateException: Lost network stack. This is not the root cause of any issue, it is a side effect of a crash that happened earlier. Earlier logs should point to the actual issue."
+  ],
+  "system_server_pid_with_java_fatal": 680,
+  "network_stack_pid_killed_after_anr": 2380,
+  "qmp_snapshots": 19,
+  "distinct_cpu0_pcs": 19,
+  "log_sha256": {
+    "kernel.log": "478bf7eccff5c587c29bb24d9b80f423d7e9955613f98d65f5995cb6709b0d89",
+    "logcat": "ae6cf764c24774589a861867d3ac10ff81230ad4af0080f6d03790381b4dacd6"
+  },
+  "observer_limitation": "HMP $pc unsupported; all requested disassemblies reported unknown register. Later minimal control verified numeric raw-word virtual/physical reads; no instruction-read success claimed for this CI.",
+  "source_followup": {
+    "cuttlefish_revision": "4b46735a8d5b752ad77f4c518708024632495a2e",
+    "frameworks_base_revision": "e554ee0e1b19758e7023950731581a314a74cb7d",
+    "matching_source_sha256": {
+      "bootconfig_args.cpp": "af5db78fa28908a5de8cd6b0b15c29fc789a0f6faea2bd795f944fda6071046d",
+      "init.vendor.rc": "ed6ca81fc1fc1cbeedf936b03a7eda055212c6a696a093d3e3eabe3bee0850f4",
+      "Build.java": "77d6b4a7fef0ac88197bd269a2a9c1c4e37d20a3fa026b3b0654930187147e95",
+      "ActiveServices.java": "5ced826fdf9c89bd1c3e9f653b611f5ab951dd3ffbedc58da0fa7b36f3cea38a"
+    },
+    "software_timeout_source": "https://android.googlesource.com/device/google/cuttlefish/+/4b46735a8d5b752ad77f4c518708024632495a2e/host/libs/config/bootconfig_args.cpp",
+    "finding": "Upstream supplies androidboot.hw_timeout_multiplier=50 only when guest/host architectures differ; our later same-architecture TCG adapter missed this selection. Vendor init maps it to ro.hw_timeout_multiplier; Build reads it; ActiveServices uses 20s times this value.",
+    "next_profile": "Request the same 50 through supported extra_bootconfig_args, verify actual property, keep Enforcing/UID/ABI/full boot checks. Use bounded 2400s for the measured cold software boot; fatal system-process logs stop it early. Not yet a successful dynamic rerun."
+  },
+  "input_archives_modified": false,
+  "qemu_or_host_binaries_modified": false,
+  "apps_tested": false,
+  "wechat_send_and_live_location": "UNFULFILLED",
+  "douyin_wireless_and_overseas": "UNFULFILLED",
+  "physical_vivo_tested": false
+}
