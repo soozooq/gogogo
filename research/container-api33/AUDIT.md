@@ -63,3 +63,11 @@ GPS／NETWORK 的缓存、单次回调和持续批量回调均从 A 跟随到 B�
 当前验证覆盖计算器的 Splash／Main Activity、资源、实际按钮运算和从桌面返回。Service、Provider、Intent result、通知、GMS、Native Guest、账号登录、异常隔离和 vivo 厂商行为均无完整回归。共享宿主 UID 的执行方式不等于为 Guest 创建独立 Linux 沙箱。
 
 下一步应验证真实第三方定位应用／SDK 的采用，以及权限／组件／GMS 兼容，再评估真实微信能否进入并正确使用发送位置／实时共享页面。抖音无线及海外地点覆盖需要各自的业务结果，不能由本轮替代。
+
+## 模拟开启时的基站读取边界
+
+2026-10-24 源码审查发现，`getCellLocation` 在开启虚拟定位但没有 BCell 时仍调用真实服务；另外两个列表 getter 直接把内部 BCell 列表当作 Android 的 CellInfo／NeighboringCellInfo 返回。缺少虚拟数据不应成为读取真实基站的条件，内部模型也不是框架 Parcelable。
+
+修正限定这三个已覆盖 getter：模拟开启时，单个位置返回空 CellIdentity／旧接口空 Bundle，两个列表返回空列表；不编造基站或运营商身份。关闭模拟时保留原有查询路径。没有更改物理网络、VPN、mock 标记或原包证书，也没有申请新的手机权限。
+
+新增自动化使用真实 Android13 ITelephony 接口类型及记录调用次数的受控服务，检查“没有模拟基站时不调用真实服务”和关闭后的正常转发；另检查空列表及旧 Bundle 返回形状。它是受控代理契约，尚待设备端运行，不能当作 Guest Hook 安装、腾讯／字节 SDK 采用或微信成功。异步 cell-info 更新、全部无线接口与第三方实际决策不在这三个 getter 的结果内。

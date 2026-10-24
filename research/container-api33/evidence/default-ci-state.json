@@ -1,154 +1,44 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
   "scope": "DEFAULT_RESEARCH_CHECKS_NOT_TARGET_APP_COMPATIBILITY",
-  "run_id": 40079023555,
-  "commit": "06f269fbca8f8e256dd4a3cc9e12a0efc436e538",
-  "tree": "8bbff3c498b6e43f459703d28d172883badc5937",
+  "run_id": 40080900517,
+  "commit": "dbb640a0019b166e88d7e32903a85826d2519f3e",
+  "tree": "2e8c85abed4f0ad5fb90f75b04c835492f6858f1",
   "conclusion": "success",
   "jobs": [
     {
-      "id": 120828490907,
-      "name": "Build, inspect and ordinary entry (Linux)",
-      "conclusion": "success",
-      "steps": [
-        {
-          "name": "Set up job",
-          "conclusion": "success"
-        },
-        {
-          "name": "Run actions/checkout@v5",
-          "conclusion": "success"
-        },
-        {
-          "name": "Set dedicated work directories after runner allocation",
-          "conclusion": "success"
-        },
-        {
-          "name": "Run actions/setup-java@v4",
-          "conclusion": "success"
-        },
-        {
-          "name": "Run android-actions/setup-android@v3",
-          "conclusion": "success"
-        },
-        {
-          "name": "Expose the command-line tools path used by the verifiers",
-          "conclusion": "success"
-        },
-        {
-          "name": "Install the fixed SDK toolchain serially",
-          "conclusion": "success"
-        },
-        {
-          "name": "Prepare pinned source, apply reviewed patch and build",
-          "conclusion": "success"
-        },
-        {
-          "name": "Inspect compiled inputs and license declarations",
-          "conclusion": "success"
-        },
-        {
-          "name": "Allow the dedicated Linux runner to use its KVM device if available",
-          "conclusion": "success"
-        },
-        {
-          "name": "Run ordinary import and calculator regression on x86_64",
-          "conclusion": "success"
-        },
-        {
-          "name": "Upload build evidence (no APK distribution)",
-          "conclusion": "success"
-        },
-        {
-          "name": "Post Run actions/setup-java@v4",
-          "conclusion": "success"
-        },
-        {
-          "name": "Post Run actions/checkout@v5",
-          "conclusion": "success"
-        },
-        {
-          "name": "Complete job",
-          "conclusion": "success"
-        }
-      ]
-    },
-    {
-      "id": 120828491081,
+      "id": 120834063179,
       "name": "Build and inspect (ARM Mac)",
-      "conclusion": "success",
-      "steps": [
-        {
-          "name": "Set up job",
-          "conclusion": "success"
-        },
-        {
-          "name": "Run actions/checkout@v5",
-          "conclusion": "success"
-        },
-        {
-          "name": "Set dedicated work directories after runner allocation",
-          "conclusion": "success"
-        },
-        {
-          "name": "Run actions/setup-java@v4",
-          "conclusion": "success"
-        },
-        {
-          "name": "Run android-actions/setup-android@v3",
-          "conclusion": "success"
-        },
-        {
-          "name": "Expose the command-line tools path used by the verifiers",
-          "conclusion": "success"
-        },
-        {
-          "name": "Record actual host and install fixed build toolchain",
-          "conclusion": "success"
-        },
-        {
-          "name": "Build standalone host and driver on ARM host",
-          "conclusion": "success"
-        },
-        {
-          "name": "Qualify ARM64 software guest (explicit research opt-in)",
-          "conclusion": "skipped"
-        },
-        {
-          "name": "Upload ARM Mac build evidence (no APK distribution)",
-          "conclusion": "success"
-        },
-        {
-          "name": "Post Run actions/setup-java@v4",
-          "conclusion": "success"
-        },
-        {
-          "name": "Post Run actions/checkout@v5",
-          "conclusion": "success"
-        },
-        {
-          "name": "Complete job",
-          "conclusion": "success"
-        }
-      ]
+      "conclusion": "success"
     },
     {
-      "id": 120828491716,
+      "id": 120834063292,
+      "name": "Inspect ARM Linux Cuttlefish host (no VM)",
+      "conclusion": "success"
+    },
+    {
+      "id": 120834063309,
+      "name": "Build, inspect and ordinary entry (Linux)",
+      "conclusion": "success"
+    },
+    {
+      "id": 120834064147,
       "name": "Anonymous startup (official Android 12L translation)",
-      "conclusion": "skipped",
-      "steps": []
+      "conclusion": "skipped"
     }
   ],
+  "cuttlefish_host_probe": "HOST_PREREQUISITES_PRESENT_NOT_ANDROID_BOOT",
+  "cuttlefish_host_result": "cuttlefish-arm-linux-host-result.json",
   "target_probe": "SKIPPED_EXPLICIT_MANUAL_OPT_IN_NOT_PASS",
   "arm64_mac_runtime_probe": "SKIPPED_DEFAULT_FALSE_NOT_PASS",
   "full_arm64_guest_apps": "NOT_RUN_API33_ART_AND_API32_KEYSTORE_SYSTEM_BOOT_FAILED",
   "wechat_send_and_live_location": "UNFULFILLED",
   "douyin_wireless_and_overseas": "UNFULFILLED",
-  "native_arm64_vivo": "NOT_VERIFIED",
+  "physical_arm64_vivo": "NOT_VERIFIED",
   "phone_update_distributed": false,
   "previous_default_run": {
-    "run_id": 40061738582,
-    "commit": "da1cb9547ebf47ede599deb8909673b2c4aff429",
+    "run_id": 40079023555,
+    "commit": "06f269fbca8f8e256dd4a3cc9e12a0efc436e538",
     "conclusion": "success"
   }
 }

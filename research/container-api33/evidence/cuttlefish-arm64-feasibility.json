@@ -1,6 +1,6 @@
 {
   "scope": "SOURCE_AND_HOST_FEASIBILITY_REVIEW_ONLY_NOT_ANDROID_BOOT",
-  "stage": "PENDING_NATIVE_ARM_LINUX_HOST_DIAGNOSTIC",
+  "stage": "NATIVE_ARM_LINUX_HOST_PREREQUISITES_VERIFIED_GUEST_PENDING",
   "sources": [
     {
       "project": "device/google/cuttlefish",
@@ -26,18 +26,6 @@
     "Same-architecture path selects KVM and host CPU; an actual software launch must explicitly configure and verify TCG rather than infer it from help",
     "Linux manager requests vhost-vsock; current main also contains a Slirp network mode"
   ],
-  "local_environment": {
-    "arch": "x86_64",
-    "kernel": "6.18.55",
-    "kvm_node": false,
-    "tun_node": false,
-    "vhost_vsock_node": false,
-    "registered_tun_driver": true,
-    "registered_vhost_vsock_driver": false,
-    "docker_daemon_ready": true,
-    "docker_containers_started": false,
-    "cuttlefish_images_downloaded": false
-  },
   "next_host_probe": {
     "runner": "ubuntu-24.04-arm",
     "official_runner_reference": "https://docs.github.com/en/actions/reference/runners/github-hosted-runners",
@@ -49,12 +37,36 @@
     }
   },
   "remaining": [
-    "Actual ARM Linux host prerequisites",
     "Public matching Android13 images and host-tool availability/architecture",
     "Isolated instance/system paths without overriding HOME",
     "Actual OS boot and identity before any app test"
   ],
   "android_boot_tested": false,
   "target_apps_tested": false,
-  "physical_vivo_tested": false
+  "physical_vivo_tested": false,
+  "host_result": "cuttlefish-arm-linux-host-result.json",
+  "local_environment_at_source_review": {
+    "arch": "x86_64",
+    "kernel": "6.18.55",
+    "kvm_node": false,
+    "tun_node": false,
+    "vhost_vsock_node": false,
+    "registered_tun_driver": true,
+    "registered_vhost_vsock_driver": false,
+    "docker_daemon_ready": true,
+    "docker_containers_started": false,
+    "cuttlefish_images_downloaded": false
+  },
+  "client_container_inspection": {
+    "official_documentation": "https://github.com/google/android-cuttlefish/blob/main/container/README.md",
+    "amd64_digest": "sha256:4f12614049ae67e1959419f8af771d5d553082a11f70cfff916e7b927f9b5e44",
+    "arm64_digest": "sha256:881eb2ddaa51295835d45c730615e45a35fb0edca9d0db1d5192db7bf24705d2",
+    "local_amd64_client_paths_observed": [
+      "/usr/bin/cvd",
+      "/usr/bin/fetch_cvd"
+    ],
+    "inspection_network": "none",
+    "cuttlefish_guest_images_downloaded": false,
+    "guest_started": false
+  }
 }

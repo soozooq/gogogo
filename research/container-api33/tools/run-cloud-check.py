@@ -20,14 +20,16 @@ parser.add_argument('--api', choices=['32', '33'], default='33')
 mode = parser.add_mutually_exclusive_group()
 mode.add_argument('--installed-baseline', action='store_true')
 mode.add_argument('--location-contract', action='store_true')
+mode.add_argument('--radio-contract', action='store_true')
 mode.add_argument('--guest-location', action='store_true')
 mode.add_argument('--third-party-location', action='store_true')
 parser.add_argument('--ordinary-entry', action='store_true', help='Use the real import/coordinate launcher with --third-party-location')
 parser.add_argument('--label', default='latest')
 args = parser.parse_args()
+contract_case = args.location_contract or args.radio_contract
 if args.ordinary_entry and not args.third_party_location:
     raise SystemExit('--ordinary-entry requires --third-party-location')
-if args.api != '33' and (args.location_contract or args.guest_location):
+if args.api != '33' and (contract_case or args.guest_location):
     raise SystemExit('The owned location contract cases remain API33 only')
 if not args.sdk or not args.root:
     raise SystemExit('Specify --sdk/--root or ANDROID_SDK_ROOT/CONTAINER_RESEARCH_WORKDIR')
@@ -85,7 +87,7 @@ if args.guest_location:
 if args.third_party_location:
     guest = root / 'guest/osmdroidRelease-v3.10.6.apk'
     guest_package = 'com.android.gpstest.osmdroid'
-inputs = (host, test) if args.location_contract else (host, test, guest)
+inputs = (host, test) if contract_case else (host, test, guest)
 if not all(p.is_file() for p in inputs):
     raise SystemExit('Build artifacts missing')
 if shell('getenforce') != 'Enforcing':
@@ -95,6 +97,7 @@ metadata = {
     'scope': 'CLOUD_EMULATOR_ONLY_NOT_VIVO_OR_WECHAT',
     'case': 'ordinary_import_coordinate_entry' if args.ordinary_entry else 'official_gpstest_location_ui' if args.third_party_location else
         'owned_guest_location_real_process' if args.guest_location else
+        'controlled_radio_proxy_contract' if args.radio_contract else
         'controlled_location_contract' if args.location_contract else
         ('system_installed_control' if args.installed_baseline else 'container_uninstalled_guest'),
     'serial': args.serial, 'api': int(args.api), 'abi': shell('getprop ro.product.cpu.abi'),
@@ -164,7 +167,7 @@ shell('settings put global transition_animation_scale 0')
 shell('settings put global animator_duration_scale 0')
 shell('input keyevent KEYCODE_WAKEUP')
 shell('wm dismiss-keyguard', check=False)
-if not args.location_contract:
+if not contract_case:
     run(['push', str(guest), '/data/local/tmp/gogogo-official-gpstest.apk' if args.third_party_location
         else '/data/local/tmp/gogogo-location-consumer.apk' if args.guest_location
         else '/data/local/tmp/gogogo-research-guest.apk'], timeout=120)
@@ -198,11 +201,13 @@ test_class = ('com.soozooq.tianwaitian.containerresearch.ThirdPartyLocationInstr
      'officialGpsTestReceivesChangedTargetThroughItsNormalUi')
     if args.third_party_location else 'com.soozooq.tianwaitian.containerresearch.GuestLocationInstrumentedTest'
     if args.guest_location else 'top.niunaijun.bcore.fake.service.LocationContractInstrumentedTest'
-    if args.location_contract else 'com.soozooq.tianwaitian.containerresearch.ExternalGuestInstrumentedTest#' +
+    if args.location_contract else 'top.niunaijun.bcore.fake.service.RadioPrivacyContractInstrumentedTest'
+    if args.radio_contract else 'com.soozooq.tianwaitian.containerresearch.ExternalGuestInstrumentedTest#' +
     ('installedCalculatorControl' if args.installed_baseline else 'calculatorRunsUninstalledAndRetainsResultAfterHome'))
 print('Running official GPSTest permission + coordinate UI check' if args.third_party_location
     else 'Running public Android location calls in a real owned Guest process' if args.guest_location
     else 'Running controlled public-API33 location contracts' if args.location_contract
+    else 'Running controlled API33 radio privacy proxy contracts' if args.radio_contract
     else 'Running real third-party UI and return-from-home check', flush=True)
 instrumentation = ['shell', 'am', 'instrument', '-w', '-r', '-e', 'api', args.api, '-e', 'class', test_class]
 if args.guest_location:
@@ -212,7 +217,7 @@ result = run(instrumentation + [
     timeout=300, check=False)
 text = result.stdout.decode(errors='replace') + result.stderr.decode(errors='replace')
 (evidence / 'cloud-instrumentation.txt').write_text(text)
-for relative in (() if args.location_contract else
+for relative in (() if contract_case else
         ('window.xml', 'screen.png', 'entry.png', 'result.json', 'last-visible-text.json') if args.third_party_location else
         ('window.xml', 'screen.png', 'result.json', 'last-guest-ui.txt') if args.guest_location
         else ('window.xml', 'screen.png')):
@@ -236,7 +241,7 @@ for relative in (() if args.location_contract else
 (evidence / 'cloud-activities.txt').write_text(shell('dumpsys activity activities', check=False))
 (evidence / 'cloud-guest-system-path.txt').write_text(shell('pm path ' + guest_package, check=False))
 cleanup_ok = remove_control_guest()
-expected_result = 'OK (4 tests)' if args.location_contract else 'OK (1 test)'
+expected_result = 'OK (4 tests)' if args.location_contract else 'OK (2 tests)' if args.radio_contract else 'OK (1 test)'
 passed = result.returncode == 0 and expected_result in text and not re.search(
     r'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=|Process crashed', text)
 system_guest_after_cleanup = bool(shell('pm path ' + guest_package, check=False))
@@ -250,8 +255,10 @@ if args.guest_location or args.third_party_location:
     'wechat_result': 'NOT_TESTED',
     'location_replacement': 'OFFICIAL_GPSTEST_UI_ONLY' if args.third_party_location else
         'OWNED_GUEST_REAL_PROCESS_ONLY' if args.guest_location else
-        'CONTROLLED_PUBLIC_API33_TEST_ONLY' if args.location_contract else 'DISABLED',
-    'guest_signer_metadata': 'PASS' if passed and not args.location_contract
+        'CONTROLLED_PUBLIC_API33_TEST_ONLY' if args.location_contract else
+        'NOT_TESTED_RADIO_PROXY_ONLY' if args.radio_contract else 'DISABLED',
+    'radio_privacy': 'CONTROLLED_PROXY_ONLY' if args.radio_contract else 'NOT_TESTED',
+    'guest_signer_metadata': 'PASS' if passed and not contract_case
         and not args.installed_baseline and not args.guest_location and not args.third_party_location else 'NOT_TESTED',
 }, indent=2) + '\n')
 (evidence / 'cloud-runtime-check.exit').write_text('0\n' if passed else '1\n')

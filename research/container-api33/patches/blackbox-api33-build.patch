@@ -583,6 +583,64 @@ index bad5396..265658f 100644
          }
      }
  
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyManagerProxy.java
+index 33686f0..8dd420e 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyManagerProxy.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyManagerProxy.java
+@@ -1,15 +1,15 @@
+ package top.niunaijun.bcore.fake.service;
+ 
+ import android.content.Context;
++import android.os.Bundle;
+ import android.util.Log;
+ 
+ import java.lang.reflect.Method;
++import java.util.ArrayList;
+ 
+ import black.android.os.ServiceManager;
+ import black.com.android.internal.telephony.ITelephony;
+ import top.niunaijun.bcore.BlackBoxCore;
+-import top.niunaijun.bcore.app.BActivityThread;
+-import top.niunaijun.bcore.entity.location.BCell;
+ import top.niunaijun.bcore.fake.frameworks.BLocationManager;
+ import top.niunaijun.bcore.fake.hook.BinderInvocationStub;
+ import top.niunaijun.bcore.fake.hook.MethodHook;
+@@ -108,11 +108,9 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             Log.d(TAG, "getCellLocation");
+             if (BLocationManager.isFakeLocationEnable()) {
+-                BCell cell = BLocationManager.get().getCell(BActivityThread.getUserId(), BActivityThread.getAppPackageName());
+-                if (cell != null) {
+-                    // TODO: Transfer BCell to CdmaCellLocation/GsmCellLocation
+-                    return null;
+-                }
++                // Missing virtual cell data must never fall back to real radio identity.
++                // Older framework interfaces returned a Bundle instead of CellIdentity.
++                return Bundle.class.isAssignableFrom(method.getReturnType()) ? new Bundle() : null;
+             }
+             return method.invoke(who, args);
+         }
+@@ -125,8 +123,8 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             Log.d(TAG, "GetAllCellInfo");
+             if (BLocationManager.isFakeLocationEnable()) {
+-                // TODO: Transfer BCell to CdmaCellLocation/GsmCellLocation
+-                return BLocationManager.get().getAllCell(BActivityThread.getUserId(), BActivityThread.getAppPackageName());
++                // Internal BCell objects are not framework CellInfo parcelables.
++                return new ArrayList<>();
+             }
+ 
+             try {
+@@ -167,8 +165,7 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             Log.d(TAG, "getNeighboringCellInfo");
+             if (BLocationManager.isFakeLocationEnable()) {
+-                // TODO: Transfer BCell to CdmaCellLocation/GsmCellLocation
+-                return BLocationManager.get().getNeighboringCell(BActivityThread.getUserId(), BActivityThread.getAppPackageName());
++                return new ArrayList<>();
+             }
+             return method.invoke(who, args);
+         }
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java
 index b2c7548..6873030 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java
