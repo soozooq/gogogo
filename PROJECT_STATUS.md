@@ -38,7 +38,7 @@
 
 [工具预检及组装已实际通过](research/container-api33/evidence/cuttlefish-firmware-network-failure.json)。随后 QEMU 因宿主缺少 `efi-virtio.rom` 退出，配置服务也因专用 TAP 无 IPv4 配置中止；内核日志为空，仍无 Android 启动。原驱动只检查 launcher 存活，后来由 ADB 超时结束，已补上实际 QEMU 子进程检查与配置服务故障检查。新增发行版固件包，并按固定配置服务源码为自有 TAP 选择不冲突的真实私有地址及广播；没有配置 NAT／DHCP，不代表联网或抖音无线通过。下一轮待实测。
 
-[固件及本地网络修正已通过下一轮](research/container-api33/evidence/cuttlefish-audio-backend-failure.json)，随后处理 AC97 音频后端。现已[实测进入 U-Boot](research/container-api33/evidence/cuttlefish-uboot-timeout.json)，只读到版本及 DRAM:3GiB，限定等待后超时；没有观察到 Linux／Android 启动或 ADB 就绪，QEMU 由本轮清理停止。原因未定，尚缺 QMP／寄存器及 CPU 状态；下一步先补这项观测，不重复相同配置的完整等待，也不认定为内核崩溃。
+[固件及本地网络修正已通过下一轮](research/container-api33/evidence/cuttlefish-audio-backend-failure.json)，随后处理 AC97 音频后端。[实测进入 U-Boot](research/container-api33/evidence/cuttlefish-uboot-timeout.json)后，新增的[五组实际 QMP 快照](research/container-api33/evidence/cuttlefish-qmp-bootloader-stall.json)显示全部寄存器不变、PC 固定 `0xff86da00`，同时持续消耗 CPU；没有 Linux／Android 或 ADB，清理由本轮执行。原始符号表的对应固件已与宿主包逐字节核对；静态源码发现旧 `TCR_EL1_RSVD` 符号扩展会设置新 LPA2 的 DS 位，与现象相符，但异常寄存器及实际重定位地址未直接测得，根因仍待动态核验。适配器现只关闭 `max` 的 LPA2 特性，保持原版固件／镜像，另补当前 PC 的只读反汇编；独立启动待执行，不把假设当作修复通过。
 
 同时修正了虚拟模式下三个基站 getter 的明确缺口：缺少 BCell 时不再查询真实基站，内部 BCell 列表不再直接当作框架对象返回；关闭模拟时沿原查询路径。[新增两项受控 Android13 代理回归已在云端通过](research/container-api33/evidence/radio-privacy-contract-results.json)，测试使用受控基站服务计数，未读取真实基站。它不证明 Guest Hook 安装或第三方采用，也不能认定微信失败根因或无线兼容。见[审计范围](research/container-api33/AUDIT.md)。
 
@@ -62,7 +62,7 @@
 
 ## 验证状态与用户失败证据
 
-[最近核对完整证据的默认检查](research/container-api33/evidence/default-ci-state.json) `40102349634 / 24584ae` 整体成功：Linux 构建／审计、普通入口 12 秒、计算器 5.543 秒、五项受控基站／Wi-Fi 检查及 ARM Mac 构建成功；证据 ZIP、提交及每轮 35 项源码摘要已核对。本次 ARM 启动及旧转译作业跳过，跳过不是目标兼容通过。上一 ARM 实测 `40100070033 / 07b632a` 停留 U-Boot，仍无完整系统或应用通过；当前补充只读 QMP／寄存器观测，使用单次 300 秒诊断等待，不重复完整 20 分钟等待。
+[最近核对完整证据的默认检查](research/container-api33/evidence/default-ci-state.json) `40102349634 / 24584ae` 整体成功：Linux 构建／审计、普通入口 12 秒、计算器 5.543 秒、五项受控基站／Wi-Fi 检查及 ARM Mac 构建成功；证据 ZIP、提交及每轮 35 项源码摘要已核对。本次 ARM 启动及旧转译作业跳过，跳过不是目标兼容通过。后续可选 ARM 运行 `40103018384 / 6ffc21e` 整体失败，300 秒诊断保存了上述固定 PC；原始 ZIP 与四项驱动源码摘要已核对。它没有改变此前默认回归的证据，也没有完整系统或应用通过。
 
 用户给出的 VPN 开／关日志中，复制时 GPS／NETWORK／GMS 缓存都接近模拟目标，但微信截图及用户反馈仍失败。导出时快照不是微信前台期间的连续采样，10 月 13 日旧实验不是本轮结果。脱敏验收在 #59 顶部，实际地址截图没有上传公共仓库。
 

@@ -20,7 +20,13 @@ def software_arguments(arguments):
             or result[cpu] != 'host':
         raise ValueError('Pinned same-architecture CVD arguments have changed')
     result[machine] = 'virt,accel=tcg,gic-version=2,mte=on,usb=off,dump-guest-core=off'
-    result[cpu] = 'max'
+    # The pinned 2022 U-Boot uses signed (1 << 31) in TCR_EL1_RSVD;
+    # its get_tcr() therefore sets high bits including TCR.DS. QEMU 8.2's
+    # max CPU enables LPA2, which gives DS and old descriptor shareability
+    # bits a new address meaning. Keep the original firmware and expose
+    # the older translation format it was built for. This is a boot-host
+    # compatibility setting, never evidence of Android/app compatibility.
+    result[cpu] = 'max,lpa2=off'
     # This pinned CVD manager always adds AC97, even with --enable_audio=false.
     # Modern distribution QEMU needs an explicit backend when no host sound
     # driver is installed. Keep the PCI device and select the real none backend.

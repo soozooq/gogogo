@@ -20,7 +20,7 @@
 
 已从官方公共 Artifact Viewer 下载同一 Android13 构建 `16596636` 的镜像、宿主工具与 manifest，[固定输入](cuttlefish-inputs.json)记录实际大小及本地计算的 SHA-256，不能冒充官方另行发布的校验和。配套 `assemble_cvd`／`run_cvd`／`cvd` 均为原生 ARM64；manifest 中对应 Cuttlefish 源码为 `4b46735a`。公共页面提供正常 Download 链接，不需要登录、API key 或交互认证，不保存临时签名链接。
 
-同一 ARM Linux 作业新增独立选项 `run_cuttlefish_arm_boot`／提交标记 `[cuttlefish-boot]`，默认关闭。先检查真实宿主前提，再用配套 `assemble_cvd → run_cvd` 阶段、显式镜像／实例／汇总路径启动一台 VM；原生宿主 Bionic 工具使用独立 `ANDROID_DATA` 运行目录，保持 HOME。宿主适配器严格识别固定源码产生的单个 KVM／CPU 参数，并替换为 TCG／GICv2／MTE／max，不修改内核、QEMU 或宿主二进制；原始下载归档保持固定，官方组装生成运行磁盘，userdata 后续正常写入。参数变化直接中止，不在末尾叠加冲突的加速器。另安装固定官方能力声明脚本，并独立核对实际设备能力，不把该声明当作能力证明。三个专用 TAP 使用独立接口，其中 mobile TAP 按配置服务要求提供本地 IPv4／广播；未配置 DHCP／NAT，不证明联网。
+同一 ARM Linux 作业新增独立选项 `run_cuttlefish_arm_boot`／提交标记 `[cuttlefish-boot]`，默认关闭。先检查真实宿主前提，再用配套 `assemble_cvd → run_cvd` 阶段、显式镜像／实例／汇总路径启动一台 VM；原生宿主 Bionic 工具使用独立 `ANDROID_DATA` 运行目录，保持 HOME。宿主适配器严格识别固定源码产生的单个 KVM／CPU 参数，并替换为 TCG／GICv2／MTE／`max,lpa2=off`，不修改内核、QEMU 或宿主二进制；原始下载归档保持固定，官方组装生成运行磁盘，userdata 后续正常写入。参数变化直接中止，不在末尾叠加冲突的加速器。另安装固定官方能力声明脚本，并独立核对实际设备能力，不把该声明当作能力证明。三个专用 TAP 使用独立接口，其中 mobile TAP 按配置服务要求提供本地 IPv4／广播；未配置 DHCP／NAT，不证明联网。
 
 启动成功必须核对完整启动、实际 API33／构建号／Cuttlefish 产品／ARM64 内核与 ABI、无 Native Bridge、普通 shell UID 2000、SELinux Enforcing，以及存活 QEMU 的二进制摘要和完整有效参数。失败保存原因与本实例日志并停止；仅上传文本／截图证据，不上传镜像／APK。当前是系统资格检查，尚无新 VM 或微信／抖音通过结果，也没有手机操作待办。
 
@@ -130,8 +130,10 @@ python3 tools/run-cloud-check.py --serial emulator-5580 --label owned-guest-loca
 
 每轮使用独立且不允许覆盖的证据目录，记录源码／APK 摘要、真实界面、JUnit 原文和结束状态。正常安装仅用于第一项对照，之后移除；容器检查要求系统中不存在对应包。`--guest-location` 只在云端测试中准入本次独立构建并校验摘要的消费者，默认宿主入口的计算器准入规则不变。原始日志留在研究工作区，仓库只收录摘要、必要报告和云端截图。
 
-[Cuttlefish 后续实际结果](evidence/cuttlefish-uboot-timeout.json)已进入 U-Boot 并显示 3GiB 内存，但限定等待后没有观察到 Linux／Android 启动或 ADB 就绪。QEMU 二进制／完整有效参数及存活状态已核对，最后由清理停止；不能写成完整系统运行或自发崩溃。下一步收集只读 QMP／寄存器及 CPU 状态，定位固件停留点，避免重复相同配置的完整等待。
+[Cuttlefish 后续实际结果](evidence/cuttlefish-uboot-timeout.json)已进入 U-Boot 并显示 3GiB 内存，但限定等待后没有观察到 Linux／Android 启动或 ADB 就绪。QEMU 二进制／完整有效参数及存活状态已核对，最后由清理停止；不能写成完整系统运行或自发崩溃。
 
 [Wi-Fi 核心修正实测](evidence/wifi-radio-privacy-contract-results.json)处理空值及关闭模式，采用 Android 标准脱敏副本、保留原对象、关闭时正常转发，移除固定路由器标识。新增三项加原基站共五项在 API33 x86_64 软件模拟器中 OK (5 tests)，1.335 秒；核对 35 项源码和两份 APK 摘要，VM 已停止。仅受控代理，没有真实 Wi-Fi 查询、Guest／SDK 采用或微信／抖音业务证明；旧 API 分支和 GitHub 独立回归另行验证。
 
-GitHub `40102349634 / 24584ae` 的独立回归也已通过：五项基站／Wi-Fi 0.055 秒、普通入口 12 秒、计算器 5.543 秒及 ARM Mac 构建；已下载并核对 ZIP、提交及每轮全部 35 项源码。ARM 系统运行本次跳过，不当作通过。后续 Cuttlefish 驱动加入只读 QMP：协议协商后只查询状态、CPU 和寄存器，并记录 CPU 时间；不暂停、恢复、重置或改动 VM。`[cuttlefish-boot] [cuttlefish-diagnose]` 在同一作业选择 300 秒观测，普通启动仍默认 1200 秒；该限制和观测结果均不替代 OS 资格检查。
+GitHub `40102349634 / 24584ae` 的独立回归也已通过：五项基站／Wi-Fi 0.055 秒、普通入口 12 秒、计算器 5.543 秒及 ARM Mac 构建；已下载并核对 ZIP、提交及每轮全部 35 项源码。ARM 系统运行本次跳过，不当作通过。Cuttlefish 驱动通过 QMP 只查询状态、CPU、寄存器及当前 PC 的八条指令，并记录 CPU 时间；不暂停、恢复、重置或改动 VM。`[cuttlefish-boot] [cuttlefish-diagnose]` 在同一作业选择 300 秒观测，普通启动仍默认 1200 秒；该限制和观测结果均不替代 OS 资格检查。
+
+[`40103018384 / 6ffc21e` 的实际诊断](evidence/cuttlefish-qmp-bootloader-stall.json)再次超时，五组寄存器完全相同，PC 为 `0xff86da00`，268.825 秒间增加 268.8 秒 QEMU 用户 CPU 时间。固件原始符号表与相同二进制已从 manifest 固定的 prebuilt 取得并核对。旧 U-Boot `get_tcr()` 使用有符号的 `(1 << 31)`，会将高位符号扩展；观测到的 X0 与此相符。QEMU 8.2.2 的 `max` 默认开启 LPA2，赋予 DS／描述符共享位新的地址含义。候选重定位下 PC 对应同步异常入口、LR 对应 `mmu_setup`；重定位和异常寄存器仍未直接读得，不能宣布根因确证。下一轮仅改为 `max,lpa2=off`，不改固件或镜像，等待独立动态核验。

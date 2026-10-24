@@ -53,7 +53,9 @@ def qmp_boot_snapshot(path):
     commands = [('status', {'execute': 'query-status'}),
                 ('cpus', {'execute': 'query-cpus-fast'}),
                 ('registers', {'execute': 'human-monitor-command',
-                               'arguments': {'command-line': 'info registers'}})]
+                               'arguments': {'command-line': 'info registers'}}),
+                ('instructions', {'execute': 'human-monitor-command',
+                                  'arguments': {'command-line': 'x /8i $pc'}})]
     try:
         with socket.socket(socket.AF_UNIX) as connection:
             connection.settimeout(2)

@@ -80,5 +80,15 @@
       ]
     }
   },
-  "cuttlefish_boot_result": "cuttlefish-uboot-timeout.json"
+  "cuttlefish_boot_result": "cuttlefish-uboot-timeout.json",
+  "later_optional_cuttlefish_run": {
+    "run_id": 40103018384,
+    "commit": "6ffc21e08e52601f51edab728985896f130a7bd3",
+    "conclusion": "failure",
+    "state": "BOOT_TIMEOUT",
+    "result": "cuttlefish-qmp-bootloader-stall.json",
+    "boot_completed": false,
+    "apps_tested": false,
+    "default_run_above_is_historical_not_this_run": true
+  }
 }
