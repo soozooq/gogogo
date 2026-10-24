@@ -18,6 +18,11 @@ on:
         required: false
         default: false
         type: boolean
+      run_cuttlefish_arm_boot:
+        description: 'Boot one pinned Android13 ARM64 Cuttlefish instance using explicit TCG; no app tests'
+        required: false
+        default: false
+        type: boolean
   push:
     branches: [research/container-api33-20261023]
     paths:
@@ -26,6 +31,7 @@ on:
       - research/container-api33/patches/**
       - research/container-api33/tools/**
       - research/container-api33/sources.json
+      - research/container-api33/cuttlefish-inputs.json
       - ci/verify_container_v31_artifacts.py
       - .github/workflows/container-research.yml
 
@@ -157,10 +163,10 @@ jobs:
           if-no-files-found: ignore
 
   cuttlefish-arm-host:
-    name: Inspect ARM Linux Cuttlefish host (no VM)
-    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.inspect_cuttlefish_arm_host) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[cuttlefish-host]')) }}
+    name: Inspect ARM Linux host and optional Cuttlefish boot
+    if: ${{ (github.event_name == 'workflow_dispatch' && (inputs.inspect_cuttlefish_arm_host || inputs.run_cuttlefish_arm_boot)) || (github.event_name == 'push' && (contains(github.event.head_commit.message, '[cuttlefish-host]') || contains(github.event.head_commit.message, '[cuttlefish-boot]'))) }}
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: 15
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v5
         with:
@@ -170,15 +176,20 @@ jobs:
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/cuttlefish-host"
           sudo apt-get update > "$RUNNER_TEMP/cuttlefish-host/package-install.txt" 2>&1
-          sudo apt-get install --no-install-recommends -y qemu-system-arm kmod >> "$RUNNER_TEMP/cuttlefish-host/package-install.txt" 2>&1
+          sudo apt-get install --no-install-recommends -y qemu-system-arm kmod iproute2 >> "$RUNNER_TEMP/cuttlefish-host/package-install.txt" 2>&1
       - name: Record actual host capabilities without launching a guest
         run: python3 research/container-api33/tools/inspect-cuttlefish-arm-host.py --prepare-host --output "$RUNNER_TEMP/cuttlefish-host/probe"
-      - name: Upload host diagnostics (no guest or APK)
+      - name: Boot pinned Android13 ARM64 system (explicit opt-in, no apps)
+        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_cuttlefish_arm_boot) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[cuttlefish-boot]')) }}
+        run: python3 research/container-api33/tools/run-cuttlefish-arm-boot.py --host-report "$RUNNER_TEMP/cuttlefish-host/probe/report.json" --workdir "$RUNNER_TEMP/cuttlefish-arm-boot"
+      - name: Upload host and optional boot diagnostics (no images or APK)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cuttlefish-arm-host-${{ github.run_number }}
-          path: ${{ runner.temp }}/cuttlefish-host/
+          path: |
+            ${{ runner.temp }}/cuttlefish-host/
+            ${{ runner.temp }}/cuttlefish-arm-boot/evidence/
           if-no-files-found: ignore
 
   official-target-startup:

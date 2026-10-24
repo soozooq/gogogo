@@ -1,0 +1,40 @@
+{
+  "scope": "PUBLIC_ANDROID13_CUTTLEFISH_BUILD_INPUTS_NOT_BOOT_OR_APP_SUCCESS",
+  "build_id": "16596636",
+  "branch": "aosp-android13-gsi",
+  "target": "aosp_cf_arm64_phone-userdebug",
+  "public_page": "https://ci.android.com/builds/submitted/16596636/aosp_cf_arm64_phone-userdebug/latest/",
+  "hash_provenance": "Locally computed after downloading via the official public artifact viewer; not independently published official checksums",
+  "cuttlefish_source_revision": "4b46735a8d5b752ad77f4c518708024632495a2e",
+  "artifacts": [
+    {
+      "name": "cvd-host_package.tar.gz",
+      "size": 258736639,
+      "sha256": "c171a0fa444963208c31cc2ccf1e0175b409ebd892749097d3eb75df041e0286"
+    },
+    {
+      "name": "aosp_cf_arm64_phone-img-16596636.zip",
+      "size": 942258504,
+      "sha256": "c42414324e0f44c9db7182bb73717bb900df131951f5f1b4e79aca008997453e"
+    },
+    {
+      "name": "manifest_16596636.xml",
+      "size": 168184,
+      "sha256": "5ed8ab51a4f1c1e9ce7911de15bf630bce960230cb71dcc36490eb53917e8206"
+    }
+  ],
+  "host_elf_machine": 183,
+  "host_binary_sha256": {
+    "bin/assemble_cvd": "1537869c0db0e01ea294ac0421cd60a91d1ac9ebfe79f9643034b54da9a7fba8",
+    "bin/run_cvd": "563a8bb1b441a99ab08591609e02b1234d944613710032ea09e9c473d5fc7a70",
+    "bin/cvd": "d2ef37efed003e25d24dc0ffd3491fcbb2fe4dbca44444af53c824444751c9d5"
+  },
+  "host_capability_helper": {
+    "url": "https://raw.githubusercontent.com/google/android-cuttlefish/1e3041680a2bbe64a04af067009d42aeabef9769/base/host/deploy/capability_query.py",
+    "sha256": "916d0d759108899667805efb7fc33e9140c8e39d00163bf7109248f6ccb9f134",
+    "scope": "Unmodified official host-package feature declaration; actual kernel/device capability is separately measured"
+  },
+  "image_unpacked_bytes": 14101742377,
+  "guest_images_modified": false,
+  "apps_included_in_research_distribution": false
+}
