@@ -42,7 +42,7 @@
 
 同时修正了虚拟模式下三个基站 getter 的明确缺口：缺少 BCell 时不再查询真实基站，内部 BCell 列表不再直接当作框架对象返回；关闭模拟时沿原查询路径。[新增两项受控 Android13 代理回归已在云端通过](research/container-api33/evidence/radio-privacy-contract-results.json)，测试使用受控基站服务计数，未读取真实基站。它不证明 Guest Hook 安装或第三方采用，也不能认定微信失败根因或无线兼容。见[审计范围](research/container-api33/AUDIT.md)。
 
-另修正容器 Wi-Fi 查询：空连接信息正常返回，关闭虚拟定位时不再改写 SSID／BSSID 或屏蔽扫描列表；API31+ 虚拟模式使用 Android 标准脱敏副本，原对象保持不变，不制造路由器身份。[新增三项 API33 检查与原基站共五项实际通过](research/container-api33/evidence/wifi-radio-privacy-contract-results.json)，1.335 秒；使用独立云端工作区的 x86_64 软件模拟器，35 项源码与两份 APK 摘要已核对，专用 VM 已停止。待 GitHub 独立回归；旧 API 空返回分支、真实 Guest／权限／SDK 及无线业务仍未验证，不归因于用户原来的微信失败。
+另修正容器 Wi-Fi 查询：空连接信息正常返回，关闭虚拟定位时不再改写 SSID／BSSID 或屏蔽扫描列表；API31+ 虚拟模式使用 Android 标准脱敏副本，原对象保持不变，不制造路由器身份。[新增三项 API33 检查与原基站共五项实际通过](research/container-api33/evidence/wifi-radio-privacy-contract-results.json)，独立软件模拟器 1.335 秒，GitHub 独立运行 0.055 秒；均为 x86_64，35 项源码及实际 APK 摘要已核对，专用 VM 已停止。旧 API 空返回分支、真实 Guest／权限／SDK 及无线业务仍未验证，不归因于用户原来的微信失败。
 
 `qualify-arm64-software-boot.py` 要求明确选择 API32／33、完整启动、ARM64 内核／主 ABI、无 x86 ABI、Native Bridge 为 0、UID 2000、SELinux Enforcing。除 ADB 的 system_server 取证外，新增可选控制台检查，在 ADB 未启动时也识别两个不同 system_server／keystore2 原生崩溃；重复同一 PID、等待服务的文字不会误算。实际 API32 故障和解析边界已验证。原包驱动的 full-arm64 与转译模式仍各自复核环境；定位关闭，停在欢迎／隐私页，不接受条款或登录，没有目标运行结果。
 
@@ -62,7 +62,7 @@
 
 ## 验证状态与用户失败证据
 
-[最近核对完整证据的默认检查](research/container-api33/evidence/default-ci-state.json) `40085793909 / 8526594`：默认 Linux 构建／审计、普通入口 13.797 秒、计算器 6.215 秒、两项受控基站代理及 ARM Mac 构建成功；证据 ZIP、提交及每轮 35 项源码摘要已核对。同一工作流可选 ARM 启动失败，整体 CI 为失败。后续 `40100070033 / 07b632a` 的默认 Linux／Mac 作业也成功，ARM 限定等待停留 U-Boot，仍无系统或应用通过。新增 Wi-Fi 三项在独立软件模拟器中已通过，GitHub 的共五项回归待新提交；不能借用旧两项结果。旧转译及 Mac 运行仍跳过，跳过不是目标兼容通过。
+[最近核对完整证据的默认检查](research/container-api33/evidence/default-ci-state.json) `40102349634 / 24584ae` 整体成功：Linux 构建／审计、普通入口 12 秒、计算器 5.543 秒、五项受控基站／Wi-Fi 检查及 ARM Mac 构建成功；证据 ZIP、提交及每轮 35 项源码摘要已核对。本次 ARM 启动及旧转译作业跳过，跳过不是目标兼容通过。上一 ARM 实测 `40100070033 / 07b632a` 停留 U-Boot，仍无完整系统或应用通过；当前补充只读 QMP／寄存器观测，使用单次 300 秒诊断等待，不重复完整 20 分钟等待。
 
 用户给出的 VPN 开／关日志中，复制时 GPS／NETWORK／GMS 缓存都接近模拟目标，但微信截图及用户反馈仍失败。导出时快照不是微信前台期间的连续采样，10 月 13 日旧实验不是本轮结果。脱敏验收在 #59 顶部，实际地址截图没有上传公共仓库。
 

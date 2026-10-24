@@ -133,3 +133,5 @@ python3 tools/run-cloud-check.py --serial emulator-5580 --label owned-guest-loca
 [Cuttlefish 后续实际结果](evidence/cuttlefish-uboot-timeout.json)已进入 U-Boot 并显示 3GiB 内存，但限定等待后没有观察到 Linux／Android 启动或 ADB 就绪。QEMU 二进制／完整有效参数及存活状态已核对，最后由清理停止；不能写成完整系统运行或自发崩溃。下一步收集只读 QMP／寄存器及 CPU 状态，定位固件停留点，避免重复相同配置的完整等待。
 
 [Wi-Fi 核心修正实测](evidence/wifi-radio-privacy-contract-results.json)处理空值及关闭模式，采用 Android 标准脱敏副本、保留原对象、关闭时正常转发，移除固定路由器标识。新增三项加原基站共五项在 API33 x86_64 软件模拟器中 OK (5 tests)，1.335 秒；核对 35 项源码和两份 APK 摘要，VM 已停止。仅受控代理，没有真实 Wi-Fi 查询、Guest／SDK 采用或微信／抖音业务证明；旧 API 分支和 GitHub 独立回归另行验证。
+
+GitHub `40102349634 / 24584ae` 的独立回归也已通过：五项基站／Wi-Fi 0.055 秒、普通入口 12 秒、计算器 5.543 秒及 ARM Mac 构建；已下载并核对 ZIP、提交及每轮全部 35 项源码。ARM 系统运行本次跳过，不当作通过。后续 Cuttlefish 驱动加入只读 QMP：协议协商后只查询状态、CPU 和寄存器，并记录 CPU 时间；不暂停、恢复、重置或改动 VM。`[cuttlefish-boot] [cuttlefish-diagnose]` 在同一作业选择 300 秒观测，普通启动仍默认 1200 秒；该限制和观测结果均不替代 OS 资格检查。

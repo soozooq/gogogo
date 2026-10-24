@@ -85,5 +85,22 @@
     "WeChat send/live or Douyin wireless/overseas compatibility",
     "ARM64 or physical vivo"
   ],
-  "phone_update_distributed": false
+  "phone_update_distributed": false,
+  "source_commit": "24584ae82dba6b80e02b1086f28b4cafe82bc6aa",
+  "independent_github_verification": {
+    "run_id": 40102349634,
+    "linux_job_id": 120896914644,
+    "mac_build_job_id": 120896914883,
+    "artifact_id": 12563616415,
+    "artifact_sha256": "a21636a08dae8772a8a814c5ad50c851e166a92637709e86a28f4046a910dc05",
+    "artifact_digest_verified": true,
+    "commit_verified": true,
+    "every_case_source_sha_verified_against_commit": true,
+    "radio_tests": 5,
+    "radio_seconds": 0.055,
+    "ordinary_entry_seconds": 12,
+    "calculator_seconds": 5.543,
+    "arm_runtime_probe": "SKIPPED_NOT_PASS",
+    "physical_vivo": "NOT_TESTED"
+  }
 }

@@ -11,6 +11,7 @@ import platform
 import re
 import shutil
 import signal
+import socket
 import subprocess
 import sys
 import tarfile
@@ -46,10 +47,43 @@ def owned_qemu_active(record):
         return False
 
 
+def qmp_boot_snapshot(path):
+    """Observe this instance only. Commands never stop/resume/reset/change the VM."""
+    result = {'read_only': True, 'commands': {}}
+    commands = [('status', {'execute': 'query-status'}),
+                ('cpus', {'execute': 'query-cpus-fast'}),
+                ('registers', {'execute': 'human-monitor-command',
+                               'arguments': {'command-line': 'info registers'}})]
+    try:
+        with socket.socket(socket.AF_UNIX) as connection:
+            connection.settimeout(2)
+            connection.connect(str(path))
+            with connection.makefile('rwb', buffering=0) as stream:
+                greeting = json.loads(stream.readline(65536))
+                if 'QMP' not in greeting:
+                    raise RuntimeError('Expected the QMP greeting')
+                result['greeting'] = greeting
+                for name, request in [('capabilities', {'execute': 'qmp_capabilities'}), *commands]:
+                    request['id'] = name
+                    stream.write(json.dumps(request).encode() + b'\r\n')
+                    for _ in range(12):
+                        response = json.loads(stream.readline(65536))
+                        if response.get('id') == name:
+                            result['commands'][name] = response
+                            break
+                    else:
+                        raise RuntimeError('No matching QMP response id')
+    except (OSError, ValueError, RuntimeError) as error:
+        result['error'] = type(error).__name__ + ': ' + str(error)[:500]
+    return result
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('--workdir', required=True)
     p.add_argument('--host-report', required=True)
+    p.add_argument('--boot-seconds', type=int, choices=[300, 1200], default=1200,
+                   help='300 is a bounded bootloader diagnostic; neither duration implies OS success')
     args = p.parse_args()
     if os.environ.get('GITHUB_ACTIONS') != 'true' or platform.system() != 'Linux' \
             or platform.machine() not in ['aarch64', 'arm64']:
@@ -67,6 +101,7 @@ def main():
               'build_id': spec['build_id'], 'state': 'PENDING', 'passed': False,
               'research_commit': subprocess.check_output(['git', '-C', str(spec_dir), 'rev-parse', 'HEAD'], text=True).strip(),
               'boot_completed': False, 'input_archives_modified': False,
+              'boot_wait_limit_seconds': args.boot_seconds,
               'host_and_qemu_binaries_modified': False,
               'official_assembly_generates_runtime_disks': True,
               'guest_userdata_expected_to_change': True,
@@ -217,8 +252,8 @@ def main():
         adb = host / 'bin/adb'
         serial = '127.0.0.1:6520'
         report.update(state='WAITING_FOR_BOOT', serial=serial)
-        last_notice = last_adb = last_crash = 0
-        deadline = time.monotonic() + 1200
+        last_notice = last_adb = last_crash = last_monitor = 0
+        deadline = time.monotonic() + args.boot_seconds
 
         def shell(arguments, timeout=12):
             return subprocess.run([str(adb), '-s', serial, 'shell'] + arguments,
@@ -254,6 +289,19 @@ def main():
                 report['state'] = 'HOST_CONFIG_SERVER_FAILED_BEFORE_BOOT'
                 break
             now = time.monotonic()
+            if report.get('qemu_live_process_verified') and now - last_monitor >= 60:
+                snapshot = qmp_boot_snapshot(instance / 'instances/cvd-1/internal/qemu_monitor.sock')
+                snapshot['elapsed_seconds'] = round(now - start, 3)
+                try:
+                    stat = (qemu_process / 'stat').read_text().rsplit(')', 1)[1].split()
+                    snapshot['qemu_cpu_ticks'] = {'user': int(stat[11]), 'system': int(stat[12]),
+                                                 'clock_ticks_per_second': os.sysconf('SC_CLK_TCK')}
+                except OSError as error:
+                    snapshot['cpu_state_error'] = type(error).__name__
+                with (out / 'qmp-boot-snapshots.jsonl').open('a') as stream:
+                    stream.write(json.dumps(snapshot) + '\n')
+                report['qmp_snapshot_count'] = report.get('qmp_snapshot_count', 0) + 1
+                last_monitor = now
             if now - last_notice >= 30:
                 print('Waiting for real Cuttlefish ARM64 boot:', round(now - start), flush=True)
                 last_notice = now
