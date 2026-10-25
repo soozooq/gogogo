@@ -7,6 +7,9 @@
         <uses-library android:name="org.apache.http.legacy" android:required="false" />
         <activity android:name=".StartupContractActivity" android:exported="true" />
         <service android:name=".StartupContractService" android:exported="false" />
+        <provider android:name=".StartupContractProvider" android:exported="false"
+            android:authorities="com.soozooq.tianwaitian.locationconsumer.startup"
+            android:process=":startup_provider" />
         <activity android:name=".ReadOnlyUiFixtureActivity" android:exported="true" />
         <activity android:name=".LocationActivity" android:exported="true">
             <intent-filter>

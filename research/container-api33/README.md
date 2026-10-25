@@ -4,13 +4,13 @@
 
 项目接手只认根目录 [PROJECT_STATUS.md](../../PROJECT_STATUS.md)。本轮继续使用同一个研发分支和 Draft #60，没有按修复或检查新增分支／PR。
 
-**当前实测**：[原生CI33／073c25db](evidence/cuttlefish-matched-original-and-black-screen-results.json)通过系统资格、两普通原包界面、两导入及原证书；普通抖音隐私页后305.978秒PID稳定，但两个Guest仍黑屏，抖音有JIT线程SIGSEGV头、缺完整栈。系统PID653稳定，清理完成，定位业务未测试。
+**当前实测**：[CI38原生ARM64匿名启动通过](evidence/native-container-startup-pass-results.json)，全部4归档、8份原生源码、自有APK签名与材料已核对。两款普通原包、两款容器导入及原证书通过；微信到登录页，抖音到隐私页并保持PID301,750ms，普通抖音302.664秒。系统PID658稳定且VM／自有包清理。微信PNG已查看；抖音仅XML／真实UI文本，无PNG。定位关闭，没有接受条款、登录或位置业务，ARM64自有Guest定位与vivo仍未验证。
 
-[CI34／2c50ca49](evidence/critical-native-and-async-results.json)实际通过自有Binder身份、新鲜回执、Context归属、旧HTTP和PendingIntent创建、全部7项受控无线检查及旧默认回归；原生作业在官方输入下载阶段失败，没有启动Android或测试目标。CriticalNative修正尚无原生目标结论。新的[Python驱动补充](evidence/public-download-and-startup-observation-preparation.json)保留全部下载校验、对合法公开viewer做有限重读，并采集限量、URL脱敏的启动日志；22项受控检查与两轮历史完整归档核对通过，实际新采集待下一轮。没有新增分支或手机实验。
+CI35已达到两个Guest界面，但抖音在2069ms后pidof集合少一个PID，严格检查失败；消失PID角色未知、crash buffer无匹配Fatal，不归为主进程或JIT崩溃。CI35尚无网络数组修正，不能把新成功归因于单一组件。CI36pending被替换，CI37漏标记跳过，CI34下载未启动；全部历史保留。
 
-新[网络数组候选](evidence/connectivity-array-contract-preparation.json)另修正关闭模式也强制null的两处绑定：Network句柄保持真实路由可见，NetworkInfo开启模式仅清除框架副本的extraInfo，连接状态与原对象保留。[CI36实际9项检查0.099秒通过](evidence/connectivity-array-contract-results.json)，全部三归档、源码、签名及默认回归已核对，不证明黑屏原因、真实Guest Hook或定位业务。CI35原生仍在独立运行；CI36待同锁。另发现printStackTrace异常不在原日志选择中，新增[System.err:W限定采集](evidence/caught-startup-exception-observation-preparation.json)，22项受控检查通过，实际新增采集待下一轮。未更改应用代码或要求手机复测。
+新增System.err捕获了微信辅助进程两次旧Provider holder反射空指针，非致命且没有阻止登录页。[候选修正](evidence/modern-provider-holder-preparation.json)为API26+选择实际ContentProviderHolder并保留null／旧API分支，新增自有独立进程Provider的公共ContentResolver随机标记往返检查。22秒构建及完整补丁重放通过，实际新契约待下一轮CI，不冒用CI38旧检查通过。
 
-CI37基础检查通过，但提交消息漏带原生标记，原生及同轮自有APK传递被跳过；此失败选择已保留。[触发补正](evidence/native-trigger-correction-preparation.json)带齐push标记，并增加明确手动容器选项，保持同锁、不取消运行中的CI35。未执行原生不算通过。
+[CI38默认检查](evidence/default-ci-state.json)包括全部9项受控无线／网络、框架身份、计算器与普通入口、447项主程序检查及lint；不证明真实Guest无线或SDK采用。原生push选择已补正并在CI38实际运行，手动选项仅静态验证。继续同一分支，不发手机实验。
 
 ## 核对下载的 CI 回执（维护用）
 
@@ -71,7 +71,7 @@ python3 research/container-api33/tools/verify-ci-receipts.py \
 
 另核对 [API31／32 官方镜像的局部元数据](evidence/api31-32-translation-metadata.json)，[API32 实际启动确认转译启用，但两款原包对照仍原生崩溃](evidence/official-target-api32-baseline-limit.json)，微信报告 `Cannot process signal 11`，抖音报告 `Bad ubidi_openSized_68 call`。容器没有启动，不能归因为容器或真机失败。
 
-[默认 CI 的 Linux 构建／审计／普通入口／计算器回归和 ARM Mac 构建均已通过](evidence/default-ci-state.json)。目标转译预检改为手动选择、默认关闭，本次跳过；运行条件变化后再复核，跳过不算目标通过。失败记录完整保留，不重复相同环境。下一项技术前提是可正常运行原包的原生 ARM64 环境；当前没有连接用户手机。[官方模拟器宿主归档](evidence/official-emulator-host-archives.json)不列 Linux ARM64，ARM Mac 的 HVF 限制也仍在。尚无微信／抖音启动、定位或海外业务通过，不加入普通入口。
+[默认 CI 的 Linux 构建／审计／普通入口／计算器回归和 ARM Mac 构建均已通过](evidence/default-ci-state.json)。目标转译预检改为手动选择、默认关闭，本次跳过；运行条件变化后再复核，跳过不算目标通过。失败记录完整保留，不重复相同环境。下一项技术前提是可正常运行原包的原生 ARM64 环境；当前没有连接用户手机。[官方模拟器宿主归档](evidence/official-emulator-host-archives.json)不列 Linux ARM64，ARM Mac 的 HVF 限制也仍在。此历史轮当时尚无目标启动通过；当前CI38已通过匿名启动，但定位和海外业务仍未通过，也未加入普通入口。
 
 ## 前轮：官方 GPSTest 实际采用位置
 

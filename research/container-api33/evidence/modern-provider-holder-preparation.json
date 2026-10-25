@@ -1,0 +1,37 @@
+{
+  "schema": "GOGOGO_MODERN_PROVIDER_HOLDER_PREPARATION_V1",
+  "scope": "OBSERVED_NONFATAL_TARGET_ERROR_AND_BUILD_NOT_CORRECTED_RUNTIME_OR_LOCATION_SUCCESS",
+  "base_commit": "adfc6173a4c60433a80f6a2e017f25013e844105",
+  "observed_native_result": "native-container-startup-pass-results.json",
+  "fixed_api33_source": {
+    "url": "https://github.com/aosp-mirror/platform_frameworks_base/blob/d27f9960456403533af0a0d5d9f14cf71c9c8cf6/core/java/android/app/ContentProviderHolder.java",
+    "sha256": "a78661955fc69c71157336fd9e2f03cbafabdb3f30a6d8e205c53ec8cb6b0de5",
+    "class": "android.app.ContentProviderHolder",
+    "fields": [
+      "info",
+      "provider"
+    ]
+  },
+  "defect": "Cross-process virtual provider holder rewriting always used pre-Oreo IActivityManager$ContentProviderHolder; actual WeChat auxiliary process logged missing Field.set NPE at both assignments.",
+  "candidate": "Use existing Oreo holder mirror plus ProviderInfo field for API26+; preserve legacy branch, and return original null holder without fabricating a provider.",
+  "new_contract": "Own non-exported provider in a separate guest process; public ContentResolver.call echoes fresh launch nonce and reports separate PID. No real data, location, account or network reads.",
+  "build": {
+    "passed": true,
+    "seconds": 22
+  },
+  "donor_patch_clean_index_replay_verified": true,
+  "new_actual_runtime": "PENDING_NEXT_CI",
+  "new_native_target_runtime": "PENDING_NEXT_CI",
+  "older_api_branch_runtime": "NOT_VERIFIED",
+  "black_screen_or_location_failure_attributed": false,
+  "source_sha256": {
+    "patches/blackbox-api33-build.patch": "65ddd2e0da7264ef06c116b2de5c6c7c1af6891d04ea7ba32eba70e3eda73990",
+    "location-consumer/src/main/AndroidManifest.xml": "cafb311e901f3125ca686af954dcd1712432cce841d1b779204f937cf9c1f3bf",
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractActivity.java": "2994e8df80e703b1164b6f51f23709456113ffbbe1a88373052a52de400131e1",
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractProvider.java": "55877546bf69ac0d1c8724fcec1f5d18cd67116e257f1300d3c4086355f6e409",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/StartupFrameworkInstrumentedTest.java": "d0f90e8e21eb007ad33e9182b8ddc45c6badd3be12740e6d521ac82e5aa751fd"
+  },
+  "phone_update_distributed": false,
+  "static_host_inspection_passed": true,
+  "static_consumer_inspection_passed": true
+}

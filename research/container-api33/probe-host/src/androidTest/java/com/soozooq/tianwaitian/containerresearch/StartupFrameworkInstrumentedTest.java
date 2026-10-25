@@ -75,6 +75,11 @@ public final class StartupFrameworkInstrumentedTest {
             assertTrue(observed.optBoolean("framework_http_legacy_class_resolved"));
             assertTrue(observed.optBoolean("pending_activity_created"));
             assertTrue(observed.optBoolean("pending_service_created"));
+            assertTrue("Real cross-process public ContentResolver call must echo this nonce",
+                    observed.optBoolean("provider_call_nonce_matches"));
+            assertTrue(observed.optBoolean("provider_process_separate"));
+            assertTrue(observed.getInt("provider_pid") > 0);
+            assertNotEquals(observed.getInt("process_api_pid"), observed.getInt("provider_pid"));
             assertEquals(hostUid, observed.getInt("expected_real_host_uid"));
             assertEquals("Public Binder caller UID outside a transaction is the system UID",
                     hostUid, observed.getInt("binder_self_uid"));

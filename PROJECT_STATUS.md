@@ -4,61 +4,54 @@
 
 ## 目标与唯一研发分支
 
-用户只有一部 Android13／vivo 手机，**没有 Root、没有电脑**。微信发送位置／实时共享已有用户失败反馈；抖音不依赖以太网及海外定位也**尚未完成**。不让用户重复旧实验，不把缓存或自有测试通过写成第三方采用。
+用户只有一部 Android13／vivo 手机，**没有 Root、没有电脑**。微信发送位置／实时共享已有用户失败反馈；抖音不依赖以太网及海外定位也**尚未完成**。不让用户重复旧实验，不把缓存、自有检查或匿名启动写成第三方定位采用。
 
 | 角色 | 分支与 PR | 约束 |
 | --- | --- | --- |
 | 继续研发 | **`research/container-api33-20261023` · [Draft #60](https://github.com/soozooq/gogogo/pull/60)** | 本分支 HEAD 是唯一研发主线，继续提交这里 |
 | 日常候选 | `fix/location-input-validation` · [Draft #59](https://github.com/soozooq/gogogo/pull/59) | 固定 `2620b741dd6a971143577737c64ebc4496120d77`，`2.4.31-simple-support / 2400099`；本轮未改 |
 
-`main` 的 `0762f60` 是旧基线。保留其他工作区及未提交内容，不新增分支／PR、删除分支、强推、重置他人工作区或自动合并。研究模块未接进日常程序，没有研究手机包待安装。
+保留其他工作区及未提交内容，不新增分支／PR、删除分支、强推、重置他人工作区或自动合并。研究容器未接进日常程序，没有新手机包或复测任务。
 
-本分支另准备[简短默认反馈](docs/simple-support-flow.md)：当前状态及缓存优先，旧工作流只列存档索引，去掉嵌套旧报告和重复实验建议，格式上限14,000字符。[本地编译、447项 Debug 单元检查及 lint 通过](research/container-api33/evidence/compact-feedback-preparation.json)，没有手机 UI 或定位业务证明。主程序源码中有此项待发布改动，定位引擎和 #59 日常候选不变；没有发布手机更新或要求复测。
+## 已越过：原生 ARM64 匿名启动
 
-## 当前卡点：网络数组检查通过，原生容器黑屏仍待验证
+[CI38／adfc6173 的全部4归档及8份原生源码已核对](research/container-api33/evidence/native-container-startup-pass-results.json)。固定Android13／build16596636、原生ARM64、Native Bridge 0、UID2000、SELinux Enforcing、实际4CPU、超时倍数50合格；system_server PID658稳定，VM及自有包均清理。
 
-最新[实际 ARM64 对照 CI33／073c25db](research/container-api33/evidence/cuttlefish-matched-original-and-black-screen-results.json)已核对全部归档及8份源码：固定API33／build16596636、原生ARM64、Native Bridge 0、UID2000、SELinux Enforcing、实际4CPU、超时倍数50；system_server PID653全程稳定，VM与自有包均清理。两款普通原包界面、容器导入及原始证书均通过。**抖音普通原包在隐私页后再观察305.978秒，PID稳定；两个容器仍为黑屏，仅有系统栏。** 微信crash buffer没有Fatal不能证明没有错误；抖音有JIT线程SIGSEGV/SEGV_ACCERR头，缺完整回溯，不能沿用CI31栈或认定具体组件原因。未接受条款、登录或测试位置业务。
-
-[CI34／2c50ca49的基础检查](research/container-api33/evidence/critical-native-and-async-results.json)已实际通过：自有Guest的真实Binder UID/PID、Context归属、新鲜启动nonce、旧HTTP类及两类PendingIntent创建；新增两项异步基站检查与旧五项共7项通过。API33+保留系统CriticalNative Binder方法，避免旧普通JNI桥回调Java／Binder；异步CellInfo请求在虚拟模式完成空列表、关闭模式原样转发。新增无线检查经过真正TelephonyManager包装和Executor但使用受控服务，不证明真实Guest无线Hook或目标SDK采用，持续订阅尚未覆盖。PendingIntent发送及后台投递未验证。
-
-CI34原生作业沿同一个锁在CI33完成后才开始，但在下载官方输入时出现HTTP429及异常链接信息，**Android未启动、目标未测试**，不能当作修正后应用失败。归档、提交与8份源码均核对；准备失败没有QEMU清理标记，工具保留未知，不能伪造已停止或通过。CI34的CriticalNative修正尚无原生目标结果。
-
-本次[驱动补充](research/container-api33/evidence/public-download-and-startup-observation-preparation.json)只修改Python：合法公开viewer下异常链接最多对同页重新读取3次，保留构建／公开访问／GCS主机／文件名／大小／SHA校验和认证拒绝；增加限定、URL脱敏的活动／窗口／进程／框架日志来定位黑屏。22项受控检查通过，两轮历史4归档及8份源码重新核对，3个实时公开viewer链接形状正常；实际新增原生采集待下一轮。应用Java／Native／清单与2c50ca49相同，未修改目标原包、JIT、ART、mock标记或平台超时。
-
-另确认了[网络数组契约缺口](research/container-api33/evidence/connectivity-array-contract-preparation.json)：旧引擎即使关闭模拟定位，也将getAllNetworks／getAllNetworkInfo强制置null，固定框架的两个公开getter均约定非空。新候选恢复不带坐标的Network句柄正常返回；关闭模式保留原NetworkInfo数组，开启模式通过框架Parcel复制后只清除副本extraInfo，保留连接状态、类型、原因和原对象，不伪造以太网或改变路由。[CI36／c5313dcb实际通过全部9项受控公开框架检查](research/container-api33/evidence/connectivity-array-contract-results.json)，0.099秒；两项新增检查确认原数组、框架Network句柄、框架Parcel副本及原对象保留，三归档、55份case源码和自有签名均核对。**这是确定的接口修正，尚未证明是黑屏原因、真实Guest无线Hook或目标SDK采用。CI35原生正在运行上一版；CI36原生待同锁，不能当作新修正的原生结果。**
-
-另补[被捕获异常的日志选择](research/container-api33/evidence/caught-startup-exception-observation-preparation.json)：启动代码使用printStackTrace，但原采集遗漏System.err。只在既有限定日志中增加System.err:W，保留限时、限量、URL脱敏与可用性边界；22项受控检查通过，实际新增采集待下一轮原生。没有为此改变应用代码或重建APK。
-
-同分支的[简短默认反馈](docs/simple-support-flow.md)保持14,000字符上限与历史索引，未发行。较旧API原生路径、vivo和定位业务仍未验证。旧[CI31启动异常](research/container-api33/evidence/cuttlefish-verified-signers-and-startup-crashes.json)、旧系统／CPU对照及全部失败保留，不重复手机实验。
-
-CI37／8060b573的Linux／Mac基础检查及9项接口回归已通过，两归档源码已核对；但本次提交消息遗漏原生标记，原生与自有APK传递均跳过，不能算新原生结果。现[补正触发选择](research/container-api33/evidence/native-trigger-correction-preparation.json)，提交消息带齐两个标记，工作流也增加明确的手动容器选项；同一个原生锁及不取消运行中作业的规则不变。后续实际排队及结果需检查GitHub作业，CI35仍是正在运行的前轮。
-
-## 已证实的工程范围
-
-以下实际运行证据均为 Android13 **x86_64**，不是 ARM64／vivo 或目标业务通过。
-
-| 实测 | 已覆盖 |
+| CI38 实际阶段 | 结果与边界 |
 | --- | --- |
-| [原版计算器](research/container-api33/evidence/results.json) | 系统未安装时容器运行，实际界面 1+2=3，回桌面重开保留结果 |
-| [定位契约与原签名](research/container-api33/evidence/api33-location-signature-results.json) | 单次／取消、持续批量／注销、次数／时长、单调时间及 Parcel；原 APK 证书查询，解析失败拒绝导入 |
-| [独立自有 Guest](research/container-api33/evidence/owned-guest-location-results.json) | 普通 LocationManager 六条 GPS／NETWORK 路径 A→B；停止稳定，取消零回调 |
-| [官方 GPSTest](research/container-api33/evidence/official-gpstest-location-results.json) | 正常精确权限、真实界面采用 A→B；GNSS 零卫星，不伪造 first-fix／NMEA |
-| [普通导入入口](research/container-api33/evidence/cloud-ordinary-entry-pass.json) | 系统文件选择、导入、精确授权、同进程更新与停止 |
-| [九项无线／网络框架受控检查](research/container-api33/evidence/connectivity-array-contract-results.json) | 原五项getter、两项异步请求及两项网络数组：线程与关闭模式、非空契约、保留连接及副本脱敏；均无真实无线查询 |
+| 两款普通原包 | 微信登录页、抖音隐私页通过；普通抖音随后302.664秒PID稳定 |
+| 两款容器 Guest | 导入、PackageInfo、SigningInfo及原证书通过；微信登录页通过，抖音隐私页通过 |
+| 抖音持续观察 | 同一PID9567保持301,750ms；最后XML仍有隐私页文本，未接受条款 |
+| 图像／日志 | 微信截图已查看，确有登录页；抖音没有PNG，不能声称查看了截图；两份XML与JUnit已核对。crash buffer未匹配Fatal不等于没有任何异常 |
+| 未覆盖 | 定位关闭；没有接受条款、登录、发送消息或位置业务。不是vivo真机、微信发送／实时共享或无线／海外抖音通过 |
 
-普通入口已统一为“选择应用 → 原版导入一次 → 填坐标并打开”，再次应用更新目标，提供停止和状态保存。仅准入固定计算器与 GPSTest，核对大小、SHA-256、包名、版本及原证书；微信／抖音未加入，也未改签或分发。
+整轮3993.935秒包含输入、安装及所有阶段，不是启动耗时。微信JUnit445.766秒，抖音784.372秒。专用TAP不等于互联网或物理蜂窝可达；无线业务仍未验证。普通入口仍只准入固定计算器和GPSTest，微信／抖音未加入，也未改签或分发。
 
-九项无线／网络信息检查使用受控代理、框架包装和合成对象，没有读取真实无线信息；不证明 Guest Hook 安装、实际权限或腾讯／字节 SDK 采用，也不能归因于用户原来的微信失败。API31+ Wi-Fi 使用公开标准脱敏接口，旧 API 空返回分支未实测。样本保留 mock 标记；Guest 与宿主共享 UID，不是独立 UID 安全沙箱。详见[审计](research/container-api33/AUDIT.md)。
+[CI35／b04ac30d](research/container-api33/evidence/native-container-startup-pass-results.json)也已进入两个Guest界面：微信通过；抖音在隐私页后的2069ms，pidof集合从9448/10120变为9448，严格集合检查失败。消失PID角色未知，crash buffer没有匹配Fatal，不能写成主进程或JIT崩溃。CI35已有CriticalNative修正、尚无网络数组修正，因此CI38的成功不能归因于单一组件。两轮失败／成功均保留。
 
-## 验证及用户失败证据
+CI36原生pending被最新pending替换，结论cancelled；CI37漏带提交标记，原生及同轮自有APK传递均跳过。二者不算原生通过。CI34下载准备失败、CI33黑屏、CI31启动异常与旧环境失败均保留，见[历史对照](research/container-api33/evidence/cuttlefish-matched-original-and-black-screen-results.json)。触发规则见AGENTS.md，CI38已经实际验证补正后的push路径；手动选项只完成静态检查。
 
-[最近完整核对的默认 CI](research/container-api33/evidence/default-ci-state.json)为 `40207482457 / c5313dcb`：Linux／Mac成功；自有框架0.604秒、计算器6.06秒、普通入口12.084秒、九项无线／网络0.099秒，每项55份源码；变化界面57份源码。主程序447项检查及lint零Error/Fatal，自有构建对50份源码、两份签名与每包11份材料核对。CI35原生仍在运行，CI36原生待同锁；最新完成的目标运行为CI33失败，CI34只是下载准备失败。排队可能由后续同锁任务替换，未执行不能算通过。
+## 正在修正：跨进程 Provider 旧反射
 
-用户 10 月 23 日 VPN 开／关日志中，导出时 GPS／NETWORK／GMS 缓存新鲜且接近模拟目标，但微信截图及反馈失败。导出快照不是微信前台连续采样；10 月 13 日旧实验不是本轮结果。#59 顶部保留脱敏失败验收及日常版本产物验证，实际地址截图没有上传公共仓库。更新 #59 时只改标记的后续研发段，保留此前正文。
+新增System.err采集在微信辅助进程6322／线程6401抓到两次`Field.set`空指针：IActivityManagerProxy.GetContentProvider的144／145行始终使用旧`IActivityManager$ContentProviderHolder`，固定API33实际类是`android.app.ContentProviderHolder`。**它是本轮观察到的非致命错误，没有阻止登录页；不能据此认定微信位置失败原因。** Python的dumpsys／ps采集发生在JUnit及Guest清理之后，不能当作黑屏时的实时进程状态。
 
-## 继续操作
+[新候选](research/container-api33/evidence/modern-provider-holder-preparation.json)在API26+使用现有Oreo holder镜像并补齐info字段，保留旧API分支；系统返回null时原样保留，不构造Provider。自有应用增加一个未导出的独立进程Provider，通过公共ContentResolver.call回传本轮随机标记和PID，检查真正跨进程往返。22秒构建及完整补丁干净索引重放通过；**新增真实运行待下一轮CI，不包含在CI38通过结果中。** 旧API分支尚未实测。
 
-1. 跟进正在运行的CI35原生结果，读取下载及启动诊断；CI36的新9项已实际通过并核对。继续沿本分支／Draft#60，将补充的System.err日志选择随下一次原生对照排队。原生job共用同一锁且不取消正在运行的检查；旧pending可能被最新pending替换，不算通过。#59日常源码固定。
-2. 下一轮确认公开输入下载恢复，并读取新增限定日志。CriticalNative修正的原生目标效果仍未知；普通抖音305秒稳定与Guest黑屏／JIT头是当前证据，不猜测LSPlant，也不更改全局JIT／镜像／mock标记。
-3. 继续分别记录普通原包界面、原证书、容器启动、持续观察和定位业务。失败、跳过和未达到阶段不能写成成功；不接受条款、登录或发送消息，不发新手机实验任务。
-4. 使用仓库外CONTAINER_RESEARCH_WORKDIR与tools/run-build.sh，保留代理／CA，SDK安装串行，生成物不入库。历史回执用固定Git提交的tools/verify-ci-receipts.py核对，新输出路径保留原文件；原生准备失败保留错误和未知清理。许可见[记录](research/container-api33/THIRD_PARTY_NOTICES.md)。
+## 定位及默认检查的实际范围
+
+定位功能的既有实测仍为Android13 **x86_64**：[独立自有Guest](research/container-api33/evidence/owned-guest-location-results.json)六条GPS／NETWORK路径A→B、停止稳定及取消零回调；[官方GPSTest](research/container-api33/evidence/official-gpstest-location-results.json)实际界面采用A→B、GNSS零卫星；[普通入口](research/container-api33/evidence/cloud-ordinary-entry-pass.json)经系统文件选择、原包导入、精确授权与同进程更新。**ARM64真实自有Guest定位尚未运行；当前匿名启动不能填补它。**
+
+[CI38默认结果](research/container-api33/evidence/default-ci-state.json)：Linux／Mac通过；自有框架0.54秒、计算器5.669秒、普通入口9.658秒、九项无线／网络受控检查0.058秒，每case55份源码；变化UI57份，自有构建50份、两份签名及每包11份材料；主程序447项检查与lint通过。自有框架确认真实Binder身份、新鲜nonce、Context归属、旧HTTP和两类PendingIntent创建，未验证发送／后台投递。
+
+九项检查使用受控服务、实际框架包装和合成输入；[网络数组修正](research/container-api33/evidence/connectivity-array-contract-results.json)保留关闭模式数组、Network句柄与连接状态，开启时只清除NetworkInfo框架副本的extraInfo；两项异步CellInfo请求完成空列表回调。没有真实无线查询，不证明Guest无线Hook、持续订阅或腾讯／字节SDK采用。样本保留mock标记；Guest与宿主共享UID，不是独立UID安全沙箱。详见[审计](research/container-api33/AUDIT.md)。
+
+同分支另准备[简短默认反馈](docs/simple-support-flow.md)：当前状态与缓存优先，旧工作流只列索引，14,000字符上限；[编译、447项Debug检查及lint通过](research/container-api33/evidence/compact-feedback-preparation.json)，没有发布手机更新。定位引擎与#59日常候选保持原版本。
+
+## 用户失败与继续操作
+
+用户10月23日VPN开／关日志中，导出时GPS／NETWORK／GMS缓存新鲜且接近模拟目标，但微信截图及反馈失败；导出快照不是微信前台连续采样，10月13日旧实验也不是本轮结果。#59保留脱敏失败验收，实际地址截图未上传公共仓库；更新#59只改标记的后续研发段，保留此前正文。
+
+1. 沿本分支／Draft#60验证新跨进程Provider契约及修正后原生启动，保留CI38已通过的独立基线；不再重复定位缓存实验。
+2. 接着在合格原生ARM64环境验证自有Guest的A→B定位、更新／停止／取消，再推进目标SDK和业务。账号与业务未验证的阶段不能写成成功，不接受条款、登录或发送消息，不发新手机实验任务。
+3. 原生作业同锁且不取消运行中的前轮；push须带齐`[cuttlefish-boot] [cuttlefish-container]`，检查实际job，不能凭绿色基础CI推断原生运行。工作区、代理／CA及SDK安装串行约束保持。
+4. 构建使用仓库外CONTAINER_RESEARCH_WORKDIR与tools/run-build.sh，生成物不入库；回执按固定Git提交的源码核对，新输出保留旧文件。许可见[记录](research/container-api33/THIRD_PARTY_NOTICES.md)。

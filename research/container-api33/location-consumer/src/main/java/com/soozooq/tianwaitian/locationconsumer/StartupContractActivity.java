@@ -3,6 +3,7 @@ package com.soozooq.tianwaitian.locationconsumer;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Binder;
 import android.os.Bundle;
@@ -51,11 +52,24 @@ public final class StartupContractActivity extends Activity {
                     new Intent(this, StartupContractService.class), flags);
             report.put("pending_service_created", service != null);
             if (service != null) service.cancel();
+            String runId = getIntent().getStringExtra("startup_contract_run_id");
+            Bundle provider = getContentResolver().call(Uri.parse(
+                    "content://com.soozooq.tianwaitian.locationconsumer.startup"),
+                    "startup", runId, null);
+            boolean providerReady = provider != null
+                    && "OWN_PRIVATE_PROVIDER_CONTRACT".equals(provider.getString("scope"))
+                    && runId != null && runId.equals(provider.getString("nonce"));
+            report.put("provider_call_nonce_matches", providerReady);
+            int providerPid = provider == null ? -1 : provider.getInt("provider_pid", -1);
+            report.put("provider_pid", providerPid);
+            report.put("provider_caller_pid", provider == null ? -1 : provider.getInt("caller_pid", -1));
+            report.put("provider_process_separate", providerPid > 0 && providerPid != Process.myPid());
             report.put("passed", activity != null && service != null
                     && report.optBoolean("activity_attribution_uid_matches_real_host")
                     && report.optBoolean("application_attribution_uid_matches_real_host")
                     && report.optBoolean("binder_self_uid_matches_real_host")
-                    && report.getInt("binder_self_pid") == report.getInt("process_api_pid"));
+                    && report.getInt("binder_self_pid") == report.getInt("process_api_pid")
+                    && providerReady && report.getBoolean("provider_process_separate"));
         } catch (Throwable error) {
             try { report.put("error_class", error.getClass().getName()); }
             catch (Exception ignored) { }

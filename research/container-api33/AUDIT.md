@@ -95,3 +95,11 @@ CI32 的UID断言误把虚拟化的 `Process.myUid()` 当作系统 UID，修正�
 固定ConnectivityManager的两个公开网络数组getter均为NonNull，旧引擎onBindMethod却在所有模式返回null。新候选移除不带坐标的Network句柄限制，关闭模式保留NetworkInfo原服务数组；开启模式经公开Parcel复制，调用真实setExtraInfo清除副本附加名称，保留连接字段和原对象。不可复制时返回空类型数组而不回退原始附加信息。两项新增检查走真正ConnectivityManager包装、受控IConnectivityManager，finally恢复静态实例，不查询真实网络；[CI36实际9项受控检查0.099秒通过](evidence/connectivity-array-contract-results.json)，三归档、55份case源码及自有签名已核对。未知是否解释两目标黑屏，真实Guest Hook、持续网络回调及SDK采用仍未验证。详见[候选](evidence/connectivity-array-contract-preparation.json)。
 
 启动链路有捕获后printStackTrace的异常，而先前限定框架日志没有System.err。现仅增加System.err:W，仍读取main/system限定tags，30秒与2MiB上限、URL脱敏、不以采集可用性改变UI判定。22项受控检查通过，新采集待原生；不是已获得目标异常或修复黑屏的证明。见[准备记录](evidence/caught-startup-exception-observation-preparation.json)。
+
+## 原生匿名启动已通过及Provider后续
+
+[CI38](evidence/native-container-startup-pass-results.json)通过固定API33原生ARM64资格、两普通原包、两Guest原证书及匿名UI；抖音PID观察301,750ms，最后XML仍为隐私页。微信PNG已查看，抖音无PNG，不能宣称已查看图像。系统PID658稳定，清理完成。位置关闭、未接受条款／登录／发送，ARM64自有Guest定位及目标业务仍未运行。CI35两个UI也已到达，但严格pidof集合变化造成失败；消失PID角色未知，不能归为主进程/JIT崩溃。两轮不能隔离单一修正因果。
+
+System.err在微信辅助进程暴露了GetContentProvider仍访问旧嵌套holder的两次反射NPE。API26+已有独立android.app.ContentProviderHolder；[候选](evidence/modern-provider-holder-preparation.json)仅按版本选择实际字段、保留null结果和旧分支。自有未导出Provider新增独立进程公共API往返与新鲜nonce／不同PID断言，没有实际数据或网络访问。22秒编译和干净索引补丁重放通过，新增运行待CI；不能借旧框架通过为它背书。
+
+Python活动／窗口／ps是在instrumentation结束后采集，Guest已在测试finally中清理；这些文件不是此前黑屏时的活体快照。最终测试XML与截图在Guest清理前，历史logcat可保留启动事件；读取可用性不替代UI或业务结论。

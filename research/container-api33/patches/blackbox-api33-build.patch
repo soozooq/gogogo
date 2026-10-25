@@ -519,10 +519,18 @@ index 5053133..2229070 100644
 +    }
  }
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IActivityManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IActivityManagerProxy.java
-index 2985eb4..2a973fe 100644
+index 2985eb4..2dddb10 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IActivityManagerProxy.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IActivityManagerProxy.java
-@@ -43,6 +43,7 @@ import top.niunaijun.bcore.fake.frameworks.BPackageManager;
+@@ -26,6 +26,7 @@ import black.android.app.ActivityManagerOreo;
+ import black.android.app.IActivityManager;
+ import black.android.app.LoadedApk;
+ import black.android.content.ContentProviderNative;
++import black.android.content.ContentProviderHolderOreo;
+ import black.android.content.pm.UserInfo;
+ import black.android.util.Singleton;
+ import top.niunaijun.bcore.BlackBoxCore;
+@@ -43,6 +44,7 @@ import top.niunaijun.bcore.fake.frameworks.BPackageManager;
  import top.niunaijun.bcore.fake.hook.ClassInvocationStub;
  import top.niunaijun.bcore.fake.hook.MethodHook;
  import top.niunaijun.bcore.fake.hook.ProxyMethod;
@@ -530,7 +538,27 @@ index 2985eb4..2a973fe 100644
  import top.niunaijun.bcore.fake.hook.ScanClass;
  import top.niunaijun.bcore.fake.service.base.PkgMethodProxy;
  import top.niunaijun.bcore.fake.service.context.providers.ContentProviderStub;
-@@ -315,7 +316,7 @@ public class IActivityManagerProxy extends ClassInvocationStub {
+@@ -140,8 +142,17 @@ public class IActivityManagerProxy extends ClassInvocationStub {
+                     }
+ 
+                     content = method.invoke(who, args);
+-                    IActivityManager.ContentProviderHolder.info.set(content, providerInfo);
+-                    IActivityManager.ContentProviderHolder.provider.set(content, new ContentProviderStub().wrapper(ContentProviderNative.asInterface.call(providerBinder), BActivityThread.getAppPackageName()));
++                    if (content == null) return null;
++                    IInterface provider = new ContentProviderStub().wrapper(
++                            ContentProviderNative.asInterface.call(providerBinder),
++                            BActivityThread.getAppPackageName());
++                    if (BuildCompat.isOreo()) {
++                        ContentProviderHolderOreo.info.set(content, providerInfo);
++                        ContentProviderHolderOreo.provider.set(content, provider);
++                    } else {
++                        IActivityManager.ContentProviderHolder.info.set(content, providerInfo);
++                        IActivityManager.ContentProviderHolder.provider.set(content, provider);
++                    }
+                 }
+                 return content;
+             }
+@@ -315,7 +326,7 @@ public class IActivityManagerProxy extends ClassInvocationStub {
          }
      }
  
@@ -1243,6 +1271,24 @@ index 0000000..8286ed5
 +        }
 +    }
 +}
+diff --git a/android-mirror/src/main/java/black/android/content/ContentProviderHolderOreo.java b/android-mirror/src/main/java/black/android/content/ContentProviderHolderOreo.java
+index 27db306..382632f 100644
+--- a/android-mirror/src/main/java/black/android/content/ContentProviderHolderOreo.java
++++ b/android-mirror/src/main/java/black/android/content/ContentProviderHolderOreo.java
+@@ -1,6 +1,7 @@
+ package black.android.content;
+ 
+ import android.os.IInterface;
++import android.content.pm.ProviderInfo;
+ 
+ import black.Reflector;
+ 
+@@ -8,4 +9,5 @@ public class ContentProviderHolderOreo {
+     public static final Reflector REF = Reflector.on("android.app.ContentProviderHolder");
+ 
+     public static Reflector.FieldWrapper<IInterface> provider = REF.field("provider");
++    public static Reflector.FieldWrapper<ProviderInfo> info = REF.field("info");
+ }
 diff --git a/android-mirror/src/main/java/black/com/android/internal/InternalResources.java b/android-mirror/src/main/java/black/com/android/internal/InternalResources.java
 new file mode 100644
 index 0000000..7495bb1
