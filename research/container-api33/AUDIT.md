@@ -103,3 +103,9 @@ CI32 的UID断言误把虚拟化的 `Process.myUid()` 当作系统 UID，修正�
 System.err在微信辅助进程暴露了GetContentProvider仍访问旧嵌套holder的两次反射NPE。API26+已有独立android.app.ContentProviderHolder；[候选](evidence/modern-provider-holder-preparation.json)仅按版本选择实际字段、保留null结果和旧分支。自有未导出Provider新增独立进程公共API往返与新鲜nonce／不同PID断言，没有实际数据或网络访问。22秒编译和干净索引补丁重放通过，新增运行待CI；不能借旧框架通过为它背书。
 
 Python活动／窗口／ps是在instrumentation结束后采集，Guest已在测试finally中清理；这些文件不是此前黑屏时的活体快照。最终测试XML与截图在Guest清理前，历史logcat可保留启动事件；读取可用性不替代UI或业务结论。
+
+## Provider调用归属的实际拒绝及原生定位准备
+
+CI39新增公共跨进程call并未通过：实际Binder UID10129与被ContentProviderStub写成10001的AttributionSource不符，AttributionSource.enforceCallingUid明确拒绝。三归档、56份case源码、自有签名材料已核对；不是微信／定位或原生失败。候选改为真实宿主UID，与现有系统Provider规则一致；InvocationTargetException解包保留真正平台异常，不关闭权限、exported或UID检查。修正后的实际运行待下一轮，见[失败与修正](evidence/provider-attribution-failure-and-correction.json)。
+
+新[原生自有阶段](evidence/native-owned-location-preparation.json)只在已合格且两个目标匿名UI通过的同一owned VM运行。消费者以独立自有APK传递、源码／许可／签名核对，仅虚拟导入；正常公共API读取及真实独立进程，不用受控服务替代Guest调用。阶段涵盖已有A→B／停止／取消，不代表腾讯／字节SDK或位置业务。25项受控驱动检查、8种工作流表达式、构建和静态材料核对通过，实际新三件CI传递与原生执行待运行。诊断限时限量、URL脱敏，采集不可用不改变已有case判定；系统身份与清理仍必须合格。

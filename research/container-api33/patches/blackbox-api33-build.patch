@@ -982,6 +982,53 @@ index 98e849a..71c6d32 100644
          }
      }
  }
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/context/providers/ContentProviderStub.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/context/providers/ContentProviderStub.java
+index 72f7ca4..a56833c 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/context/providers/ContentProviderStub.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/context/providers/ContentProviderStub.java
+@@ -3,9 +3,10 @@ package top.niunaijun.bcore.fake.service.context.providers;
+ import android.os.IInterface;
+ 
+ import java.lang.reflect.Method;
++import java.lang.reflect.InvocationTargetException;
+ 
+ import black.android.content.AttributionSource;
+-import top.niunaijun.bcore.app.BActivityThread;
++import top.niunaijun.bcore.BlackBoxCore;
+ import top.niunaijun.bcore.fake.hook.ClassInvocationStub;
+ import top.niunaijun.bcore.utils.compat.ContextCompat;
+ 
+@@ -33,7 +34,7 @@ public class ContentProviderStub extends ClassInvocationStub implements BContent
+     @Override
+     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+         if ("asBinder".equals(method.getName())) {
+-            return method.invoke(mBase, args);
++            return invokeBase(method, args);
+         }
+ 
+         if (args != null && args.length > 0) {
+@@ -41,10 +42,19 @@ public class ContentProviderStub extends ClassInvocationStub implements BContent
+             if (arg instanceof String) {
+                 args[0] = mAppPkg;
+             } else if (arg.getClass().getName().equals(AttributionSource.REF.getClazz().getName())) {
+-                ContextCompat.fixAttributionSourceState(arg, BActivityThread.getBUid());
++                // The real Binder sender owns the host UID, not the internal virtual UID.
++                ContextCompat.fixAttributionSourceState(arg, BlackBoxCore.getHostUid());
+             }
+         }
+-        return method.invoke(mBase, args);
++        return invokeBase(method, args);
++    }
++
++    private Object invokeBase(Method method, Object[] args) throws Throwable {
++        try {
++            return method.invoke(mBase, args);
++        } catch (InvocationTargetException error) {
++            throw error.getCause();
++        }
+     }
+ 
+     @Override
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java
 index b2c7548..6873030 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java

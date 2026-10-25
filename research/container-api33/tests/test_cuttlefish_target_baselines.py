@@ -42,6 +42,7 @@ class OriginalBaselineControlTest(unittest.TestCase):
                                 for c in calls))
             log = next(c for c in calls if c[0] == 'logcat')
             self.assertIn('System.err:W', log)  # Caught startup exceptions use printStackTrace.
+            self.assertIn('DatabaseUtils:E', log)  # Provider parcel errors include the actual UID rejection.
             self.assertIn('-s', log)  # Keep filtered capture instead of all app logs.
 
     def test_install_phases_hash_gate_and_owned_session_abandon(self):

@@ -286,5 +286,77 @@
   "wechat_send_and_live_location": "UNFULFILLED",
   "douyin_wireless_and_overseas": "UNFULFILLED",
   "physical_arm64_vivo": "NOT_VERIFIED",
-  "phone_update_distributed": false
+  "phone_update_distributed": false,
+  "same_commit_default_checks": {
+    "scope": "ACTUAL_X86_64_FRAMEWORK_AND_CONTROLLED_RADIO_NOT_TARGET_LOCATION",
+    "actual_own_framework": {
+      "scope": "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION",
+      "passed": true,
+      "pending_intents_sent": false,
+      "location_requested": false,
+      "startup_contract_run_id": "051d6a69-43c7-41ce-988f-c27fb0d6f6be",
+      "framework_http_legacy_class_resolved": true,
+      "expected_real_host_uid": 10129,
+      "process_api_uid": 10001,
+      "binder_self_uid": 10129,
+      "binder_self_pid": 2545,
+      "process_api_pid": 2545,
+      "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
+      "binder_self_uid_matches_real_host": true,
+      "activity_attribution_uid": 10129,
+      "application_attribution_uid": 10129,
+      "activity_attribution_uid_matches_real_host": true,
+      "application_attribution_uid_matches_real_host": true,
+      "activity_attribution_package": "com.soozooq.tianwaitian.containerresearch",
+      "pending_activity_created": true,
+      "pending_service_created": true
+    },
+    "case_junit": {
+      "x86_64-startup-framework": [
+        "Time: 0.54",
+        "OK (1 test)"
+      ],
+      "x86_64-calculator": [
+        "Time: 5.669",
+        "OK (1 test)"
+      ],
+      "x86_64-ordinary-entry": [
+        "Time: 9.658",
+        "OK (1 test)"
+      ],
+      "x86_64-radio-privacy": [
+        "Time: 0.058",
+        "OK (9 tests)"
+      ]
+    },
+    "source_inputs_per_case_verified": 55,
+    "moving_ui_source_inputs_verified": 57,
+    "own_transport": {
+      "source_count_verified": 50,
+      "apks": {
+        "host": {
+          "name": "probeHost-debug.apk",
+          "size": 4531832,
+          "sha256": "2db66afac057e65ae901068c10219aa512bbb065e2a5b8649ee4b0a0a32c4802"
+        },
+        "driver": {
+          "name": "probeHost-debug-androidTest.apk",
+          "size": 500186,
+          "sha256": "0125bd2ce7ba5030669776a70927b88e9f7c5826ba1ebe3c53aa412e3bd2dc50"
+        }
+      },
+      "notice_materials_per_apk": 11,
+      "signatures_verified_and_same": true
+    },
+    "feedback_main": {
+      "junit": {
+        "tests": 447,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "lint_error_fatal_count": 0,
+      "passed": true
+    }
+  }
 }

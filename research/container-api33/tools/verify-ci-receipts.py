@@ -82,10 +82,15 @@ with tempfile.TemporaryDirectory(prefix='ci-receipts-') as temporary:
     if 'own' in directories:
         own = directories['own']
         files = {'host': 'probeHost-debug.apk', 'driver': 'probeHost-debug-androidTest.apk'}
+        manifest = json.loads((own / 'manifest.json').read_text())
+        include_consumer = manifest.get('scope') == 'CI_SELF_OWNED_HOST_DRIVER_CONSUMER_NOT_ORIGINAL_TARGET_APKS_OR_PHONE_RELEASE'
+        if include_consumer: files['consumer'] = 'locationConsumer-debug.apk'
         if {p.name for p in own.iterdir()} != {*files.values(), 'manifest.json'}:
             raise ValueError('Unexpected own transport entry')
-        manifest = json.loads((own / 'manifest.json').read_text())
-        if manifest.get('commit') != commit or manifest.get('scope') != 'CI_SELF_OWNED_HOST_AND_DRIVER_NOT_ORIGINAL_TARGET_APKS_OR_PHONE_RELEASE':
+        if manifest.get('commit') != commit or manifest.get('scope') not in [
+                'CI_SELF_OWNED_HOST_AND_DRIVER_NOT_ORIGINAL_TARGET_APKS_OR_PHONE_RELEASE',
+                'CI_SELF_OWNED_HOST_DRIVER_CONSUMER_NOT_ORIGINAL_TARGET_APKS_OR_PHONE_RELEASE'] \
+                or set(manifest.get('apks', {})) != set(files):
             raise ValueError('Own transport identity differs')
         count = verify_source_map(manifest['sources_sha256'])
         tracked = subprocess.run(['git', 'ls-tree', '-r', '--name-only', commit, '--',
@@ -98,7 +103,7 @@ with tempfile.TemporaryDirectory(prefix='ci-receipts-') as temporary:
             parts = PurePosixPath(name).parts
             suffix = PurePosixPath(name).suffix
             if name in fixed or parts[0] == 'licenses' and suffix in ['.txt', '.json'] \
-                    or parts[0] in ['tools', 'probe-host', 'patches'] \
+                    or parts[0] in ['tools', 'probe-host', 'patches'] + (['location-consumer'] if include_consumer else []) \
                     and suffix in ['.py', '.sh', '.java', '.xml', '.gradle', '.patch']:
                 expected_sources.add(name)
         if set(manifest['sources_sha256']) != expected_sources:
@@ -110,7 +115,7 @@ with tempfile.TemporaryDirectory(prefix='ci-receipts-') as temporary:
         certs = []
         for role, name in files.items():
             path, pin = own / name, manifest['apks'][role]
-            if path.stat().st_size != pin['size'] or sha(path.read_bytes()) != pin['sha256']:
+            if pin.get('name') != name or path.stat().st_size != pin['size'] or sha(path.read_bytes()) != pin['sha256']:
                 raise ValueError('Own APK size/hash differs')
             with zipfile.ZipFile(path) as apk:
                 if any(name.endswith('.apk') for name in apk.namelist()): raise ValueError('Embedded APK rejected')
@@ -183,6 +188,8 @@ with tempfile.TemporaryDirectory(prefix='ci-receipts-') as temporary:
             path = boot_path.parent / folder / 'summary.json'
             if path.exists():
                 receipt['native'][name] = json.loads(path.read_text()).get('results', {})
+        owned = boot_path.parent / 'owned-location-native/result.json'
+        if owned.exists(): receipt['native']['owned_location'] = json.loads(owned.read_text())
     receipt['integrity_verified'] = True
 with output_path.open('x', encoding='utf-8') as stream:
     stream.write(json.dumps(receipt, indent=2) + '\n')

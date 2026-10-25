@@ -15,6 +15,17 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    sourceSets.main.assets.srcDir layout.buildDirectory.dir('generated/researchNoticeAssets')
 }
+
+// Preserve the same source/license materials when this own APK is transported to ARM CI.
+def noticeSpec = new File(System.getenv('CONTAINER_RESEARCH_SPEC_DIR'))
+def generateResearchNotices = tasks.register('generateResearchNotices', Sync) {
+    from(new File(noticeSpec, 'licenses')) { include '*.txt', '*provenance.json' }
+    from(new File(noticeSpec, 'THIRD_PARTY_NOTICES.md'))
+    from(new File(noticeSpec, 'CI_SOURCE_AND_RELINK.md'))
+    into layout.buildDirectory.dir('generated/researchNoticeAssets/research-notices')
+}
+tasks.named('preBuild').configure { dependsOn generateResearchNotices }
 
 // Deliberately no host, container-engine, SDK, or other library dependency.

@@ -8,9 +8,11 @@
 
 CI35已达到两个Guest界面，但抖音在2069ms后pidof集合少一个PID，严格检查失败；消失PID角色未知、crash buffer无匹配Fatal，不归为主进程或JIT崩溃。CI35尚无网络数组修正，不能把新成功归因于单一组件。CI36pending被替换，CI37漏标记跳过，CI34下载未启动；全部历史保留。
 
-新增System.err捕获了微信辅助进程两次旧Provider holder反射空指针，非致命且没有阻止登录页。[候选修正](evidence/modern-provider-holder-preparation.json)为API26+选择实际ContentProviderHolder并保留null／旧API分支，新增自有独立进程Provider的公共ContentResolver随机标记往返检查。22秒构建及完整补丁重放通过，实际新契约待下一轮CI，不冒用CI38旧检查通过。
+现代Provider holder候选在[CI39自有跨进程检查](evidence/provider-attribution-failure-and-correction.json)暴露第二层错误：真实Binder UID10129，AttributionSource却被改成虚拟10001，系统明确拒绝。该case0.528秒／1项失败，后续回归未运行、原生跳过；三档及源码、签名与材料已核对。新候选按真实宿主UID发送，保留系统权限和调用归属校验、原始异常，实际修正待下一轮。
 
-[CI38默认检查](evidence/default-ci-state.json)包括全部9项受控无线／网络、框架身份、计算器与普通入口、447项主程序检查及lint；不证明真实Guest无线或SDK采用。原生push选择已补正并在CI38实际运行，手动选项仅静态验证。继续同一分支，不发手机实验。
+[原生自有定位阶段](evidence/native-owned-location-preparation.json)已准备：两目标匿名UI通过后，在同一合格VM运行独立自有Guest的公共框架／跨进程Provider及六条GPS／NETWORK A→B、停止与取消。严格新三件自有APK传递、旧两件兼容、已有包／文件保留与清理保护；不读取目标账号或测试SDK。11秒构建、静态检查、三件材料／同签名、25项驱动检查及8种选择组合通过，新增实际ARM定位仍待运行。
+
+[CI38默认基线](evidence/native-container-startup-pass-results.json)的9项受控无线、框架身份、两项UI回归、447项及lint已通过，但不代表真实无线／SDK。最新CI39部分失败另见[状态](evidence/default-ci-state.json)。原生push已在CI38实际验证，手动路径只静态验证。继续同一分支，不发手机实验。
 
 ## 核对下载的 CI 回执（维护用）
 

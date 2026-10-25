@@ -24,7 +24,7 @@ on:
         default: false
         type: boolean
       run_cuttlefish_container_probe:
-        description: 'Run matched original and container startup controls with the exact same-run self-owned APK pair'
+        description: 'Run matched target startup, then owned Guest location with the exact same-run self-owned APK set'
         required: false
         default: false
         type: boolean
@@ -129,10 +129,10 @@ jobs:
           fi
           echo "$feedback_status" > "$feedback_evidence/returncode.txt"
           exit "$feedback_status"
-      - name: Prepare own host and driver for the same CI run (no original target APKs)
+      - name: Prepare own host, driver and consumer for the same CI run (no original target APKs)
         if: ${{ inputs.run_cuttlefish_container_probe || contains(github.event.head_commit.message, '[cuttlefish-container]') }}
-        run: python3 research/container-api33/tools/ci_owned_apks.py --workdir "$CONTAINER_RESEARCH_WORKDIR" --output "$RUNNER_TEMP/ci-owned-container-apks"
-      - name: Transfer only the self-owned APK pair for ARM CI (one day, not a phone release)
+        run: python3 research/container-api33/tools/ci_owned_apks.py --workdir "$CONTAINER_RESEARCH_WORKDIR" --output "$RUNNER_TEMP/ci-owned-container-apks" --include-consumer
+      - name: Transfer only the self-owned APKs for ARM CI (one day, not a phone release)
         if: ${{ inputs.run_cuttlefish_container_probe || contains(github.event.head_commit.message, '[cuttlefish-container]') }}
         uses: actions/upload-artifact@v4
         with:
@@ -227,7 +227,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
-      - name: Receive the exact same-run self-owned pair (no original target APKs)
+      - name: Receive the exact same-run self-owned APKs (no original target APKs)
         if: ${{ inputs.run_cuttlefish_container_probe || contains(github.event.head_commit.message, '[cuttlefish-container]') }}
         uses: actions/download-artifact@v4
         with:
@@ -258,7 +258,7 @@ jobs:
             cvd_arguments+=(--original-baselines)
           fi
           if [[ '${{ inputs.run_cuttlefish_container_probe || contains(github.event.head_commit.message, '[cuttlefish-container]') }}' == true ]]; then
-            cvd_arguments+=(--container-apks "$RUNNER_TEMP/ci-owned-container-apks")
+            cvd_arguments+=(--container-apks "$RUNNER_TEMP/ci-owned-container-apks" --owned-location-check)
           fi
           sudo -n -E -u "$(id -un)" -- python3 research/container-api33/tools/run-cuttlefish-arm-boot.py "${cvd_arguments[@]}"
       - name: Upload host and optional boot diagnostics (no images or APK)

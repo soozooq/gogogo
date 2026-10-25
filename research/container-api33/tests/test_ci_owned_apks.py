@@ -15,6 +15,29 @@ spec.loader.exec_module(transport)
 
 
 class OwnBuildTransportTest(unittest.TestCase):
+    def test_optional_consumer_requires_complete_scope_source_and_flat_inventory(self):
+        with tempfile.TemporaryDirectory() as folder:
+            directory = Path(folder)
+            files = {**transport.FILES, 'consumer': transport.CONSUMER_FILE}
+            for name in files.values(): (directory / name).write_bytes(b'owned-only-fixture')
+            manifest = {'scope': transport.CONSUMER_SCOPE, 'commit': 'a' * 40,
+                        'sources_sha256': {'own-consumer-source': 'hash'},
+                        'apks': {role: {'name': name, 'size': (directory / name).stat().st_size,
+                                       'sha256': transport.digest(directory / name)} for role, name in files.items()}}
+            path = directory / 'manifest.json'
+            path.write_text(json.dumps(manifest))
+            with patch.object(transport, 'sources', return_value=manifest['sources_sha256']) as sources, \
+                    patch.object(transport, 'verify_notices'):
+                self.assertEqual(manifest, transport.verify(directory, directory, 'a' * 40))
+                sources.assert_called_with(directory, True)
+                manifest['scope'] = transport.SCOPE
+                path.write_text(json.dumps(manifest))
+                with self.assertRaises(RuntimeError): transport.verify(directory, directory, 'a' * 40)
+                manifest['scope'] = transport.CONSUMER_SCOPE
+                path.write_text(json.dumps(manifest))
+                (directory / transport.CONSUMER_FILE).unlink()
+                with self.assertRaises(RuntimeError): transport.verify(directory, directory, 'a' * 40)
+
     def test_source_license_materials_and_no_embedded_original(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

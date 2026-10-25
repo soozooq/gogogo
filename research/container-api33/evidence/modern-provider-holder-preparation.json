@@ -33,5 +33,6 @@
   },
   "phone_update_distributed": false,
   "static_host_inspection_passed": true,
-  "static_consumer_inspection_passed": true
+  "static_consumer_inspection_passed": true,
+  "subsequent_actual_result": "provider-attribution-failure-and-correction.json"
 }

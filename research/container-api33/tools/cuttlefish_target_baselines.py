@@ -440,6 +440,7 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
 def capture_container_startup_diagnostics(run, out, result):
     """Bounded, read-only framework evidence; an unavailable read is not a UI failure."""
     captures = result['startup_diagnostics'] = {}
+    result['startup_diagnostics_capture_phase'] = 'AFTER_INSTRUMENTATION_AND_GUEST_CLEANUP'
     commands = {
         'activities.txt': ['shell', 'dumpsys', 'activity', 'activities'],
         'windows.txt': ['shell', 'dumpsys', 'window', 'windows'],
@@ -447,7 +448,7 @@ def capture_container_startup_diagnostics(run, out, result):
         'startup-framework-log.txt': ['logcat', '-d', '-b', 'main', '-b', 'system',
             '-v', 'threadtime', '-t', '2500', '-s', 'AndroidRuntime:E', 'ActivityManager:I',
             'ActivityTaskManager:I', 'NativeCore:D', 'BActivityThread:D', 'BlackBoxCore:D',
-            'AppInstrumentation:D', 'HCallbackProxy:D', 'System.err:W']}
+            'AppInstrumentation:D', 'HCallbackProxy:D', 'System.err:W', 'DatabaseUtils:E']}
     for name, command in commands.items():
         try:
             response = run(command, timeout=30, check=False)

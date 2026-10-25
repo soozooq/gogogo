@@ -111,9 +111,13 @@ def main():
     p.add_argument('--original-baselines', action='store_true',
                    help='After qualification only: ordinary original welcome/privacy UI; no container or accounts')
     p.add_argument('--container-apks', help='Exact same-CI own host/test pair; also requires --original-baselines')
+    p.add_argument('--owned-location-check', action='store_true',
+                   help='After successful target startup controls, run independent own Guest contracts')
     args = p.parse_args()
     if args.container_apks and not args.original_baselines:
         p.error('--container-apks requires the original ordinary controls first')
+    if args.owned_location_check and not args.container_apks:
+        p.error('--owned-location-check requires verified same-run container APKs')
     if os.environ.get('GITHUB_ACTIONS') != 'true' or platform.system() != 'Linux' \
             or platform.machine() not in ['aarch64', 'arm64']:
         raise SystemExit('Use the dedicated native ARM Linux workflow, never a phone')
@@ -140,6 +144,7 @@ def main():
                   Path(__file__), spec_dir / 'tools/cuttlefish-tcg-qemu.py',
                   spec_dir / 'tools/fetch-cuttlefish-inputs.py', spec_dir / 'cuttlefish-inputs.json',
                   spec_dir / 'tools/cuttlefish_target_baselines.py',
+                  spec_dir / 'tools/cuttlefish_owned_location.py',
                   spec_dir / 'tools/ci_owned_apks.py',
                   spec_dir / 'tools/inspect-cuttlefish-arm-host.py',
                   spec_dir / 'evidence/official-target-apk-readiness.json']}}
@@ -148,6 +153,9 @@ def main():
     if args.original_baselines:
         report['scope'] = 'CUTTLEFISH_SYSTEM_AND_INSTALLED_ORIGINAL_STARTUP_NOT_CONTAINER_LOCATION_OR_VIVO'
     report['container_startups_requested'] = bool(args.container_apks)
+    report['owned_location_requested'] = args.owned_location_check
+    report['owned_location_passed'] = False
+    report['owned_guest_location_tested'] = False
     if args.container_apks:
         report['scope'] = 'CUTTLEFISH_SYSTEM_AND_ORIGINAL_CONTAINER_STARTUP_NOT_LOCATION_OR_VIVO'
     runner = None
@@ -476,9 +484,21 @@ def main():
                 if args.container_apks:
                     # Each successful control has already been followed immediately.
                     report['container_startups_passed'] = container['passed']
+                    if args.owned_location_check and baseline['passed'] and container['passed']:
+                        from cuttlefish_owned_location import run_owned_location_control
+                        expected_pid = container['results']['douyin']['environment_after_container']['system_pid']
+                        owned = run_owned_location_control(work, spec_dir, report, launched,
+                            environment, own_apks, expected_pid)
+                        report['owned_location_passed'] = owned['passed']
+                        report['owned_guest_location_tested'] = 'location' in owned.get('cases', {})
                     report['passed'] = baseline['passed'] and container['passed']
                     report['state'] = 'QUALIFIED_BOOT_AND_CONTAINER_UI' if report['passed'] \
                         else 'ORIGINAL_OR_CONTAINER_STARTUP_NOT_CONFIRMED'
+                    if args.owned_location_check:
+                        report['scope'] = 'CUTTLEFISH_SYSTEM_CONTAINER_UI_AND_OWNED_LOCATION_NOT_TARGET_LOCATION_OR_VIVO'
+                        report['passed'] = report['passed'] and report['owned_location_passed']
+                        report['state'] = 'QUALIFIED_BOOT_CONTAINER_UI_AND_OWNED_LOCATION' if report['passed'] \
+                            else 'PREREQUISITE_OR_OWNED_CONTRACT_NOT_CONFIRMED'
                 else:
                     report['passed'] = baseline['passed']
                     report['state'] = 'QUALIFIED_BOOT_AND_ORIGINAL_UI' if baseline['passed'] \
