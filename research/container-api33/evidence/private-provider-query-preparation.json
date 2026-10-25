@@ -31,5 +31,6 @@
     "behavior": "PERMISSION_GRANTED",
     "modified_by_this_followup": false,
     "query_success_not_permission_policy_proof": true
-  }
+  },
+  "subsequent_actual_query_result": "private-provider-query-results.json"
 }

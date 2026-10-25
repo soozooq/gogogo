@@ -14,7 +14,7 @@ CI35已达到两个Guest界面，但抖音在2069ms后pidof集合少一个PID，
 
 [CI38默认基线](evidence/native-container-startup-pass-results.json)的9项受控无线、框架身份、两项UI回归、447项及lint已通过，但不代表真实无线／SDK。CI39失败保留；[最新默认CI40](evidence/default-ci-state.json)已通过完整回归与447项／lint，每case57份、移动UI59份源码已核对。原生push已在CI38实际验证，手动路径只静态验证。继续同一分支，不发手机实验。
 
-新增[自有私有Provider查询检查](evidence/private-provider-query-preparation.json)单独核对query的UID／权限分支，返回合成数据，不改引擎或exported／权限；13秒编译和静态检查通过，实际结果待基础CI。原生CI40保持固定输入继续运行，不因该检查新开VM。
+新增[自有私有Provider查询检查](evidence/private-provider-query-preparation.json)单独核对query的UID／权限分支，返回合成数据，不改引擎或exported／权限；[CI41实际查询通过](evidence/private-provider-query-results.json)：call与query回传同一nonce／远程PID2685、调用者2658；全回归、57份case／59份移动UI源码、447项及lint通过，两档已核对，本轮不传递APK或启动原生。原引擎旧URI授权GRANTED规则保留，不能把功能通过当权限拒绝／隔离证明；CI40保持cf4e固定输入继续运行，不包含这项query。
 
 ## 核对下载的 CI 回执（维护用）
 

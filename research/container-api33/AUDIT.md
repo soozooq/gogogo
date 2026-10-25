@@ -113,3 +113,5 @@ CI39新增公共跨进程call并未通过：实际Binder UID10129与被ContentPr
 [CI40实际x86_64结果](evidence/provider-attribution-results.json)已确认公共跨进程call恢复：main2634、Provider2661、调用者PID2634与本轮nonce一致；真实宿主UID10129，原UID校验保留。三件同轮自有APK、59份源码、三证书同签名和每包11份材料均核对；全部默认回归、447项与lint通过。原生作业仍在运行，不能将x86通过填作ARM64定位、真实无线或目标SDK结果；CI39失败保留。
 
 私有Provider query后续只检查合成Cursor／nonce／PID往返。原引擎IActivityManagerProxy.CheckUriPermission始终返回PERMISSION_GRANTED，本轮没有修改该旧规则；因此即使query成功，也不能作为权限拒绝或隔离的验证。固定AOSP的UID缓存／检查与该旧hook分开记录，不据静态疑点断言实际查询失败。
+
+[CI41实际x86查询](evidence/private-provider-query-results.json)已返回本轮nonce、同一远程PID2685，call调用者2658；Provider Process API UID10001、Binder调用者UID10129也已记录。该功能通过不能隔离权限路径因果或证明拒绝策略。完整基础回归及两归档源码已核对；本轮无APK传递／原生运行，旧CI40固定消费者未包含新增query，不是ARM64 query证明。

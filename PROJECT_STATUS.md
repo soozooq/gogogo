@@ -43,13 +43,13 @@ Provider调用归属改为真实宿主UID后，[CI40／cf4e2822公共跨进程�
 
 限定诊断加入DatabaseUtils错误标签并保留限时、限量、URL脱敏及“采集不可用不改变case判定”；dumpsys／ps发生在JUnit及Guest清理之后，不能当作此前黑屏时的活体状态。
 
-另补[私有Provider查询契约](research/container-api33/evidence/private-provider-query-preparation.json)：固定API33的query还会检查同App UID／exported／URI权限，call通过不能证明查询。自有未导出Provider只返回合成nonce和PID，新增公共query验证游标往返；原引擎checkUriPermission仍返回GRANTED，本轮未改，查询成功不代表权限拒绝或隔离通过。13秒编译及静态检查通过，实际结果待单独基础CI。没有改引擎或权限，不启动重复原生轮次，正在运行的CI40继续使用固定cf4e2822源码。
+另补[私有Provider查询契约](research/container-api33/evidence/private-provider-query-preparation.json)：固定API33的query还会检查同App UID／exported／URI权限，call通过不能证明查询。自有未导出Provider只返回合成nonce和PID，新增公共query验证游标往返；原引擎checkUriPermission仍返回GRANTED，本轮未改，查询成功不代表权限拒绝或隔离通过。[CI41实际功能查询通过](research/container-api33/evidence/private-provider-query-results.json)，call／query均回传本轮nonce、同一远程PID2685，调用者2658；Provider Process API UID10001、Binder调用者UID10129，0.902秒／1项。没有改引擎或权限，本轮原生和APK传递均有意跳过；CI40仍按固定cf4e2822运行，其旧消费者没有新增query检查，不能替代ARM64 query证明。
 
 ## 定位及默认检查的实际范围
 
 定位功能的既有实测仍为Android13 **x86_64**：[独立自有Guest](research/container-api33/evidence/owned-guest-location-results.json)六条GPS／NETWORK路径A→B、停止稳定及取消零回调；[官方GPSTest](research/container-api33/evidence/official-gpstest-location-results.json)实际界面采用A→B、GNSS零卫星；[普通入口](research/container-api33/evidence/cloud-ordinary-entry-pass.json)经系统文件选择、原包导入、精确授权与同进程更新。**ARM64真实自有Guest定位尚无已核对结果；当前匿名启动不能填补它。**
 
-[最近完整核对的默认CI40](research/container-api33/evidence/default-ci-state.json)：Linux／Mac通过；自有框架0.587秒、计算器6.111秒、普通入口12.322秒、九项无线／网络受控检查0.091秒，每case57份源码；变化UI59份，自有构建59份、三份签名及每包11份材料；主程序447项检查与lint通过。自有框架确认真实Binder身份、新鲜nonce、Context归属、旧HTTP和两类PendingIntent创建，未验证发送／后台投递。
+[最新默认CI41](research/container-api33/evidence/default-ci-state.json)：Linux／Mac与四项case通过；框架0.902秒、计算器6.258秒、普通入口11.998秒、九项受控无线0.106秒，每case57份源码，变化UI59份，447项及lint通过，两归档已核对。本轮没有同轮APK传递；先前[CI40三件／59份源码／三签名及每包11份材料](research/container-api33/evidence/provider-attribution-results.json)单列保留，不混作CI41新产物。自有框架确认真实Binder身份、新鲜nonce、Context归属、旧HTTP和两类PendingIntent创建，未验证发送／后台投递。
 
 九项检查使用受控服务、实际框架包装和合成输入；[网络数组修正](research/container-api33/evidence/connectivity-array-contract-results.json)保留关闭模式数组、Network句柄与连接状态，开启时只清除NetworkInfo框架副本的extraInfo；两项异步CellInfo请求完成空列表回调。没有真实无线查询，不证明Guest无线Hook、持续订阅或腾讯／字节SDK采用。样本保留mock标记；Guest与宿主共享UID，不是独立UID安全沙箱。详见[审计](research/container-api33/AUDIT.md)。
 
