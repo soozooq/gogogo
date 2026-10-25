@@ -25,7 +25,7 @@
 
 抖音 Guest 的 JIT 线程在 ART `FindOatMethodFor → GetOatQuickMethodHeader → StackVisitor → JitCodeCache` 路径 SIGSEGV，系统进程仍健康。**尚不能归因为某个 Hook 组件或用户 vivo。** 现有普通对照显示隐私页即结束，时间范围不同；候选对普通对照和已显示界面的容器各加入300秒持续观察，记录目标进程与异常。没有修改全局 JIT、ART属性或看门狗；Xposed 配置默认关闭，不能凭原生栈猜测 LSPlant 原因。
 
-[候选准备记录](research/container-api33/evidence/framework-startup-prerequisite-preparation.json)：最终构建18秒、15项受控驱动检查通过，包括持续观察的目标异常／进程变化／系统异常分支；新增自有 Guest 用普通 API 检查旧 HTTP 类、PendingIntent 创建与取消、系统归属 UID，**实际运行结果待默认 CI**。PendingIntent 发送／后台投递没有在此项中验证。两份自有 APK 各保留11份许可／NOTICE／来源／相容库替换材料，仍不是完整逐文件许可审计或手机发行。
+[新增自有 Guest 的实际回执](research/container-api33/evidence/framework-startup-prerequisite-results.json)（CI32／`3f0087fb`）已确认旧 HTTP 类加载、活动／服务 PendingIntent 创建成功，但测试误把 Guest 中虚拟化的 `Process.myUid()` 当作系统真实 UID，UID断言失败，原生作业因此跳过。**系统 AttributionSource 必须保留真实宿主 UID，不能为通过测试改回逻辑 UID。** 本次从启动前的宿主 `ApplicationInfo.uid` 取预期值，核对它与宿主 `Process.myUid()`、缓存宿主UID一致，并记录框架实际数值；13秒重新构建通过，修正后实际运行待新CI。此前15项受控驱动检查通过，包括持续观察的异常分支，源码未再改变。PendingIntent 发送／后台投递没有在此项中验证。两份自有 APK 各保留11份许可／NOTICE／来源／相容库替换材料，仍不是完整逐文件许可审计或手机发行。
 
 维护者可用[单命令回执核对](research/container-api33/README.md)复核历史归档：从固定 Git 提交取源码，保留真实失败，拒绝摘要／提交／清单错配和不安全路径，缺少原生回执不计通过。接手沿本分支继续，日常#59与手机版本保持原样。
 
@@ -50,7 +50,7 @@
 
 ## 验证及用户失败证据
 
-[最近完整核对的默认 CI](research/container-api33/evidence/default-ci-state.json)为 `40174550024 / ff1a21ee`：Linux／Mac 默认作业成功，计算器6.236秒、普通入口11.774秒、五项代理0.060秒，各轮51项源码核对；独立变化界面复现旧空闲错误，新读取33毫秒、53项源码核对。主程序447项Debug单元检查、四项源码及lint零Error/Fatal核对。自有构建对48项源码、两份签名与材料核对。整轮仍因 Guest 启动崩溃而失败，旧转译作业跳过，跳过不是通过。
+[最近完整核对的默认 CI](research/container-api33/evidence/default-ci-state.json)为 `40182108173 / 3f0087fb`：Linux因上述新增UID断言失败，Mac构建成功；自有变化界面通过并核对57项源码，框架检查55项源码，自有构建对50项源码、两份签名与每包11份材料核对。主程序447项Debug单元检查及lint零Error/Fatal。三个旧默认案例在新增前提失败后没有运行；原生和旧转译作业均跳过，不能算通过。上一轮CI31的计算器／普通入口／五项代理与最新实际原生失败分别保留，不能充作CI32结果。
 
 用户 10 月 23 日 VPN 开／关日志中，导出时 GPS／NETWORK／GMS 缓存新鲜且接近模拟目标，但微信截图及反馈失败。导出快照不是微信前台连续采样；10 月 13 日旧实验不是本轮结果。#59 顶部保留脱敏失败验收及日常版本产物验证，实际地址截图没有上传公共仓库。更新 #59 时只改标记的后续研发段，保留此前正文。
 

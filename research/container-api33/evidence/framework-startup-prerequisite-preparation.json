@@ -4,7 +4,8 @@
   "base_commit": "ff1a21eeacf2ce9efb0aa1718332af2823dd9df1",
   "build": {
     "passed": true,
-    "seconds": 18
+    "seconds": 13,
+    "scope": "REAL_HOST_UID_TEST_CORRECTION_REBUILD"
   },
   "controlled_python_tests": {
     "passed": true,
@@ -12,7 +13,7 @@
     "seconds": 0.058,
     "post_ui_lifecycle_subcases": true
   },
-  "own_guest_framework_runtime": "PENDING_DEFAULT_CI",
+  "own_guest_framework_runtime": "CI32_HTTP_AND_PENDING_INTENT_CREATION_PASSED; UID_ASSERTION_USED_VIRTUAL_PROCESS_UID_AND_FAILED; CORRECTED_NUMERIC_CHECK_PENDING_NEW_CI",
   "corrected_wechat_startup": "PENDING_NATIVE_CI",
   "douyin_post_ui_comparison": "PENDING_NATIVE_CI",
   "pending_intent_scope": "CREATION_AND_CANCEL_ONLY_NOT_DELIVERY",
@@ -36,7 +37,7 @@
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ExternalGuestInstrumentedTest.java": "14d55a69bef8234da9967db2362de313f64e154de6ed520be93ec2025df89a55",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/GuestLocationInstrumentedTest.java": "86b45c72096eeb021d311840f0d74039354afa798075cbc37e77f61bdf0e2b24",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/OfficialTargetStartupInstrumentedTest.java": "e472591d67ca941ecc6bd85a54640cbbb3eb0049a9cde175ebbe3e54b17dbd0e",
-    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/StartupFrameworkInstrumentedTest.java": "7fbf74fb2600c221f08a840a961a8fd51ad746d637dc8f616f396d8f8ee7b009",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/StartupFrameworkInstrumentedTest.java": "b1cd16f4c9c7db7b81e31a0ded8229fcbd831cb3d7f4bc95f7c605fd008015f6",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ThirdPartyLocationInstrumentedTest.java": "c3f7335a56b66a15533d87b193ac362602e3f08feceb4f11fae1cb2e5736ba88",
     "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java": "b36cd994d40fa173fcd3c0830d688a102e0f63bf24584e3e1b6aa2e723f36e54",
     "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/RadioPrivacyContractInstrumentedTest.java": "dad922464c6ff52a2e0db148b6dff3a594ae5ed2a9c0cbebdc01ecd7bd30449a",
@@ -73,7 +74,7 @@
     "location-consumer/src/main/res/values/ids.xml": "d432b392a5beb2beffbc7a54cd0879df48a9aaf45c002b64cc81b30663d14c24",
     "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/LocationActivity.java": "81507dbca1d8b73b1d1164ed8233cb819fa43d5f1745535c9b592ce67df5fcb4",
     "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractService.java": "2c84ceab6539669ca86a21ad07eb866c6a3bdd4ad6221ba024097b138b805223",
-    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractActivity.java": "ef41a6e441f2e5101788c45a5b03626d1b717167902acca1d2b5f49356893e15",
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractActivity.java": "300f8410bf06a2fe912d620255743629cb6f62b6e77174c01a9f1cd0f30be1e8",
     "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/ReadOnlyUiFixtureActivity.java": "36a0197ca1b56e3839c41039b3b5dfb9ee62ab2b6753ecb3374639f24368a184"
   },
   "test_source_sha256": {
@@ -82,5 +83,7 @@
     "tests/test_cuttlefish_target_baselines.py": "b74cc2897451c5bc21bd4e95289d761a8314b05c408f9d236587f252353c99b1"
   },
   "donor_patch_clean_index_application_verified": true,
-  "startup_cli_selection_verified": true
+  "startup_cli_selection_verified": true,
+  "uid_test_correction_base_commit": "3f0087fbfad04b915e0b4c67a9b364d8aa544863",
+  "latest_runtime_record": "framework-startup-prerequisite-results.json"
 }

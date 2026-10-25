@@ -52,6 +52,10 @@ public final class StartupFrameworkInstrumentedTest {
             assertTrue(imported.success); assertEquals(pkg, imported.packageName);
             BLocationManager.disableFakeLocation(0, pkg);
             Intent launch = new Intent().setComponent(new ComponentName(pkg, pkg + ".StartupContractActivity"));
+            int hostUid = context.getApplicationInfo().uid;
+            assertEquals("Capture the system UID before entering the virtual guest", android.os.Process.myUid(), hostUid);
+            assertEquals("Cached host UID must agree with the real host process", BlackBoxCore.getHostUid(), hostUid);
+            launch.putExtra("expected_host_uid", hostUid);
             BlackBoxCore.get().startActivity(launch, 0);
             File receipt = new File(BEnvironment.getDataDir(pkg, 0), "files/startup-contract.json");
             long deadline = SystemClock.elapsedRealtime() + 60000;
@@ -66,8 +70,11 @@ public final class StartupFrameworkInstrumentedTest {
             assertTrue(observed.optBoolean("framework_http_legacy_class_resolved"));
             assertTrue(observed.optBoolean("pending_activity_created"));
             assertTrue(observed.optBoolean("pending_service_created"));
-            assertTrue(observed.optBoolean("activity_attribution_uid_matches_process"));
-            assertTrue(observed.optBoolean("application_attribution_uid_matches_process"));
+            assertEquals(hostUid, observed.getInt("expected_real_host_uid"));
+            assertEquals(hostUid, observed.getInt("activity_attribution_uid"));
+            assertEquals(hostUid, observed.getInt("application_attribution_uid"));
+            assertTrue(observed.optBoolean("activity_attribution_uid_matches_real_host"));
+            assertTrue(observed.optBoolean("application_attribution_uid_matches_real_host"));
             assertEquals(context.getPackageName(), observed.getString("activity_attribution_package"));
             assertFalse(observed.optBoolean("pending_intents_sent"));
             assertFalse(observed.optBoolean("location_requested"));

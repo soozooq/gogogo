@@ -1,0 +1,130 @@
+{
+  "schema": "GOGOGO_FRAMEWORK_STARTUP_PREREQUISITE_RESULTS_V1",
+  "scope": "API33_X86_64_SELF_OWNED_GUEST_ONLY_NOT_TARGET_STARTUP_OR_LOCATION",
+  "run_id": 40182108173,
+  "commit": "3f0087fbfad04b915e0b4c67a9b364d8aa544863",
+  "tree": "a2b03b378727ffb4af60aaeb7b42a5e98c546701",
+  "conclusion": "failure",
+  "artifacts": {
+    "linux": {
+      "id": 12594279085,
+      "sha256": "0b48c0f4d5824f2125992eca90a154908a1603fda32c0b4fd65b95062ce7ed8a",
+      "verified": true
+    },
+    "own": {
+      "id": 12595090903,
+      "sha256": "b34b4e42a75c0ad1e71c85f886d693975776089f33c959377b7ce1cf8d724cef",
+      "verified": true
+    },
+    "mac": {
+      "id": 12594646492,
+      "sha256": "a7535e57dbe61a35c119d417fa30f8d9ccdba70c8f34bf4a41f90c2cabf8ca0d",
+      "verified": true
+    }
+  },
+  "source_inputs_verified": 55,
+  "own_transport": {
+    "source_count_verified": 50,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4530752,
+        "sha256": "a878bc437d1b8cda918724cfef4a392c1cd1b5fda4ee25479fd1887935b4f4c6"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 494322,
+        "sha256": "7564197e2fdeac12f3c6d8bb87dd65ec7aee26082003442d8e9a28c8658d4fea"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "observed": {
+    "scope": "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION",
+    "passed": false,
+    "pending_intents_sent": false,
+    "location_requested": false,
+    "framework_http_legacy_class_resolved": true,
+    "activity_attribution_uid_matches_process": false,
+    "application_attribution_uid_matches_process": false,
+    "activity_attribution_package": "com.soozooq.tianwaitian.containerresearch",
+    "pending_activity_created": true,
+    "pending_service_created": true
+  },
+  "failure": {
+    "assertion": "activity_attribution_uid_matches_process",
+    "java_line_in_tested_commit": 69,
+    "junit_tests": 1,
+    "junit_failures": 1,
+    "junit_seconds": 0.612,
+    "diagnosis": "Guest Process.myUid is deliberately virtualized by OsProxy; it is not the real system UID expected for framework attribution. Numeric framework attribution UID was not recorded by this failed version.",
+    "runtime_attribution_not_reverted": true,
+    "virtual_uid_remains_internal": true
+  },
+  "candidate_correction": {
+    "expected_uid_source": "Host targetContext ApplicationInfo.uid captured before guest launch; assert equals host Process.myUid and BlackBoxCore.getHostUid",
+    "actual_fields": [
+      "expected_real_host_uid",
+      "process_api_uid",
+      "activity_attribution_uid",
+      "application_attribution_uid"
+    ],
+    "local_build_passed": true,
+    "local_build_seconds": 13,
+    "corrected_runtime": "PENDING_NEW_CI"
+  },
+  "read_only_ui_capture": {
+    "source_count_verified": 57,
+    "passed": true,
+    "scope": "SELF_OWNED_MOVING_UI_ONLY_NOT_TARGET_STARTUP_OR_LOCATION",
+    "old_cli": {
+      "returncode": 0,
+      "idle_error_observed": true
+    },
+    "observed": {
+      "scope": "SELF_OWNED_UI_CAPTURE_ONLY_NOT_TARGET_STARTUP",
+      "target": "owned-fixture",
+      "package": "com.soozooq.tianwaitian.locationconsumer",
+      "api": 33,
+      "capture_method": "UI_AUTOMATION_WITHOUT_IDLE_WAIT",
+      "own_driver_targeting": true,
+      "plain_application": true,
+      "passed": true,
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "input_events_sent": false,
+      "root_package": "com.soozooq.tianwaitian.locationconsumer",
+      "visible_text": [
+        "Read-only moving fixture 119"
+      ],
+      "stage": "OWN_UI_VISIBLE",
+      "elapsed_ms": 530
+    },
+    "cleanup": {
+      "com.soozooq.tianwaitian.locationconsumer": true,
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true
+    },
+    "host_engine_process_absent": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "old_calculator_ordinary_radio_cases": "NOT_RUN_AFTER_NEW_PREREQUISITE_FAILURE",
+  "native_job": {
+    "id": 121136452646,
+    "conclusion": "skipped",
+    "interpretation": "PREREQUISITE_GATE_NOT_PASS"
+  },
+  "wechat_and_douyin_location": "UNFULFILLED",
+  "phone_update_distributed": false
+}

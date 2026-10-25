@@ -23,9 +23,16 @@ public final class StartupContractActivity extends Activity {
             Class.forName("org.apache.http.impl.client.DefaultHttpClient", false, getClassLoader());
             report.put("framework_http_legacy_class_resolved", true);
             if (Build.VERSION.SDK_INT >= 31) {
-                report.put("activity_attribution_uid_matches_process", getAttributionSource().getUid() == Process.myUid());
-                report.put("application_attribution_uid_matches_process",
-                        getApplicationContext().getAttributionSource().getUid() == Process.myUid());
+                // Process.myUid is deliberately virtualized by the container. Compare
+                // framework attribution with the real host UID captured before guest launch.
+                int expectedHostUid = getIntent().getIntExtra("expected_host_uid", -1);
+                report.put("expected_real_host_uid", expectedHostUid).put("process_api_uid", Process.myUid());
+                report.put("activity_attribution_uid", getAttributionSource().getUid());
+                report.put("application_attribution_uid", getApplicationContext().getAttributionSource().getUid());
+                report.put("activity_attribution_uid_matches_real_host", expectedHostUid > 0
+                        && getAttributionSource().getUid() == expectedHostUid);
+                report.put("application_attribution_uid_matches_real_host", expectedHostUid > 0
+                        && getApplicationContext().getAttributionSource().getUid() == expectedHostUid);
                 report.put("activity_attribution_package", getAttributionSource().getPackageName());
             }
             int flags = PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_CANCEL_CURRENT;
@@ -38,8 +45,8 @@ public final class StartupContractActivity extends Activity {
             report.put("pending_service_created", service != null);
             if (service != null) service.cancel();
             report.put("passed", activity != null && service != null
-                    && report.optBoolean("activity_attribution_uid_matches_process")
-                    && report.optBoolean("application_attribution_uid_matches_process"));
+                    && report.optBoolean("activity_attribution_uid_matches_real_host")
+                    && report.optBoolean("application_attribution_uid_matches_real_host"));
         } catch (Throwable error) {
             try { report.put("error_class", error.getClass().getName()); }
             catch (Exception ignored) { }

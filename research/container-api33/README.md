@@ -6,6 +6,8 @@
 
 **当前实测**：[原生 ARM64 最新结果 `40174550024 / ff1a21ee`](evidence/cuttlefish-verified-signers-and-startup-crashes.json)已自动确认微信欢迎页、抖音隐私页；两款容器导入和原证书查询也通过。Guest 启动后，微信因 Wi-Fi 权限、旧 HTTP 类、现代 PendingIntent 归属错误崩溃，抖音有 Guest ART JIT 线程原生崩溃。系统进程保持稳定，清理完成；两款容器界面与定位业务均未通过。候选一次补齐微信的三个已知框架条件，先用自有 Guest 自动检查；抖音补充同样时长的普通／容器对照，不猜测具体 Hook 原因，不改全局 JIT 或模拟标记。
 
+[最新默认检查 CI32／3f0087fb](evidence/framework-startup-prerequisite-results.json)已实际通过旧 HTTP 类加载及两类 PendingIntent 创建，UID断言仍失败：Guest 的 `Process.myUid()` 返回内部逻辑 UID，原测试误把它当作系统 UID。修正改用进入 Guest 前取得的真实宿主 UID，并记录实际归属数值；13秒构建通过，修正后运行待新CI。保留正确的运行时代码归属处理，不更改它来迎合错误断言。原生检查本轮跳过，CI31仍是最新实际 ARM64 结果。
+
 ## 核对下载的 CI 回执（维护用）
 
 `tools/verify-ci-receipts.py` 读取已下载的 ZIP，不安装应用、不查询手机。输入 JSON 填写 GitHub Artifact API 给出的完整提交、run ID及各归档摘要，路径指向本地 ZIP；支持 `linux`、`mac`、`own`、`native` 四种归档角色。摘要不能改成从待验证 ZIP 自行推导的预期值。输出使用一个尚不存在的新路径，保留旧证据。

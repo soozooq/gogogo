@@ -1,89 +1,128 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
   "scope": "DEFAULT_RESEARCH_CHECKS_ONLY_NOT_TARGET_APP_COMPATIBILITY",
-  "run_id": 40174550024,
-  "commit": "ff1a21eeacf2ce9efb0aa1718332af2823dd9df1",
-  "tree": "d2f00257f6cf4492e79b590f8be751e37da20c4e",
+  "run_id": 40182108173,
+  "commit": "3f0087fbfad04b915e0b4c67a9b364d8aa544863",
+  "tree": "a2b03b378727ffb4af60aaeb7b42a5e98c546701",
   "conclusion": "failure",
-  "default_checks_conclusion": "success",
+  "default_checks_conclusion": "failure",
   "jobs": [
     {
-      "id": 121112305903,
+      "id": 121135137255,
       "name": "Build, inspect and ordinary entry (Linux)",
-      "conclusion": "success"
+      "conclusion": "failure"
     },
     {
-      "id": 121112305882,
+      "id": 121135137402,
       "name": "Build and inspect (ARM Mac)",
       "conclusion": "success"
     },
     {
-      "id": 121113567517,
+      "id": 121136452646,
       "name": "Inspect ARM Linux host and optional Cuttlefish boot",
-      "conclusion": "failure",
-      "system_boot_passed": true,
-      "both_original_ui_passed": true,
-      "both_original_signers_passed": true,
-      "both_container_startups_passed": false
+      "conclusion": "skipped"
     },
     {
-      "id": 121112306963,
+      "id": 121135138272,
       "name": "Anonymous startup (official Android 12L translation)",
       "conclusion": "skipped"
     }
   ],
   "linux_artifact": {
-    "id": 12590814627,
-    "sha256": "ee2e2bd9ed34c25b54399d7676f03d7610b4471be589e184642b66019a3ea4ca",
+    "id": 12594279085,
+    "sha256": "0b48c0f4d5824f2125992eca90a154908a1603fda32c0b4fd65b95062ce7ed8a",
+    "verified": true,
     "digest_verified": true,
     "commit_verified": true,
     "every_case_source_map_verified_against_commit": true
   },
   "default_case_results": {
-    "x86_64-ordinary-entry": {
-      "passed": true,
-      "source_inputs_verified": 51,
-      "junit": [
-        "Time: 11.774",
-        "OK (1 test)"
-      ]
+    "x86_64-startup-framework": {
+      "source_count_verified": 55,
+      "passed": false
     },
-    "x86_64-calculator": {
+    "read-only-ui-capture": {
+      "source_count_verified": 57,
       "passed": true,
-      "source_inputs_verified": 51,
-      "junit": [
-        "Time: 6.236",
-        "OK (1 test)"
-      ]
-    },
-    "x86_64-radio-privacy": {
-      "passed": true,
-      "source_inputs_verified": 51,
-      "junit": [
-        "Time: 0.06",
-        "OK (5 tests)"
-      ]
+      "scope": "SELF_OWNED_MOVING_UI_ONLY_NOT_TARGET_STARTUP_OR_LOCATION",
+      "old_cli": {
+        "returncode": 0,
+        "idle_error_observed": true
+      },
+      "observed": {
+        "scope": "SELF_OWNED_UI_CAPTURE_ONLY_NOT_TARGET_STARTUP",
+        "target": "owned-fixture",
+        "package": "com.soozooq.tianwaitian.locationconsumer",
+        "api": 33,
+        "capture_method": "UI_AUTOMATION_WITHOUT_IDLE_WAIT",
+        "own_driver_targeting": true,
+        "plain_application": true,
+        "passed": true,
+        "terms_accepted": false,
+        "login_attempted": false,
+        "messages_sent": false,
+        "input_events_sent": false,
+        "root_package": "com.soozooq.tianwaitian.locationconsumer",
+        "visible_text": [
+          "Read-only moving fixture 119"
+        ],
+        "stage": "OWN_UI_VISIBLE",
+        "elapsed_ms": 530
+      },
+      "cleanup": {
+        "com.soozooq.tianwaitian.locationconsumer": true,
+        "com.soozooq.tianwaitian.containerresearch.test": true,
+        "com.soozooq.tianwaitian.containerresearch": true
+      },
+      "host_engine_process_absent": true
     }
   },
   "cuttlefish_boot_result": "cuttlefish-verified-signers-and-startup-crashes.json",
-  "full_arm64_system_boot": "QUALIFIED_API33_BUILD16596636_UID2000_ENFORCING_NO_TRANSLATION",
-  "full_arm64_guest_apps": "BOTH_ORIGINAL_UI_AND_BOTH_VIRTUAL_IMPORT_SIGNERS_PASS; WECHAT_GUEST_JAVA_FATALS_AND_DOUYIN_GUEST_ART_JIT_NATIVE_FATAL",
-  "target_probe": "BOTH_NATIVE_CONTAINERS_LAUNCH_REQUESTED_STARTUP_FAILED; OLD_TRANSLATED_JOB_SKIPPED_NOT_PASS",
+  "full_arm64_system_boot": "NO_NEW_NATIVE_RUN; LAST_QUALIFIED_CI31_API33_BUILD16596636",
+  "full_arm64_guest_apps": "NO_NEW_NATIVE_RUN; LAST_CI31_BOTH_ORIGINAL_UI_AND_IMPORT_SIGNERS_PASS_WITH_GUEST_STARTUP_CRASHES",
+  "target_probe": "CI32_NATIVE_SKIPPED_NOT_PASS; CI31_REMAINS_LATEST_ACTUAL_NATIVE_RESULT",
   "arm64_mac_runtime_probe": "SKIPPED_DEFAULT_FALSE_NOT_PASS",
   "wechat_send_and_live_location": "UNFULFILLED",
   "douyin_wireless_and_overseas": "UNFULFILLED",
   "physical_arm64_vivo": "NOT_VERIFIED",
   "phone_update_distributed": false,
   "previous_verified_default_run": {
-    "run_id": 40149216340,
-    "commit": "7a2eaf518367e579c5813fe14d9601a1a38103c8",
-    "default_checks_conclusion": "success"
+    "run_id": 40174550024,
+    "commit": "ff1a21eeacf2ce9efb0aa1718332af2823dd9df1",
+    "default_checks_conclusion": "success",
+    "original_default_case_results": {
+      "x86_64-ordinary-entry": {
+        "passed": true,
+        "source_inputs_verified": 51,
+        "junit": [
+          "Time: 11.774",
+          "OK (1 test)"
+        ]
+      },
+      "x86_64-calculator": {
+        "passed": true,
+        "source_inputs_verified": 51,
+        "junit": [
+          "Time: 6.236",
+          "OK (1 test)"
+        ]
+      },
+      "x86_64-radio-privacy": {
+        "passed": true,
+        "source_inputs_verified": 51,
+        "junit": [
+          "Time: 0.06",
+          "OK (5 tests)"
+        ]
+      }
+    }
   },
-  "controlled_radio_proxy": "PASS_FIVE_CONTROLLED_CELL_WIFI_TESTS_NOT_GUEST_OR_ACTUAL_RADIO_PROOF",
+  "controlled_radio_proxy": "NOT_RUN_IN_CI32; PREVIOUS_FIVE_CONTROLLED_TESTS_NOT_GUEST_OR_RADIO_PROOF",
   "radio_result": "wifi-radio-privacy-contract-results.json",
   "mac_artifact": {
-    "id": 12592016648,
-    "sha256": "bdc9462eb2910a0378acd1bbecadab421df9f7b2cfb01dd4c8f7486c9d8c443f",
+    "id": 12594646492,
+    "sha256": "a7535e57dbe61a35c119d417fa30f8d9ccdba70c8f34bf4a41f90c2cabf8ca0d",
+    "verified": true,
     "digest_verified": true,
     "commit_verified": true
   },
@@ -94,42 +133,75 @@
       "errors": 0,
       "skipped": 0
     },
-    "lint_error_or_fatal_count": 0,
-    "source_files_verified": 4
+    "lint_error_fatal_count": 0,
+    "passed": true
   },
   "own_transport": {
-    "artifact_id": 12592065531,
-    "artifact_sha256": "11af232018a085851a10f4b3e4d3256c173d27c47c14edacc0a413cb4684defd",
-    "source_count_verified": 48,
-    "host": {
-      "signature_verified": true,
-      "certificate_sha256": "597f5a48b5112bb83ebd7388202dafe67fbb8e7a48afb9b347839b0ab08aa318"
-    },
-    "driver": {
-      "signature_verified": true,
-      "certificate_sha256": "597f5a48b5112bb83ebd7388202dafe67fbb8e7a48afb9b347839b0ab08aa318"
-    },
-    "own_ui_component_and_plain_driver_manifest_verified": true,
-    "both_native_abi_links_byte_identical_to_previously_verified_ci30": true,
+    "source_count_verified": 50,
     "apks": {
       "host": {
         "name": "probeHost-debug.apk",
-        "size": 4530076,
-        "sha256": "6be16aea4d5658d62e373c31bd49b66c24576a3cf9a4bab6d9cfaa5a2e62a001"
+        "size": 4530752,
+        "sha256": "a878bc437d1b8cda918724cfef4a392c1cd1b5fda4ee25479fd1887935b4f4c6"
       },
       "driver": {
         "name": "probeHost-debug-androidTest.apk",
-        "size": 491958,
-        "sha256": "bc884daf9dca93dd5734da9ba453f9762f002b739e2234fb9366a9d9d01a7143"
+        "size": 494322,
+        "sha256": "7564197e2fdeac12f3c6d8bb87dd65ec7aee26082003442d8e9a28c8658d4fea"
       }
-    }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
   },
   "read_only_ui_capture": {
-    "source_count_verified": 53,
+    "source_count_verified": 57,
     "passed": true,
-    "old_cli_idle_error_observed": true,
-    "own_capture_ms": 33,
-    "root_package": "com.soozooq.tianwaitian.locationconsumer",
+    "scope": "SELF_OWNED_MOVING_UI_ONLY_NOT_TARGET_STARTUP_OR_LOCATION",
+    "old_cli": {
+      "returncode": 0,
+      "idle_error_observed": true
+    },
+    "observed": {
+      "scope": "SELF_OWNED_UI_CAPTURE_ONLY_NOT_TARGET_STARTUP",
+      "target": "owned-fixture",
+      "package": "com.soozooq.tianwaitian.locationconsumer",
+      "api": 33,
+      "capture_method": "UI_AUTOMATION_WITHOUT_IDLE_WAIT",
+      "own_driver_targeting": true,
+      "plain_application": true,
+      "passed": true,
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "input_events_sent": false,
+      "root_package": "com.soozooq.tianwaitian.locationconsumer",
+      "visible_text": [
+        "Read-only moving fixture 119"
+      ],
+      "stage": "OWN_UI_VISIBLE",
+      "elapsed_ms": 530
+    },
+    "cleanup": {
+      "com.soozooq.tianwaitian.locationconsumer": true,
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true
+    },
     "host_engine_process_absent": true
-  }
+  },
+  "default_cases_not_run": [
+    "x86_64-ordinary-entry",
+    "x86_64-calculator",
+    "x86_64-radio-privacy"
+  ],
+  "framework_startup_result": "framework-startup-prerequisite-results.json",
+  "latest_actual_native_run": {
+    "run_id": 40174550024,
+    "commit": "ff1a21eeacf2ce9efb0aa1718332af2823dd9df1",
+    "result": "cuttlefish-verified-signers-and-startup-crashes.json",
+    "both_original_ui_passed": true,
+    "both_original_signers_passed": true,
+    "both_container_startups_passed": false,
+    "system_server_pid_stable": 653
+  },
+  "native_job_this_run": "SKIPPED_DEFAULT_PREREQUISITE_FAILURE_NOT_PASS"
 }
