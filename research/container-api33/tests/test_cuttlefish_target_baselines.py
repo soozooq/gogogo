@@ -75,7 +75,8 @@ class OriginalBaselineControlTest(unittest.TestCase):
             entry = {'source_key': 'wechat', 'package': 'com.tencent.mm',
                      'sha256': hashlib.sha256(apk.read_bytes()).hexdigest()}
             for mode in ['ready', 'wrong_signer', 'wrong_runtime', 'wrong_package',
-                         'junit_failed', 'cleanup_failed', 'preexisting', 'wrong_abi']:
+                         'junit_failed', 'cleanup_failed', 'preexisting', 'wrong_abi',
+                         'system_changed', 'system_fatal', 'post_changed', 'post_fatal']:
                 with self.subTest(mode=mode):
                     calls = []
                     observed = {'passed': True, 'runtime': 'cuttlefish-arm64', 'package': entry['package'],
@@ -88,7 +89,19 @@ class OriginalBaselineControlTest(unittest.TestCase):
                         command = argv[3:]
                         calls.append(command)
                         output, code = b'', 0
-                        if command[:3] == ['shell', 'pm', 'path']:
+                        if command == ['shell', 'id', '-u']:
+                            output = b'2000'
+                        elif command == ['shell', 'getenforce']:
+                            output = b'Enforcing'
+                        elif command == ['shell', 'getprop', 'sys.boot_completed']:
+                            output = b'1'
+                        elif command == ['shell', 'pidof', 'system_server']:
+                            instrumented = any(c[:3] == ['shell', 'am', 'instrument'] for c in calls)
+                            output = b'9002' if mode == 'system_changed' or mode == 'post_changed' and instrumented else b'9001'
+                        elif command == ['logcat', '-d', '-b', 'crash'] and (mode == 'system_fatal'
+                                or mode == 'post_fatal' and any(c[:3] == ['shell', 'am', 'instrument'] for c in calls)):
+                            output = b'E AndroidRuntime: *** FATAL EXCEPTION IN SYSTEM PROCESS: FinalizerWatchdogDaemon'
+                        elif command[:3] == ['shell', 'pm', 'path']:
                             if mode == 'preexisting': output = b'package:/preserve.apk'
                         elif command[:3] == ['shell', 'dumpsys', 'package']:
                             output = b'primaryCpuAbi=x86_64' if mode == 'wrong_abi' else b'primaryCpuAbi=arm64-v8a'
@@ -103,10 +116,12 @@ class OriginalBaselineControlTest(unittest.TestCase):
 
                     with patch.object(baselines.subprocess, 'run', side_effect=adb):
                         result = baselines.container_startup(Path('/controlled/adb'), '127.0.0.1:6520',
-                            apk, entry, root, root / mode, dict(os.environ))
+                            apk, entry, root, root / mode, dict(os.environ), expected_system_pid='9001')
                     self.assertEqual(mode == 'ready', result['passed'])
-                    if mode == 'preexisting':
+                    if mode in ['preexisting', 'system_changed', 'system_fatal']:
                         self.assertFalse(any(c[0] in ['install', 'uninstall'] for c in calls))
+                    if mode in ['system_changed', 'system_fatal', 'post_changed', 'post_fatal']:
+                        self.assertTrue(result['state'].startswith('ENVIRONMENT_'))
                     if mode == 'wrong_abi':
                         self.assertFalse(any(c[:3] == ['shell', 'am', 'instrument'] for c in calls))
                     self.assertFalse(any(c[:3] in [['shell', 'input', 'tap'], ['shell', 'input', 'text']]
@@ -150,7 +165,8 @@ class OriginalBaselineControlTest(unittest.TestCase):
                    '<node package="com.tencent.mm" text="Log in"/>'
                    '<node package="com.tencent.mm" text="Sign up"/></hierarchy>').encode()
             for mode in ['welcome', 'preexisting', 'identity_changed', 'install_failed',
-                         'install_timed_out', 'native_crash', 'unrelated_ui', 'cleanup_failed']:
+                         'install_timed_out', 'native_crash', 'unrelated_ui', 'cleanup_failed',
+                         'system_changed', 'system_fatal', 'post_ui_changed']:
                 with self.subTest(mode=mode):
                     calls = []
 
@@ -168,6 +184,11 @@ class OriginalBaselineControlTest(unittest.TestCase):
                             output = ('different' if mode == 'identity_changed' else value).encode()
                         elif command == ['shell', 'uname', '-m']:
                             output = b'aarch64'
+                        elif command == ['shell', 'pidof', 'system_server']:
+                            committed = any(c[:3] == ['shell', 'pm', 'install-commit'] for c in calls)
+                            captured = any(c[:2] == ['exec-out', 'cat'] for c in calls)
+                            changed = mode == 'system_changed' and committed or mode == 'post_ui_changed' and captured
+                            output = b'9002' if changed else b'9001'
                         elif command == ['shell', 'am', 'get-started-user-state', '0']:
                             output = b'RUNNING_UNLOCKED'
                         elif command[:3] == ['shell', 'pm', 'path']:
@@ -195,6 +216,8 @@ class OriginalBaselineControlTest(unittest.TestCase):
                         elif command == ['logcat', '-d', '-b', 'crash']:
                             if mode in ['native_crash', 'unrelated_ui']:
                                 output = b'pid: 12 >>> com.tencent.mm <<< signal 11'
+                            elif mode == 'system_fatal':
+                                output = b'E AndroidRuntime: *** FATAL EXCEPTION IN SYSTEM PROCESS: FinalizerWatchdogDaemon'
                         elif command[0] == 'uninstall':
                             code = int(mode == 'cleanup_failed')
                             output = b'Failure [FIXTURE]' if code else b'Success'
@@ -214,6 +237,47 @@ class OriginalBaselineControlTest(unittest.TestCase):
                         self.assertEqual('PREEXISTING_SYSTEM_PACKAGE_PRESERVED', result['state'])
                     if mode in ['native_crash', 'unrelated_ui']:
                         self.assertEqual('ORIGINAL_SYSTEM_CONTROL_NATIVE_CRASH', result['state'])
+                    if mode in ['system_changed', 'system_fatal', 'post_ui_changed']:
+                        self.assertTrue(result['state'].startswith('ENVIRONMENT_'))
+                        self.assertEqual(mode == 'post_ui_changed', result['launch_requested'])
+
+    def test_each_original_finishes_its_callback_before_the_next_target(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / 'evidence').mkdir()
+            pins = {'targets': [{'source_key': key} for key in ['wechat', 'douyin']],
+                    'source': {key: {'url': 'https://unused.invalid'} for key in ['wechat', 'douyin']}}
+            (root / 'evidence/official-target-apk-readiness.json').write_text(json.dumps(pins))
+            events = []
+
+            def original(adb, serial, apk, entry, *args):
+                key = entry['source_key']
+                events.append(('original', key))
+                return {'passed': key == 'wechat', 'state': 'CONTROLLED_FIXTURE'}
+
+            def after_target(key, result):
+                events.append(('after', key, result['passed']))
+
+            with patch.object(baselines, 'require_owned_qualified_vm'), \
+                    patch.object(baselines, 'original_input', return_value=root / 'fixture.apk'), \
+                    patch.object(baselines, 'installed_baseline', side_effect=original), patch('builtins.print'):
+                result = baselines.run_original_baselines(root, root, {'serial': 'fixture', 'properties': {}},
+                                                         {}, {}, after_target)
+            self.assertFalse(result['passed'])
+            self.assertEqual([('original', 'wechat'), ('after', 'wechat', True),
+                              ('original', 'douyin'), ('after', 'douyin', False)], events)
+
+    def test_failed_original_never_requests_container_inputs_or_guest_actions(self):
+        with patch.object(baselines, 'require_owned_qualified_vm') as gate, \
+                patch.object(baselines, 'original_input') as download, \
+                patch.object(baselines, 'container_startup') as start:
+            for original in [{'passed': False}, {'passed': True}]:
+                result = baselines.run_container_control(Path('/unused'), Path('/unused'), {}, {}, {},
+                    Path('/unused'), 'wechat', original)
+                self.assertTrue(result['state'].startswith('SKIPPED_ORIGINAL_SYSTEM_'))
+        gate.assert_not_called()
+        download.assert_not_called()
+        start.assert_not_called()
 
     def test_different_existing_input_is_preserved(self):
         with tempfile.TemporaryDirectory() as folder:

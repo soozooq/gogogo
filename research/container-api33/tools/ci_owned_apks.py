@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import zipfile
 
 
 FILES = {'host': 'probeHost-debug.apk', 'driver': 'probeHost-debug-androidTest.apk'}
@@ -19,7 +20,9 @@ def digest(path):
 
 def sources(spec):
     paths = [spec / 'sources.json', spec / 'cuttlefish-inputs.json',
-             spec / 'evidence/official-target-apk-readiness.json']
+             spec / 'evidence/official-target-apk-readiness.json',
+             spec / 'THIRD_PARTY_NOTICES.md', spec / 'CI_SOURCE_AND_RELINK.md']
+    paths.extend(p for p in (spec / 'licenses').iterdir() if p.is_file() and p.suffix in ['.txt', '.json'])
     for folder in ['tools', 'probe-host', 'patches']:
         paths.extend(p for p in (spec / folder).rglob('*') if p.is_file()
                      and p.suffix in ['.py', '.sh', '.java', '.xml', '.gradle', '.patch'])
@@ -43,7 +46,20 @@ def verify(directory, spec, commit):
         if entry.get('name') != name or path.stat().st_size != entry.get('size') \
                 or digest(path) != entry.get('sha256'):
             raise RuntimeError('Own APK transport size/hash mismatch: ' + role)
+        verify_notices(path, spec)
     return manifest
+
+
+def verify_notices(apk, spec):
+    materials = [*sorted((spec / 'licenses').glob('*.txt')),
+                 *sorted((spec / 'licenses').glob('*provenance.json')),
+                 spec / 'THIRD_PARTY_NOTICES.md', spec / 'CI_SOURCE_AND_RELINK.md']
+    with zipfile.ZipFile(apk) as archive:
+        if any(name.endswith('.apk') for name in archive.namelist()):
+            raise RuntimeError('The own APK must not embed another APK')
+        for path in materials:
+            if archive.read('assets/research-notices/' + path.name) != path.read_bytes():
+                raise RuntimeError('Own APK source/license material differs: ' + path.name)
 
 
 def main():

@@ -141,6 +141,7 @@ def main():
                   spec_dir / 'tools/fetch-cuttlefish-inputs.py', spec_dir / 'cuttlefish-inputs.json',
                   spec_dir / 'tools/cuttlefish_target_baselines.py',
                   spec_dir / 'tools/ci_owned_apks.py',
+                  spec_dir / 'tools/inspect-cuttlefish-arm-host.py',
                   spec_dir / 'evidence/official-target-apk-readiness.json']}}
     report['original_baselines_requested'] = args.original_baselines
     report['software_hw_timeout_multiplier_requested'] = 50
@@ -175,10 +176,13 @@ def main():
             temporary = Path(os.environ['RUNNER_TEMP']).resolve()
             if own_apks == temporary or not own_apks.is_relative_to(temporary):
                 raise RuntimeError('Own-build transport must stay in this runner temporary directory')
-            verify(own_apks, spec_dir, report['research_commit'])
+            own_manifest = verify(own_apks, spec_dir, report['research_commit'])
             report['own_apk_transport_manifest_sha256'] = digest(own_apks / 'manifest.json')
         if not host_report.get('eligible_for_boot_attempt'):
             raise RuntimeError('Actual host prerequisites did not pass')
+        if min(host_report.get('cpu_count') or 0, host_report.get('affinity_cpu_count') or 0) < 4:
+            raise RuntimeError('This large-app software attempt requires four measured host CPUs')
+        report['requested_guest_cpus'] = 4
         actual_groups = set(os.getgroups()) | {os.getegid()}
         if os.getuid() != host_report['uid'] or os.getuid() == 0:
             raise RuntimeError('Run as the same ordinary host probe user, not root')
@@ -281,7 +285,7 @@ def main():
         flags = ['--system_image_dir=' + str(images), '--instance_dir=' + str(instance),
                  '--assembly_dir=' + str(work / 'assembly'), '--vm_manager=qemu_cli',
                  '--qemu_binary_dir=' + str(wrapper), '--gpu_mode=guest_swiftshader',
-                 '--cpus=2', '--memory_mb=3072', '--start_webrtc=false', '--enable_audio=false',
+                 '--cpus=4', '--memory_mb=3072', '--start_webrtc=false', '--enable_audio=false',
                  '--start_gnss_proxy=false', '--guest_enforce_security=true',
                  '--report_anonymous_usage_stats=n', '--daemon=false', '--use_allocd=false',
                  '--vhost_net=false', '--restart_subprocesses=false',
@@ -416,7 +420,8 @@ def main():
                 'ro.dalvik.vm.native.bridge', 'ro.hw_timeout_multiplier', 'sys.boot_completed']}
             report.update(properties=properties, kernel_arch=shell(['uname', '-m']).stdout.decode().strip(),
                           shell_uid=shell(['id', '-u']).stdout.decode().strip(),
-                          selinux=shell(['getenforce']).stdout.decode().strip())
+                          selinux=shell(['getenforce']).stdout.decode().strip(),
+                          guest_cpu_online=shell(['cat', '/sys/devices/system/cpu/online']).stdout.decode().strip())
             launched = json.loads(launch_record.read_text())
             qemu_process = Path('/proc') / str(launched['pid'])
             actual_binary = (qemu_process / 'exe').resolve(strict=True)
@@ -435,6 +440,7 @@ def main():
                 and properties['ro.hw_timeout_multiplier'] == '50' \
                 and report['kernel_arch'] == 'aarch64' and report['shell_uid'] == '2000' \
                 and report['selinux'] == 'Enforcing' \
+                and report['guest_cpu_online'] == '0-3' \
                 and actual_binary == Path('/usr/bin/qemu-system-aarch64').resolve() \
                 and report['qemu']['sha256'] == host_report['qemu']['sha256'] \
                 and report['qemu']['arguments_match_launch_record']
@@ -442,17 +448,32 @@ def main():
             report['system_boot_passed'] = report['passed']
             if report['passed'] and args.original_baselines:
                 from cuttlefish_target_baselines import run_original_baselines
-                baseline = run_original_baselines(work, spec_dir, report, launched, environment)
+                container = None
+                if args.container_apks:
+                    from cuttlefish_target_baselines import run_container_control
+                    container = {'scope': 'CVD_ARM64_CONTAINER_STARTUP_ONLY_NOT_LOCATION_OR_VIVO',
+                        'results': {}, 'passed': False,
+                        'own_apk_manifest_sha256': digest(own_apks / 'manifest.json'),
+                        'own_apks': own_manifest['apks'], 'target_apks_uploaded_or_modified': False,
+                        'accounts_used': False, 'location_business_tested': False}
+
+                    def after_target(key, original):
+                        container['results'][key] = run_container_control(work, spec_dir, report,
+                            launched, environment, own_apks, key, original)
+                        container['passed'] = set(container['results']) == {'wechat', 'douyin'} \
+                            and all(x.get('passed') is True for x in container['results'].values())
+                        folder = out / 'container-target-startups'
+                        folder.mkdir(exist_ok=True)
+                        (folder / 'summary.json').write_text(json.dumps(container, indent=2) + '\n')
+
+                baseline = run_original_baselines(work, spec_dir, report, launched, environment,
+                    after_target=after_target if args.container_apks else None)
                 report['original_baselines_passed'] = baseline['passed']
                 report['apps_tested'] = any(x.get('launch_requested') for x in baseline['results'].values())
                 report['wechat_tested'] = baseline['results']['wechat'].get('launch_requested', False)
                 report['location_business_tested'] = False
                 if args.container_apks:
-                    # Each target needs its own confirmed ordinary control; one
-                    # target failing does not stop the other's independent check.
-                    from cuttlefish_target_baselines import run_container_controls
-                    container = run_container_controls(work, spec_dir, report, launched,
-                                                       environment, own_apks, baseline)
+                    # Each successful control has already been followed immediately.
                     report['container_startups_passed'] = container['passed']
                     report['passed'] = baseline['passed'] and container['passed']
                     report['state'] = 'QUALIFIED_BOOT_AND_CONTAINER_UI' if report['passed'] \

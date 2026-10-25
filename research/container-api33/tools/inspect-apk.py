@@ -45,6 +45,10 @@ with zipfile.ZipFile(host) as apk:
     abis = sorted({n.split('/')[1] for n in apk.namelist() if n.startswith('lib/') and n.endswith('.so')})
     mirror = 'Lblack/com/android/internal/InternalResources$styleable;' in definitions
     catalog = json.loads(apk.read('assets/approved-guests.json'))
+    for path in [*sorted((spec / 'licenses').glob('*.txt')),
+                 *sorted((spec / 'licenses').glob('*provenance.json')),
+                 spec / 'THIRD_PARTY_NOTICES.md', spec / 'CI_SOURCE_AND_RELINK.md']:
+        assert apk.read('assets/research-notices/' + path.name) == path.read_bytes(), path.name
 sources = json.loads((spec / 'sources.json').read_text())
 assert len(catalog) == 2
 for actual, key, location in zip(catalog, ['guest', 'third_party_location'], [False, True]):

@@ -1,12 +1,12 @@
 # Android 13 免 Root 容器可行性验证
 
-2026-10-23。此目录保存独立研究宿主、固定源码补丁与云端验证证据。天外天日常版本仍为 `2.4.31-simple-support / 2400099`；主程序、签名、定位服务及默认入口均未改动。本轮没有需要用户安装的手机更新包。
+此目录保存独立研究宿主、固定源码补丁与云端验证证据。天外天日常候选仍为 #59 的 `2.4.31-simple-support / 2400099`。同一研发分支另准备[简短默认反馈](../../docs/simple-support-flow.md)，未发布；定位服务及签名不变。本轮没有需要用户安装的手机更新包。
 
 项目接手只认根目录 [PROJECT_STATUS.md](../../PROJECT_STATUS.md)。本轮继续使用同一个研发分支和 Draft #60，没有按修复或检查新增分支／PR。
 
-**当前实测**：[原生 ARM64 Android13 完整启动已合格](evidence/cuttlefish-qualified-boot-install-timeout.json)，包括固定构建、无转译、普通 UID2000、SELinux Enforcing、实际超时倍数50及存活 QEMU 身份。两款原包都在默认 `adb install` 的180秒内未完成，尚未打开应用；欢迎页、容器和位置业务均未通过。以下早期系统失败保留为历史，不替代该最新结果。
+**当前实测**：[原生 ARM64 Android13 完整启动及两款原包分阶段安装已通过](evidence/cuttlefish-staged-install-and-runtime-limit.json)，并已请求启动。微信未读到实际界面，约131秒后才有欢迎 Activity 启动记录；抖音观察期间系统进程发生资源终结超时并重启。欢迎页、容器及位置业务均未通过。以下旧安装／系统失败保留为历史，不替代此结果。
 
-## 2026-10-24：补充 ARM64 整机软件模拟核查
+## 历史：ARM64 软件模拟与 Cuttlefish 前置核查
 
 [实际 Linux 核查](evidence/full-arm64-software-linux-check.json)已越过启动器限制，在官方未修改的 API33 ARM64 镜像里读到 ARM64 内核／应用 ABI、Native Bridge 0、UID 2000、SELinux Enforcing。随后 ART／system_server 原生崩溃，完整启动未通过；新 CPU 配置和全新 AVD 也复现，目标应用与容器均未测试。
 
@@ -36,7 +36,7 @@
 
 [后续实际运行](evidence/cuttlefish-audio-backend-failure.json)确认固件和网络配置已解决，仍在内核前因 `AC97: no default audio driver available` 退出。固定 QEMU manager 无条件加入 AC97，即使传入 `enable_audio=false`；适配器现严格核对该设备，再保留原 PCI 拓扑并指定 `AC97,audiodev=cvd_silent`／`-audiodev none,id=cvd_silent`，不依赖宿主声卡，不删除设备或修改二进制。完整实测 argv 转换及冲突参数本地检查通过，仍待真正启动结果。
 
-## 最新进展：统一的普通导入／选点入口
+## 已实测：统一的普通导入／选点入口
 
 研究宿主现在用一个页面完成选择、导入、填坐标、打开与停止。固定计算器和 GPSTest 的清单从 `sources.json` 生成；导入核对原 APK 的大小、摘要、包名、版本、证书。已导入状态和目标会保留，修改坐标后直接再次应用；不会改动系统安装的微信、抖音或日常天外天。
 
@@ -146,6 +146,12 @@ GitHub `40102349634 / 24584ae` 的独立回归也已通过：五项基站／Wi-F
 
 [原生 ARM 后续实测 `40104761802 / de74ecd`](evidence/cuttlefish-post-firmware-anr.json)已进入 Linux 5.15.206 和 Android 服务，但网络栈服务执行 ANR 后被杀，引发 system_server Java `Lost network stack` 及 zygote 重启，完整启动未通过、原包未执行。ZIP、四项源码和实际 CPU 已核对，VM 已停止。新配置使用固定上游 `BootconfigArgsFromConfig` 的软件模拟超时倍数 50：上游仅按跨架构自动选择，本次同架构 TCG 适配遗漏该选择；通过受支持的 `extra_bootconfig_args` 请求，不改系统二进制或取消检查。Vendor init 将其映射到 `ro.hw_timeout_multiplier`，Build 读取，ActiveServices 的 20 秒服务时限乘以该值。系统资格新增核验实际值 50，外层 2400 秒仍有限定，明确系统进程 Java 致命异常／内核 panic 提前停止。该配置随后已独立通过系统资格，见下段；任何欢迎页也不等于微信／抖音业务成功。
 
-[`40107227047 / 8311ed0` 的独立结果](evidence/cuttlefish-qualified-boot-install-timeout.json)已确认上述配置实际生效并通过完整系统资格。随后两款原包安装均在180秒超时；目标应用未启动，卸载失败及未记录安装会话的缺口如实保留，VM 已停止。当前安装驱动先等待 `am get-started-user-state 0` 返回 `RUNNING_UNLOCKED`，将禁用传输压缩的文件传输、远端 SHA256、标准 `pm install-create/write/commit` 分开计时保存回执与超时前输出，失败放弃本次已记录会话。单次安装阶段总等待限定1500秒，仍需真实 ARM 验证，不推断180秒内是传输还是解析阻塞。
+[`40107227047 / 8311ed0` 的独立结果](evidence/cuttlefish-qualified-boot-install-timeout.json)已确认上述配置实际生效并通过完整系统资格。随后两款原包安装均在180秒超时；目标应用未启动，卸载失败及未记录安装会话的缺口如实保留，VM 已停止。当前安装驱动先等待 `am get-started-user-state 0` 返回 `RUNNING_UNLOCKED`，将禁用传输压缩的文件传输、远端 SHA256、标准 `pm install-create/write/commit` 分开计时保存回执与超时前输出，失败放弃本次已记录会话。单次安装阶段总等待限定1500秒；后续结果见下段，不由旧180秒超时推断传输或解析原因。
 
-后续容器衔接使用明确的 `[cuttlefish-boot] [cuttlefish-container]` 标记，默认不执行：同一工作流 Linux 作业构建的自有宿主／测试对，以提交、完整研究源码和每份大小／SHA绑定，通过单日保留的独立 CI 产物传给 ARM 作业。仅含自有构建对与 manifest，原始微信／抖音不会进入该产物；它不是日常手机更新包。仍须先通过本次系统身份及该目标的普通安装对照，再调用既有匿名启动测试；CVD 模式再次核对固定构建／产品／安全状态，SDK 模式保留原限制。一个目标普通对照失败，只跳过该目标容器检查。此衔接仅本地编译通过，尚无实际容器 ARM64 结果，手机发行及许可材料门槛见 [来源记录](THIRD_PARTY_NOTICES.md)。
+后续容器衔接使用明确的 `[cuttlefish-boot] [cuttlefish-container]` 标记，默认不执行：同一工作流 Linux 作业构建的自有宿主／测试对，以提交、完整研究源码和每份大小／SHA绑定，通过单日保留的独立 CI 产物传给 ARM 作业。仅含自有构建对与 manifest，原始微信／抖音不会进入该产物；它不是日常手机更新包。仍须先通过本次系统身份及该目标的普通安装对照，再调用既有匿名启动测试；CVD 模式再次核对固定构建／产品／安全状态，SDK 模式保留原限制。一个目标普通对照失败，只跳过该目标容器检查。此衔接尚无实际容器 ARM64 结果。
+
+[自有 APK 材料准备](evidence/ci-own-apk-materials-preparation.json)记录实际本地构建及检查：每份 APK 内保留11份许可／NOTICE／来源和相容库替换材料，字节与源码逐一匹配；两个 ABI 的实际 ELF 均有 `libxposed.so → liblsplant.so` 动态依赖。传递校验同时固定这些材料并拒绝嵌入其他 APK，13项受控驱动／材料检查通过。更改许可或来源材料也触发 CI。此材料包不是全部依赖逐文件许可审计或手机发行的完成证明，详见[来源记录](THIRD_PARTY_NOTICES.md)及[源码／库替换说明](CI_SOURCE_AND_RELINK.md)。
+
+[最新 ARM 实测 `40143188975 / 5e87841`](evidence/cuttlefish-staged-install-and-runtime-limit.json)确认上述分阶段安装全部成功，提交耗时757.125／680.084秒；新鲜系统身份和两款启动请求均记录。微信欢迎 Activity 约131秒才出现，旧窗口120秒内未读到界面；抖音期间 `system_server` 的 `ApkAssets.finalize()` 10秒终结超时导致重启，包清理未确认，VM 已停止。保留原始 UNKNOWN，不把平台崩溃写成目标原生故障。
+
+下一轮准备使用实测宿主及亲和性至少4核的4 vCPU、原包及 CVD 界面300秒上限，内存3072MiB不变；新增系统进程 PID／致命异常的前后检查，每个普通对照通过清理后立即进入对应容器，再处理另一目标。13项受控检查及自有构建对14秒重建通过，尚无新 ARM 运行结果。ART 的固定源码确认终结默认10秒及独立配置入口，本轮没有改其属性或看门狗；容量调整能否避免故障仍待实际验证。

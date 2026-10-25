@@ -61,6 +61,8 @@ def inspect():
     report['kvm_device_exists'] = Path('/dev/kvm').is_char_device()
     report['disk_free_bytes'] = shutil.disk_usage(out).free
     report['memory_bytes'] = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
+    report['cpu_count'] = os.cpu_count()
+    report['affinity_cpu_count'] = len(os.sched_getaffinity(0))
     qemu = shutil.which('qemu-system-aarch64')
     qemu_ok = False
     if qemu:

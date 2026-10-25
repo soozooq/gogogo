@@ -1,21 +1,21 @@
 # 许可与来源记录
 
-本目录发布研究源码、补丁及脱敏云端证据；未打包分发两份候选容器、Fossify APK 或预编译 Native 库。下列为已核对的声明及发布前仍需完成的材料，不是逐文件授权审计的完成证明。
+本目录提交研究源码、补丁及脱敏云端证据。明确选择时，同一 CI 可通过单日保留的产物传递自编宿主／测试对，APK 内随附许可、NOTICE、来源及相容库替换说明；原始第三方 APK 与系统镜像不包含在内。下列为已核对的声明及范围，不是逐文件授权审计的完成证明，也不是正式手机发行。
 
 | 输入 | 固定来源 | 已核对声明 |
 | --- | --- | --- |
 | BlackBox | `ccgjson/BlackBox@df6249da` | 根 LICENSE 为 Apache-2.0；本目录补丁保留该来源，文本见 [Apache-2.0.txt](licenses/Apache-2.0.txt) |
 | 两份内置 Dobby 源码 | BlackBox 固定源码树内 | Apache-2.0，原 LICENSE 保留在获取的源码中 |
 | Apache Commons Lang | BlackBox Xposed 模块 | Apache-2.0，原 LICENSE／NOTICE 保留在源码中 |
-| LSPlant standalone 5.0 | 解析后的宿主运行时依赖 | LGPL-3.0；[原版许可文本](licenses/LGPL-3.0-LSPlant.txt)，正式分发须处理对应源码、修改及重链接相关义务 |
+| LSPlant standalone 5.0 | 解析后的宿主运行时依赖；v5.0 对应 `9324d71097a273ae7ce63fa2c2d676e17a1a2e04` | LGPL-3.0；[该版本许可原文](licenses/LGPL-3.0-LSPlant.txt)及 [GPL-3.0](licenses/GPL-3.0.txt)随附；实际 `libxposed.so` 动态链接 `liblsplant.so`，来源及相容库替换见[说明](CI_SOURCE_AND_RELINK.md) |
 | xCrash 3.1.0 | 解析后的宿主运行时依赖 | POM 标为 MIT；[上游完整声明](licenses/xCrash-LICENSE.txt)另列 BSD 风格及公共领域部分，不能只按 POM 名称省略 |
 | AndroidX、Kotlin、Guava 等 | 实际解析的运行时依赖图 | POM 声明见机器清单；Guava ListenableFuture 的 Apache-2.0 声明来自 `guava-parent:26.0-android` |
 | Fossify Calculator 1.4.0 | 官方 release 与 Git tag `1.4.0` | GPL-3.0；源码及发布地址见 `sources.json`，测试直接使用原始发布文件，不嵌入宿主 |
 | GPSTest 3.10.6（osmdroid） | 官方 `barbeau/gpstest` release，源码 `ffcf2a974e3c6b34cc3aac1c7086f467d24b8439` | Apache-2.0；[上游版权及完整许可](licenses/GPSTest-LICENSE.txt)。只下载、核验原 APK 用于云端运行，不嵌入或重签 APK；第三方自身依赖不属于宿主运行依赖图 |
 
-后续加入的 `location-consumer` 是本项目自编、独立构建的 Android 测试消费者，无第三方库依赖；它不是新的第三方兼容样本。此目录仍只发布其源码与云端证据，不提交消费者、宿主或测试 APK。
+后续加入的 `location-consumer` 是本项目自编、独立构建的 Android 测试消费者，无第三方库依赖；它不是新的第三方兼容样本。消费者、宿主或测试 APK 不提交到 Git 历史。
 
-代码另准备了明确选择后的同一 CI 作业间自有宿主／测试 APK 对传递，产物单日保留、固定源码／大小／摘要，不包含目标原包、Fossify／GPSTest APK 或系统镜像。该路径尚未执行，不是面向手机用户的发行，也不表示上述正式分发材料已完成；源码和本记录继续保留实际许可范围。
+自有 CI 对的 manifest 固定同一提交、源码、许可材料及 APK 大小／摘要。两份自有 APK 内的 `assets/research-notices/` 字节与仓库材料逐一核对，并拒绝嵌入任何其他 APK。JUnit 4.13.2 的 EPL-1.0 与 Hamcrest Core 1.3 的 BSD 声明从实际解析 JAR 提取，Commons NOTICE 来自固定引擎源码；附加材料来源见[记录](licenses/ci-additional-provenance.json)。保留了运行时清单不覆盖全部测试／构建工具与逐文件内容的边界。
 
 清单覆盖解析后的 53 个组件节点（含本地工程）。它收集宿主运行时的 POM 及父 POM 声明，不覆盖全部构建／测试工具，也不能替代原生源文件、字体、资源、NOTICE 和完整源码提供要求的逐项核对。
 

@@ -50,6 +50,15 @@ def anonymous_stage(target, texts):
     return None
 
 
+def platform_failure(crash):
+    """A system-process crash invalidates this environment, not the target APK."""
+    if b'FATAL EXCEPTION IN SYSTEM PROCESS' in crash:
+        return 'SYSTEM_PROCESS_JAVA_FATAL'
+    if re.search(rb'>>>\s*system_server\s*<<<', crash):
+        return 'SYSTEM_PROCESS_NATIVE_FATAL'
+    return None
+
+
 def original_input(work, entry, url, environment):
     names = {'wechat': 'weixin-8.0.79-arm64.apk', 'douyin': 'douyin-40.8.0.apk'}
     directory = work / 'targets'
@@ -173,6 +182,7 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
               'passed': False, 'state': 'NOT_RUN', 'launch_requested': False,
               'terms_accepted': False, 'login_attempted': False, 'messages_sent': False,
               'location_business_tested': False, 'container_tested': False}
+    result['startup_ui_wait_limit_seconds'] = 300
 
     def run(args, timeout=30, check=True):
         response = subprocess.run([str(adb), '-s', serial, *args], capture_output=True, timeout=timeout,
@@ -183,6 +193,25 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
 
     def shell(args, **kwargs):
         return run(['shell', *args], **kwargs).stdout.decode(errors='replace').strip()
+
+    def check_system_process(stage):
+        current = shell(['pidof', 'system_server'], check=False)
+        result.setdefault('system_process_checkpoints', {})[stage] = current
+        expected = result.get('system_server_pid_at_start')
+        if not re.fullmatch(r'[1-9][0-9]*', current) or expected and current != expected:
+            result['passed'] = False
+            result['platform_failure'] = 'SYSTEM_PROCESS_MISSING_OR_CHANGED'
+            result['state'] = 'ENVIRONMENT_SYSTEM_PROCESS_MISSING_OR_CHANGED'
+            raise RuntimeError('System process changed; no target compatibility conclusion')
+        return current
+
+    def read_crash():
+        crash = run(['logcat', '-d', '-b', 'crash'], check=False).stdout
+        (out / 'crash-log.txt').write_bytes(crash)
+        failure = platform_failure(crash)
+        if failure:
+            result.update(passed=False, platform_failure=failure, state='ENVIRONMENT_' + failure)
+        return crash
 
     def capture():
         path = '/data/local/tmp/gogogo-original-window.xml'
@@ -217,6 +246,7 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
                 raise RuntimeError('Current ADB system identity differs from qualification: ' + name)
         if shell(['uname', '-m']) != 'aarch64':
             raise RuntimeError('Current ADB kernel is not ARM64')
+        result['system_server_pid_at_start'] = check_system_process('BEFORE_INSTALL')
         if shell(['pm', 'path', package], check=False):
             result['state'] = 'PREEXISTING_SYSTEM_PACKAGE_PRESERVED'
             raise RuntimeError('Fresh package absence required; existing app preserved')
@@ -236,6 +266,10 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
         result['state'] = 'INSTALL_STAGING_REQUESTED'
         staged_original_install(run, apk, entry, out, result)
         result['state'] = 'INSTALL_CONFIRMED'
+        read_crash()
+        if result.get('platform_failure'):
+            raise RuntimeError('System process failed during installation')
+        check_system_process('AFTER_INSTALL')
         component = shell(['cmd', 'package', 'resolve-activity', '--brief', '-a', 'android.intent.action.MAIN',
                            '-c', 'android.intent.category.LAUNCHER', '-p', package]).splitlines()[-1]
         if not re.fullmatch(re.escape(package) + r'/[A-Za-z0-9_.$]+', component):
@@ -243,13 +277,15 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
         started = run(['shell', 'am', 'start', '-n', component])
         (out / 'start.txt').write_bytes(started.stdout + started.stderr)
         result['launch_requested'] = True
-        deadline = time.monotonic() + 120
+        deadline = time.monotonic() + result['startup_ui_wait_limit_seconds']
         while time.monotonic() < deadline:
+            crash = read_crash()
+            if result.get('platform_failure'):
+                break
+            check_system_process('DURING_UI_WAIT')
             texts = capture()
             (out / 'visible-text.json').write_text(json.dumps(texts, ensure_ascii=False, indent=2) + '\n')
             stage = anonymous_stage(target, texts)
-            crash = run(['logcat', '-d', '-b', 'crash'], check=False).stdout
-            (out / 'crash-log.txt').write_bytes(crash)
             if stage:
                 result.update(state=stage, passed=True)
                 break
@@ -259,13 +295,21 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
             time.sleep(2)
         else:
             result['state'] = 'STARTUP_UI_NOT_REACHED_WITHIN_BOUND_UNKNOWN_CAUSE'
+        if result['passed']:
+            check_system_process('AFTER_UI')
     except Exception as error:
+        result['passed'] = False
         result['error'] = type(error).__name__ + ': ' + str(error)[:1500]
         installation = result.get('installation', {})
-        if installation.get('failed_phase'):
+        if installation.get('failed_phase') and not result.get('platform_failure'):
             result['state'] = 'INSTALL_' + installation['failed_phase'] \
                 + ('_TIMEOUT' if isinstance(error, subprocess.TimeoutExpired) else '_FAILED')
     finally:
+        if result.get('installation'):
+            try:
+                read_crash()
+            except Exception as error:
+                result['crash_read_error'] = type(error).__name__
         if result.get('installation', {}).get('commit_requested'):
             try:
                 removed = run(['uninstall', package], timeout=120, check=False)
@@ -280,7 +324,7 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
     return result
 
 
-def container_startup(adb, serial, apk, entry, own_apks, out, environment):
+def container_startup(adb, serial, apk, entry, own_apks, out, environment, expected_system_pid=None):
     """Use the existing own instrumentation; no account/UI actions are added."""
     out.mkdir(parents=True, exist_ok=False)
     host_package = 'com.soozooq.tianwaitian.containerresearch'
@@ -300,14 +344,26 @@ def container_startup(adb, serial, apk, entry, own_apks, out, environment):
         return response
 
     try:
+        identity = {name: run(['shell', *command], check=False).stdout.decode().strip()
+                    for name, command in [('uid', ['id', '-u']), ('selinux', ['getenforce']),
+                                          ('boot', ['getprop', 'sys.boot_completed']),
+                                          ('system_pid', ['pidof', 'system_server'])]}
+        result['environment_before_container'] = identity
+        crash = run(['logcat', '-d', '-b', 'crash'], check=False).stdout
+        failure = platform_failure(crash)
+        if failure or identity['uid'] != '2000' or identity['selinux'] != 'Enforcing' \
+                or identity['boot'] != '1' or not re.fullmatch(r'[1-9][0-9]*', identity['system_pid']) \
+                or (expected_system_pid is not None and identity['system_pid'] != expected_system_pid):
+            result['state'] = 'ENVIRONMENT_' + (failure or 'CURRENT_SYSTEM_NOT_QUALIFIED')
+            raise RuntimeError('Current system must still match the successful original control')
         for candidate in [package, host_package, driver_package]:
             if run(['shell', 'pm', 'path', candidate], check=False).stdout.strip():
                 raise RuntimeError('Existing system package preserved: ' + candidate)
         requested_packages.append(host_package)
         run(['install', '--abi', 'arm64-v8a', str(own_apks / 'probeHost-debug.apk')], timeout=240)
-        identity = run(['shell', 'dumpsys', 'package', host_package]).stdout
-        (out / 'host-package.txt').write_bytes(identity)
-        if b'primaryCpuAbi=arm64-v8a' not in identity:
+        package_state = run(['shell', 'dumpsys', 'package', host_package]).stdout
+        (out / 'host-package.txt').write_bytes(package_state)
+        if b'primaryCpuAbi=arm64-v8a' not in package_state:
             raise RuntimeError('Platform did not select the actual ARM64 host ABI')
         requested_packages.append(driver_package)
         run(['install', str(own_apks / 'probeHost-debug-androidTest.apk')], timeout=240)
@@ -317,7 +373,7 @@ def container_startup(adb, serial, apk, entry, own_apks, out, environment):
         instrument = run(['shell', 'am', 'instrument', '-w', '-r', '-e', 'target', target,
             '-e', 'api', '33', '-e', 'runtime', 'cuttlefish-arm64', '-e', 'class',
             'com.soozooq.tianwaitian.containerresearch.OfficialTargetStartupInstrumentedTest#pinnedOfficialTargetColdStartup',
-            driver_package + '/androidx.test.runner.AndroidJUnitRunner'], timeout=600, check=False)
+            driver_package + '/androidx.test.runner.AndroidJUnitRunner'], timeout=900, check=False)
         transcript = instrument.stdout + instrument.stderr
         (out / 'junit.txt').write_bytes(transcript)
         observed = None
@@ -329,16 +385,24 @@ def container_startup(adb, serial, apk, entry, own_apks, out, environment):
                 (out / name).write_bytes(data)
                 if name == 'result.json':
                     observed = json.loads(data)
-        (out / 'crash-log.txt').write_bytes(run(['logcat', '-d', '-b', 'crash'], check=False).stdout)
-        passed = instrument.returncode == 0 and b'OK (1 test)' in transcript \
+        crash = run(['logcat', '-d', '-b', 'crash'], check=False).stdout
+        (out / 'crash-log.txt').write_bytes(crash)
+        after = {'system_pid': run(['shell', 'pidof', 'system_server'], check=False).stdout.decode().strip(),
+                 'boot': run(['shell', 'getprop', 'sys.boot_completed'], check=False).stdout.decode().strip()}
+        result['environment_after_container'] = after
+        failure = platform_failure(crash)
+        stable = failure is None and after['system_pid'] == identity['system_pid'] and after['boot'] == '1'
+        passed = stable and instrument.returncode == 0 and b'OK (1 test)' in transcript \
             and b'FAILURES!!!' not in transcript and b'INSTRUMENTATION_FAILED' not in transcript \
             and isinstance(observed, dict) and observed.get('passed') is True \
             and observed.get('runtime') == 'cuttlefish-arm64' \
             and observed.get('package') == package and observed.get('sha256') == entry['sha256'] \
             and observed.get('original_signer') is True \
             and observed.get('location_enabled') is False
-        result.update(passed=passed, state='ANONYMOUS_CONTAINER_UI_CONFIRMED' if passed
-                      else 'CONTAINER_STARTUP_NOT_CONFIRMED_SEE_EVIDENCE', observed=observed)
+        state = 'ANONYMOUS_CONTAINER_UI_CONFIRMED' if passed else 'CONTAINER_STARTUP_NOT_CONFIRMED_SEE_EVIDENCE'
+        if not stable:
+            state = 'ENVIRONMENT_' + (failure or 'SYSTEM_CHANGED_AFTER_INSTRUMENTATION')
+        result.update(passed=passed, state=state, observed=observed)
     except Exception as error:
         result['error'] = type(error).__name__ + ': ' + str(error)[:1500]
     finally:
@@ -357,39 +421,33 @@ def container_startup(adb, serial, apk, entry, own_apks, out, environment):
     return result
 
 
-def run_container_controls(work, spec_dir, report, record, environment, own_apks, baselines):
-    from ci_owned_apks import verify
-    require_owned_qualified_vm(work, report, record)
-    manifest = verify(own_apks, spec_dir, report['research_commit'])
-    pins = json.loads((spec_dir / 'evidence/official-target-apk-readiness.json').read_text())
-    out = work / 'evidence/container-target-startups'
-    out.mkdir(exist_ok=False)
-    results = {}
-    for key in ['wechat', 'douyin']:
-        try:
-            if baselines['results'][key].get('passed') is not True:
-                results[key] = {'passed': False, 'state': 'SKIPPED_ORIGINAL_SYSTEM_CONTROL_NOT_CONFIRMED'}
-                continue
-            require_owned_qualified_vm(work, report, record)
-            entry = next(x for x in pins['targets'] if x['source_key'] == key)
-            apk = original_input(work, entry, pins['source'][key]['url'], environment)
-            result = container_startup(work / 'host/bin/adb', report['serial'], apk, entry, own_apks,
-                                       out / key, environment)
-        except Exception as error:
-            result = {'passed': False, 'state': 'PREPARATION_FAILED_NO_CONTAINER_CONCLUSION',
-                      'error': type(error).__name__ + ': ' + str(error)[:1500]}
-        results[key] = result
-        print('Anonymous container startup:', key, result['state'], flush=True)
-    summary = {'scope': 'CVD_ARM64_CONTAINER_STARTUP_ONLY_NOT_LOCATION_OR_VIVO', 'results': results,
-               'passed': all(x.get('passed') is True for x in results.values()),
-               'own_apk_manifest_sha256': digest(own_apks / 'manifest.json'),
-               'own_apks': manifest['apks'], 'target_apks_uploaded_or_modified': False,
-               'accounts_used': False, 'location_business_tested': False}
-    (out / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
-    return summary
+def run_container_control(work, spec_dir, report, record, environment, own_apks, key, baseline):
+    """Immediately follow one successful ordinary control, before another target."""
+    if key not in ['wechat', 'douyin']:
+        raise ValueError('Only pinned target controls are admitted')
+    if baseline.get('passed') is not True:
+        return {'passed': False, 'state': 'SKIPPED_ORIGINAL_SYSTEM_CONTROL_NOT_CONFIRMED'}
+    if not re.fullmatch(r'[1-9][0-9]*', str(baseline.get('system_server_pid_at_start', ''))):
+        return {'passed': False, 'state': 'SKIPPED_ORIGINAL_SYSTEM_IDENTITY_NOT_RECORDED'}
+    try:
+        from ci_owned_apks import verify
+        require_owned_qualified_vm(work, report, record)
+        verify(own_apks, spec_dir, report['research_commit'])
+        pins = json.loads((spec_dir / 'evidence/official-target-apk-readiness.json').read_text())
+        out = work / 'evidence/container-target-startups'
+        out.mkdir(exist_ok=True)
+        entry = next(x for x in pins['targets'] if x['source_key'] == key)
+        apk = original_input(work, entry, pins['source'][key]['url'], environment)
+        result = container_startup(work / 'host/bin/adb', report['serial'], apk, entry, own_apks,
+                                   out / key, environment, baseline.get('system_server_pid_at_start'))
+    except Exception as error:
+        result = {'passed': False, 'state': 'PREPARATION_FAILED_NO_CONTAINER_CONCLUSION',
+                  'error': type(error).__name__ + ': ' + str(error)[:1500]}
+    print('Anonymous container startup:', key, result['state'], flush=True)
+    return result
 
 
-def run_original_baselines(work, spec_dir, report, record, environment):
+def run_original_baselines(work, spec_dir, report, record, environment, after_target=None):
     require_owned_qualified_vm(work, report, record)
     pins = json.loads((spec_dir / 'evidence/official-target-apk-readiness.json').read_text())
     out = work / 'evidence/original-target-baselines'
@@ -408,6 +466,8 @@ def run_original_baselines(work, spec_dir, report, record, environment):
                       'error': type(error).__name__ + ': ' + str(error)[:1500]}
         results[key] = result
         print('Original installed startup:', key, result['state'], flush=True)
+        if after_target is not None:
+            after_target(key, result)
     summary = {'scope': 'ORIGINAL_INSTALLED_STARTUP_ONLY_NOT_CONTAINER_OR_LOCATION',
                'results': results, 'passed': all(x.get('passed') is True for x in results.values()),
                'input_manifest_sha256': digest(spec_dir / 'evidence/official-target-apk-readiness.json'),

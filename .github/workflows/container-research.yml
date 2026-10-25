@@ -33,6 +33,16 @@ on:
       - research/container-api33/tests/**
       - research/container-api33/sources.json
       - research/container-api33/cuttlefish-inputs.json
+      - research/container-api33/licenses/**
+      - research/container-api33/THIRD_PARTY_NOTICES.md
+      - research/container-api33/CI_SOURCE_AND_RELINK.md
+      - app/src/**
+      - app/build.gradle
+      - externalDemo/**
+      - build.gradle
+      - settings.gradle
+      - gradle/**
+      - ci/verify_tianwaitian_launcher.py
       - ci/verify_container_v31_artifacts.py
       - .github/workflows/container-research.yml
 
@@ -79,7 +89,7 @@ jobs:
           fi
           test -x "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
       - name: Install the fixed SDK toolchain serially
-        run: sdkmanager --sdk_root="$ANDROID_HOME" 'platforms;android-30' 'platforms;android-33' 'platforms;android-34' 'build-tools;33.0.2' 'ndk;25.1.8937393' 'cmake;3.22.1'
+        run: sdkmanager --sdk_root="$ANDROID_HOME" 'platforms;android-30' 'platforms;android-33' 'platforms;android-34' 'platforms;android-36' 'build-tools;33.0.2' 'build-tools;35.0.0' 'build-tools;36.0.0' 'ndk;25.1.8937393' 'cmake;3.22.1'
       - name: Prepare pinned source, apply reviewed patch and build
         run: |
           set -euo pipefail
@@ -93,6 +103,31 @@ jobs:
           python3 research/container-api33/tools/inspect-third-party-apk.py --sdk "$ANDROID_HOME" --apk "$CONTAINER_RESEARCH_WORKDIR/guest/osmdroidRelease-v3.10.6.apk" --output "$CONTAINER_RESEARCH_WORKDIR/evidence/gpstest-artifact.json"
           python3 research/container-api33/tools/license-inventory.py --graph "$CONTAINER_RESEARCH_WORKDIR/evidence/runtime-dependencies.json" --gradle-cache "${GRADLE_USER_HOME:-$HOME/.gradle}" --output "$CONTAINER_RESEARCH_WORKDIR/evidence/dependency-licenses.json"
           git rev-parse HEAD > "$CONTAINER_RESEARCH_WORKDIR/evidence/research-commit.txt"
+      - name: Compile and check compact feedback without a phone artifact
+        run: |
+          set -euo pipefail
+          if [ ! -f local.properties ]; then
+            cat > local.properties <<'PROPERTIES'
+          MAPS_API_KEY=DUMMY
+          MAPS_SAFE_CODE=DUMMY
+          TENCENT_MAP_KEY=DUMMY
+          PROPERTIES
+          fi
+          python3 ci/verify_tianwaitian_launcher.py
+          feedback_status=0
+          bash ./gradlew :app:testDebugUnitTest :app:lintDebug --console=plain || feedback_status=$?
+          feedback_evidence="$CONTAINER_RESEARCH_WORKDIR/evidence/feedback-main"
+          mkdir -p "$feedback_evidence/unit"
+          git rev-parse HEAD > "$feedback_evidence/commit.txt"
+          sha256sum app/src/main/java/com/zcshou/gogogo/LabFeedbackReport.java app/src/main/java/com/zcshou/gogogo/LabSupportLog.java app/src/main/java/com/zcshou/gogogo/LabHubActivity.java app/src/test/java/com/zcshou/gogogo/LabFeedbackReportTest.java > "$feedback_evidence/source-sha256.txt"
+          if [ -d app/build/test-results/testDebugUnitTest ]; then
+            cp app/build/test-results/testDebugUnitTest/TEST-*.xml "$feedback_evidence/unit/"
+          fi
+          if [ -f app/build/reports/lint-results-debug.xml ]; then
+            cp app/build/reports/lint-results-debug.xml "$feedback_evidence/"
+          fi
+          echo "$feedback_status" > "$feedback_evidence/returncode.txt"
+          exit "$feedback_status"
       - name: Prepare own host and driver for the same CI run (no original target APKs)
         if: ${{ contains(github.event.head_commit.message, '[cuttlefish-container]') }}
         run: python3 research/container-api33/tools/ci_owned_apks.py --workdir "$CONTAINER_RESEARCH_WORKDIR" --output "$RUNNER_TEMP/ci-owned-container-apks"

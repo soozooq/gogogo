@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import zipfile
 from unittest.mock import patch
 
 
@@ -14,6 +15,28 @@ spec.loader.exec_module(transport)
 
 
 class OwnBuildTransportTest(unittest.TestCase):
+    def test_source_license_materials_and_no_embedded_original(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / 'licenses').mkdir()
+            for path in [root / 'licenses/GPL-3.0.txt', root / 'THIRD_PARTY_NOTICES.md',
+                         root / 'CI_SOURCE_AND_RELINK.md']:
+                path.write_text('controlled text for ' + path.name)
+            apk = root / 'own.apk'
+            materials = [root / 'licenses/GPL-3.0.txt', root / 'THIRD_PARTY_NOTICES.md',
+                         root / 'CI_SOURCE_AND_RELINK.md']
+            for mode in ['good', 'different_text', 'embedded_apk']:
+                with self.subTest(mode=mode):
+                    with zipfile.ZipFile(apk, 'w') as archive:
+                        for path in materials:
+                            data = b'different' if mode == 'different_text' else path.read_bytes()
+                            archive.writestr('assets/research-notices/' + path.name, data)
+                        if mode == 'embedded_apk': archive.writestr('assets/original.apk', b'not-admitted')
+                    if mode == 'good':
+                        transport.verify_notices(apk, root)
+                    else:
+                        with self.assertRaises(RuntimeError): transport.verify_notices(apk, root)
+
     def test_commit_source_bytes_and_flat_allowlist(self):
         with tempfile.TemporaryDirectory() as folder:
             directory = Path(folder)
@@ -24,7 +47,8 @@ class OwnBuildTransportTest(unittest.TestCase):
                                         'sha256': transport.digest(directory / name)}
                                  for role, name in transport.FILES.items()}}
             (directory / 'manifest.json').write_text(json.dumps(manifest))
-            with patch.object(transport, 'sources', return_value={'fixture': 'hash'}):
+            with patch.object(transport, 'sources', return_value={'fixture': 'hash'}), \
+                    patch.object(transport, 'verify_notices'):
                 self.assertEqual(manifest, transport.verify(directory, directory, 'a' * 40))
                 with self.assertRaises(RuntimeError):
                     transport.verify(directory, directory, 'b' * 40)

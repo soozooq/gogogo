@@ -19,6 +19,8 @@ android {
     }
     packagingOptions { jniLibs { useLegacyPackaging true } }
     sourceSets.main.assets.srcDir layout.buildDirectory.dir('generated/researchGuestAssets')
+    sourceSets.main.assets.srcDir layout.buildDirectory.dir('generated/researchNoticeAssets')
+    sourceSets.androidTest.assets.srcDir layout.buildDirectory.dir('generated/researchNoticeAssets')
 }
 
 // One pinned source manifest supplies both the cloud verifier and the ordinary import UI.
@@ -45,6 +47,17 @@ def generateResearchGuestCatalog = tasks.register('generateResearchGuestCatalog'
     }
 }
 tasks.named('preBuild').configure { dependsOn generateResearchGuestCatalog }
+
+// Each own CI APK carries the preserved license/source material. Target APKs
+// remain external inputs and never become assets of either own APK.
+def noticeSpec = new File(System.getenv('CONTAINER_RESEARCH_SPEC_DIR'))
+def generateResearchNotices = tasks.register('generateResearchNotices', Sync) {
+    from(new File(noticeSpec, 'licenses')) { include '*.txt', '*provenance.json' }
+    from(new File(noticeSpec, 'THIRD_PARTY_NOTICES.md'))
+    from(new File(noticeSpec, 'CI_SOURCE_AND_RELINK.md'))
+    into layout.buildDirectory.dir('generated/researchNoticeAssets/research-notices')
+}
+tasks.named('preBuild').configure { dependsOn generateResearchNotices }
 
 dependencies {
     implementation project(':BCore')

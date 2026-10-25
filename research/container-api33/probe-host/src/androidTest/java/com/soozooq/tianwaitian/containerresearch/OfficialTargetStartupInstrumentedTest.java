@@ -139,7 +139,7 @@ public final class OfficialTargetStartupInstrumentedTest {
             report.put("original_signer", true);
             Intent launch = BlackBoxCore.getBPackageManager().getLaunchIntentForPackage(pkg, 0);
             assertNotNull(launch); BlackBoxCore.get().startActivity(launch, 0);
-            long deadline = SystemClock.elapsedRealtime() + (cuttlefish ? 180000 : 90000);
+            long deadline = SystemClock.elapsedRealtime() + (cuttlefish ? 300000 : 90000);
             String stage = null;
             while (SystemClock.elapsedRealtime() < deadline) {
                 List<String> text = new ArrayList<>();

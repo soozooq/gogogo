@@ -1,0 +1,38 @@
+{
+  "scope": "LOCAL_APP_COMPILATION_AND_JUNIT_LINT_ONLY_NOT_PHONE_UI_OR_TARGET_LOCATION",
+  "source_parent": "5e878412edf642401450dcf2698ca1d1d84944d8",
+  "source_sha256": {
+    "app/src/main/java/com/zcshou/gogogo/LabFeedbackReport.java": "8afde2c4372cef5c0e7fa04ef255d90572aeb85d526f148729f3b4a7663f3008",
+    "app/src/main/java/com/zcshou/gogogo/LabSupportLog.java": "f21ba9134c57106149866066275a5ad4e62427c2c09aa888955ca1e07fa71507",
+    "app/src/main/java/com/zcshou/gogogo/LabHubActivity.java": "f9461ed5c87a4c67622e6cdfa9e70beb4932e868429a6c1769b34a99fec929ec",
+    "app/src/test/java/com/zcshou/gogogo/LabFeedbackReportTest.java": "f22e1249703282eae0cf822cc9ba3dc7a5c02d2199c2e0855b60a2d6562de9b7"
+  },
+  "app_debug_junit": {
+    "tests": 447,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "suites": 72,
+    "new_privacy_boundaries_cases": 5
+  },
+  "compile_and_unit_build_seconds": 29,
+  "lint_passed": true,
+  "lint_seconds": 46,
+  "lint_error_or_fatal_count": 0,
+  "launcher_static_contract": "PASS",
+  "feedback_character_limit": 14000,
+  "old_full_export_limit": 200000,
+  "historical_record_bodies_in_default_export": false,
+  "historical_records_deleted": false,
+  "advanced_full_export_retained": true,
+  "ci_step_yaml_and_shell_syntax": "PASS_PREPARED_NOT_EXECUTED",
+  "log_sha256": {
+    "compact-feedback-main-build.log": "3ae3df4ec69e732305b2d34490375695858d370e383cf3d1507acb477375a34d",
+    "compact-feedback-main-lint.log": "32b2203b41763c8bdd5dbd369d03a2e6cad4e35e427152acc32cc5c175681cd7"
+  },
+  "daily_candidate_commit_unchanged": "2620b741dd6a971143577737c64ebc4496120d77",
+  "location_engine_changed": false,
+  "phone_update_distributed": false,
+  "phone_ui_tested": false,
+  "wechat_or_douyin_location_success": false
+}

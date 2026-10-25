@@ -1,38 +1,39 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
   "scope": "DEFAULT_RESEARCH_CHECKS_ONLY_NOT_TARGET_APP_COMPATIBILITY",
-  "run_id": 40107227047,
-  "commit": "8311ed043ad3682763f7ea4c74a845ea675eadf9",
-  "tree": "e674d4b0892866df70cb716e6565413aae96aa7c",
+  "run_id": 40143188975,
+  "commit": "5e878412edf642401450dcf2698ca1d1d84944d8",
+  "tree": "d6d58111c846008245e6a553f0fb89b53278db50",
   "conclusion": "failure",
   "default_checks_conclusion": "success",
   "jobs": [
     {
-      "id": 120911326914,
+      "id": 121019017276,
       "name": "Build, inspect and ordinary entry (Linux)",
       "conclusion": "success"
     },
     {
-      "id": 120911326737,
+      "id": 121019017482,
       "name": "Build and inspect (ARM Mac)",
       "conclusion": "success"
     },
     {
-      "id": 120911326835,
+      "id": 121019810765,
       "name": "Inspect ARM Linux host and optional Cuttlefish boot",
       "conclusion": "failure",
       "system_boot_passed": true,
-      "original_installation_passed": false
+      "original_installation_passed": true,
+      "original_ui_confirmed": false
     },
     {
-      "id": 120911328018,
+      "id": 121019018532,
       "name": "Anonymous startup (official Android 12L translation)",
       "conclusion": "skipped"
     }
   ],
   "linux_artifact": {
-    "id": 12565003547,
-    "sha256": "974637312c3ec431b31e235312f9fd34cc0bfdc65e5308ba001dc56ec56f0496",
+    "id": 12579846931,
+    "sha256": "515240115ae4814923870f96ffcca8b65c88967e3571532253e4212149af1c64",
     "digest_verified": true,
     "commit_verified": true,
     "every_case_source_map_verified_against_commit": true
@@ -41,43 +42,43 @@
     "x86_64-calculator": {
       "passed": true,
       "tests": 1,
-      "source_inputs_verified": 36,
+      "source_inputs_verified": 37,
       "junit": [
-        "Time: 5.843",
+        "Time: 5.69",
         "OK (1 test)"
       ]
     },
     "x86_64-ordinary-entry": {
       "passed": true,
       "tests": 1,
-      "source_inputs_verified": 36,
+      "source_inputs_verified": 37,
       "junit": [
-        "Time: 12.142",
+        "Time: 10.997",
         "OK (1 test)"
       ]
     },
     "x86_64-radio-privacy": {
       "passed": true,
       "tests": 5,
-      "source_inputs_verified": 36,
+      "source_inputs_verified": 37,
       "junit": [
-        "Time: 0.054",
+        "Time: 0.035",
         "OK (5 tests)"
       ]
     }
   },
-  "cuttlefish_boot_result": "cuttlefish-qualified-boot-install-timeout.json",
+  "cuttlefish_boot_result": "cuttlefish-staged-install-and-runtime-limit.json",
   "full_arm64_system_boot": "QUALIFIED_API33_BUILD16596636_UID2000_ENFORCING_NO_TRANSLATION",
-  "full_arm64_guest_apps": "NOT_RUN_ORIGINAL_ADB_INSTALL_TIMEOUT_BEFORE_LAUNCH",
-  "target_probe": "OLD_TRANSLATED_JOB_SKIPPED_NOT_PASS_NATIVE_ORIGINAL_INSTALL_ATTEMPTS_FAILED",
+  "full_arm64_guest_apps": "ORIGINALS_INSTALLED_BOTH_LAUNCH_REQUESTED_UI_UNCONFIRMED_LATER_SYSTEM_JAVA_FATAL",
+  "target_probe": "OLD_TRANSLATED_JOB_SKIPPED_NOT_PASS_NATIVE_ORIGINAL_UI_UNCONFIRMED",
   "arm64_mac_runtime_probe": "SKIPPED_DEFAULT_FALSE_NOT_PASS",
   "wechat_send_and_live_location": "UNFULFILLED",
   "douyin_wireless_and_overseas": "UNFULFILLED",
   "physical_arm64_vivo": "NOT_VERIFIED",
   "phone_update_distributed": false,
   "previous_verified_default_run": {
-    "run_id": 40102349634,
-    "commit": "24584ae82dba6b80e02b1086f28b4cafe82bc6aa",
+    "run_id": 40107227047,
+    "commit": "8311ed043ad3682763f7ea4c74a845ea675eadf9",
     "default_checks_conclusion": "success"
   },
   "controlled_radio_proxy": "PASS_FIVE_CONTROLLED_CELL_WIFI_TESTS_NOT_GUEST_OR_ACTUAL_RADIO_PROOF",

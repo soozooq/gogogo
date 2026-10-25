@@ -1,0 +1,35 @@
+{
+  "scope": "PRESERVED_LICENSE_TEXT_PROVENANCE_NOT_FULL_LICENSE_AUDIT",
+  "entries": [
+    {
+      "file": "GPL-3.0.txt",
+      "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+      "source": "Debian base-files /usr/share/common-licenses/GPL-3",
+      "canonical_url": "https://www.gnu.org/licenses/gpl-3.0.txt"
+    },
+    {
+      "file": "EPL-1.0-JUnit.txt",
+      "sha256": "9648bb2891b9813970bddb68d4be8a5e6ec8280d0180a53dfb29236b579c55bb",
+      "source": "junit:junit:4.13.2!/LICENSE-junit.txt",
+      "artifact_sha256": "8e495b634469d64fb8acfa3495a065cbacc8a0fff55ce1e31007be4c16dc57d3"
+    },
+    {
+      "file": "Hamcrest-LICENSE.txt",
+      "sha256": "1cde867cab5c8e842929da5391cef98b4017314822270e934e8e2eef3767c666",
+      "source": "org.hamcrest:hamcrest-core:1.3!/LICENSE.txt",
+      "artifact_sha256": "66fdef91e9739348df7a096aa384a5685f4e875584cce89386a7a47251c4d8e9"
+    },
+    {
+      "file": "Apache-Commons-Lang-NOTICE.txt",
+      "sha256": "8e9063e0b4e04d7711f7c2c473ec0f1237492028de87c7e71ba3045cfbd3a0e6",
+      "source": "ccgjson/BlackBox@df6249da4b032649689a98242f147da6c5342172/BCore/xposed/src/main/apacheCommonsLang/NOTICE.txt"
+    },
+    {
+      "file": "LGPL-3.0-LSPlant.txt",
+      "sha256": "09acdfb5bfb7aaed93d7d7fa5cebfc7350c555847d2ed07b5b9716da43670e04",
+      "source": "LSPosed/LSPlant@9324d71097a273ae7ce63fa2c2d676e17a1a2e04/LICENSE",
+      "tag": "v5.0",
+      "annotated_tag_object": "7339d2fae3288145d405dc4bf0afaa86f67f4646"
+    }
+  ]
+}

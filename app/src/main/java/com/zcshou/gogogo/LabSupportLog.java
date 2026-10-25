@@ -162,10 +162,8 @@ public final class LabSupportLog {
         return "NOT_AVAILABLE";
     }
 
-    public static String generate(Context context, String expectedLongitude,
-                                  String expectedLatitude) {
-        StringBuilder out = new StringBuilder(12_000);
-        out.append("GOGOGO_SUPPORT_LOG_V1\n");
+    private static void appendMetadata(StringBuilder out, Context context,
+                                       String expectedLongitude, String expectedLatitude) {
         out.append("captured_at=")
                 .append(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ",
                         Locale.US).format(new Date())).append('\n');
@@ -196,6 +194,13 @@ public final class LabSupportLog {
                 : LabSupportLogText.finiteTarget(latitude, false)).append('\n');
         out.append("last_requested_mock_target=").append(lastRequested)
                 .append(" (WGS84 lng,lat,wall_ms; requested_not_confirmed)\n");
+    }
+
+    public static String generate(Context context, String expectedLongitude,
+                                  String expectedLatitude) {
+        StringBuilder out = new StringBuilder(12_000);
+        out.append("GOGOGO_SUPPORT_LOG_V1\n");
+        appendMetadata(out, context, expectedLongitude, expectedLatitude);
         section(out, "QUICK_AND_RECOVERY", captureSafe(context, 0));
         section(out, "SERVICE_LIFECYCLE", captureSafe(context, 1));
         Boolean mainWeChatStopped = LabExperimentPreflight.observeCurrentUserWeChat(context);
@@ -221,7 +226,7 @@ public final class LabSupportLog {
         return generateAll(context, expectedLongitude, expectedLatitude, null);
     }
 
-    /** Single feedback action: inspect existing caches now, then append saved history. */
+    /** Default feedback reads existing caches and indexes history without copying old experiments. */
     public static String generateForFeedback(Context context) {
         String snapshot;
         try {
@@ -232,7 +237,39 @@ public final class LabSupportLog {
         if (Thread.currentThread().isInterrupted()) {
             throw new IllegalStateException("EXPORT_CANCELLED");
         }
-        return generateAll(context, "", "", snapshot);
+        StringBuilder metadata = new StringBuilder();
+        appendMetadata(metadata, context, "", "");
+        String basics;
+        try {
+            LabQuickCheckReport.Snapshot state = LabQuickCheckReader.read(context);
+            basics = "android_api=" + state.apiLevel
+                    + "\nsystem_location=" + state.systemLocation
+                    + "\nfine_permission=" + state.finePermission
+                    + "\ncoarse_permission=" + state.coarsePermission
+                    + "\nmock_appop=" + state.mockAppOp
+                    + "\nservice_flag=" + (state.localServiceFlag ? "RUNNING" : "STOPPED")
+                    + "; scope=THIS_PROCESS_ONLY_NOT_GLOBAL_STATUS\n";
+        } catch (RuntimeException unavailable) {
+            basics = "BASICS_UNAVAILABLE_" + unavailable.getClass().getSimpleName();
+        }
+        StringBuilder index = new StringBuilder();
+        index.append(LabFeedbackReport.historyIndex("CONSUMER_ACTIVE", read(context, ACTIVE)));
+        index.append(LabFeedbackReport.historyIndex("CONSUMER_PASSIVE", read(context, PASSIVE)));
+        index.append(LabFeedbackReport.historyIndex("TENCENT_SDK", read(context, TENCENT)));
+        index.append(savedRecordIndex(context, "CROSS_APP", "cross_app_location_evidence", "total_log"));
+        index.append(savedRecordIndex(context, "WORKFLOW", "gogogo_auto_diagnostics_panel", "workflow_log"));
+        index.append(savedRecordIndex(context, "AUTO_REPORT", "gogogo_auto_diagnostics_panel", "last_report"));
+        return LabFeedbackReport.render(metadata.toString(), basics, snapshot,
+                captureSafe(context, 1), index.toString());
+    }
+
+    private static String savedRecordIndex(Context context, String label, String preferences, String key) {
+        try {
+            return LabFeedbackReport.historyIndex(label, context.getSharedPreferences(
+                    preferences, Context.MODE_PRIVATE).getString(key, ""));
+        } catch (RuntimeException unavailable) {
+            return label + ": saved=UNKNOWN; read=UNAVAILABLE\n";
+        }
     }
 
     private static String generateAll(Context context, String expectedLongitude,
