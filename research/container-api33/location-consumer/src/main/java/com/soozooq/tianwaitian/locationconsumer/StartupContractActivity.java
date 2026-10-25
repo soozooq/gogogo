@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.Process;
 import android.widget.TextView;
@@ -20,6 +21,7 @@ public final class StartupContractActivity extends Activity {
         try {
             report.put("scope", "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION");
             report.put("passed", false).put("pending_intents_sent", false).put("location_requested", false);
+            report.put("startup_contract_run_id", getIntent().getStringExtra("startup_contract_run_id"));
             Class.forName("org.apache.http.impl.client.DefaultHttpClient", false, getClassLoader());
             report.put("framework_http_legacy_class_resolved", true);
             if (Build.VERSION.SDK_INT >= 31) {
@@ -27,6 +29,11 @@ public final class StartupContractActivity extends Activity {
                 // framework attribution with the real host UID captured before guest launch.
                 int expectedHostUid = getIntent().getIntExtra("expected_host_uid", -1);
                 report.put("expected_real_host_uid", expectedHostUid).put("process_api_uid", Process.myUid());
+                report.put("binder_self_uid", Binder.getCallingUid());
+                report.put("binder_self_pid", Binder.getCallingPid()).put("process_api_pid", Process.myPid());
+                report.put("binder_self_identity_scope", "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION");
+                report.put("binder_self_uid_matches_real_host", expectedHostUid > 0
+                        && report.getInt("binder_self_uid") == expectedHostUid);
                 report.put("activity_attribution_uid", getAttributionSource().getUid());
                 report.put("application_attribution_uid", getApplicationContext().getAttributionSource().getUid());
                 report.put("activity_attribution_uid_matches_real_host", expectedHostUid > 0
@@ -46,7 +53,9 @@ public final class StartupContractActivity extends Activity {
             if (service != null) service.cancel();
             report.put("passed", activity != null && service != null
                     && report.optBoolean("activity_attribution_uid_matches_real_host")
-                    && report.optBoolean("application_attribution_uid_matches_real_host"));
+                    && report.optBoolean("application_attribution_uid_matches_real_host")
+                    && report.optBoolean("binder_self_uid_matches_real_host")
+                    && report.getInt("binder_self_pid") == report.getInt("process_api_pid"));
         } catch (Throwable error) {
             try { report.put("error_class", error.getClass().getName()); }
             catch (Exception ignored) { }

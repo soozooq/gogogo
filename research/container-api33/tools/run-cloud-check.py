@@ -215,6 +215,7 @@ print('Running official GPSTest permission + coordinate UI check' if args.third_
     else 'Running public Android location calls in a real owned Guest process' if args.guest_location
     else 'Running controlled public-API33 location contracts' if args.location_contract
     else 'Running controlled API33 radio privacy proxy contracts' if args.radio_contract
+    else 'Running self-owned Guest framework startup contracts' if args.startup_contract
     else 'Running real third-party UI and return-from-home check', flush=True)
 instrumentation = ['shell', 'am', 'instrument', '-w', '-r', '-e', 'api', args.api, '-e', 'class', test_class]
 if args.guest_location:
@@ -251,7 +252,7 @@ for relative in (() if contract_case else
 (evidence / 'cloud-activities.txt').write_text(shell('dumpsys activity activities', check=False))
 (evidence / 'cloud-guest-system-path.txt').write_text(shell('pm path ' + guest_package, check=False))
 cleanup_ok = remove_control_guest()
-expected_result = 'OK (4 tests)' if args.location_contract else 'OK (5 tests)' if args.radio_contract else 'OK (1 test)'
+expected_result = 'OK (4 tests)' if args.location_contract else 'OK (7 tests)' if args.radio_contract else 'OK (1 test)'
 passed = result.returncode == 0 and expected_result in text and not re.search(
     r'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=|Process crashed', text)
 system_guest_after_cleanup = bool(shell('pm path ' + guest_package, check=False))

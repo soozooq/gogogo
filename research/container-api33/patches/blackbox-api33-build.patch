@@ -24,6 +24,22 @@ index c8ffd80..742995f 100644
 -parcelable BLocationConfig;
 \ No newline at end of file
 +parcelable BLocationConfig;
+diff --git a/BCore/src/main/cpp/Hook/BinderHook.cpp b/BCore/src/main/cpp/Hook/BinderHook.cpp
+index 1dd21a3..46e0acf 100644
+--- a/BCore/src/main/cpp/Hook/BinderHook.cpp
++++ b/BCore/src/main/cpp/Hook/BinderHook.cpp
+@@ -10,6 +10,11 @@ HOOK_JNI(jint, getCallingUid, JNIEnv *env, jobject obj) {
+ }
+ 
+ void BinderHook::init(JNIEnv *env) {
++    // Android13 declares getCallingUid as CriticalNative. Its ABI has no
++    // JNIEnv/jclass and cannot safely re-enter Java or make a Binder query
++    // through the ordinary JNI bridge below. Preserve the OS caller identity;
++    // logical guest identities remain in the virtual process/package model.
++    if (BoxCore::getApiLevel() >= 33) return;
+     const char *clazz = "android/os/Binder";
+     JniHook::HookJniFun(env, clazz, "getCallingUid", "()I", (void *) new_getCallingUid, (void **) (&orig_getCallingUid), true);
+ }
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/app/BActivityThread.java b/BCore/src/main/java/top/niunaijun/bcore/app/BActivityThread.java
 index 925966c..af85cc7 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/app/BActivityThread.java
@@ -711,10 +727,10 @@ index bad5396..265658f 100644
      }
  
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyManagerProxy.java
-index 33686f0..8dd420e 100644
+index 33686f0..4ee563d 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyManagerProxy.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyManagerProxy.java
-@@ -1,15 +1,15 @@
+@@ -1,19 +1,22 @@
  package top.niunaijun.bcore.fake.service;
  
  import android.content.Context;
@@ -722,7 +738,9 @@ index 33686f0..8dd420e 100644
  import android.util.Log;
  
  import java.lang.reflect.Method;
++import java.lang.reflect.InvocationTargetException;
 +import java.util.ArrayList;
++import java.util.List;
  
  import black.android.os.ServiceManager;
  import black.com.android.internal.telephony.ITelephony;
@@ -732,7 +750,12 @@ index 33686f0..8dd420e 100644
  import top.niunaijun.bcore.fake.frameworks.BLocationManager;
  import top.niunaijun.bcore.fake.hook.BinderInvocationStub;
  import top.niunaijun.bcore.fake.hook.MethodHook;
-@@ -108,11 +108,9 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+ import top.niunaijun.bcore.fake.hook.ProxyMethod;
++import top.niunaijun.bcore.fake.hook.ProxyMethods;
+ import top.niunaijun.bcore.utils.Md5Utils;
+ 
+ public class ITelephonyManagerProxy extends BinderInvocationStub {
+@@ -108,11 +111,9 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
              Log.d(TAG, "getCellLocation");
              if (BLocationManager.isFakeLocationEnable()) {
@@ -747,7 +770,7 @@ index 33686f0..8dd420e 100644
              }
              return method.invoke(who, args);
          }
-@@ -125,8 +123,8 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+@@ -125,8 +126,8 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
              Log.d(TAG, "GetAllCellInfo");
              if (BLocationManager.isFakeLocationEnable()) {
@@ -758,7 +781,41 @@ index 33686f0..8dd420e 100644
              }
  
              try {
-@@ -167,8 +165,7 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+@@ -137,6 +138,33 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+         }
+     }
+ 
++    @ProxyMethods({"requestCellInfoUpdate", "requestCellInfoUpdateWithWorkSource"})
++    public static class RequestCellInfoUpdate extends MethodHook {
++
++        @Override
++        protected Object hook(Object who, Method method, Object[] args) throws Throwable {
++            if (!BLocationManager.isFakeLocationEnable()) {
++                return method.invoke(who, args);
++            }
++            // The public TelephonyManager wrapper owns its executor and error handling.
++            // Complete its real callback with unavailable cell data; do not request a
++            // modem update or manufacture CellInfo from the internal BCell model.
++            Class<?>[] types = method.getParameterTypes();
++            for (int i = 0; i < types.length; i++) {
++                if ("android.telephony.ICellInfoCallback".equals(types[i].getName())) {
++                    if (args[i] == null) throw new IllegalArgumentException("Cell info callback required");
++                    try {
++                        types[i].getMethod("onCellInfo", List.class).invoke(args[i], new ArrayList<>());
++                    } catch (InvocationTargetException error) {
++                        throw error.getCause();
++                    }
++                    return null;
++                }
++            }
++            throw new UnsupportedOperationException("Unknown cell info callback contract");
++        }
++    }
++
+     @ProxyMethod("getNetworkOperator")
+     public static class GetNetworkOperator extends MethodHook {
+ 
+@@ -167,8 +195,7 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
              Log.d(TAG, "getNeighboringCellInfo");
              if (BLocationManager.isFakeLocationEnable()) {

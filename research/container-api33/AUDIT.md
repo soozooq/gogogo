@@ -84,4 +84,6 @@ GPS／NETWORK 的缓存、单次回调和持续批量回调均从 A 跟随到 B�
 
 `ff1a21ee` 原生 ARM64 中，两款普通原包界面、导入和原始证书均通过，Guest 启动仍失败。微信三个异常与候选框架修正、抖音JIT线程栈见[回执](evidence/cuttlefish-verified-signers-and-startup-crashes.json)。新增普通Wi-Fi权限仅满足初始化的真实系统检查；没有批量恢复引擎权限。共享库取平台实际元数据，不构造伪造记录。系统 AttributionSource 与 PendingIntent 使用真实宿主 UID／包名，虚拟包身份不用于冒充系统调用者。自有检查的发送／后台投递和目标 SDK 采用仍未验证，抖音具体崩溃组件未确定。
 
-CI32 的自有 Guest 已通过旧 HTTP 类加载与两类 PendingIntent 创建，但新增 UID 测试失败：`OsProxy` 将 Guest 的 `Process.myUid()` 虚拟化，不能与 OS-facing AttributionSource 的真实宿主 UID 直接比较。修正后的测试在 Guest 启动前核对宿主的 ApplicationInfo／Process／缓存 UID，再记录框架数值；运行时归属修正未回退。详见[原始失败与修正范围](evidence/framework-startup-prerequisite-results.json)，修正后实际运行待新CI。
+CI32 的UID断言误把虚拟化的 `Process.myUid()` 当作系统 UID，修正后CI33自有Guest已实际确认Context AttributionSource与真实宿主UID一致，旧HTTP及两类PendingIntent创建也通过。详见[失败历史与真实结果](evidence/framework-startup-prerequisite-results.json)，不是目标或手机成功。
+
+固定Android13另将Binder.getCallingUid声明为CriticalNative，而旧原生替换使用普通JNI签名并回调Java/Binder。新候选在API33+保留该系统方法，内部逻辑UID不用于替换OS调用者身份；新增自有Binder UID/PID及新鲜报告校验。两种异步CellInfo请求在虚拟模式完成空列表回调，关闭模式原样转发；新增检查使用真实TelephonyManager包装与Executor、受控服务cache，finally恢复，不查询真实modem。二者均等待新硬件CI，不能由静态约束认定已修复抖音，也不能将本地0方法执行的初始化失败算作回调通过。没有改ART/JIT、平台超时、原包证书或mock标记；较旧API的原生路径未改、未验证。详见[候选记录](evidence/critical-native-and-async-preparation.json)。

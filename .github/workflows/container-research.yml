@@ -49,10 +49,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: container-research-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   build:
     name: Build, inspect and ordinary entry (Linux)
@@ -214,6 +210,11 @@ jobs:
   cuttlefish-arm-host:
     name: Inspect ARM Linux host and optional Cuttlefish boot
     needs: build
+    # Keep the old workflow group so its active ARM64 run finishes before this job.
+    # New Linux/Mac prerequisites can run while the expensive native job waits.
+    concurrency:
+      group: container-research-${{ github.ref }}
+      cancel-in-progress: false
     if: ${{ (github.event_name == 'workflow_dispatch' && (inputs.inspect_cuttlefish_arm_host || inputs.run_cuttlefish_arm_boot)) || (github.event_name == 'push' && (contains(github.event.head_commit.message, '[cuttlefish-host]') || contains(github.event.head_commit.message, '[cuttlefish-boot]'))) }}
     runs-on: ubuntu-24.04-arm
     timeout-minutes: ${{ contains(github.event.head_commit.message, '[cuttlefish-container]') && 150 || (contains(github.event.head_commit.message, '[cuttlefish-startup]') && 120 || 50) }}

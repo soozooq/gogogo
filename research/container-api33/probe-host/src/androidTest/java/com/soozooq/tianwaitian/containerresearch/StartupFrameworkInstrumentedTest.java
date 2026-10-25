@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.MessageDigest;
+import java.util.UUID;
 import top.niunaijun.bcore.BlackBoxCore;
 import top.niunaijun.bcore.core.env.BEnvironment;
 import top.niunaijun.bcore.entity.pm.InstallResult;
@@ -56,8 +57,11 @@ public final class StartupFrameworkInstrumentedTest {
             assertEquals("Capture the system UID before entering the virtual guest", android.os.Process.myUid(), hostUid);
             assertEquals("Cached host UID must agree with the real host process", BlackBoxCore.getHostUid(), hostUid);
             launch.putExtra("expected_host_uid", hostUid);
-            BlackBoxCore.get().startActivity(launch, 0);
+            String runId = UUID.randomUUID().toString();
+            launch.putExtra("startup_contract_run_id", runId);
             File receipt = new File(BEnvironment.getDataDir(pkg, 0), "files/startup-contract.json");
+            assertTrue("Do not accept a previous guest receipt", !receipt.exists() || receipt.delete());
+            BlackBoxCore.get().startActivity(launch, 0);
             long deadline = SystemClock.elapsedRealtime() + 60000;
             while (!receipt.isFile() && SystemClock.elapsedRealtime() < deadline) SystemClock.sleep(300);
             assertTrue("Own guest must return its framework receipt", receipt.isFile());
@@ -67,10 +71,16 @@ public final class StartupFrameworkInstrumentedTest {
             try (FileOutputStream output = new FileOutputStream(new File(folder, "result.json"))) {
                 output.write(observed.toString(2).getBytes(StandardCharsets.UTF_8)); output.getFD().sync();
             }
+            assertEquals("The receipt must belong to this launch", runId, observed.getString("startup_contract_run_id"));
             assertTrue(observed.optBoolean("framework_http_legacy_class_resolved"));
             assertTrue(observed.optBoolean("pending_activity_created"));
             assertTrue(observed.optBoolean("pending_service_created"));
             assertEquals(hostUid, observed.getInt("expected_real_host_uid"));
+            assertEquals("Public Binder caller UID outside a transaction is the system UID",
+                    hostUid, observed.getInt("binder_self_uid"));
+            assertTrue(observed.getInt("binder_self_pid") > 0);
+            assertEquals(observed.getInt("process_api_pid"), observed.getInt("binder_self_pid"));
+            assertTrue(observed.optBoolean("binder_self_uid_matches_real_host"));
             assertEquals(hostUid, observed.getInt("activity_attribution_uid"));
             assertEquals(hostUid, observed.getInt("application_attribution_uid"));
             assertTrue(observed.optBoolean("activity_attribution_uid_matches_real_host"));

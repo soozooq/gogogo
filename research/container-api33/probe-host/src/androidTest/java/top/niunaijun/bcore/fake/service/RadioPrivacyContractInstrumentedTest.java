@@ -4,10 +4,17 @@ import static org.junit.Assert.*;
 
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Binder;
+import android.os.WorkSource;
+import android.telephony.CellInfo;
+import android.telephony.TelephonyManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
@@ -15,6 +22,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -196,5 +209,103 @@ public final class RadioPrivacyContractInstrumentedTest {
         assertEquals(1, baseCalls.get());
         assertSame(legacy.neighbors, neighbors.hook(legacy, neighborMethod, new Object[0]));
         assertEquals(1, legacy.calls);
+    }
+
+    /** Exercise the actual public framework wrapper, including its private Binder callback
+     * and the caller's executor. The process-local service cache is replaced with a controlled
+     * service for the entire call, then restored; neither mode queries real radio hardware.
+     */
+    private void asyncFrameworkRequest(boolean workSourceForm, boolean virtual) throws Throwable {
+        Field cache = TelephonyManager.class.getDeclaredField("sITelephony");
+        Field caching = TelephonyManager.class.getDeclaredField("sServiceHandleCacheEnabled");
+        cache.setAccessible(true); caching.setAccessible(true);
+        Object previousService = cache.get(null);
+        boolean previousCaching = caching.getBoolean(null);
+        AtomicReference<Object[]> incoming = new AtomicReference<>();
+        AtomicReference<Object[]> delegated = new AtomicReference<>();
+        AtomicReference<String> calledMethod = new AtomicReference<>();
+        List<CellInfo> synthetic = new ArrayList<>();
+        synthetic.add((CellInfo) Class.forName("android.telephony.CellInfoGsm")
+                .getDeclaredConstructor().newInstance());
+        Object controlled = Proxy.newProxyInstance(telephony.getClassLoader(), new Class<?>[] {telephony},
+                (proxy, method, args) -> {
+                    baseCalls.incrementAndGet();
+                    delegated.set(args.clone());
+                    Class<?> callbackType = method.getParameterTypes()[1];
+                    callbackType.getMethod("onCellInfo", List.class).invoke(args[1], synthetic);
+                    return null;
+                });
+        ITelephonyManagerProxy.RequestCellInfoUpdate hook = new ITelephonyManagerProxy.RequestCellInfoUpdate();
+        Object intercepted = Proxy.newProxyInstance(telephony.getClassLoader(), new Class<?>[] {telephony},
+                (proxy, method, args) -> {
+                    if ("asBinder".equals(method.getName())) return new Binder();
+                    incoming.set(args.clone()); calledMethod.set(method.getName());
+                    try { return hook.hook(controlled, method, args); }
+                    catch (InvocationTargetException error) { throw error.getCause(); }
+                });
+        ExecutorService executor = Executors.newSingleThreadExecutor(
+                task -> new Thread(task, "gogogo-cell-contract-executor"));
+        CountDownLatch completed = new CountDownLatch(1);
+        AtomicReference<List<CellInfo>> received = new AtomicReference<>();
+        AtomicReference<String> callbackThread = new AtomicReference<>();
+        AtomicInteger callbacks = new AtomicInteger(), errors = new AtomicInteger();
+        TelephonyManager.CellInfoCallback callback = new TelephonyManager.CellInfoCallback() {
+            @Override public void onCellInfo(List<CellInfo> cells) {
+                received.set(cells); callbackThread.set(Thread.currentThread().getName());
+                callbacks.incrementAndGet(); completed.countDown();
+            }
+            @Override public void onError(int code, Throwable error) {
+                errors.incrementAndGet(); completed.countDown();
+            }
+        };
+        WorkSource workSource = new WorkSource();
+        try {
+            caching.setBoolean(null, true); cache.set(null, intercepted);
+            TelephonyManager manager = InstrumentationRegistry.getInstrumentation().getTargetContext()
+                    .getSystemService(TelephonyManager.class).createForSubscriptionId(1);
+            if (workSourceForm) {
+                Method withWorkSource = TelephonyManager.class.getDeclaredMethod("requestCellInfoUpdate",
+                        WorkSource.class, Executor.class, TelephonyManager.CellInfoCallback.class);
+                withWorkSource.setAccessible(true);
+                withWorkSource.invoke(manager, workSource, executor, callback);
+            } else {
+                manager.requestCellInfoUpdate(executor, callback);
+            }
+            assertTrue("Framework callback must complete instead of hanging", completed.await(5, TimeUnit.SECONDS));
+            assertEquals(0, errors.get()); assertEquals(1, callbacks.get());
+            assertEquals("gogogo-cell-contract-executor", callbackThread.get());
+            assertEquals(workSourceForm ? "requestCellInfoUpdateWithWorkSource" : "requestCellInfoUpdate",
+                    calledMethod.get());
+            assertNotNull(received.get());
+            assertEquals(1, incoming.get()[0]);
+            if (workSourceForm) assertSame(workSource, incoming.get()[4]);
+            if (virtual) {
+                assertTrue(received.get().isEmpty()); assertNull(delegated.get());
+            } else {
+                assertSame(synthetic, received.get());
+                assertNotNull(delegated.get());
+                for (int i = 0; i < incoming.get().length; i++) {
+                    if (i == 0) assertEquals(incoming.get()[i], delegated.get()[i]);
+                    else assertSame("Ordinary mode must retain callback and attribution arguments",
+                                incoming.get()[i], delegated.get()[i]);
+                }
+            }
+        } finally {
+            cache.set(null, previousService); caching.setBoolean(null, previousCaching);
+            executor.shutdownNow();
+        }
+    }
+
+    @Test public void virtualAsyncCellRequestsCompleteOnTheFrameworkExecutorWithoutModemCalls() throws Throwable {
+        asyncFrameworkRequest(false, true);
+        asyncFrameworkRequest(true, true);
+        assertEquals(0, baseCalls.get());
+    }
+
+    @Test public void closedAsyncCellRequestsPreserveCallbacksAndWorkAttribution() throws Throwable {
+        BLocationManager.disableFakeLocation(user, pkg);
+        asyncFrameworkRequest(false, false);
+        asyncFrameworkRequest(true, false);
+        assertEquals(2, baseCalls.get());
     }
 }

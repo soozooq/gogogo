@@ -6,7 +6,7 @@
 
 **当前实测**：[原生 ARM64 最新结果 `40174550024 / ff1a21ee`](evidence/cuttlefish-verified-signers-and-startup-crashes.json)已自动确认微信欢迎页、抖音隐私页；两款容器导入和原证书查询也通过。Guest 启动后，微信因 Wi-Fi 权限、旧 HTTP 类、现代 PendingIntent 归属错误崩溃，抖音有 Guest ART JIT 线程原生崩溃。系统进程保持稳定，清理完成；两款容器界面与定位业务均未通过。候选一次补齐微信的三个已知框架条件，先用自有 Guest 自动检查；抖音补充同样时长的普通／容器对照，不猜测具体 Hook 原因，不改全局 JIT 或模拟标记。
 
-[最新默认检查 CI32／3f0087fb](evidence/framework-startup-prerequisite-results.json)已实际通过旧 HTTP 类加载及两类 PendingIntent 创建，UID断言仍失败：Guest 的 `Process.myUid()` 返回内部逻辑 UID，原测试误把它当作系统 UID。修正改用进入 Guest 前取得的真实宿主 UID，并记录实际归属数值；13秒构建通过，修正后运行待新CI。保留正确的运行时代码归属处理，不更改它来迎合错误断言。原生检查本轮跳过，CI31仍是最新实际 ARM64 结果。
+[最新默认检查 CI33／073c25db](evidence/framework-startup-prerequisite-results.json)已实际通过旧 HTTP 类、两类 PendingIntent创建与Context真实宿主UID，修正了CI32拿虚拟Process UID作预期的错误测试。Linux／Mac及旧回归通过，原生目标对照正在运行。新候选另处理CriticalNative Binder替换的ABI风险和两种异步基站回调，新增检查实际运行仍待新CI；两次本地软件环境在测试前失败，不能计通过。详见[准备与失败边界](evidence/critical-native-and-async-preparation.json)。队列改为基础检查可并行、原生沿同一锁排队且不取消前轮；所有工作继续本分支。
 
 ## 核对下载的 CI 回执（维护用）
 

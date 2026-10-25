@@ -1,19 +1,19 @@
 {
   "schema": "GOGOGO_FRAMEWORK_STARTUP_PREREQUISITE_PREPARATION_V1",
   "scope": "BUILD_AND_CONTROLLED_DRIVER_CHECKS_NOT_CORRECTED_TARGET_RUNTIME",
-  "base_commit": "ff1a21eeacf2ce9efb0aa1718332af2823dd9df1",
+  "base_commit": "073c25dbd540068826ff85a0602b4c35237261b8",
   "build": {
     "passed": true,
     "seconds": 13,
-    "scope": "REAL_HOST_UID_TEST_CORRECTION_REBUILD"
+    "scope": "CRITICAL_NATIVE_AND_ASYNC_CALLBACK_CANDIDATE_REBUILD"
   },
   "controlled_python_tests": {
     "passed": true,
     "count": 15,
-    "seconds": 0.058,
+    "seconds": 0.068,
     "post_ui_lifecycle_subcases": true
   },
-  "own_guest_framework_runtime": "CI32_HTTP_AND_PENDING_INTENT_CREATION_PASSED; UID_ASSERTION_USED_VIRTUAL_PROCESS_UID_AND_FAILED; CORRECTED_NUMERIC_CHECK_PENDING_NEW_CI",
+  "own_guest_framework_runtime": "CI33_OLD_HTTP_PENDING_CREATION_AND_ATTRIBUTION_UID_ACTUALLY_PASS; NEW_BINDER_SELF_IDENTITY_CHECK_PENDING",
   "corrected_wechat_startup": "PENDING_NATIVE_CI",
   "douyin_post_ui_comparison": "PENDING_NATIVE_CI",
   "pending_intent_scope": "CREATION_AND_CANCEL_ONLY_NOT_DELIVERY",
@@ -32,15 +32,15 @@
     "licenses/LGPL-3.0-LSPlant.txt": "09acdfb5bfb7aaed93d7d7fa5cebfc7350c555847d2ed07b5b9716da43670e04",
     "licenses/ci-additional-provenance.json": "7fbc7c983596f006f2c3d239fcb72974433bf824aa74a9732ed8313f3c2fbe33",
     "licenses/xCrash-LICENSE.txt": "bee83bba5b3f6502bb69700e20b024205fb6425740e054e63dda0c970d230790",
-    "patches/blackbox-api33-build.patch": "47e789ce87a4338ac8ef69dadcbee73732253180cff4301f79a06b8da80cbdc1",
+    "patches/blackbox-api33-build.patch": "2bfe077a1a1e7bfb24b53b42b14e7030c75dba04b75a81774015111ac315f44c",
     "probe-host/build.gradle": "0fd90fb1fa95f35417e43f7f9569f8a1a384fe8193ab88ff023e5da0cb0807c9",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ExternalGuestInstrumentedTest.java": "14d55a69bef8234da9967db2362de313f64e154de6ed520be93ec2025df89a55",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/GuestLocationInstrumentedTest.java": "86b45c72096eeb021d311840f0d74039354afa798075cbc37e77f61bdf0e2b24",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/OfficialTargetStartupInstrumentedTest.java": "e472591d67ca941ecc6bd85a54640cbbb3eb0049a9cde175ebbe3e54b17dbd0e",
-    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/StartupFrameworkInstrumentedTest.java": "b1cd16f4c9c7db7b81e31a0ded8229fcbd831cb3d7f4bc95f7c605fd008015f6",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/StartupFrameworkInstrumentedTest.java": "0e69791a4618d845034ba098f3e1cb3b2e3293a1af6273c969b4fe81b1ffb8eb",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ThirdPartyLocationInstrumentedTest.java": "c3f7335a56b66a15533d87b193ac362602e3f08feceb4f11fae1cb2e5736ba88",
     "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java": "b36cd994d40fa173fcd3c0830d688a102e0f63bf24584e3e1b6aa2e723f36e54",
-    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/RadioPrivacyContractInstrumentedTest.java": "dad922464c6ff52a2e0db148b6dff3a594ae5ed2a9c0cbebdc01ecd7bd30449a",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/RadioPrivacyContractInstrumentedTest.java": "804a403aeac863b734aa29b7a1883be8bbc8cafe56925bac357c80da5b3b9135",
     "probe-host/src/main/AndroidManifest.xml": "78ec6d530bd822638a6011ff805084edd69a8e4be4578789b3284fe37196fc65",
     "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/GuestImport.java": "9605255f9bf5e8681384146a52a89c35d93f9220e40625deeef9cd71d1a77fc9",
     "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/OriginalUiProbeInstrumentation.java": "e47af8d4c577924a9144159a0bc6c83fc20498cb92f6d4624aa716ded6dec169",
@@ -62,7 +62,7 @@
     "tools/qualify-arm64-software-boot.py": "d3bbc2fbebcbc381dd73712f08ccc1a31815c64202471b29a17b03627bb30066",
     "tools/run-arm-mac-software-checks.sh": "4cff7f26be72beb5200d3bea7bc253cdd7d7dc784f356de1bace3394dbb98c0a",
     "tools/run-build.sh": "ba7a3e3d5b233ca4200ac1f7bb160c0be5eb3686323caa992826022cfac045ad",
-    "tools/run-cloud-check.py": "8a01c47054d4ebfd5adb2f8bfd45bc66e183e7cf285a6d8cd01282331fa1e3f8",
+    "tools/run-cloud-check.py": "a2de22992ab82b46e8328658dae2856acb60b9f93427b4911a69895dd4b8a039",
     "tools/run-cuttlefish-arm-boot.py": "734fd0c4dc87cf387625bd07ef9e741bc51e93f5f50dfb8395498c003f2ea50a",
     "tools/run-emulator-checks.sh": "7c9447accc80e497ea220cdaafaf3912ddd43a69872d942b816f31e347a17f7c",
     "tools/run-read-only-ui-check.py": "c625dd25b2ae7b6d574bd08dae944b39ab51ac201d9d7009ee4e410746428439",
@@ -74,7 +74,7 @@
     "location-consumer/src/main/res/values/ids.xml": "d432b392a5beb2beffbc7a54cd0879df48a9aaf45c002b64cc81b30663d14c24",
     "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/LocationActivity.java": "81507dbca1d8b73b1d1164ed8233cb819fa43d5f1745535c9b592ce67df5fcb4",
     "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractService.java": "2c84ceab6539669ca86a21ad07eb866c6a3bdd4ad6221ba024097b138b805223",
-    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractActivity.java": "300f8410bf06a2fe912d620255743629cb6f62b6e77174c01a9f1cd0f30be1e8",
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractActivity.java": "a1d60dd8e4bf9e18938d33bcab66a2f49b5a23e8f72d4d0e6f27b329dc133747",
     "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/ReadOnlyUiFixtureActivity.java": "36a0197ca1b56e3839c41039b3b5dfb9ee62ab2b6753ecb3374639f24368a184"
   },
   "test_source_sha256": {
@@ -85,5 +85,9 @@
   "donor_patch_clean_index_application_verified": true,
   "startup_cli_selection_verified": true,
   "uid_test_correction_base_commit": "3f0087fbfad04b915e0b4c67a9b364d8aa544863",
-  "latest_runtime_record": "framework-startup-prerequisite-results.json"
+  "latest_runtime_record": "framework-startup-prerequisite-results.json",
+  "new_async_cell_callback_runtime": "PENDING_HARDWARE_CI; LOCAL_SOFTWARE_ENVIRONMENT_FAILED_BEFORE_TEST_METHODS",
+  "workflow_source_sha256": {
+    ".github/workflows/container-research.yml": "e0eac12b290e0c9a41066867985dcf95c79e52340880c90470dc77a1a05b7fdb"
+  }
 }
