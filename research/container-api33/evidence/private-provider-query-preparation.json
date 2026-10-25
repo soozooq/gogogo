@@ -1,0 +1,35 @@
+{
+  "schema": "GOGOGO_PRIVATE_PROVIDER_QUERY_PREPARATION_V1",
+  "scope": "FIXED_API33_SOURCE_AND_OWN_FIXTURE_BUILD_NOT_QUERY_RUNTIME_OR_NATIVE_RESULT",
+  "base_commit": "fa68fd2f58bc9ee04c422db760ca5d8c995deb8a",
+  "existing_actual_call_result": "provider-attribution-results.json",
+  "source_concern": "The real call result does not exercise query Cursor transport. Fixed API33 also has UID/URI checks, but the pre-existing engine CheckUriPermission returns GRANTED; this follow-up verifies functional Cursor IPC, not permission denial or isolation.",
+  "fixed_api33_reference": {
+    "url": "https://github.com/aosp-mirror/platform_frameworks_base/blob/d27f9960456403533af0a0d5d9f14cf71c9c8cf6/core/java/android/content/ContentProvider.java",
+    "sha256": "b9434ed4f84ac5f88626f130d12de212a43f6201ef1f7c79e71716aaba965c64",
+    "same_app_uid_check_line": 810,
+    "my_uid_capture_line": 2438
+  },
+  "new_contract": "Same non-exported own provider returns only synthetic scope/nonce/PID via public ContentResolver.query. Require fresh nonce and same remote PID as call; record provider Process API UID and Binder caller UID. No real database, location, device identifiers or network reads.",
+  "query_runtime": "PENDING_DEFAULT_ONLY_CI",
+  "engine_patch_or_permissions_exported_uid_checks_changed": false,
+  "native_ci40_kept_running_with_fixed_original_source": "cf4e28221a712aa7837622e9665d0d8d4d78af83",
+  "new_native_run_requested": false,
+  "build": {
+    "passed": true,
+    "seconds": 13
+  },
+  "static_consumer_inspection_passed": true,
+  "source_sha256": {
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractProvider.java": "c8311359d441056512fe959f18815d0642511e3a3cc830273e64db5b8c70e87d",
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractActivity.java": "30bda83babbe59f6161c1180fac9ab67b22e6354d8d1dfa0083c5ad100f0806b",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/StartupFrameworkInstrumentedTest.java": "839d2c46b133f910632d8e8a7262718f8a62624a2263d9dabb3e09921e1406be"
+  },
+  "phone_update_distributed": false,
+  "preexisting_uri_permission_hook": {
+    "source": "IActivityManagerProxy.CheckUriPermission:561",
+    "behavior": "PERMISSION_GRANTED",
+    "modified_by_this_followup": false,
+    "query_success_not_permission_policy_proof": true
+  }
+}

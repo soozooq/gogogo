@@ -37,7 +37,7 @@
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ExternalGuestInstrumentedTest.java": "14d55a69bef8234da9967db2362de313f64e154de6ed520be93ec2025df89a55",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/GuestLocationInstrumentedTest.java": "86b45c72096eeb021d311840f0d74039354afa798075cbc37e77f61bdf0e2b24",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/OfficialTargetStartupInstrumentedTest.java": "e472591d67ca941ecc6bd85a54640cbbb3eb0049a9cde175ebbe3e54b17dbd0e",
-    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/StartupFrameworkInstrumentedTest.java": "d0f90e8e21eb007ad33e9182b8ddc45c6badd3be12740e6d521ac82e5aa751fd",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/StartupFrameworkInstrumentedTest.java": "839d2c46b133f910632d8e8a7262718f8a62624a2263d9dabb3e09921e1406be",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ThirdPartyLocationInstrumentedTest.java": "c3f7335a56b66a15533d87b193ac362602e3f08feceb4f11fae1cb2e5736ba88",
     "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java": "b36cd994d40fa173fcd3c0830d688a102e0f63bf24584e3e1b6aa2e723f36e54",
     "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/RadioPrivacyContractInstrumentedTest.java": "63d97268bce78204d68e08852f89d0dda882f150937854a6e6e2b71be8e0589c",
@@ -74,9 +74,9 @@
     "location-consumer/src/main/res/values/ids.xml": "d432b392a5beb2beffbc7a54cd0879df48a9aaf45c002b64cc81b30663d14c24",
     "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/LocationActivity.java": "81507dbca1d8b73b1d1164ed8233cb819fa43d5f1745535c9b592ce67df5fcb4",
     "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractService.java": "2c84ceab6539669ca86a21ad07eb866c6a3bdd4ad6221ba024097b138b805223",
-    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractActivity.java": "2994e8df80e703b1164b6f51f23709456113ffbbe1a88373052a52de400131e1",
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractActivity.java": "30bda83babbe59f6161c1180fac9ab67b22e6354d8d1dfa0083c5ad100f0806b",
     "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/ReadOnlyUiFixtureActivity.java": "36a0197ca1b56e3839c41039b3b5dfb9ee62ab2b6753ecb3374639f24368a184",
-    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractProvider.java": "55877546bf69ac0d1c8724fcec1f5d18cd67116e257f1300d3c4086355f6e409",
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractProvider.java": "c8311359d441056512fe959f18815d0642511e3a3cc830273e64db5b8c70e87d",
     "tools/cuttlefish_owned_location.py": "bf2f1a572259d4b3c69defdd4bb48fb194828c22399140da203dccae3dc6efc9"
   },
   "test_source_sha256": {
@@ -130,5 +130,11 @@
     "correction": "PUSH_WITH_BOTH_CUTTLEFISH_BOOT_AND_CONTAINER_MARKERS; EXPLICIT_MANUAL_CONTAINER_INPUT_ADDED",
     "app_source_changed": false
   },
-  "subsequent_actual_default_result": "provider-attribution-results.json"
+  "subsequent_actual_default_result": "provider-attribution-results.json",
+  "private_provider_query_followup": {
+    "base_commit": "fa68fd2f58bc9ee04c422db760ca5d8c995deb8a",
+    "scope": "OWN_PUBLIC_QUERY_CONTRACT_ONLY_NOT_ENGINE_CHANGE",
+    "actual_new_runtime": "PENDING_DEFAULT_ONLY_CI",
+    "native_ci40_unchanged": true
+  }
 }

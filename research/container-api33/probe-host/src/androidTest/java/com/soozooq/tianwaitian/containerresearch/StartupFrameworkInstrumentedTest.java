@@ -80,6 +80,10 @@ public final class StartupFrameworkInstrumentedTest {
             assertTrue(observed.optBoolean("provider_process_separate"));
             assertTrue(observed.getInt("provider_pid") > 0);
             assertNotEquals(observed.getInt("process_api_pid"), observed.getInt("provider_pid"));
+            assertEquals(hostUid, observed.getInt("provider_caller_binder_uid"));
+            assertTrue("Own private provider query must preserve the nonce",
+                    observed.optBoolean("provider_query_nonce_matches"));
+            assertEquals(observed.getInt("provider_pid"), observed.getInt("provider_query_pid"));
             assertEquals(hostUid, observed.getInt("expected_real_host_uid"));
             assertEquals("Public Binder caller UID outside a transaction is the system UID",
                     hostUid, observed.getInt("binder_self_uid"));

@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.net.Uri;
+import android.database.Cursor;
 import android.os.Build;
 import android.os.Binder;
 import android.os.Bundle;
@@ -64,12 +65,28 @@ public final class StartupContractActivity extends Activity {
             report.put("provider_pid", providerPid);
             report.put("provider_caller_pid", provider == null ? -1 : provider.getInt("caller_pid", -1));
             report.put("provider_process_separate", providerPid > 0 && providerPid != Process.myPid());
+            report.put("provider_process_api_uid", provider == null ? -1 : provider.getInt("provider_process_api_uid", -1));
+            report.put("provider_caller_binder_uid", provider == null ? -1 : provider.getInt("caller_binder_uid", -1));
+            boolean queryReady = false;
+            int queryPid = -1;
+            Uri query = Uri.parse("content://com.soozooq.tianwaitian.locationconsumer.startup")
+                    .buildUpon().appendPath("echo").appendQueryParameter("nonce", runId).build();
+            try (Cursor cursor = getContentResolver().query(query, null, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    queryReady = "OWN_PRIVATE_PROVIDER_QUERY".equals(cursor.getString(cursor.getColumnIndexOrThrow("scope")))
+                            && runId.equals(cursor.getString(cursor.getColumnIndexOrThrow("nonce")));
+                    queryPid = cursor.getInt(cursor.getColumnIndexOrThrow("provider_pid"));
+                }
+            }
+            report.put("provider_query_nonce_matches", queryReady);
+            report.put("provider_query_pid", queryPid);
             report.put("passed", activity != null && service != null
                     && report.optBoolean("activity_attribution_uid_matches_real_host")
                     && report.optBoolean("application_attribution_uid_matches_real_host")
                     && report.optBoolean("binder_self_uid_matches_real_host")
                     && report.getInt("binder_self_pid") == report.getInt("process_api_pid")
-                    && providerReady && report.getBoolean("provider_process_separate"));
+                    && providerReady && report.getBoolean("provider_process_separate")
+                    && queryReady && queryPid == providerPid);
         } catch (Throwable error) {
             try { report.put("error_class", error.getClass().getName()); }
             catch (Exception ignored) { }

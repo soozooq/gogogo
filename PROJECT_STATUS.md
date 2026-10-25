@@ -43,6 +43,8 @@ Provider调用归属改为真实宿主UID后，[CI40／cf4e2822公共跨进程�
 
 限定诊断加入DatabaseUtils错误标签并保留限时、限量、URL脱敏及“采集不可用不改变case判定”；dumpsys／ps发生在JUnit及Guest清理之后，不能当作此前黑屏时的活体状态。
 
+另补[私有Provider查询契约](research/container-api33/evidence/private-provider-query-preparation.json)：固定API33的query还会检查同App UID／exported／URI权限，call通过不能证明查询。自有未导出Provider只返回合成nonce和PID，新增公共query验证游标往返；原引擎checkUriPermission仍返回GRANTED，本轮未改，查询成功不代表权限拒绝或隔离通过。13秒编译及静态检查通过，实际结果待单独基础CI。没有改引擎或权限，不启动重复原生轮次，正在运行的CI40继续使用固定cf4e2822源码。
+
 ## 定位及默认检查的实际范围
 
 定位功能的既有实测仍为Android13 **x86_64**：[独立自有Guest](research/container-api33/evidence/owned-guest-location-results.json)六条GPS／NETWORK路径A→B、停止稳定及取消零回调；[官方GPSTest](research/container-api33/evidence/official-gpstest-location-results.json)实际界面采用A→B、GNSS零卫星；[普通入口](research/container-api33/evidence/cloud-ordinary-entry-pass.json)经系统文件选择、原包导入、精确授权与同进程更新。**ARM64真实自有Guest定位尚无已核对结果；当前匿名启动不能填补它。**
