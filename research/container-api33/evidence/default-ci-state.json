@@ -1,37 +1,37 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
   "scope": "DEFAULT_RESEARCH_CHECKS_ONLY_NOT_TARGET_APP_COMPATIBILITY",
-  "run_id": 40205388335,
-  "commit": "b04ac30d59f6b5539706c7ae13adf0aae6c648e8",
-  "tree": "c23ba27885fd3605cbe1ea76e68cf154459414da",
+  "run_id": 40207482457,
+  "commit": "c5313dcb88ae9274eb635f0129e4e421ebe919f5",
+  "tree": "f649a2db0e4209c34976cdc258ee8729aba25d95",
   "conclusion": null,
   "default_checks_conclusion": "success",
   "jobs": [
     {
-      "id": 121205085466,
+      "id": 121211420832,
       "name": "Build, inspect and ordinary entry (Linux)",
       "conclusion": "success"
     },
     {
-      "id": 121205085780,
+      "id": 121211420613,
       "name": "Build and inspect (ARM Mac)",
       "conclusion": "success"
     },
     {
-      "id": 121206560217,
+      "id": 121213057132,
       "name": "Inspect ARM Linux host and optional Cuttlefish boot",
-      "status": "in_progress",
+      "status": "pending",
       "conclusion": null
     },
     {
-      "id": 121205086381,
+      "id": 121211421761,
       "name": "Anonymous startup (official Android 12L translation)",
       "conclusion": "skipped"
     }
   ],
   "linux_artifact": {
-    "id": 12603363256,
-    "sha256": "ce04648a55bba1c41a6bf94358e8892bd4d43d20840923a4e948b265b37a4063",
+    "id": 12605031165,
+    "sha256": "406e7b39079a790097dab8fa323c787a3899ace018de5cab7f2bbc6b2b775619",
     "verified": true
   },
   "default_case_results": {
@@ -39,7 +39,7 @@
       "source_count_verified": 55,
       "passed": true,
       "junit": [
-        "Time: 0.504",
+        "Time: 0.604",
         "OK (1 test)"
       ]
     },
@@ -47,15 +47,15 @@
       "source_count_verified": 55,
       "passed": true,
       "junit": [
-        "Time: 0.052",
-        "OK (7 tests)"
+        "Time: 0.099",
+        "OK (9 tests)"
       ]
     },
     "x86_64-ordinary-entry": {
       "source_count_verified": 55,
       "passed": true,
       "junit": [
-        "Time: 10.079",
+        "Time: 12.084",
         "OK (1 test)"
       ]
     },
@@ -63,7 +63,7 @@
       "source_count_verified": 55,
       "passed": true,
       "junit": [
-        "Time: 5.706",
+        "Time: 6.06",
         "OK (1 test)"
       ]
     },
@@ -90,10 +90,10 @@
         "input_events_sent": false,
         "root_package": "com.soozooq.tianwaitian.locationconsumer",
         "visible_text": [
-          "Read-only moving fixture 115"
+          "Read-only moving fixture 113"
         ],
         "stage": "OWN_UI_VISIBLE",
-        "elapsed_ms": 535
+        "elapsed_ms": 29
       },
       "cleanup": {
         "com.soozooq.tianwaitian.locationconsumer": true,
@@ -118,11 +118,11 @@
     "default_checks_conclusion": "failure",
     "reason": "OLD_GUEST_PROCESS_UID_ASSERTION_WAS_WRONG"
   },
-  "controlled_radio_proxy": "CI35_SEVEN_CONTROLLED_TESTS_PASS; TWO_NEW_NETWORK_ARRAY_TESTS_PENDING_NEXT_CI",
-  "radio_result": "wifi-radio-privacy-contract-results.json",
+  "controlled_radio_proxy": "CI36_NINE_CONTROLLED_PUBLIC_FRAMEWORK_TESTS_ACTUALLY_PASS; NOT_REAL_GUEST_RADIO_OR_TARGET_SDK_PROOF",
+  "radio_result": "connectivity-array-contract-results.json",
   "mac_artifact": {
-    "id": 12603063638,
-    "sha256": "d1411b81b2be4390c57920939074c57403b55408b8183f0a7b2d66550bf5e5bf",
+    "id": 12604966032,
+    "sha256": "fc8d8abd48075562b081c5a0bbaf44779aeb6550865d4630829da924257f41f6",
     "verified": true
   },
   "feedback_main": {
@@ -140,13 +140,13 @@
     "apks": {
       "host": {
         "name": "probeHost-debug.apk",
-        "size": 4531380,
-        "sha256": "c1352ac3c72fbf4d3fcb48b265ae59be46b2ed3d2ce278961c8908a368e75388"
+        "size": 4531832,
+        "sha256": "b15ad6089c5703ae9fa943168b40aea5878bbdfe672845894ac1feb54f59a192"
       },
       "driver": {
         "name": "probeHost-debug-androidTest.apk",
-        "size": 498038,
-        "sha256": "c7ba7171e2039c40be678eb0ad48aca21555d1f2bceb4d4ef7edb0f7de3e4ba3"
+        "size": 500186,
+        "sha256": "0fe6b6ebae7aa04a6c8c58bdef2b70c6ce972994e3d897af8168aae526305b22"
       }
     },
     "notice_materials_per_apk": 11,
@@ -175,10 +175,10 @@
       "input_events_sent": false,
       "root_package": "com.soozooq.tianwaitian.locationconsumer",
       "visible_text": [
-        "Read-only moving fixture 115"
+        "Read-only moving fixture 113"
       ],
       "stage": "OWN_UI_VISIBLE",
-      "elapsed_ms": 535
+      "elapsed_ms": 29
     },
     "cleanup": {
       "com.soozooq.tianwaitian.locationconsumer": true,
@@ -199,12 +199,19 @@
     "both_container_startups_passed": false,
     "system_server_pid_stable": 653
   },
-  "native_job_this_run": "IN_PROGRESS_NOT_PASS",
+  "native_job_this_run": "PENDING_SAME_LOCK_NOT_PASS",
   "status": "in_progress",
   "previous_completed_run": {
     "run_id": 40201331254,
     "commit": "2c50ca4929a1142c145733019dbe8516eb1c4174",
     "default_checks_conclusion": "success",
     "native_phase": "PREPARATION_DOWNLOAD_FAILURE_NOT_APP_RESULT"
+  },
+  "previous_active_native": {
+    "run_id": 40205388335,
+    "commit": "b04ac30d59f6b5539706c7ae13adf0aae6c648e8",
+    "job_id": 121206560217,
+    "status_at_capture": "in_progress",
+    "contains_new_network_array_fix": false
   }
 }

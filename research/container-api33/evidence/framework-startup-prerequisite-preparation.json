@@ -51,7 +51,7 @@
     "tools/build-environment.init.gradle": "5d47c36a41ae28792b6c47d4cf1a464935bcfdcfbdd4334ae9f710789f056ab7",
     "tools/ci_owned_apks.py": "017ecab20df52c47233b46b84b810d64a51b9327a814110c7b37675e8efc5a73",
     "tools/cuttlefish-tcg-qemu.py": "09383784ba253869bdb473578780449fb7a6aaea96709a068c67efc8ace1e737",
-    "tools/cuttlefish_target_baselines.py": "4ac94c0af6fe0cf875f73fd614fd1a25fad628fff21132ba81584d6c41e39f2d",
+    "tools/cuttlefish_target_baselines.py": "d7eaff2f28330b8543e162e22c65b7b7421332012fc99be6009a23459296a1bc",
     "tools/fetch-cuttlefish-inputs.py": "07f1de6779b11f87b2731c3216d16da5f92f2a47156e943a2ed71d2c55fc5667",
     "tools/inspect-apk.py": "ec0eed5870d0a5ca8c8e9a53f142b60c2b345b691d7f7b8e4a9d07dabfbab81a",
     "tools/inspect-cuttlefish-arm-host.py": "b467ecd31e82709ada236d222b8ca4e09dd67914754f2505e29c0053598280d9",
@@ -80,7 +80,7 @@
   "test_source_sha256": {
     "tests/test_cuttlefish_monitor.py": "f1110afb0f7e5182207055eb1fda393c38b56475767c2194498915d3777d46cb",
     "tests/test_ci_owned_apks.py": "f695acdd7f66bb4abee5f30ed576de3663838a2735bb53d01d589ba84c41bc54",
-    "tests/test_cuttlefish_target_baselines.py": "de7db38129d519827b42052449f320fb23c10040ff58fb08424d13342824192f",
+    "tests/test_cuttlefish_target_baselines.py": "786fd12b046eca27b3df2843aa44ea51a3efcd27b0a49e9c763b2478175f2999",
     "tests/test_public_artifact_inputs.py": "1cf0f11d469b059b0da8b9e723f3f10d1dc423d28108b1ddff668e6f41dff5f4",
     "tests/test_receipt_preparation_failure.py": "dc0ec034efafd57939fe29273bf4dc68b1e6b29822f5b6715e1218a8dd0c3227"
   },
@@ -104,7 +104,18 @@
     "build_passed": true,
     "build_seconds": 19,
     "new_radio_suite_count": 9,
-    "new_runtime": "PENDING_NEXT_CI",
+    "new_runtime": "CI36_NINE_CONTROLLED_FRAMEWORK_TESTS_PASS; NATIVE_PENDING_NOT_PASS",
     "native_cpp_unchanged_since": "2c50ca4929a1142c145733019dbe8516eb1c4174"
+  },
+  "caught_exception_observation_followup": {
+    "base_commit": "c5313dcb88ae9274eb635f0129e4e421ebe919f5",
+    "controlled_tests": {
+      "count": 22,
+      "seconds": 0.413,
+      "passed": true
+    },
+    "System.err_warning_capture_added": true,
+    "app_code_or_manifest_changed": false,
+    "target_runtime": "PENDING_NEXT_NATIVE"
   }
 }

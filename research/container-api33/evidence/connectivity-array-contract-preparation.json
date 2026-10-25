@@ -75,5 +75,6 @@
     },
     "three_archive_digests_and_source_maps_verified": true
   },
-  "phone_update_distributed": false
+  "phone_update_distributed": false,
+  "subsequent_actual_runtime_result": "connectivity-array-contract-results.json"
 }

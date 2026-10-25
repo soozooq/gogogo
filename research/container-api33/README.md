@@ -8,7 +8,7 @@
 
 [CI34／2c50ca49](evidence/critical-native-and-async-results.json)实际通过自有Binder身份、新鲜回执、Context归属、旧HTTP和PendingIntent创建、全部7项受控无线检查及旧默认回归；原生作业在官方输入下载阶段失败，没有启动Android或测试目标。CriticalNative修正尚无原生目标结论。新的[Python驱动补充](evidence/public-download-and-startup-observation-preparation.json)保留全部下载校验、对合法公开viewer做有限重读，并采集限量、URL脱敏的启动日志；22项受控检查与两轮历史完整归档核对通过，实际新采集待下一轮。没有新增分支或手机实验。
 
-新[网络数组候选](evidence/connectivity-array-contract-preparation.json)另修正关闭模式也强制null的两处绑定：Network句柄保持真实路由可见，NetworkInfo开启模式仅清除框架副本的extraInfo，连接状态与原对象保留。19秒编译、22项驱动检查和静态核对通过；新增两项受控公开框架检查（总9项）尚待新CI，不证明黑屏原因、真实Guest Hook或定位业务。CI35原生仍在独立运行，默认旧7项已核对通过。
+新[网络数组候选](evidence/connectivity-array-contract-preparation.json)另修正关闭模式也强制null的两处绑定：Network句柄保持真实路由可见，NetworkInfo开启模式仅清除框架副本的extraInfo，连接状态与原对象保留。[CI36实际9项检查0.099秒通过](evidence/connectivity-array-contract-results.json)，全部三归档、源码、签名及默认回归已核对，不证明黑屏原因、真实Guest Hook或定位业务。CI35原生仍在独立运行；CI36待同锁。另发现printStackTrace异常不在原日志选择中，新增[System.err:W限定采集](evidence/caught-startup-exception-observation-preparation.json)，22项受控检查通过，实际新增采集待下一轮。未更改应用代码或要求手机复测。
 
 ## 核对下载的 CI 回执（维护用）
 

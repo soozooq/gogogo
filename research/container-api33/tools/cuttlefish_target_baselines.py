@@ -447,7 +447,7 @@ def capture_container_startup_diagnostics(run, out, result):
         'startup-framework-log.txt': ['logcat', '-d', '-b', 'main', '-b', 'system',
             '-v', 'threadtime', '-t', '2500', '-s', 'AndroidRuntime:E', 'ActivityManager:I',
             'ActivityTaskManager:I', 'NativeCore:D', 'BActivityThread:D', 'BlackBoxCore:D',
-            'AppInstrumentation:D', 'HCallbackProxy:D']}
+            'AppInstrumentation:D', 'HCallbackProxy:D', 'System.err:W']}
     for name, command in commands.items():
         try:
             response = run(command, timeout=30, check=False)

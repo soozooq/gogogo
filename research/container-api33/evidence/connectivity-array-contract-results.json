@@ -1,0 +1,163 @@
+{
+  "schema": "GOGOGO_CONNECTIVITY_ARRAY_CONTRACT_RESULTS_V1",
+  "scope": "ACTUAL_API33_X86_64_CONTROLLED_PUBLIC_FRAMEWORK_NOT_GUEST_RADIO_TARGET_OR_PHONE",
+  "run_id": 40207482457,
+  "commit": "c5313dcb88ae9274eb635f0129e4e421ebe919f5",
+  "tree": "f649a2db0e4209c34976cdc258ee8729aba25d95",
+  "default_checks_conclusion": "success",
+  "artifacts": {
+    "linux": {
+      "id": 12605031165,
+      "sha256": "406e7b39079a790097dab8fa323c787a3899ace018de5cab7f2bbc6b2b775619",
+      "verified": true
+    },
+    "own": {
+      "id": 12605050789,
+      "sha256": "a0562b1e3208f4b2f9c48ea8dba9971851b3ef19c80887d93ee621d061dffdf3",
+      "verified": true
+    },
+    "mac": {
+      "id": 12604966032,
+      "sha256": "fc8d8abd48075562b081c5a0bbaf44779aeb6550865d4630829da924257f41f6",
+      "verified": true
+    }
+  },
+  "source_inputs_per_case_verified": 55,
+  "radio_junit": [
+    "Time: 0.099",
+    "OK (9 tests)"
+  ],
+  "new_test_methods": [
+    "closedConnectivityKeepsOrdinaryPublicNetworkArrays",
+    "virtualConnectivityKeepsRoutesAndRedactsOnlyCopiedExtraInfo"
+  ],
+  "observed_contract": {
+    "actual_public_ConnectivityManager_wrapper": true,
+    "controlled_IConnectivityManager_only": true,
+    "real_network_query": false,
+    "closed_mode_preserves_original_array_references": true,
+    "virtual_mode_preserves_opaque_Network_handles": true,
+    "virtual_NetworkInfo_uses_framework_Parcel_copy": true,
+    "copy_connection_state_type_and_reason_preserved": true,
+    "copy_extra_info_cleared": true,
+    "original_extra_info_unchanged": true,
+    "process_local_ConnectivityManager_sInstance_restored": true
+  },
+  "actual_own_framework": {
+    "scope": "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION",
+    "passed": true,
+    "pending_intents_sent": false,
+    "location_requested": false,
+    "startup_contract_run_id": "1381f620-76a3-4c73-a9e6-25ebb9a3a011",
+    "framework_http_legacy_class_resolved": true,
+    "expected_real_host_uid": 10129,
+    "process_api_uid": 10001,
+    "binder_self_uid": 10129,
+    "binder_self_pid": 2638,
+    "process_api_pid": 2638,
+    "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
+    "binder_self_uid_matches_real_host": true,
+    "activity_attribution_uid": 10129,
+    "application_attribution_uid": 10129,
+    "activity_attribution_uid_matches_real_host": true,
+    "application_attribution_uid_matches_real_host": true,
+    "activity_attribution_package": "com.soozooq.tianwaitian.containerresearch",
+    "pending_activity_created": true,
+    "pending_service_created": true
+  },
+  "other_junit": {
+    "x86_64-startup-framework": [
+      "Time: 0.604",
+      "OK (1 test)"
+    ],
+    "x86_64-calculator": [
+      "Time: 6.06",
+      "OK (1 test)"
+    ],
+    "x86_64-ordinary-entry": [
+      "Time: 12.084",
+      "OK (1 test)"
+    ]
+  },
+  "own_transport": {
+    "source_count_verified": 50,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4531832,
+        "sha256": "b15ad6089c5703ae9fa943168b40aea5878bbdfe672845894ac1feb54f59a192"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 500186,
+        "sha256": "0fe6b6ebae7aa04a6c8c58bdef2b70c6ce972994e3d897af8168aae526305b22"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "read_only_ui_capture": {
+    "source_count_verified": 57,
+    "passed": true,
+    "scope": "SELF_OWNED_MOVING_UI_ONLY_NOT_TARGET_STARTUP_OR_LOCATION",
+    "old_cli": {
+      "returncode": 0,
+      "idle_error_observed": true
+    },
+    "observed": {
+      "scope": "SELF_OWNED_UI_CAPTURE_ONLY_NOT_TARGET_STARTUP",
+      "target": "owned-fixture",
+      "package": "com.soozooq.tianwaitian.locationconsumer",
+      "api": 33,
+      "capture_method": "UI_AUTOMATION_WITHOUT_IDLE_WAIT",
+      "own_driver_targeting": true,
+      "plain_application": true,
+      "passed": true,
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "input_events_sent": false,
+      "root_package": "com.soozooq.tianwaitian.locationconsumer",
+      "visible_text": [
+        "Read-only moving fixture 113"
+      ],
+      "stage": "OWN_UI_VISIBLE",
+      "elapsed_ms": 29
+    },
+    "cleanup": {
+      "com.soozooq.tianwaitian.locationconsumer": true,
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true
+    },
+    "host_engine_process_absent": true
+  },
+  "native_this_commit": {
+    "job_id": 121213057132,
+    "status_at_capture": "pending",
+    "passed": false,
+    "interpretation": "WAITING_FOR_PREVIOUS_ACTIVE_CI35; MAY_BE_SUPERSEDED_BY_NEXT_PENDING_JOB_NOT_PASS"
+  },
+  "previous_active_native": {
+    "run_id": 40205388335,
+    "commit": "b04ac30d59f6b5539706c7ae13adf0aae6c648e8",
+    "job_id": 121206560217,
+    "status_at_capture": "in_progress",
+    "contains_new_network_array_fix": false
+  },
+  "actual_guest_radio_hook_or_target_sdk_adoption_proven": false,
+  "black_screen_cause_attributed": false,
+  "wechat_send_and_live_location": "UNFULFILLED",
+  "douyin_wireless_and_overseas": "UNFULFILLED",
+  "physical_arm64_vivo": "NOT_VERIFIED",
+  "phone_update_distributed": false
+}

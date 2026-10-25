@@ -40,6 +40,9 @@ class OriginalBaselineControlTest(unittest.TestCase):
             self.assertIn(b'[URL_REDACTED]', data); self.assertNotIn(b'secret=fixture', data)
             self.assertTrue(all(c[0] == 'logcat' or c[:2] in [['shell', 'dumpsys'], ['shell', 'ps']]
                                 for c in calls))
+            log = next(c for c in calls if c[0] == 'logcat')
+            self.assertIn('System.err:W', log)  # Caught startup exceptions use printStackTrace.
+            self.assertIn('-s', log)  # Keep filtered capture instead of all app logs.
 
     def test_install_phases_hash_gate_and_owned_session_abandon(self):
         with tempfile.TemporaryDirectory() as folder:

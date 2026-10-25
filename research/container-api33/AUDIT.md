@@ -92,4 +92,6 @@ CI32 的UID断言误把虚拟化的 `Process.myUid()` 当作系统 UID，修正�
 
 本轮Python补充仅对同一合法公开viewer进行有限重读，严格保留访问、主机、文件名、大小与SHA边界，认证拒绝仍终止；不记录短签名URL。回执工具能核对准备失败，保留运行未达到与未知QEMU清理；伪造成功／已启动／错误scope均被受控负例拒绝。新增启动诊断只读、限时限量、URL脱敏，读取不可用不改变UI结论；实际新采集待后续原生运行。
 
-固定ConnectivityManager的两个公开网络数组getter均为NonNull，旧引擎onBindMethod却在所有模式返回null。新候选移除不带坐标的Network句柄限制，关闭模式保留NetworkInfo原服务数组；开启模式经公开Parcel复制，调用真实setExtraInfo清除副本附加名称，保留连接字段和原对象。不可复制时返回空类型数组而不回退原始附加信息。两项新增检查走真正ConnectivityManager包装、受控IConnectivityManager，finally恢复静态实例，不查询真实网络；19秒构建通过，实际新9项待硬件CI。未知是否解释两目标黑屏，持续网络回调及SDK采用仍未验证。详见[候选](evidence/connectivity-array-contract-preparation.json)。
+固定ConnectivityManager的两个公开网络数组getter均为NonNull，旧引擎onBindMethod却在所有模式返回null。新候选移除不带坐标的Network句柄限制，关闭模式保留NetworkInfo原服务数组；开启模式经公开Parcel复制，调用真实setExtraInfo清除副本附加名称，保留连接字段和原对象。不可复制时返回空类型数组而不回退原始附加信息。两项新增检查走真正ConnectivityManager包装、受控IConnectivityManager，finally恢复静态实例，不查询真实网络；[CI36实际9项受控检查0.099秒通过](evidence/connectivity-array-contract-results.json)，三归档、55份case源码及自有签名已核对。未知是否解释两目标黑屏，真实Guest Hook、持续网络回调及SDK采用仍未验证。详见[候选](evidence/connectivity-array-contract-preparation.json)。
+
+启动链路有捕获后printStackTrace的异常，而先前限定框架日志没有System.err。现仅增加System.err:W，仍读取main/system限定tags，30秒与2MiB上限、URL脱敏、不以采集可用性改变UI判定。22项受控检查通过，新采集待原生；不是已获得目标异常或修复黑屏的证明。见[准备记录](evidence/caught-startup-exception-observation-preparation.json)。
