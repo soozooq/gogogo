@@ -5,3 +5,5 @@
 除非用户明确要求隔离另一项工作，继续使用当前 `research/container-api33-20261023` 分支和 Draft PR #60，不为每次修复或验证新建分支。保留日常候选分支 #59；不擅自删除、强推或重置其他工作区。
 
 任何“成功”结论都必须注明证据范围。云端接口测试、自有应用和计算器运行不等于微信、抖音、海外定位或 ARM64／vivo 真机兼容。记录失败及剩余缺口，减少手机用户的重复实验。
+
+需要原生目标对照时，push 提交消息须同时包含 `[cuttlefish-boot] [cuttlefish-container]`；没有标记只会跑基础检查。若仓库启用 Container research 的手动运行，可选择 `run_cuttlefish_container_probe=true`，自动准备同一轮自有 APK、启动固定系统及普通原包／容器对照。原生作业共用锁，不取消正在运行的前轮；被跳过／替换的 pending 不算通过。

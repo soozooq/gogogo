@@ -31,6 +31,8 @@ CI34原生作业沿同一个锁在CI33完成后才开始，但在下载官方输
 
 同分支的[简短默认反馈](docs/simple-support-flow.md)保持14,000字符上限与历史索引，未发行。较旧API原生路径、vivo和定位业务仍未验证。旧[CI31启动异常](research/container-api33/evidence/cuttlefish-verified-signers-and-startup-crashes.json)、旧系统／CPU对照及全部失败保留，不重复手机实验。
 
+CI37／8060b573的Linux／Mac基础检查及9项接口回归已通过，两归档源码已核对；但本次提交消息遗漏原生标记，原生与自有APK传递均跳过，不能算新原生结果。现[补正触发选择](research/container-api33/evidence/native-trigger-correction-preparation.json)，提交消息带齐两个标记，工作流也增加明确的手动容器选项；同一个原生锁及不取消运行中作业的规则不变。后续实际排队及结果需检查GitHub作业，CI35仍是正在运行的前轮。
+
 ## 已证实的工程范围
 
 以下实际运行证据均为 Android13 **x86_64**，不是 ARM64／vivo 或目标业务通过。

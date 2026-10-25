@@ -17,5 +17,7 @@
     "tests/test_cuttlefish_target_baselines.py": "786fd12b046eca27b3df2843aa44ea51a3efcd27b0a49e9c763b2478175f2999"
   },
   "actual_ci36_default_result": "connectivity-array-contract-results.json",
-  "phone_update_distributed": false
+  "phone_update_distributed": false,
+  "first_followup_native_result": "CI37_SKIPPED_MISSING_COMMIT_OPT_IN_NOT_PASS",
+  "trigger_correction": "native-trigger-correction-preparation.json"
 }

@@ -10,6 +10,8 @@
 
 新[网络数组候选](evidence/connectivity-array-contract-preparation.json)另修正关闭模式也强制null的两处绑定：Network句柄保持真实路由可见，NetworkInfo开启模式仅清除框架副本的extraInfo，连接状态与原对象保留。[CI36实际9项检查0.099秒通过](evidence/connectivity-array-contract-results.json)，全部三归档、源码、签名及默认回归已核对，不证明黑屏原因、真实Guest Hook或定位业务。CI35原生仍在独立运行；CI36待同锁。另发现printStackTrace异常不在原日志选择中，新增[System.err:W限定采集](evidence/caught-startup-exception-observation-preparation.json)，22项受控检查通过，实际新增采集待下一轮。未更改应用代码或要求手机复测。
 
+CI37基础检查通过，但提交消息漏带原生标记，原生及同轮自有APK传递被跳过；此失败选择已保留。[触发补正](evidence/native-trigger-correction-preparation.json)带齐push标记，并增加明确手动容器选项，保持同锁、不取消运行中的CI35。未执行原生不算通过。
+
 ## 核对下载的 CI 回执（维护用）
 
 `tools/verify-ci-receipts.py` 读取已下载的 ZIP，不安装应用、不查询手机。输入 JSON 填写 GitHub Artifact API 给出的完整提交、run ID及各归档摘要，路径指向本地 ZIP；支持 `linux`、`mac`、`own`、`native` 四种归档角色。摘要不能改成从待验证 ZIP 自行推导的预期值。输出使用一个尚不存在的新路径，保留旧证据。

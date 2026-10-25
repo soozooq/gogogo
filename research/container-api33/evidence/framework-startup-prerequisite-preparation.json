@@ -90,7 +90,7 @@
   "latest_runtime_record": "critical-native-and-async-results.json",
   "new_async_cell_callback_runtime": "CI34_TWO_ADDED_CONTROLLED_FRAMEWORK_WRAPPER_TESTS_ACTUALLY_PASS; SEVEN_RADIO_TESTS_TOTAL",
   "workflow_source_sha256": {
-    ".github/workflows/container-research.yml": "e0eac12b290e0c9a41066867985dcf95c79e52340880c90470dc77a1a05b7fdb"
+    ".github/workflows/container-research.yml": "63ee9814d9bae57a137a34387c125b9c7f7718c52c8d95321e0078080119791c"
   },
   "driver_only_followup_base_commit": "2c50ca4929a1142c145733019dbe8516eb1c4174",
   "driver_only_followup_tests": {
@@ -117,5 +117,11 @@
     "System.err_warning_capture_added": true,
     "app_code_or_manifest_changed": false,
     "target_runtime": "PENDING_NEXT_NATIVE"
+  },
+  "native_trigger_followup": {
+    "base_commit": "8060b5734160a3b6a15e2e5d4183b4c2f9b39303",
+    "first_followup_native": "CI37_SKIPPED_MISSING_COMMIT_OPT_IN_NOT_PASS",
+    "correction": "PUSH_WITH_BOTH_CUTTLEFISH_BOOT_AND_CONTAINER_MARKERS; EXPLICIT_MANUAL_CONTAINER_INPUT_ADDED",
+    "app_source_changed": false
   }
 }

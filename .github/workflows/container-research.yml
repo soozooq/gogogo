@@ -23,6 +23,11 @@ on:
         required: false
         default: false
         type: boolean
+      run_cuttlefish_container_probe:
+        description: 'Run matched original and container startup controls with the exact same-run self-owned APK pair'
+        required: false
+        default: false
+        type: boolean
   push:
     branches: [research/container-api33-20261023]
     paths:
@@ -125,10 +130,10 @@ jobs:
           echo "$feedback_status" > "$feedback_evidence/returncode.txt"
           exit "$feedback_status"
       - name: Prepare own host and driver for the same CI run (no original target APKs)
-        if: ${{ contains(github.event.head_commit.message, '[cuttlefish-container]') }}
+        if: ${{ inputs.run_cuttlefish_container_probe || contains(github.event.head_commit.message, '[cuttlefish-container]') }}
         run: python3 research/container-api33/tools/ci_owned_apks.py --workdir "$CONTAINER_RESEARCH_WORKDIR" --output "$RUNNER_TEMP/ci-owned-container-apks"
       - name: Transfer only the self-owned APK pair for ARM CI (one day, not a phone release)
-        if: ${{ contains(github.event.head_commit.message, '[cuttlefish-container]') }}
+        if: ${{ inputs.run_cuttlefish_container_probe || contains(github.event.head_commit.message, '[cuttlefish-container]') }}
         uses: actions/upload-artifact@v4
         with:
           name: ci-owned-container-apks-${{ github.sha }}
@@ -215,15 +220,15 @@ jobs:
     concurrency:
       group: container-research-${{ github.ref }}
       cancel-in-progress: false
-    if: ${{ (github.event_name == 'workflow_dispatch' && (inputs.inspect_cuttlefish_arm_host || inputs.run_cuttlefish_arm_boot)) || (github.event_name == 'push' && (contains(github.event.head_commit.message, '[cuttlefish-host]') || contains(github.event.head_commit.message, '[cuttlefish-boot]'))) }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && (inputs.inspect_cuttlefish_arm_host || inputs.run_cuttlefish_arm_boot || inputs.run_cuttlefish_container_probe)) || (github.event_name == 'push' && (contains(github.event.head_commit.message, '[cuttlefish-host]') || contains(github.event.head_commit.message, '[cuttlefish-boot]'))) }}
     runs-on: ubuntu-24.04-arm
-    timeout-minutes: ${{ contains(github.event.head_commit.message, '[cuttlefish-container]') && 150 || (contains(github.event.head_commit.message, '[cuttlefish-startup]') && 120 || 50) }}
+    timeout-minutes: ${{ (inputs.run_cuttlefish_container_probe || contains(github.event.head_commit.message, '[cuttlefish-container]')) && 150 || (contains(github.event.head_commit.message, '[cuttlefish-startup]') && 120 || 50) }}
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
       - name: Receive the exact same-run self-owned pair (no original target APKs)
-        if: ${{ contains(github.event.head_commit.message, '[cuttlefish-container]') }}
+        if: ${{ inputs.run_cuttlefish_container_probe || contains(github.event.head_commit.message, '[cuttlefish-container]') }}
         uses: actions/download-artifact@v4
         with:
           name: ci-owned-container-apks-${{ github.sha }}
@@ -244,15 +249,15 @@ jobs:
       - name: Check original startup control logic without a device
         run: python3 -m unittest discover -s research/container-api33/tests -v
       - name: Qualify pinned Android13 ARM64 system and optional original startup
-        if: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_cuttlefish_arm_boot) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[cuttlefish-boot]')) }}
+        if: ${{ (github.event_name == 'workflow_dispatch' && (inputs.run_cuttlefish_arm_boot || inputs.run_cuttlefish_container_probe)) || (github.event_name == 'push' && contains(github.event.head_commit.message, '[cuttlefish-boot]')) }}
         # Refresh supplementary groups as the SAME ordinary runner user; retain proxy/CA.
         run: |
           set -euo pipefail
           cvd_arguments=(--host-report "$RUNNER_TEMP/cuttlefish-host/probe/report.json" --workdir "$RUNNER_TEMP/cuttlefish-arm-boot" --boot-seconds ${{ contains(github.event.head_commit.message, '[cuttlefish-diagnose]') && '300' || '2400' }})
-          if [[ '${{ contains(github.event.head_commit.message, '[cuttlefish-startup]') || contains(github.event.head_commit.message, '[cuttlefish-container]') }}' == true ]]; then
+          if [[ '${{ inputs.run_cuttlefish_container_probe || contains(github.event.head_commit.message, '[cuttlefish-startup]') || contains(github.event.head_commit.message, '[cuttlefish-container]') }}' == true ]]; then
             cvd_arguments+=(--original-baselines)
           fi
-          if [[ '${{ contains(github.event.head_commit.message, '[cuttlefish-container]') }}' == true ]]; then
+          if [[ '${{ inputs.run_cuttlefish_container_probe || contains(github.event.head_commit.message, '[cuttlefish-container]') }}' == true ]]; then
             cvd_arguments+=(--container-apks "$RUNNER_TEMP/ci-owned-container-apks")
           fi
           sudo -n -E -u "$(id -un)" -- python3 research/container-api33/tools/run-cuttlefish-arm-boot.py "${cvd_arguments[@]}"
