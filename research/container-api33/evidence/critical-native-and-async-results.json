@@ -1,0 +1,172 @@
+{
+  "schema": "GOGOGO_CRITICAL_NATIVE_AND_ASYNC_RESULTS_V1",
+  "scope": "ACTUAL_X86_64_SELF_OWNED_FRAMEWORK_AND_CONTROLLED_CALLBACKS_NOT_TARGET_OR_PHONE",
+  "run_id": 40201331254,
+  "commit": "2c50ca4929a1142c145733019dbe8516eb1c4174",
+  "artifacts": {
+    "linux": {
+      "id": 12602122069,
+      "sha256": "212b20ce35d7060af3abe3123a730b80d7fa870310cb942b7d3fde150f1fc63f",
+      "verified": true
+    },
+    "mac": {
+      "id": 12602250375,
+      "sha256": "7bc833d0a7e18d6c3246c85798821744728b612e6525649211d3b34ed1ac65f4",
+      "verified": true
+    },
+    "own": {
+      "id": 12602690632,
+      "sha256": "7ae61a6647f255fcaa3ae6911e5bca0465c9995555bc13777f68c608cf73ad23",
+      "verified": true
+    },
+    "native": {
+      "id": 12602433491,
+      "sha256": "149ba9a651b9422849c9188b572508127628d098ff17e95cd10d1593d2917658",
+      "verified": true
+    }
+  },
+  "all_archive_hashes_and_source_maps_verified": true,
+  "actual_own_framework": {
+    "scope": "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION",
+    "passed": true,
+    "pending_intents_sent": false,
+    "location_requested": false,
+    "startup_contract_run_id": "f9131f34-c13a-4327-86ac-f8aebe31d302",
+    "framework_http_legacy_class_resolved": true,
+    "expected_real_host_uid": 10129,
+    "process_api_uid": 10001,
+    "binder_self_uid": 10129,
+    "binder_self_pid": 2649,
+    "process_api_pid": 2649,
+    "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
+    "binder_self_uid_matches_real_host": true,
+    "activity_attribution_uid": 10129,
+    "application_attribution_uid": 10129,
+    "activity_attribution_uid_matches_real_host": true,
+    "application_attribution_uid_matches_real_host": true,
+    "activity_attribution_package": "com.soozooq.tianwaitian.containerresearch",
+    "pending_activity_created": true,
+    "pending_service_created": true
+  },
+  "default_cases": {
+    "x86_64-startup-framework": {
+      "source_count_verified": 55,
+      "passed": true,
+      "junit": [
+        "Time: 0.495",
+        "OK (1 test)"
+      ]
+    },
+    "x86_64-radio-privacy": {
+      "source_count_verified": 55,
+      "passed": true,
+      "junit": [
+        "Time: 0.047",
+        "OK (7 tests)"
+      ]
+    },
+    "x86_64-ordinary-entry": {
+      "source_count_verified": 55,
+      "passed": true,
+      "junit": [
+        "Time: 9.919",
+        "OK (1 test)"
+      ]
+    },
+    "x86_64-calculator": {
+      "source_count_verified": 55,
+      "passed": true,
+      "junit": [
+        "Time: 5.593",
+        "OK (1 test)"
+      ]
+    },
+    "read-only-ui-capture": {
+      "source_count_verified": 57,
+      "passed": true,
+      "scope": "SELF_OWNED_MOVING_UI_ONLY_NOT_TARGET_STARTUP_OR_LOCATION",
+      "old_cli": {
+        "returncode": 0,
+        "idle_error_observed": true
+      },
+      "observed": {
+        "scope": "SELF_OWNED_UI_CAPTURE_ONLY_NOT_TARGET_STARTUP",
+        "target": "owned-fixture",
+        "package": "com.soozooq.tianwaitian.locationconsumer",
+        "api": 33,
+        "capture_method": "UI_AUTOMATION_WITHOUT_IDLE_WAIT",
+        "own_driver_targeting": true,
+        "plain_application": true,
+        "passed": true,
+        "terms_accepted": false,
+        "login_attempted": false,
+        "messages_sent": false,
+        "input_events_sent": false,
+        "root_package": "com.soozooq.tianwaitian.locationconsumer",
+        "visible_text": [
+          "Read-only moving fixture 118"
+        ],
+        "stage": "OWN_UI_VISIBLE",
+        "elapsed_ms": 546
+      },
+      "cleanup": {
+        "com.soozooq.tianwaitian.locationconsumer": true,
+        "com.soozooq.tianwaitian.containerresearch.test": true,
+        "com.soozooq.tianwaitian.containerresearch": true
+      },
+      "host_engine_process_absent": true
+    }
+  },
+  "own_transport": {
+    "source_count_verified": 50,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4531380,
+        "sha256": "4473cdb68f0d921bfb17ecbc25ed3d8db61cbbcdca192c64389d43371399698f"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 498038,
+        "sha256": "20c0d2e8b312698448292a3edce52978a5293a7b7572dfe912e2a270b8976337"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "native": {
+    "source_count_verified": 8,
+    "state": "PREPARATION_OR_PROBE_ERROR",
+    "passed": false,
+    "phase": "PREPARATION_FAILED_BEFORE_REPORTED_QEMU_LAUNCH",
+    "system_boot_passed": false,
+    "qemu_process_stopped": null,
+    "error": "RuntimeError: artifact-download failed with exit 1"
+  },
+  "native_source_count_verified": 8,
+  "original_target_or_location_tested_in_this_native_job": false,
+  "native_download_failure": {
+    "public_http_429_observed": true,
+    "subsequent_error": "Unexpected official download host or artifact name",
+    "actual_bad_url_shape": "NOT_RECORDED_UNKNOWN",
+    "later_public_page_metadata": "ALL_THREE_HTTPS_GCS_EXPECTED_NAMES_VALID; NO_AUTH_SESSION"
+  },
+  "native_lock_sequence": {
+    "prior_native_run": 40197335425,
+    "prior_native_step_finished": "2026-10-25T14:39:48Z",
+    "this_native_job_started": "2026-10-25T14:39:59Z",
+    "active_run_cancelled": false
+  },
+  "wechat_and_douyin_location": "UNFULFILLED",
+  "phone_update_distributed": false
+}

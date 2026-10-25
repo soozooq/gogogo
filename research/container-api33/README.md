@@ -4,9 +4,9 @@
 
 项目接手只认根目录 [PROJECT_STATUS.md](../../PROJECT_STATUS.md)。本轮继续使用同一个研发分支和 Draft #60，没有按修复或检查新增分支／PR。
 
-**当前实测**：[原生 ARM64 最新结果 `40174550024 / ff1a21ee`](evidence/cuttlefish-verified-signers-and-startup-crashes.json)已自动确认微信欢迎页、抖音隐私页；两款容器导入和原证书查询也通过。Guest 启动后，微信因 Wi-Fi 权限、旧 HTTP 类、现代 PendingIntent 归属错误崩溃，抖音有 Guest ART JIT 线程原生崩溃。系统进程保持稳定，清理完成；两款容器界面与定位业务均未通过。候选一次补齐微信的三个已知框架条件，先用自有 Guest 自动检查；抖音补充同样时长的普通／容器对照，不猜测具体 Hook 原因，不改全局 JIT 或模拟标记。
+**当前实测**：[原生CI33／073c25db](evidence/cuttlefish-matched-original-and-black-screen-results.json)通过系统资格、两普通原包界面、两导入及原证书；普通抖音隐私页后305.978秒PID稳定，但两个Guest仍黑屏，抖音有JIT线程SIGSEGV头、缺完整栈。系统PID653稳定，清理完成，定位业务未测试。
 
-[最新默认检查 CI33／073c25db](evidence/framework-startup-prerequisite-results.json)已实际通过旧 HTTP 类、两类 PendingIntent创建与Context真实宿主UID，修正了CI32拿虚拟Process UID作预期的错误测试。Linux／Mac及旧回归通过，原生目标对照正在运行。新候选另处理CriticalNative Binder替换的ABI风险和两种异步基站回调，新增检查实际运行仍待新CI；两次本地软件环境在测试前失败，不能计通过。详见[准备与失败边界](evidence/critical-native-and-async-preparation.json)。队列改为基础检查可并行、原生沿同一锁排队且不取消前轮；所有工作继续本分支。
+[CI34／2c50ca49](evidence/critical-native-and-async-results.json)实际通过自有Binder身份、新鲜回执、Context归属、旧HTTP和PendingIntent创建、全部7项受控无线检查及旧默认回归；原生作业在官方输入下载阶段失败，没有启动Android或测试目标。CriticalNative修正尚无原生目标结论。新的[Python驱动补充](evidence/public-download-and-startup-observation-preparation.json)保留全部下载校验、对合法公开viewer做有限重读，并采集限量、URL脱敏的启动日志；22项受控检查与两轮历史完整归档核对通过，实际新采集待下一轮。没有新增分支或手机实验。
 
 ## 核对下载的 CI 回执（维护用）
 
@@ -19,7 +19,7 @@ python3 research/container-api33/tools/verify-ci-receipts.py \
   --output /path/to/new-verified-receipt.json
 ```
 
-输入形状为 `{"run_id": 123, "commit": "完整40位提交", "artifacts": {"linux": {"id": 456, "sha256": "API给出的64位归档摘要", "path": "/path/to/linux.zip"}}}`；其他角色按同样形状添加。校验归档路径、提交源码及完整自有传递清单、APK 摘要／签名／材料、主程序 XML 和各阶段记录，按固定 Git 提交取源码，因此保留历史回执时无需重置工作区。未提供原生回执记为 `NOT_SUPPLIED_NOT_PASS`，真实失败继续保留；`integrity_verified` 表示证据核对，不是微信／抖音或定位成功。参见[实际回执与负例准备记录](evidence/receipt-verifier-preparation.json)。
+输入形状为 `{"run_id": 123, "commit": "完整40位提交", "artifacts": {"linux": {"id": 456, "sha256": "API给出的64位归档摘要", "path": "/path/to/linux.zip"}}}`；其他角色按同样形状添加。校验归档路径、提交源码及完整自有传递清单、APK 摘要／签名／材料、主程序 XML 和各阶段记录，按固定 Git 提交取源码，因此保留历史回执时无需重置工作区。原生下载等准备失败保留错误、明确未达到运行阶段及未知清理；未提供原生回执记为 `NOT_SUPPLIED_NOT_PASS`，真实失败继续保留；`integrity_verified` 表示证据核对，不是微信／抖音或定位成功。参见[实际回执与负例准备记录](evidence/receipt-verifier-preparation.json)。
 
 ## 历史：ARM64 软件模拟与 Cuttlefish 前置核查
 

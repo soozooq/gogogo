@@ -86,4 +86,8 @@ GPS／NETWORK 的缓存、单次回调和持续批量回调均从 A 跟随到 B�
 
 CI32 的UID断言误把虚拟化的 `Process.myUid()` 当作系统 UID，修正后CI33自有Guest已实际确认Context AttributionSource与真实宿主UID一致，旧HTTP及两类PendingIntent创建也通过。详见[失败历史与真实结果](evidence/framework-startup-prerequisite-results.json)，不是目标或手机成功。
 
-固定Android13另将Binder.getCallingUid声明为CriticalNative，而旧原生替换使用普通JNI签名并回调Java/Binder。新候选在API33+保留该系统方法，内部逻辑UID不用于替换OS调用者身份；新增自有Binder UID/PID及新鲜报告校验。两种异步CellInfo请求在虚拟模式完成空列表回调，关闭模式原样转发；新增检查使用真实TelephonyManager包装与Executor、受控服务cache，finally恢复，不查询真实modem。二者均等待新硬件CI，不能由静态约束认定已修复抖音，也不能将本地0方法执行的初始化失败算作回调通过。没有改ART/JIT、平台超时、原包证书或mock标记；较旧API的原生路径未改、未验证。详见[候选记录](evidence/critical-native-and-async-preparation.json)。
+固定Android13另将Binder.getCallingUid声明为CriticalNative，而旧原生替换使用普通JNI签名并回调Java/Binder。新候选在API33+保留该系统方法，内部逻辑UID不用于替换OS调用者身份；新增自有Binder UID/PID及新鲜报告校验。两种异步CellInfo请求在虚拟模式完成空列表回调，关闭模式原样转发；新增检查使用真实TelephonyManager包装与Executor、受控服务cache，finally恢复，不查询真实modem。二者已在CI34硬件x86检查通过；原生目标因下载未测试，不能据此认定已修复抖音，本地0方法执行的初始化失败另行保留。没有改ART/JIT、平台超时、原包证书或mock标记；较旧API的原生路径未改、未验证。详见[候选记录](evidence/critical-native-and-async-preparation.json)。
+
+最新CI34自有Binder UID/PID与新鲜nonce检查实际通过，真实Context归属和两类PendingIntent创建继续通过；两项异步基站检查合计7项受控框架检查通过。它们使用受控服务cache及合成值，不能证明真实Guest持续无线订阅、目标SDK或位置业务。CI34原生只达到下载准备失败；当前实际原生CI33普通抖音保持305.978秒稳定、两个Guest黑屏。抖音仅有JIT SIGSEGV/SEGV_ACCERR头，缺栈，不能沿用CI31归因。详见[原生对照](evidence/cuttlefish-matched-original-and-black-screen-results.json)与[新自有结果及下载失败](evidence/critical-native-and-async-results.json)。
+
+本轮Python补充仅对同一合法公开viewer进行有限重读，严格保留访问、主机、文件名、大小与SHA边界，认证拒绝仍终止；不记录短签名URL。回执工具能核对准备失败，保留运行未达到与未知QEMU清理；伪造成功／已启动／错误scope均被受控负例拒绝。新增启动诊断只读、限时限量、URL脱敏，读取不可用不改变UI结论；实际新采集待后续原生运行。

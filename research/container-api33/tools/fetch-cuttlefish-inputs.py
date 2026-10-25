@@ -22,8 +22,43 @@ def public_open(url, timeout):
                 raise
             print('Temporary public artifact HTTP', error.code,
                   '; retry', attempt + 2, 'of 3', flush=True)
+            delay = 2 ** (attempt + 1)
+            try:
+                delay = min(30, max(delay, int((error.headers or {}).get('Retry-After', '0'))))
+            except (TypeError, ValueError):
+                pass
             error.close()
+            time.sleep(delay)
+
+
+def artifact_download_url(spec, entry):
+    page = spec['public_page'] + entry['name']
+    for attempt in range(3):
+        request = urllib.request.Request(page, headers={'Cache-Control': 'no-cache'})
+        with public_open(request, timeout=45) as response:
+            html = response.read(256 * 1024).decode()
+        match = re.search(r'var JSVariables = (\{[^\n]+\});', html)
+        if not match:
+            raise RuntimeError('Public viewer did not provide the expected artifact metadata')
+        metadata = json.loads(match.group(1))
+        if any(metadata.get(k) != spec[v] for k, v in [
+                ('buildId', 'build_id'), ('branch', 'branch'), ('target', 'target')]) \
+                or metadata.get('forceLogin') is not False or metadata.get('idToken') is not None:
+            raise RuntimeError('Public build identity/access does not match')
+        value = metadata.get('artifactUrl')
+        url = urllib.parse.urlparse(value if isinstance(value, str) else '')
+        name_matches = url.path.endswith('/' + entry['name'])
+        if url.scheme == 'https' and url.hostname == 'storage.googleapis.com' \
+                and url.netloc == 'storage.googleapis.com' and name_matches and not url.fragment:
+            return value
+        # Retry only the same public viewer. All identity/access, GCS host/name,
+        # size and digest checks remain mandatory; a bad URL is never followed.
+        if attempt < 2:
+            print('Public artifact link not ready; reread', attempt + 2, 'of 3', flush=True)
             time.sleep(2 ** (attempt + 1))
+        else:
+            raise RuntimeError('Official link unavailable after 3 public reads: scheme=' + url.scheme
+                               + ', host=' + str(url.hostname) + ', name_matches=' + str(name_matches))
 
 
 def download(spec, entry, directory):
@@ -35,25 +70,12 @@ def download(spec, entry, directory):
         return
     # The public HTML embeds the same short-lived URL as its Download button.
     # Do not save or print that URL, scrape API keys, or use an authenticated session.
-    with public_open(spec['public_page'] + entry['name'], timeout=45) as response:
-        html = response.read(256 * 1024).decode()
-    match = re.search(r'var JSVariables = (\{[^\n]+\});', html)
-    if not match:
-        raise RuntimeError('Public viewer did not provide the expected artifact metadata')
-    metadata = json.loads(match.group(1))
-    if any(metadata.get(k) != spec[v] for k, v in [
-            ('buildId', 'build_id'), ('branch', 'branch'), ('target', 'target')]) \
-            or metadata.get('forceLogin') is not False or metadata.get('idToken') is not None:
-        raise RuntimeError('Public build identity/access does not match')
-    url = urllib.parse.urlparse(metadata['artifactUrl'])
-    if url.scheme != 'https' or url.hostname != 'storage.googleapis.com' \
-            or not url.path.endswith('/' + entry['name']):
-        raise RuntimeError('Unexpected official download host or artifact name')
+    url = artifact_download_url(spec, entry)
     temporary = target.with_name(target.name + '.partial')
     digest = hashlib.sha256()
     total = 0
     try:
-        with public_open(metadata['artifactUrl'], timeout=90) as response, temporary.open('xb') as output:
+        with public_open(url, timeout=90) as response, temporary.open('xb') as output:
             if int(response.headers.get('Content-Length', '0')) != entry['size']:
                 raise RuntimeError('Unexpected official artifact length')
             while block := response.read(1024 * 1024):

@@ -18,6 +18,29 @@ module_spec.loader.exec_module(baselines)
 
 
 class OriginalBaselineControlTest(unittest.TestCase):
+    def test_startup_diagnostics_are_bounded_redacted_and_do_not_change_ui_result(self):
+        calls = []
+        def read(command, timeout, check):
+            calls.append(command)
+            self.assertEqual(30, timeout); self.assertFalse(check)
+            if command[:4] == ['shell', 'dumpsys', 'activity', 'activities']:
+                raise subprocess.TimeoutExpired(command, timeout)
+            data = b'framework fixture'
+            if command[0] == 'logcat':
+                data = b'NativeCore: https://example.invalid/path?secret=fixture\n' + b'x' * (2 * 1024 * 1024 + 10)
+            return subprocess.CompletedProcess(command, 0, data, b'')
+        with tempfile.TemporaryDirectory() as folder:
+            out = Path(folder); result = {'passed': True}
+            baselines.capture_container_startup_diagnostics(read, out, result)
+            self.assertTrue(result['passed'])
+            self.assertEqual('TimeoutExpired', result['startup_diagnostics']['activities.txt']['error_class'])
+            self.assertTrue(result['startup_diagnostics']['startup-framework-log.txt']['truncated'])
+            data = (out / 'startup-framework-log.txt').read_bytes()
+            self.assertEqual(2 * 1024 * 1024, len(data))
+            self.assertIn(b'[URL_REDACTED]', data); self.assertNotIn(b'secret=fixture', data)
+            self.assertTrue(all(c[0] == 'logcat' or c[:2] in [['shell', 'dumpsys'], ['shell', 'ps']]
+                                for c in calls))
+
     def test_install_phases_hash_gate_and_owned_session_abandon(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

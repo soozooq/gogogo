@@ -437,6 +437,30 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
     return result
 
 
+def capture_container_startup_diagnostics(run, out, result):
+    """Bounded, read-only framework evidence; an unavailable read is not a UI failure."""
+    captures = result['startup_diagnostics'] = {}
+    commands = {
+        'activities.txt': ['shell', 'dumpsys', 'activity', 'activities'],
+        'windows.txt': ['shell', 'dumpsys', 'window', 'windows'],
+        'processes.txt': ['shell', 'ps', '-A', '-o', 'USER,PID,PPID,NAME'],
+        'startup-framework-log.txt': ['logcat', '-d', '-b', 'main', '-b', 'system',
+            '-v', 'threadtime', '-t', '2500', '-s', 'AndroidRuntime:E', 'ActivityManager:I',
+            'ActivityTaskManager:I', 'NativeCore:D', 'BActivityThread:D', 'BlackBoxCore:D',
+            'AppInstrumentation:D', 'HCallbackProxy:D']}
+    for name, command in commands.items():
+        try:
+            response = run(command, timeout=30, check=False)
+            data = (response.stdout or b'') + (response.stderr or b'')
+            data = re.sub(rb'https?://[^\s]+', b'[URL_REDACTED]', data)
+            limit = 2 * 1024 * 1024
+            (out / name).write_bytes(data[:limit])
+            captures[name] = {'available': response.returncode == 0,
+                              'bytes': min(len(data), limit), 'truncated': len(data) > limit}
+        except Exception as error:
+            captures[name] = {'available': False, 'error_class': type(error).__name__}
+
+
 def container_startup(adb, serial, apk, entry, own_apks, out, environment, expected_system_pid=None):
     """Use the existing own instrumentation; no account/UI actions are added."""
     out.mkdir(parents=True, exist_ok=False)
@@ -498,6 +522,7 @@ def container_startup(adb, serial, apk, entry, own_apks, out, environment, expec
                 (out / name).write_bytes(data)
                 if name == 'result.json':
                     observed = json.loads(data)
+        capture_container_startup_diagnostics(run, out, result)
         crash = run(['logcat', '-d', '-b', 'crash'], check=False).stdout
         (out / 'crash-log.txt').write_bytes(crash)
         after = {'system_pid': run(['shell', 'pidof', 'system_server'], check=False).stdout.decode().strip(),

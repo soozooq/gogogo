@@ -159,13 +159,25 @@ with tempfile.TemporaryDirectory(prefix='ci-receipts-') as temporary:
     receipt['native'] = {'state': 'NOT_SUPPLIED_NOT_PASS', 'passed': False}
     if 'native' in directories:
         candidates = [(p, json.loads(p.read_text())) for p in directories['native'].rglob('result.json')]
-        boots = [(p, x) for p, x in candidates if x.get('research_commit') == commit and 'qemu_process_stopped' in x]
+        def early_preparation_failure(value):
+            return value.get('state') == 'PREPARATION_OR_PROBE_ERROR' \
+                and value.get('passed') is False and value.get('boot_completed') is False \
+                and (value.get('qemu_launch_requested') is None or value.get('qemu_launch_requested') is False) \
+                and (value.get('system_boot_passed') is None or value.get('system_boot_passed') is False) \
+                and isinstance(value.get('error'), str) and bool(value['error'])
+        boots = [(p, x) for p, x in candidates if x.get('research_commit') == commit
+                 and str(x.get('scope', '')).startswith('CUTTLEFISH_')
+                 and ('qemu_process_stopped' in x or early_preparation_failure(x))]
         if len(boots) != 1: raise ValueError('Exactly one native boot receipt for expected commit required')
         boot_path, boot = boots[0]
+        preparation_only = 'qemu_process_stopped' not in boot
         receipt['native'] = {'source_count_verified': verify_source_map(boot['source_sha256']),
-            'state': boot['state'], 'passed': boot.get('passed') is True,
+            'state': boot['state'], 'passed': not preparation_only and boot.get('passed') is True,
+            'phase': 'PREPARATION_FAILED_BEFORE_REPORTED_QEMU_LAUNCH' if preparation_only
+                else 'BOOT_OR_RUNTIME_REPORTED',
             'system_boot_passed': boot.get('system_boot_passed') is True,
-            'qemu_process_stopped': boot.get('qemu_process_stopped') is True}
+            'qemu_process_stopped': None if preparation_only else boot.get('qemu_process_stopped') is True}
+        if 'error' in boot: receipt['native']['error'] = boot['error']
         for name, folder in [('ordinary_originals', 'original-target-baselines'),
                              ('container_targets', 'container-target-startups')]:
             path = boot_path.parent / folder / 'summary.json'

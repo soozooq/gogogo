@@ -1,24 +1,29 @@
 {
   "schema": "GOGOGO_FRAMEWORK_STARTUP_PREREQUISITE_RESULTS_V1",
   "scope": "ACTUAL_API33_X86_64_SELF_OWNED_GUEST_NOT_TARGET_OR_PHONE",
-  "run_id": 40197335425,
-  "commit": "073c25dbd540068826ff85a0602b4c35237261b8",
-  "tree": "3961e84bbc1a7e38520937d7db2a9c7401a148c2",
+  "run_id": 40201331254,
+  "commit": "2c50ca4929a1142c145733019dbe8516eb1c4174",
+  "tree": "aba897c8b522202be040b0802a20074ed8a0a2cd",
   "conclusion": "success",
   "artifacts": {
     "linux": {
-      "id": 12600313971,
-      "sha256": "12dbd51976d6d4165fcd81851bafd6cc67f5ae0c6d2a4c8540ce1b289dc3dd7e",
+      "id": 12602122069,
+      "sha256": "212b20ce35d7060af3abe3123a730b80d7fa870310cb942b7d3fde150f1fc63f",
       "verified": true
     },
     "mac": {
-      "id": 12600727599,
-      "sha256": "cd4ab5d07b50e310e5def4c5a52dc09525b74462ac76cb92e18fca8d5df7b862",
+      "id": 12602250375,
+      "sha256": "7bc833d0a7e18d6c3246c85798821744728b612e6525649211d3b34ed1ac65f4",
       "verified": true
     },
     "own": {
-      "id": 12600473142,
-      "sha256": "1f7283345f7de1cbd81951959358c1b7fec1b233364fe30f9a2aa4036fb1a006",
+      "id": 12602690632,
+      "sha256": "7ae61a6647f255fcaa3ae6911e5bca0465c9995555bc13777f68c608cf73ad23",
+      "verified": true
+    },
+    "native": {
+      "id": 12602433491,
+      "sha256": "149ba9a651b9422849c9188b572508127628d098ff17e95cd10d1593d2917658",
       "verified": true
     }
   },
@@ -27,9 +32,15 @@
     "passed": true,
     "pending_intents_sent": false,
     "location_requested": false,
+    "startup_contract_run_id": "f9131f34-c13a-4327-86ac-f8aebe31d302",
     "framework_http_legacy_class_resolved": true,
     "expected_real_host_uid": 10129,
     "process_api_uid": 10001,
+    "binder_self_uid": 10129,
+    "binder_self_pid": 2649,
+    "process_api_pid": 2649,
+    "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
+    "binder_self_uid_matches_real_host": true,
     "activity_attribution_uid": 10129,
     "application_attribution_uid": 10129,
     "activity_attribution_uid_matches_real_host": true,
@@ -40,7 +51,7 @@
   },
   "source_inputs_verified": 55,
   "junit": [
-    "Time: 0.601",
+    "Time: 0.495",
     "OK (1 test)"
   ],
   "own_transport": {
@@ -48,13 +59,13 @@
     "apks": {
       "host": {
         "name": "probeHost-debug.apk",
-        "size": 4530752,
-        "sha256": "d079d304d0f56ebe54775466f9fe5602e1cd9f4fd65454feb92286d9f383f2ed"
+        "size": 4531380,
+        "sha256": "4473cdb68f0d921bfb17ecbc25ed3d8db61cbbcdca192c64389d43371399698f"
       },
       "driver": {
         "name": "probeHost-debug-androidTest.apk",
-        "size": 494670,
-        "sha256": "a7225441132ff48647617550a678129ab2453100a07695be647f5f631bc20ee0"
+        "size": 498038,
+        "sha256": "20c0d2e8b312698448292a3edce52978a5293a7b7572dfe912e2a270b8976337"
       }
     },
     "notice_materials_per_apk": 11,
@@ -83,10 +94,10 @@
       "input_events_sent": false,
       "root_package": "com.soozooq.tianwaitian.locationconsumer",
       "visible_text": [
-        "Read-only moving fixture 112"
+        "Read-only moving fixture 118"
       ],
       "stage": "OWN_UI_VISIBLE",
-      "elapsed_ms": 25
+      "elapsed_ms": 546
     },
     "cleanup": {
       "com.soozooq.tianwaitian.locationconsumer": true,
@@ -106,12 +117,14 @@
     "passed": true
   },
   "native_job_this_run": {
-    "id": 121182450478,
-    "status": "in_progress",
+    "id": 121195762294,
+    "status": "completed",
+    "conclusion": "failure",
+    "phase": "ARTIFACT_DOWNLOAD_BEFORE_BOOT",
     "passed": false
   },
-  "binder_self_identity_checked": false,
-  "new_async_cell_callback_checks": "PENDING_NEXT_CI_NOT_IN_THIS_COMMIT",
+  "binder_self_identity_checked": true,
+  "new_async_cell_callback_checks": "PASS_TWO_CONTROLLED_FRAMEWORK_WRAPPER_TESTS_WITH_BOTH_REQUEST_FORMS_NOT_GUEST_RADIO_PROOF",
   "pending_intent_scope": "CREATION_AND_CANCEL_NOT_SEND_OR_BACKGROUND_DELIVERY",
   "previous_failed_run": {
     "run_id": 40182108173,
