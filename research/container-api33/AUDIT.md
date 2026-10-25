@@ -91,3 +91,5 @@ CI32 的UID断言误把虚拟化的 `Process.myUid()` 当作系统 UID，修正�
 最新CI34自有Binder UID/PID与新鲜nonce检查实际通过，真实Context归属和两类PendingIntent创建继续通过；两项异步基站检查合计7项受控框架检查通过。它们使用受控服务cache及合成值，不能证明真实Guest持续无线订阅、目标SDK或位置业务。CI34原生只达到下载准备失败；当前实际原生CI33普通抖音保持305.978秒稳定、两个Guest黑屏。抖音仅有JIT SIGSEGV/SEGV_ACCERR头，缺栈，不能沿用CI31归因。详见[原生对照](evidence/cuttlefish-matched-original-and-black-screen-results.json)与[新自有结果及下载失败](evidence/critical-native-and-async-results.json)。
 
 本轮Python补充仅对同一合法公开viewer进行有限重读，严格保留访问、主机、文件名、大小与SHA边界，认证拒绝仍终止；不记录短签名URL。回执工具能核对准备失败，保留运行未达到与未知QEMU清理；伪造成功／已启动／错误scope均被受控负例拒绝。新增启动诊断只读、限时限量、URL脱敏，读取不可用不改变UI结论；实际新采集待后续原生运行。
+
+固定ConnectivityManager的两个公开网络数组getter均为NonNull，旧引擎onBindMethod却在所有模式返回null。新候选移除不带坐标的Network句柄限制，关闭模式保留NetworkInfo原服务数组；开启模式经公开Parcel复制，调用真实setExtraInfo清除副本附加名称，保留连接字段和原对象。不可复制时返回空类型数组而不回退原始附加信息。两项新增检查走真正ConnectivityManager包装、受控IConnectivityManager，finally恢复静态实例，不查询真实网络；19秒构建通过，实际新9项待硬件CI。未知是否解释两目标黑屏，持续网络回调及SDK采用仍未验证。详见[候选](evidence/connectivity-array-contract-preparation.json)。

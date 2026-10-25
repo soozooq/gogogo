@@ -1,37 +1,37 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
   "scope": "DEFAULT_RESEARCH_CHECKS_ONLY_NOT_TARGET_APP_COMPATIBILITY",
-  "run_id": 40201331254,
-  "commit": "2c50ca4929a1142c145733019dbe8516eb1c4174",
-  "tree": "aba897c8b522202be040b0802a20074ed8a0a2cd",
-  "conclusion": "failure",
+  "run_id": 40205388335,
+  "commit": "b04ac30d59f6b5539706c7ae13adf0aae6c648e8",
+  "tree": "c23ba27885fd3605cbe1ea76e68cf154459414da",
+  "conclusion": null,
   "default_checks_conclusion": "success",
   "jobs": [
     {
-      "id": 121192946778,
+      "id": 121205085466,
       "name": "Build, inspect and ordinary entry (Linux)",
       "conclusion": "success"
     },
     {
-      "id": 121192946572,
+      "id": 121205085780,
       "name": "Build and inspect (ARM Mac)",
       "conclusion": "success"
     },
     {
-      "id": 121195762294,
+      "id": 121206560217,
       "name": "Inspect ARM Linux host and optional Cuttlefish boot",
-      "conclusion": "failure",
-      "phase": "PREPARATION_DOWNLOAD_BEFORE_BOOT"
+      "status": "in_progress",
+      "conclusion": null
     },
     {
-      "id": 121192947400,
+      "id": 121205086381,
       "name": "Anonymous startup (official Android 12L translation)",
       "conclusion": "skipped"
     }
   ],
   "linux_artifact": {
-    "id": 12602122069,
-    "sha256": "212b20ce35d7060af3abe3123a730b80d7fa870310cb942b7d3fde150f1fc63f",
+    "id": 12603363256,
+    "sha256": "ce04648a55bba1c41a6bf94358e8892bd4d43d20840923a4e948b265b37a4063",
     "verified": true
   },
   "default_case_results": {
@@ -39,7 +39,7 @@
       "source_count_verified": 55,
       "passed": true,
       "junit": [
-        "Time: 0.495",
+        "Time: 0.504",
         "OK (1 test)"
       ]
     },
@@ -47,7 +47,7 @@
       "source_count_verified": 55,
       "passed": true,
       "junit": [
-        "Time: 0.047",
+        "Time: 0.052",
         "OK (7 tests)"
       ]
     },
@@ -55,7 +55,7 @@
       "source_count_verified": 55,
       "passed": true,
       "junit": [
-        "Time: 9.919",
+        "Time: 10.079",
         "OK (1 test)"
       ]
     },
@@ -63,7 +63,7 @@
       "source_count_verified": 55,
       "passed": true,
       "junit": [
-        "Time: 5.593",
+        "Time: 5.706",
         "OK (1 test)"
       ]
     },
@@ -90,10 +90,10 @@
         "input_events_sent": false,
         "root_package": "com.soozooq.tianwaitian.locationconsumer",
         "visible_text": [
-          "Read-only moving fixture 118"
+          "Read-only moving fixture 115"
         ],
         "stage": "OWN_UI_VISIBLE",
-        "elapsed_ms": 546
+        "elapsed_ms": 535
       },
       "cleanup": {
         "com.soozooq.tianwaitian.locationconsumer": true,
@@ -104,9 +104,9 @@
     }
   },
   "cuttlefish_boot_result": "cuttlefish-matched-original-and-black-screen-results.json",
-  "full_arm64_system_boot": "CI34_NOT_REACHED_ARTIFACT_DOWNLOAD; LAST_ACTUAL_CI33_QUALIFIED_BUILD16596636",
-  "full_arm64_guest_apps": "CI34_NOT_TESTED; LAST_CI33_ORIGINAL_UI_AND_IMPORT_SIGNERS_PASS_BOTH_GUEST_BLACK_SCREENS_DOUYIN_JIT_FATAL",
-  "target_probe": "LATEST_RUNTIME_CI33_FAILURE; CI34_PREPARATION_FAILURE_NOT_APP_RESULT",
+  "full_arm64_system_boot": "CI35_IN_PROGRESS; LAST_ACTUAL_RUNTIME_CI33_BUILD16596636",
+  "full_arm64_guest_apps": "CI35_PENDING; LAST_ACTUAL_CI33_ORIGINAL_UI_PASS_AND_TWO_GUEST_BLACK_SCREENS",
+  "target_probe": "CI35_IN_PROGRESS; CI34_DOWNLOAD_FAILURE_AND_CI33_APP_FAILURE_KEPT_SEPARATE",
   "arm64_mac_runtime_probe": "SKIPPED_DEFAULT_FALSE_NOT_PASS",
   "wechat_send_and_live_location": "UNFULFILLED",
   "douyin_wireless_and_overseas": "UNFULFILLED",
@@ -118,11 +118,11 @@
     "default_checks_conclusion": "failure",
     "reason": "OLD_GUEST_PROCESS_UID_ASSERTION_WAS_WRONG"
   },
-  "controlled_radio_proxy": "CI34_SEVEN_NAMED_CONTROLLED_FRAMEWORK_TESTS_PASS_NOT_GUEST_RADIO_OR_TARGET_SDK_PROOF",
+  "controlled_radio_proxy": "CI35_SEVEN_CONTROLLED_TESTS_PASS; TWO_NEW_NETWORK_ARRAY_TESTS_PENDING_NEXT_CI",
   "radio_result": "wifi-radio-privacy-contract-results.json",
   "mac_artifact": {
-    "id": 12602250375,
-    "sha256": "7bc833d0a7e18d6c3246c85798821744728b612e6525649211d3b34ed1ac65f4",
+    "id": 12603063638,
+    "sha256": "d1411b81b2be4390c57920939074c57403b55408b8183f0a7b2d66550bf5e5bf",
     "verified": true
   },
   "feedback_main": {
@@ -141,12 +141,12 @@
       "host": {
         "name": "probeHost-debug.apk",
         "size": 4531380,
-        "sha256": "4473cdb68f0d921bfb17ecbc25ed3d8db61cbbcdca192c64389d43371399698f"
+        "sha256": "c1352ac3c72fbf4d3fcb48b265ae59be46b2ed3d2ce278961c8908a368e75388"
       },
       "driver": {
         "name": "probeHost-debug-androidTest.apk",
         "size": 498038,
-        "sha256": "20c0d2e8b312698448292a3edce52978a5293a7b7572dfe912e2a270b8976337"
+        "sha256": "c7ba7171e2039c40be678eb0ad48aca21555d1f2bceb4d4ef7edb0f7de3e4ba3"
       }
     },
     "notice_materials_per_apk": 11,
@@ -175,10 +175,10 @@
       "input_events_sent": false,
       "root_package": "com.soozooq.tianwaitian.locationconsumer",
       "visible_text": [
-        "Read-only moving fixture 118"
+        "Read-only moving fixture 115"
       ],
       "stage": "OWN_UI_VISIBLE",
-      "elapsed_ms": 546
+      "elapsed_ms": 535
     },
     "cleanup": {
       "com.soozooq.tianwaitian.locationconsumer": true,
@@ -199,14 +199,12 @@
     "both_container_startups_passed": false,
     "system_server_pid_stable": 653
   },
-  "native_job_this_run": {
-    "source_count_verified": 8,
-    "state": "PREPARATION_OR_PROBE_ERROR",
-    "passed": false,
-    "phase": "PREPARATION_FAILED_BEFORE_REPORTED_QEMU_LAUNCH",
-    "system_boot_passed": false,
-    "qemu_process_stopped": null,
-    "error": "RuntimeError: artifact-download failed with exit 1"
-  },
-  "status": "completed"
+  "native_job_this_run": "IN_PROGRESS_NOT_PASS",
+  "status": "in_progress",
+  "previous_completed_run": {
+    "run_id": 40201331254,
+    "commit": "2c50ca4929a1142c145733019dbe8516eb1c4174",
+    "default_checks_conclusion": "success",
+    "native_phase": "PREPARATION_DOWNLOAD_FAILURE_NOT_APP_RESULT"
+  }
 }

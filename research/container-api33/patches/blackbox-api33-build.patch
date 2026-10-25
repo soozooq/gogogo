@@ -539,6 +539,67 @@ index 2985eb4..2a973fe 100644
      public static class GetIntentSender extends MethodHook {
  
          @Override
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IConnectivityManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IConnectivityManagerProxy.java
+index 0ff8a3c..97093fe 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IConnectivityManagerProxy.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IConnectivityManagerProxy.java
+@@ -1,11 +1,16 @@
+ package top.niunaijun.bcore.fake.service;
+ 
+ import android.content.Context;
++import android.net.NetworkInfo;
++import android.os.Parcel;
++import java.lang.reflect.Method;
+ 
+ import black.android.net.IConnectivityManager;
+ import black.android.os.ServiceManager;
+ import top.niunaijun.bcore.fake.hook.BinderInvocationStub;
+-import top.niunaijun.bcore.fake.service.base.ValueMethodProxy;
++import top.niunaijun.bcore.fake.hook.MethodHook;
++import top.niunaijun.bcore.fake.hook.ProxyMethod;
++import top.niunaijun.bcore.fake.frameworks.BLocationManager;
+ 
+ public class IConnectivityManagerProxy extends BinderInvocationStub {
+     public static final String TAG = "IConnectivityManagerProxy";
+@@ -24,11 +29,33 @@ public class IConnectivityManagerProxy extends BinderInvocationStub {
+         replaceSystemService(Context.CONNECTIVITY_SERVICE);
+     }
+ 
+-    @Override
+-    protected void onBindMethod() {
+-        super.onBindMethod();
+-        addMethodHook(new ValueMethodProxy("getAllNetworkInfo", null));
+-        addMethodHook(new ValueMethodProxy("getAllNetworks",null));
++    // Opaque Network handles are not coordinates. Leave getAllNetworks on the
++    // ordinary service path so Wi-Fi/cellular/VPN routing remains observable.
++    @ProxyMethod("getAllNetworkInfo")
++    public static class GetAllNetworkInfo extends MethodHook {
++        @Override
++        protected Object hook(Object who, Method method, Object[] args) throws Throwable {
++            NetworkInfo[] original = (NetworkInfo[]) method.invoke(who, args);
++            if (!BLocationManager.isFakeLocationEnable() || original == null) return original;
++            try {
++                Method clearExtra = NetworkInfo.class.getDeclaredMethod("setExtraInfo", String.class);
++                clearExtra.setAccessible(true);
++                NetworkInfo[] copies = new NetworkInfo[original.length];
++                for (int i = 0; i < original.length; i++) {
++                    if (original[i] == null) continue;
++                    Parcel parcel = Parcel.obtain();
++                    try {
++                        original[i].writeToParcel(parcel, 0); parcel.setDataPosition(0);
++                        copies[i] = NetworkInfo.CREATOR.createFromParcel(parcel);
++                    } finally { parcel.recycle(); }
++                    clearExtra.invoke(copies[i], new Object[] {null});
++                }
++                return copies;
++            } catch (ReflectiveOperationException | RuntimeException unavailable) {
++                // No raw extra-info fallback if this platform lacks the copy contract.
++                return new NetworkInfo[0];
++            }
++        }
+     }
+ 
+     @Override
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
 index bad5396..265658f 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java

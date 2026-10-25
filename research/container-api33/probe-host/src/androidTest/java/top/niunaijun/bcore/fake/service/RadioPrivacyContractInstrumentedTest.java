@@ -2,6 +2,10 @@ package top.niunaijun.bcore.fake.service;
 
 import static org.junit.Assert.*;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Binder;
@@ -306,6 +310,85 @@ public final class RadioPrivacyContractInstrumentedTest {
         BLocationManager.disableFakeLocation(user, pkg);
         asyncFrameworkRequest(false, false);
         asyncFrameworkRequest(true, false);
+        assertEquals(2, baseCalls.get());
+    }
+
+    private interface NetworkProbe { void run(ConnectivityManager manager) throws Throwable; }
+
+    /** Public framework getters use only this controlled IConnectivityManager. */
+    private void withNetworkManager(Network[] networks, NetworkInfo[] infos, NetworkProbe probe) throws Throwable {
+        Class<?> service = Class.forName("android.net.IConnectivityManager");
+        Object controlled = Proxy.newProxyInstance(service.getClassLoader(), new Class<?>[] {service},
+                (proxy, method, args) -> {
+                    baseCalls.incrementAndGet();
+                    if ("getAllNetworks".equals(method.getName())) return networks;
+                    if ("getAllNetworkInfo".equals(method.getName())) return infos;
+                    throw new AssertionError("Unexpected controlled connectivity method: " + method.getName());
+                });
+        IConnectivityManagerProxy.GetAllNetworkInfo hook = new IConnectivityManagerProxy.GetAllNetworkInfo();
+        Object intercepted = Proxy.newProxyInstance(service.getClassLoader(), new Class<?>[] {service},
+                (proxy, method, args) -> {
+                    if ("asBinder".equals(method.getName())) return new Binder();
+                    try {
+                        return "getAllNetworkInfo".equals(method.getName())
+                                ? hook.hook(controlled, method, args) : method.invoke(controlled, args);
+                    } catch (InvocationTargetException error) { throw error.getCause(); }
+                });
+        Field instance = ConnectivityManager.class.getDeclaredField("sInstance");
+        instance.setAccessible(true); Object previous = instance.get(null);
+        try {
+            java.lang.reflect.Constructor<?> constructor = ConnectivityManager.class
+                    .getDeclaredConstructor(Context.class, service);
+            constructor.setAccessible(true);
+            ConnectivityManager manager = (ConnectivityManager) constructor.newInstance(
+                    InstrumentationRegistry.getInstrumentation().getTargetContext(), intercepted);
+            probe.run(manager);
+        } finally { instance.set(null, previous); }
+    }
+
+    private NetworkInfo syntheticConnectedWifi() throws Exception {
+        java.lang.reflect.Constructor<NetworkInfo> constructor = NetworkInfo.class
+                .getDeclaredConstructor(int.class, int.class, String.class, String.class);
+        constructor.setAccessible(true);
+        NetworkInfo info = constructor.newInstance(ConnectivityManager.TYPE_WIFI, 0, "WIFI", "");
+        Method state = NetworkInfo.class.getDeclaredMethod("setDetailedState",
+                NetworkInfo.DetailedState.class, String.class, String.class);
+        state.setAccessible(true);
+        state.invoke(info, NetworkInfo.DetailedState.CONNECTED, "synthetic-reason", "synthetic-ssid");
+        return info;
+    }
+
+    private Network[] syntheticNetworks() throws Exception {
+        java.lang.reflect.Constructor<Network> constructor = Network.class.getDeclaredConstructor(int.class);
+        constructor.setAccessible(true);
+        return new Network[] {constructor.newInstance(42)};
+    }
+
+    @Test public void closedConnectivityKeepsOrdinaryPublicNetworkArrays() throws Throwable {
+        BLocationManager.disableFakeLocation(user, pkg);
+        Network[] networks = syntheticNetworks(); NetworkInfo[] infos = {syntheticConnectedWifi()};
+        withNetworkManager(networks, infos, manager -> {
+            assertSame(networks, manager.getAllNetworks());
+            assertSame(infos, manager.getAllNetworkInfo());
+        });
+        assertEquals(2, baseCalls.get());
+    }
+
+    @Test public void virtualConnectivityKeepsRoutesAndRedactsOnlyCopiedExtraInfo() throws Throwable {
+        Network[] networks = syntheticNetworks(); NetworkInfo original = syntheticConnectedWifi();
+        NetworkInfo[] infos = {original};
+        withNetworkManager(networks, infos, manager -> {
+            assertSame("Opaque handles must remain available to normal routing code", networks, manager.getAllNetworks());
+            NetworkInfo[] copies = manager.getAllNetworkInfo();
+            assertNotNull(copies); assertEquals(1, copies.length);
+            assertNotSame(infos, copies); assertNotSame(original, copies[0]);
+            assertTrue(copies[0].isConnected());
+            assertEquals(original.getType(), copies[0].getType());
+            assertEquals(original.getDetailedState(), copies[0].getDetailedState());
+            assertEquals("synthetic-reason", copies[0].getReason());
+            assertNull(copies[0].getExtraInfo());
+            assertEquals("synthetic-ssid", original.getExtraInfo());
+        });
         assertEquals(2, baseCalls.get());
     }
 }

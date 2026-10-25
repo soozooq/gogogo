@@ -8,6 +8,8 @@
 
 [CI34／2c50ca49](evidence/critical-native-and-async-results.json)实际通过自有Binder身份、新鲜回执、Context归属、旧HTTP和PendingIntent创建、全部7项受控无线检查及旧默认回归；原生作业在官方输入下载阶段失败，没有启动Android或测试目标。CriticalNative修正尚无原生目标结论。新的[Python驱动补充](evidence/public-download-and-startup-observation-preparation.json)保留全部下载校验、对合法公开viewer做有限重读，并采集限量、URL脱敏的启动日志；22项受控检查与两轮历史完整归档核对通过，实际新采集待下一轮。没有新增分支或手机实验。
 
+新[网络数组候选](evidence/connectivity-array-contract-preparation.json)另修正关闭模式也强制null的两处绑定：Network句柄保持真实路由可见，NetworkInfo开启模式仅清除框架副本的extraInfo，连接状态与原对象保留。19秒编译、22项驱动检查和静态核对通过；新增两项受控公开框架检查（总9项）尚待新CI，不证明黑屏原因、真实Guest Hook或定位业务。CI35原生仍在独立运行，默认旧7项已核对通过。
+
 ## 核对下载的 CI 回执（维护用）
 
 `tools/verify-ci-receipts.py` 读取已下载的 ZIP，不安装应用、不查询手机。输入 JSON 填写 GitHub Artifact API 给出的完整提交、run ID及各归档摘要，路径指向本地 ZIP；支持 `linux`、`mac`、`own`、`native` 四种归档角色。摘要不能改成从待验证 ZIP 自行推导的预期值。输出使用一个尚不存在的新路径，保留旧证据。

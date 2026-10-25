@@ -1,0 +1,79 @@
+{
+  "schema": "GOGOGO_CONNECTIVITY_ARRAY_CONTRACT_PREPARATION_V1",
+  "scope": "SOURCE_CONTRACT_AND_BUILD_NOT_NEW_RUNTIME_OR_BLACK_SCREEN_CAUSE",
+  "base_commit": "b04ac30d59f6b5539706c7ae13adf0aae6c648e8",
+  "observed_source_defect": "IConnectivityManagerProxy binds both getAllNetworks and getAllNetworkInfo to null unconditionally, including CLOSE_MODE. Fixed Android13 public getters return non-null arrays.",
+  "official_references": {
+    "ConnectivityManager.java": {
+      "url": "https://android.googlesource.com/platform/packages/modules/Connectivity/+/177e2e25ba95429dd646a30091bae499ccb50ca0/framework/src/android/net/ConnectivityManager.java",
+      "sha256": "b7e1fbdecbeb179d7d7a02625ee93c1ab1a8acf2e454bf2e1d7fbcc0a00d9d71",
+      "getter_lines": [
+        1545,
+        1608
+      ]
+    },
+    "NetworkInfo.java": {
+      "url": "https://android.googlesource.com/platform/packages/modules/Connectivity/+/177e2e25ba95429dd646a30091bae499ccb50ca0/framework/src/android/net/NetworkInfo.java",
+      "sha256": "c5ff328be1ca39db2b6f5d816b0225ae957620bd9b1af639fd78ef67f4092236",
+      "setExtraInfo_line": 514
+    }
+  },
+  "candidate": {
+    "opaque_network_handles": "DEFAULT_SERVICE_PATH_ALL_MODES; NO_ROUTE_OR_TRANSPORT_FABRICATION",
+    "network_info_closed_mode": "ORIGINAL_SERVICE_ARRAY_UNCHANGED",
+    "network_info_virtual_mode": "PUBLIC_PARCEL_COPY; CLEAR_ONLY_EXTRA_INFO_ON_COPY; PRESERVE_CONNECTION_STATE_AND_ORIGINAL",
+    "unsupported_copy_contract": "EMPTY_TYPED_ARRAY_WITHOUT_RAW_EXTRA_INFO_FALLBACK",
+    "new_tests": "TWO_CONTROLLED_PUBLIC_CONNECTIVITY_MANAGER_WRAPPER_CHECKS; RESTORE_PROCESS_LOCAL_STATIC_INSTANCE_IN_FINALLY",
+    "new_radio_suite_count": 9,
+    "actual_new_runtime": "PENDING_NEXT_HARDWARE_CI",
+    "actual_guest_hook_or_sdk_adoption_proven": false,
+    "black_screen_cause_attributed": false
+  },
+  "build": {
+    "passed": true,
+    "seconds": 19
+  },
+  "controlled_python_tests": {
+    "passed": true,
+    "count": 22,
+    "seconds": 0.783
+  },
+  "static_host_inspection_passed": true,
+  "donor_patch_clean_index_replay_verified": true,
+  "main_phone_code_manifest_or_version_changed": false,
+  "target_apk_certificate_mock_flags_jit_or_platform_timeout_changed": false,
+  "source_sha256": {
+    "patches/blackbox-api33-build.patch": "307a8cac5e0ab8f90cc0c32caa8d093923b6962e3e1e38a4d4337f8c9929341e",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/RadioPrivacyContractInstrumentedTest.java": "63d97268bce78204d68e08852f89d0dda882f150937854a6e6e2b71be8e0589c",
+    "tools/run-cloud-check.py": "262f10ab2992bf23f5976d36f0784a48c60083e55350a6e063606826d3cc09cd"
+  },
+  "latest_verified_default": {
+    "run_id": 40205388335,
+    "commit": "b04ac30d59f6b5539706c7ae13adf0aae6c648e8",
+    "old_radio_tests": 7,
+    "actual_framework": {
+      "scope": "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION",
+      "passed": true,
+      "pending_intents_sent": false,
+      "location_requested": false,
+      "startup_contract_run_id": "53590f2b-f79e-4b49-ac3b-ad753036e85b",
+      "framework_http_legacy_class_resolved": true,
+      "expected_real_host_uid": 10129,
+      "process_api_uid": 10001,
+      "binder_self_uid": 10129,
+      "binder_self_pid": 2583,
+      "process_api_pid": 2583,
+      "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
+      "binder_self_uid_matches_real_host": true,
+      "activity_attribution_uid": 10129,
+      "application_attribution_uid": 10129,
+      "activity_attribution_uid_matches_real_host": true,
+      "application_attribution_uid_matches_real_host": true,
+      "activity_attribution_package": "com.soozooq.tianwaitian.containerresearch",
+      "pending_activity_created": true,
+      "pending_service_created": true
+    },
+    "three_archive_digests_and_source_maps_verified": true
+  },
+  "phone_update_distributed": false
+}
