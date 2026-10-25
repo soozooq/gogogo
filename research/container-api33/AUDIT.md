@@ -109,3 +109,5 @@ Python活动／窗口／ps是在instrumentation结束后采集，Guest已在测�
 CI39新增公共跨进程call并未通过：实际Binder UID10129与被ContentProviderStub写成10001的AttributionSource不符，AttributionSource.enforceCallingUid明确拒绝。三归档、56份case源码、自有签名材料已核对；不是微信／定位或原生失败。候选改为真实宿主UID，与现有系统Provider规则一致；InvocationTargetException解包保留真正平台异常，不关闭权限、exported或UID检查。修正后的实际运行待下一轮，见[失败与修正](evidence/provider-attribution-failure-and-correction.json)。
 
 新[原生自有阶段](evidence/native-owned-location-preparation.json)只在已合格且两个目标匿名UI通过的同一owned VM运行。消费者以独立自有APK传递、源码／许可／签名核对，仅虚拟导入；正常公共API读取及真实独立进程，不用受控服务替代Guest调用。阶段涵盖已有A→B／停止／取消，不代表腾讯／字节SDK或位置业务。25项受控驱动检查、8种工作流表达式、构建和静态材料核对通过，实际新三件CI传递与原生执行待运行。诊断限时限量、URL脱敏，采集不可用不改变已有case判定；系统身份与清理仍必须合格。
+
+[CI40实际x86_64结果](evidence/provider-attribution-results.json)已确认公共跨进程call恢复：main2634、Provider2661、调用者PID2634与本轮nonce一致；真实宿主UID10129，原UID校验保留。三件同轮自有APK、59份源码、三证书同签名和每包11份材料均核对；全部默认回归、447项与lint通过。原生作业仍在运行，不能将x86通过填作ARM64定位、真实无线或目标SDK结果；CI39失败保留。
