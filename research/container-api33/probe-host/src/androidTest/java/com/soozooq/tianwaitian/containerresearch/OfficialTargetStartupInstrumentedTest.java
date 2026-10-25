@@ -52,9 +52,11 @@ public final class OfficialTargetStartupInstrumentedTest {
         return result.toString();
     }
     private static void write(File file, JSONObject value) throws Exception {
-        try (FileOutputStream output = new FileOutputStream(file)) {
+        File temporary = new File(file.getParentFile(), file.getName() + ".tmp");
+        try (FileOutputStream output = new FileOutputStream(temporary)) {
             output.write(value.toString(2).getBytes(StandardCharsets.UTF_8)); output.getFD().sync();
         }
+        if (!temporary.renameTo(file)) throw new IllegalStateException("Startup receipt commit failed");
     }
     @Test public void pinnedOfficialTargetColdStartup() throws Exception {
         String key = InstrumentationRegistry.getArguments().getString("target");
@@ -125,11 +127,13 @@ public final class OfficialTargetStartupInstrumentedTest {
             }
             assertEquals(sha, hex(digest.digest())); assertTrue(apk.setReadOnly());
             report.put("last_completed_stage", "PINNED_INPUT_VERIFIED");
+            write(new File(folder, "result.json"), report);
             InstallResult imported = BlackBoxCore.get().installPackageAsUser(apk, 0);
             report.put("import_success", imported.success);
             assertTrue("Pinned virtual import must succeed", imported.success);
             assertEquals(pkg, imported.packageName);
             report.put("last_completed_stage", "VIRTUAL_IMPORT_CONFIRMED");
+            write(new File(folder, "result.json"), report);
             BLocationManager.disableFakeLocation(0, pkg);
             assertEquals(BLocationManager.CLOSE_MODE, BLocationManager.get().getPattern(0, pkg));
             PackageInfo identity = BlackBoxCore.getBPackageManager().getPackageInfo(pkg,
@@ -144,9 +148,11 @@ public final class OfficialTargetStartupInstrumentedTest {
                     .digest(identity.signingInfo.getApkContentsSigners()[0].toByteArray())));
             report.put("original_signer", true);
             report.put("last_completed_stage", "ORIGINAL_SIGNER_CONFIRMED");
+            write(new File(folder, "result.json"), report);
             Intent launch = BlackBoxCore.getBPackageManager().getLaunchIntentForPackage(pkg, 0);
             assertNotNull(launch); BlackBoxCore.get().startActivity(launch, 0);
             report.put("last_completed_stage", "TARGET_LAUNCH_REQUESTED");
+            write(new File(folder, "result.json"), report);
             long deadline = SystemClock.elapsedRealtime() + (cuttlefish ? 300000 : 90000);
             String stage = null;
             while (SystemClock.elapsedRealtime() < deadline) {
@@ -171,6 +177,23 @@ public final class OfficialTargetStartupInstrumentedTest {
             boolean ready = stage != null && !pid.isEmpty();
             report.put("guest_pid", pid);
             report.put("stage", stage == null ? "NOT_REACHED" : stage);
+            if (ready && cuttlefish && "douyin".equals(key)) {
+                report.put("last_completed_stage", "ANONYMOUS_UI_SEEN_BEFORE_HOLD");
+                write(new File(folder, "result.json"), report);
+                long holdStarted = SystemClock.elapsedRealtime();
+                long holdDeadline = holdStarted + 300000;
+                boolean stable = true;
+                String current = pid;
+                while (SystemClock.elapsedRealtime() < holdDeadline) {
+                    SystemClock.sleep(1500);
+                    current = shell("pidof " + pkg);
+                    if (!pid.equals(current)) { stable = false; break; }
+                }
+                report.put("post_ui_observation", new JSONObject().put("requested_seconds", 300)
+                        .put("observed_ms", SystemClock.elapsedRealtime() - holdStarted)
+                        .put("initial_target_pid", pid).put("last_target_pid", current).put("passed", stable));
+                ready = stable;
+            }
             report.put("passed", ready);
             assertTrue("Expected anonymous startup UI was not reached: " + lastText, ready);
             report.put("last_completed_stage", "ANONYMOUS_UI_CONFIRMED");

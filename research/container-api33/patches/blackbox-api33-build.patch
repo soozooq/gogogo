@@ -24,6 +24,20 @@ index c8ffd80..742995f 100644
 -parcelable BLocationConfig;
 \ No newline at end of file
 +parcelable BLocationConfig;
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/app/BActivityThread.java b/BCore/src/main/java/top/niunaijun/bcore/app/BActivityThread.java
+index 925966c..af85cc7 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/app/BActivityThread.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/app/BActivityThread.java
+@@ -265,7 +265,8 @@ public class BActivityThread extends IBActivityThread.Stub {
+             CrashHandler.create();
+         } catch (Throwable ignored) { }
+ 
+-        PackageInfo packageInfo = BlackBoxCore.getBPackageManager().getPackageInfo(packageName, PackageManager.GET_PROVIDERS, BActivityThread.getUserId());
++        PackageInfo packageInfo = BlackBoxCore.getBPackageManager().getPackageInfo(packageName,
++                PackageManager.GET_PROVIDERS | PackageManager.GET_SHARED_LIBRARY_FILES, BActivityThread.getUserId());
+         ApplicationInfo applicationInfo = packageInfo.applicationInfo;
+         if (packageInfo.providers == null) {
+             packageInfo.providers = new ProviderInfo[]{};
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/accounts/BAccountManagerService.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/accounts/BAccountManagerService.java
 index d103d80..959b903 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/core/system/accounts/BAccountManagerService.java
@@ -285,10 +299,22 @@ index 06e20a6..53ea4b1 100644
      }
  }
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/pm/PackageManagerCompat.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/pm/PackageManagerCompat.java
-index dc071ad..c262d7e 100644
+index dc071ad..6056308 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/core/system/pm/PackageManagerCompat.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/core/system/pm/PackageManagerCompat.java
-@@ -21,7 +21,6 @@ import java.util.Set;
+@@ -12,16 +12,18 @@ import android.content.pm.PackageManager;
+ import android.content.pm.PermissionInfo;
+ import android.content.pm.ProviderInfo;
+ import android.content.pm.ServiceInfo;
++import android.content.pm.SharedLibraryInfo;
+ import android.content.res.AssetManager;
+ import android.content.res.Resources;
+ import android.os.Build;
+ 
+ import java.util.HashSet;
++import java.util.ArrayList;
++import java.util.List;
+ import java.util.Set;
  
  import black.android.content.pm.ApplicationInfoL;
  import black.android.content.pm.ApplicationInfoN;
@@ -296,7 +322,7 @@ index dc071ad..c262d7e 100644
  import top.niunaijun.bcore.BlackBoxCore;
  import top.niunaijun.bcore.core.env.AppSystemEnv;
  import top.niunaijun.bcore.core.env.BEnvironment;
-@@ -42,7 +41,11 @@ public class PackageManagerCompat {
+@@ -42,7 +44,11 @@ public class PackageManagerCompat {
              PackageInfo packageInfo = null;
              try {
                  packageInfo = generatePackageInfo(p, flags, 0, 0, state, userId);
@@ -309,7 +335,7 @@ index dc071ad..c262d7e 100644
              return packageInfo;
          }
          return null;
-@@ -197,21 +200,21 @@ public class PackageManagerCompat {
+@@ -197,21 +203,21 @@ public class PackageManagerCompat {
          }
  
          if ((flags & PackageManager.GET_SIGNATURES) != 0) {
@@ -341,6 +367,71 @@ index dc071ad..c262d7e 100644
              }
          }
          return pi;
+@@ -293,7 +299,8 @@ public class PackageManagerCompat {
+ 
+         ApplicationInfo baseApplication;
+         try {
+-            baseApplication = BlackBoxCore.getPackageManager().getApplicationInfo(BlackBoxCore.getHostPkg(), flags);
++            baseApplication = BlackBoxCore.getPackageManager().getApplicationInfo(BlackBoxCore.getHostPkg(),
++                    flags | PackageManager.GET_SHARED_LIBRARY_FILES);
+         } catch (Exception e) {
+             return null;
+         }
+@@ -342,7 +349,7 @@ public class PackageManagerCompat {
+                 ApplicationInfoN.credentialProtectedDataDir.set(ai, ai.dataDir);
+             }
+         }
+-        fixJar(ai);
++        fixJar(ai, baseApplication, flags);
+         return ai;
+     }
+ 
+@@ -354,7 +361,7 @@ public class PackageManagerCompat {
+         return !state.installed || state.hidden;
+     }
+ 
+-    private static void fixJar(ApplicationInfo info) {
++    private static void fixJar(ApplicationInfo info, ApplicationInfo hostInfo, int flags) {
+         String APACHE_LEGACY_JAR = "/system/framework/org.apache.http.legacy.boot.jar";
+         String APACHE_LEGACY_JAR_Q = "/system/framework/org.apache.http.legacy.jar";
+         Set<String> sharedLibraryFileList = new HashSet<>();
+@@ -369,6 +376,36 @@ public class PackageManagerCompat {
+             sharedLibraryFileList.add(APACHE_LEGACY_JAR);
+         }
+         info.sharedLibraryFiles = sharedLibraryFileList.toArray(new String[]{});
++        if (Build.VERSION.SDK_INT >= 29 && (flags & PackageManager.GET_SHARED_LIBRARY_FILES) != 0) {
++            // API29+ resolves framework JARs through SharedLibraryInfo loaders, not
++            // the legacy string array. Use genuine framework metadata from the host's
++            // declared optional library; never construct a fake platform library record.
++            try {
++                java.lang.reflect.Field field = ApplicationInfo.class.getDeclaredField("sharedLibraryInfos");
++                field.setAccessible(true);
++                List<SharedLibraryInfo> hostLibraries = (List<SharedLibraryInfo>) field.get(hostInfo);
++                List<SharedLibraryInfo> guestLibraries = (List<SharedLibraryInfo>) field.get(info);
++                List<SharedLibraryInfo> merged = guestLibraries == null
++                        ? new ArrayList<>() : new ArrayList<>(guestLibraries);
++                boolean present = false;
++                for (SharedLibraryInfo library : merged) {
++                    if ("org.apache.http.legacy".equals(library.getName())) present = true;
++                }
++                if (!present && hostLibraries != null) {
++                    for (SharedLibraryInfo library : hostLibraries) {
++                        if ("org.apache.http.legacy".equals(library.getName())) {
++                            merged.add(library);
++                            present = true;
++                            break;
++                        }
++                    }
++                }
++                if (!present) throw new IllegalStateException("Framework HTTP legacy library metadata unavailable");
++                field.set(info, merged);
++            } catch (ReflectiveOperationException error) {
++                throw new IllegalStateException("Framework shared-library metadata unavailable", error);
++            }
++        }
+     }
+ 
+     public static Resources getResources(Context context, ApplicationInfo appInfo) {
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java b/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java
 index 3a16522..bf7f078 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java
@@ -411,6 +502,27 @@ index 5053133..2229070 100644
 +                BActivityThread.getUserId(), provider, intervalMillis, durationMillis, maxUpdates);
 +    }
  }
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IActivityManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IActivityManagerProxy.java
+index 2985eb4..2a973fe 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IActivityManagerProxy.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IActivityManagerProxy.java
+@@ -43,6 +43,7 @@ import top.niunaijun.bcore.fake.frameworks.BPackageManager;
+ import top.niunaijun.bcore.fake.hook.ClassInvocationStub;
+ import top.niunaijun.bcore.fake.hook.MethodHook;
+ import top.niunaijun.bcore.fake.hook.ProxyMethod;
++import top.niunaijun.bcore.fake.hook.ProxyMethods;
+ import top.niunaijun.bcore.fake.hook.ScanClass;
+ import top.niunaijun.bcore.fake.service.base.PkgMethodProxy;
+ import top.niunaijun.bcore.fake.service.context.providers.ContentProviderStub;
+@@ -315,7 +316,7 @@ public class IActivityManagerProxy extends ClassInvocationStub {
+         }
+     }
+ 
+-    @ProxyMethod("getIntentSender")
++    @ProxyMethods({"getIntentSender", "getIntentSenderWithFeature"})
+     public static class GetIntentSender extends MethodHook {
+ 
+         @Override
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
 index bad5396..265658f 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
@@ -753,6 +865,21 @@ index b2c7548..6873030 100644
 -}
 \ No newline at end of file
 +}
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ContextCompat.java b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ContextCompat.java
+index 0057d3a..d07a4ba 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ContextCompat.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ContextCompat.java
+@@ -48,7 +48,9 @@ public class ContextCompat {
+             ContentResolver.mPackageName.set(context.getContentResolver(), BlackBoxCore.getHostPkg());
+ 
+             if (BuildCompat.isS()) {
+-                fixAttributionSourceState(ContextImpl.getAttributionSource.call(context), BActivityThread.getBUid());
++                // Framework services validate this package against the actual Binder UID.
++                // Virtual package UIDs belong only to the internal package model.
++                fixAttributionSourceState(ContextImpl.getAttributionSource.call(context), BlackBoxCore.getHostUid());
+             }
+         } catch (Exception e) {
+             e.printStackTrace();
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/LocationCallbackCompat.java b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/LocationCallbackCompat.java
 new file mode 100644
 index 0000000..24b6704

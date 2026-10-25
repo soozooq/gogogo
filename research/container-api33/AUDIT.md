@@ -79,3 +79,7 @@ GPS／NETWORK 的缓存、单次回调和持续批量回调均从 A 跟随到 B�
 修正后，关闭模式和空连接信息保持原返回；虚拟模式在 API31+ 使用公开的 `WifiInfo.makeCopy(getApplicableRedactions())` 返回标准脱敏副本，保留原对象及不需要脱敏的链路字段，不制造路由器身份。旧系统缺少该公开契约时返回空连接信息；旧 API 分支尚未运行验证。扫描列表仅在虚拟模式为空，关闭时沿原调用路径。不改变系统 Wi-Fi／VPN、权限、mock 标记或原证书。
 
 新增三项受控 Android13 检查使用真实 IWifiManager 方法类型和合成 WifiInfo／ScanResult，验证脱敏字段与原对象不变、空连接信息、关闭后的正常转发；没有查询真实 Wi-Fi。五项在独立云端工作区的软件模拟器中实际 OK (5 tests)，1.335 秒，并在 GitHub KVM 独立运行 0.055 秒通过；均为 API33 x86_64。证据 ZIP、35 项源码及实际 APK 摘要逐一核对，专用 VM 已停止，见[实际结果](evidence/wifi-radio-privacy-contract-results.json)。普通入口及计算器同时回归通过。它不覆盖真实 Guest Hook 安装、实际 Wi-Fi 权限、异步网络回调、腾讯／字节 SDK 或无线定位业务，也不证明 ARM64／vivo。
+
+### 原生启动已知缺口与候选
+
+`ff1a21ee` 原生 ARM64 中，两款普通原包界面、导入和原始证书均通过，Guest 启动仍失败。微信三个异常与候选框架修正、抖音JIT线程栈见[回执](evidence/cuttlefish-verified-signers-and-startup-crashes.json)。新增普通Wi-Fi权限仅满足初始化的真实系统检查；没有批量恢复引擎权限。共享库取平台实际元数据，不构造伪造记录。系统 AttributionSource 与 PendingIntent 使用真实宿主 UID／包名，虚拟包身份不用于冒充系统调用者。自有检查的发送／后台投递和目标 SDK 采用仍未验证，抖音具体崩溃组件未确定。

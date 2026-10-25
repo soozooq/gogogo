@@ -15,21 +15,21 @@
 
 本分支另准备[简短默认反馈](docs/simple-support-flow.md)：当前状态及缓存优先，旧工作流只列存档索引，去掉嵌套旧报告和重复实验建议，格式上限14,000字符。[本地编译、447项 Debug 单元检查及 lint 通过](research/container-api33/evidence/compact-feedback-preparation.json)，没有手机 UI 或定位业务证明。主程序源码中有此项待发布改动，定位引擎和 #59 日常候选不变；没有发布手机更新或要求复测。
 
-## 当前卡点：容器包身份查询与界面读取
+## 当前卡点：微信框架兼容与抖音 Guest JIT 崩溃
 
-最新 [ARM 实测 `40149216340 / 7a2eaf5`](research/container-api33/evidence/cuttlefish-original-ui-and-package-identity-limit.json)通过完整系统资格：API33／固定构建 `16596636`、ARM64 内核及主 ABI、Native Bridge 0、UID2000、SELinux Enforcing、超时倍数50、实际4 vCPU及存活 QEMU 身份。ZIP及八项报告源码均核对。全程记录的 `system_server` PID651未改变，两款原包及自有包清理成功、VM已停止；没有重现上一轮终结超时，仍不能证明4核是因果修复。
+最新 [原生 ARM64 实测 `40174550024 / ff1a21ee`](research/container-api33/evidence/cuttlefish-verified-signers-and-startup-crashes.json)通过完整系统资格：API33／固定构建 `16596636`、ARM64 内核及主 ABI、Native Bridge 0、UID2000、SELinux Enforcing、超时倍数50、实际4 vCPU。八项报告源码及ZIP核对，`system_server` PID653全程未改变；两款普通原包、自有包均清理，VM已停止。
 
-两款原包均普通安装成功，提交耗时391.443／480.764秒。**微信截图实际显示 Log In／Sign Up 欢迎页，但旧 `uiautomator dump` 报“could not get idle state”，原始自动判定仍为 false，微信容器因此跳过。** 抖音读取到真实隐私页且没有接受条款，普通对照通过。
+**两款普通原包界面均自动通过：微信欢迎页、抖音隐私页；两款容器导入、PackageInfo／SigningInfo 与原始证书也通过。** 这实际确认了上一轮免空闲读取与内部签名标志修正。随后两款 Guest 都启动了代码，但在进入预期界面前失败，位置业务没有测试，未接受条款或登录。
 
-**抖音首次进入实际 ARM64 容器导入并成功，随后 PackageInfo／SigningInfo 的空值断言失败，尚未执行抖音启动。** 原始同一行断言无法区分两个空值；不能称为抖音自身崩溃或模拟位置拒绝。固定镜像的框架源码显示，归档接口只有传 `GET_SIGNATURES` 才收集、验证证书，而 `GET_SIGNING_CERTIFICATES` 单独请求会留下空 SigningInfo。候选补丁内部同时请求两个标志，仍返回原包真实证书、只暴露调用者请求的字段；另记录异常类型和各阶段结果。修正后的 ARM64 结果尚未取得。
+微信 Guest 记录了三个独立启动错误：Wi-Fi P2P 缺 `ACCESS_WIFI_STATE`、旧版 `DefaultHttpClient` 类缺失，以及推送服务创建 PendingIntent 时将虚拟包名送到了系统，真实 UID 不匹配。候选修改一起处理：按固定源码补齐两项普通 Wi-Fi 权限；声明平台旧 HTTP 库并保留真实 `SharedLibraryInfo`，绑定时请求共享库元数据；覆盖现代 `getIntentSenderWithFeature`，对系统使用真实宿主归属；Context 的系统 AttributionSource 同样使用真实宿主 UID。没有改签目标包、伪造证书、清除 mock 标记或增加手机实验入口。
 
-候选界面读取改用当前 Accessibility 节点，跳过空闲等待。只启动自有测试 APK 的普通 Application，不启动容器 Application、点击条款或登录；核对真实目标窗口、文字及回执，清理两份自有包后再进入对应容器。默认没有自有构建对时仍保留旧 CLI 路径。15秒构建及14项受控驱动／材料检查通过。[首次本地变化界面检查未通过](research/container-api33/evidence/nonidle-ui-and-signature-preparation.json)：启动 instrumentation 会停止同一个被测进程，原先的自有界面因此不适合作对照。现将变化界面放在独立自有消费者内，加入默认云端自动检查；修正后的实际结果待取得。自有界面通过也不能替代微信／抖音对照。
+抖音 Guest 的 JIT 线程在 ART `FindOatMethodFor → GetOatQuickMethodHeader → StackVisitor → JitCodeCache` 路径 SIGSEGV，系统进程仍健康。**尚不能归因为某个 Hook 组件或用户 vivo。** 现有普通对照显示隐私页即结束，时间范围不同；候选对普通对照和已显示界面的容器各加入300秒持续观察，记录目标进程与异常。没有修改全局 JIT、ART属性或看门狗；Xposed 配置默认关闭，不能凭原生栈猜测 LSPlant 原因。
 
-自有宿主／测试对仅在明确选择时通过同一 CI 传递，固定提交／源码／大小／SHA。两份 APK 各保留11份许可／NOTICE／来源／相容库替换材料，字节逐一匹配，两个 ABI 实际动态链接 LSPlant；这是编译与材料范围，不是完整逐文件许可审计或手机发行。原包单独下载核验，不进入产物。
+[候选准备记录](research/container-api33/evidence/framework-startup-prerequisite-preparation.json)：最终构建18秒、15项受控驱动检查通过，包括持续观察的目标异常／进程变化／系统异常分支；新增自有 Guest 用普通 API 检查旧 HTTP 类、PendingIntent 创建与取消、系统归属 UID，**实际运行结果待默认 CI**。PendingIntent 发送／后台投递没有在此项中验证。两份自有 APK 各保留11份许可／NOTICE／来源／相容库替换材料，仍不是完整逐文件许可审计或手机发行。
 
-固定 [Cuttlefish 输入](research/container-api33/cuttlefish-inputs.json)为同一官方构建的宿主、镜像及 manifest；摘要为本地计算，非官方独立校验和。没有 DHCP／NAT、互联网或无线业务证明。不改镜像、ART属性或终结看门狗。之前[安装超时](research/container-api33/evidence/cuttlefish-qualified-boot-install-timeout.json)及[两核平台终结崩溃](research/container-api33/evidence/cuttlefish-staged-install-and-runtime-limit.json)均保留。
+维护者可用[单命令回执核对](research/container-api33/README.md)复核历史归档：从固定 Git 提交取源码，保留真实失败，拒绝摘要／提交／清单错配和不安全路径，缺少原生回执不计通过。接手沿本分支继续，日常#59与手机版本保持原样。
 
-不重复相同旧环境：[API30](research/container-api33/evidence/official-target-baseline-limit.json)／[API32 转译](research/container-api33/evidence/official-target-api32-baseline-limit.json)原包在容器外原生崩溃；[AOSP ARM64 SDK](research/container-api33/evidence/full-arm64-software-linux-check.json)和[Google API33](research/container-api33/evidence/google-api33-full-arm64-software-check.json)有 ART／system_server 崩溃；[Google API32](research/container-api33/evidence/google-api32-full-arm64-software-check.json)有 keystore2 崩溃；[ARM Mac](research/container-api33/evidence/mac-arm64-tcg-selection-failure.json)仍错误启用 HVF。这些不是 vivo 失败，也不代表所有 ARM64 路径不可用。
+固定 [Cuttlefish 输入](research/container-api33/cuttlefish-inputs.json)仍为同一官方宿主、镜像和manifest，没有 DHCP／NAT、互联网或无线定位业务证明。[两核平台终结崩溃](research/container-api33/evidence/cuttlefish-staged-install-and-runtime-limit.json)及[上一轮签名空值](research/container-api33/evidence/cuttlefish-original-ui-and-package-identity-limit.json)保留。旧[API30](research/container-api33/evidence/official-target-baseline-limit.json)／[API32 转译](research/container-api33/evidence/official-target-api32-baseline-limit.json)、[AOSP ARM64 SDK](research/container-api33/evidence/full-arm64-software-linux-check.json)、[Google API33](research/container-api33/evidence/google-api33-full-arm64-software-check.json)、[Google API32](research/container-api33/evidence/google-api32-full-arm64-software-check.json)及[ARM Mac](research/container-api33/evidence/mac-arm64-tcg-selection-failure.json)失败不替代本轮结果，也不是 vivo 失败。
 
 ## 已证实的工程范围
 
@@ -50,13 +50,13 @@
 
 ## 验证及用户失败证据
 
-[最近完整核对的默认 CI](research/container-api33/evidence/default-ci-state.json)为 `40149216340 / 7a2eaf5`：Linux／Mac 默认作业成功，五项代理0.058秒、普通入口12.625秒、计算器6.157秒，各轮48项源码及两份 ZIP均核对。主程序447项 Debug单元检查、四项源码及 lint零Error/Fatal也核对。自有构建对单独核对46项源码、两份签名及许可材料。整轮因原始微信文字判定和抖音容器身份查询而失败；旧转译作业跳过，**跳过不是通过**。
+[最近完整核对的默认 CI](research/container-api33/evidence/default-ci-state.json)为 `40174550024 / ff1a21ee`：Linux／Mac 默认作业成功，计算器6.236秒、普通入口11.774秒、五项代理0.060秒，各轮51项源码核对；独立变化界面复现旧空闲错误，新读取33毫秒、53项源码核对。主程序447项Debug单元检查、四项源码及lint零Error/Fatal核对。自有构建对48项源码、两份签名与材料核对。整轮仍因 Guest 启动崩溃而失败，旧转译作业跳过，跳过不是通过。
 
 用户 10 月 23 日 VPN 开／关日志中，导出时 GPS／NETWORK／GMS 缓存新鲜且接近模拟目标，但微信截图及反馈失败。导出快照不是微信前台连续采样；10 月 13 日旧实验不是本轮结果。#59 顶部保留脱敏失败验收及日常版本产物验证，实际地址截图没有上传公共仓库。更新 #59 时只改标记的后续研发段，保留此前正文。
 
 ## 继续操作
 
-1. 默认 CI 先检查独立自有变化界面的免空闲读取及新签名查询的计算器回归；保留失败、源码与产物摘要。仍沿当前分支／#60提交，不发布手机更新。
-2. 云端重新核对本次系统；每个原包普通对照通过且自有包清理后，立即检查对应容器，再处理另一款。修正结果必须实际读回，欢迎／隐私页不等于定位业务。运行中不推送代码取消任务。
-3. 平台进程崩溃或更换时停止对应检查并单独记录。不接受条款、登录、发送消息或隐藏 mock 标记，不增加手机实验。
-4. 构建命令见[研究说明](research/container-api33/README.md)，许可见[记录](research/container-api33/THIRD_PARTY_NOTICES.md)。使用仓库外 `CONTAINER_RESEARCH_WORKDIR`、`tools/run-build.sh`；保留代理／CA，SDK安装串行，生成物不入库。
+1. 先运行新增自有 Guest 的框架启动检查，再保留计算器、普通入口、无线代理和只读界面回归；基础项通过后再进入原生 ARM64 原包／容器检查。不发布手机更新或增加用户实验。
+2. 原生结果按普通界面、原包身份、启动、持续观察分别核对。抖音晚发异常尚未确定原因，先做同样时长对照，不更改全局JIT／镜像／mock标记。
+3. 仍沿唯一分支／#60提交，运行中不推送取消作业，#59源码固定。记录失败及目标业务缺口；不接受条款、登录或发送消息。
+4. 使用仓库外 `CONTAINER_RESEARCH_WORKDIR` 与 `tools/run-build.sh`，保留代理／CA，SDK安装串行，生成物不入库。归档核对命令见[研究说明](research/container-api33/README.md)，许可见[记录](research/container-api33/THIRD_PARTY_NOTICES.md)。

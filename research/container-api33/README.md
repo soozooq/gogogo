@@ -4,7 +4,20 @@
 
 项目接手只认根目录 [PROJECT_STATUS.md](../../PROJECT_STATUS.md)。本轮继续使用同一个研发分支和 Draft #60，没有按修复或检查新增分支／PR。
 
-**当前实测**：[原生 ARM64 Android13 最新结果](evidence/cuttlefish-original-ui-and-package-identity-limit.json)已确认两款原包普通安装及实际启动界面：微信欢迎页由截图确认，原始文字门槛因空闲等待失败，仍记 false；抖音隐私页自动通过、未接受条款。抖音首次容器导入成功，随后在包身份查询处失败，尚未启动目标；微信容器跳过。四核系统本轮进程稳定、清理成功，不能推断容量调整已因果修复。容器启动、位置业务与 vivo 均无通过结果。
+**当前实测**：[原生 ARM64 最新结果 `40174550024 / ff1a21ee`](evidence/cuttlefish-verified-signers-and-startup-crashes.json)已自动确认微信欢迎页、抖音隐私页；两款容器导入和原证书查询也通过。Guest 启动后，微信因 Wi-Fi 权限、旧 HTTP 类、现代 PendingIntent 归属错误崩溃，抖音有 Guest ART JIT 线程原生崩溃。系统进程保持稳定，清理完成；两款容器界面与定位业务均未通过。候选一次补齐微信的三个已知框架条件，先用自有 Guest 自动检查；抖音补充同样时长的普通／容器对照，不猜测具体 Hook 原因，不改全局 JIT 或模拟标记。
+
+## 核对下载的 CI 回执（维护用）
+
+`tools/verify-ci-receipts.py` 读取已下载的 ZIP，不安装应用、不查询手机。输入 JSON 填写 GitHub Artifact API 给出的完整提交、run ID及各归档摘要，路径指向本地 ZIP；支持 `linux`、`mac`、`own`、`native` 四种归档角色。摘要不能改成从待验证 ZIP 自行推导的预期值。输出使用一个尚不存在的新路径，保留旧证据。
+
+```sh
+python3 research/container-api33/tools/verify-ci-receipts.py \
+  --inputs /path/to/api-artifact-inputs.json \
+  --sdk "$ANDROID_SDK_ROOT" \
+  --output /path/to/new-verified-receipt.json
+```
+
+输入形状为 `{"run_id": 123, "commit": "完整40位提交", "artifacts": {"linux": {"id": 456, "sha256": "API给出的64位归档摘要", "path": "/path/to/linux.zip"}}}`；其他角色按同样形状添加。校验归档路径、提交源码及完整自有传递清单、APK 摘要／签名／材料、主程序 XML 和各阶段记录，按固定 Git 提交取源码，因此保留历史回执时无需重置工作区。未提供原生回执记为 `NOT_SUPPLIED_NOT_PASS`，真实失败继续保留；`integrity_verified` 表示证据核对，不是微信／抖音或定位成功。参见[实际回执与负例准备记录](evidence/receipt-verifier-preparation.json)。
 
 ## 历史：ARM64 软件模拟与 Cuttlefish 前置核查
 
@@ -155,3 +168,9 @@ GitHub `40102349634 / 24584ae` 的独立回归也已通过：五项基站／Wi-F
 [历史 ARM 实测 `40143188975 / 5e87841`](evidence/cuttlefish-staged-install-and-runtime-limit.json)确认上述分阶段安装全部成功，提交耗时757.125／680.084秒；新鲜系统身份和两款启动请求均记录。微信欢迎 Activity 约131秒才出现，旧窗口120秒内未读到界面；抖音期间 `system_server` 的 `ApkAssets.finalize()` 10秒终结超时导致重启，包清理未确认，VM 已停止。保留原始 UNKNOWN，不把平台崩溃写成目标原生故障。
 
 后续[四核实测 `40149216340 / 7a2eaf5`](evidence/cuttlefish-original-ui-and-package-identity-limit.json)保留了上述原包界面和容器身份查询结果。当前修正固定镜像归档接口所需的内部签名标志，并用自有宿主中的只读 instrumentation 指向自有测试 APK 的普通 Application，直接读取可见目标节点，避开 CLI 空闲等待且不初始化容器引擎；两份自有包清理后才进入容器。15秒构建及14项受控检查通过。首次本地自有界面对照未通过，现将变化界面放到独立自有消费者，并将读取检查加入默认 CI；[准备记录](evidence/nonidle-ui-and-signature-preparation.json)保留失败。修正后的读取、计算器及目标 ARM64 结果待取得。ART属性和看门狗均未修改。
+
+## 当前框架启动修正
+
+[准备记录](evidence/framework-startup-prerequisite-preparation.json)区分18秒构建及15项受控检查与尚待取得的实际 Guest／原包结果。宿主新增的 `ACCESS_WIFI_STATE`／`CHANGE_WIFI_STATE` 是固定系统 `WifiP2pManager.initialize` 强制要求的普通权限，未申请附近设备运行时权限或启用无线发现。旧 HTTP 支持使用平台真实共享库元数据；现代 PendingIntent 对系统按真实宿主身份创建，虚拟身份留在内部模型，不伪造系统 UID 或原包证书。自有框架检查只创建／取消 PendingIntent，没有验证发送或后台投递。
+
+默认云端先运行自有变化界面、框架启动检查，再跑普通入口／计算器／无线代理。原生抖音普通对照与已经读到界面的容器各持续观察300秒，记录晚发异常和进程变化；容器执行总上限1200秒，系统身份、原包摘要／证书、JUnit和清理门槛保留。每个启动阶段先落盘，失败回执可复核。没有新增手机实验页或发布更新，微信实时位置、抖音无以太网与海外定位仍未完成。

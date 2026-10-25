@@ -1,5 +1,6 @@
 """Controlled ADB fixtures, never an actual Android or target-app result."""
 import hashlib
+import itertools
 import importlib.util
 import json
 import os
@@ -151,6 +152,17 @@ class OriginalBaselineControlTest(unittest.TestCase):
         self.assertEqual('PRIVACY_WITHOUT_ACCEPTANCE', baselines.anonymous_stage('douyin', ['隐私', '同意']))
         self.assertIsNone(baselines.anonymous_stage('unlisted', ['Privacy', 'Agree']))
 
+    def test_target_fatal_scope_excludes_other_apps_and_package_prefixes(self):
+        package = 'com.ss.android.ugc.aweme'
+        java = b'E AndroidRuntime: FATAL EXCEPTION: main\nE AndroidRuntime: Process: com.ss.android.ugc.aweme, PID: 123\n'
+        self.assertEqual('TARGET_JAVA_FATAL', baselines.target_failure(java, package))
+        self.assertEqual('TARGET_JAVA_FATAL', baselines.target_failure(java.replace(b'aweme,', b'aweme:push,'), package))
+        self.assertIsNone(baselines.target_failure(java.replace(b'aweme,', b'aweme.other,'), package))
+        self.assertIsNone(baselines.target_failure(java, 'com.tencent.mm'))
+        native = b'pid: 123 >>> com.ss.android.ugc.aweme <<<\nsignal 11 (SIGSEGV)'
+        self.assertEqual('TARGET_NATIVE_FATAL', baselines.target_failure(native, package))
+        self.assertIsNone(baselines.target_failure(native, 'com.tencent.mm'))
+
     def test_preservation_ui_scope_cleanup_and_environment(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -167,9 +179,17 @@ class OriginalBaselineControlTest(unittest.TestCase):
             for mode in ['welcome', 'preexisting', 'identity_changed', 'install_failed',
                          'install_timed_out', 'native_crash', 'unrelated_ui', 'cleanup_failed',
                          'system_changed', 'system_fatal', 'post_ui_changed',
-                         'nonidle_ready', 'nonidle_cleanup_failed', 'nonidle_preexisting']:
+                         'nonidle_ready', 'nonidle_cleanup_failed', 'nonidle_preexisting',
+                         'nonidle_hold_ready', 'nonidle_hold_target_fatal',
+                         'nonidle_hold_system_fatal', 'nonidle_hold_process_changed']:
                 with self.subTest(mode=mode):
                     calls = []
+                    markers = {'ui': False, 'crash_reads': 0, 'pid_reads': 0}
+                    ticks = itertools.count()
+
+                    def read_ui(*args):
+                        markers['ui'] = True
+                        return ['Log in', 'Sign up'], 'WELCOME_WITHOUT_LOGIN', {'controlled_fixture': True}
 
                     def adb(argv, **kwargs):
                         self.assertIs(environment, kwargs['env'])
@@ -197,7 +217,8 @@ class OriginalBaselineControlTest(unittest.TestCase):
                                 and command[-1] == 'com.soozooq.tianwaitian.containerresearch')
                             output = b'package:/preexisting.apk' if existing else b''
                         elif command == ['shell', 'pidof', entry['package']]:
-                            output = b'9500'
+                            markers['pid_reads'] += 1
+                            output = b'9501' if mode == 'nonidle_hold_process_changed' and markers['pid_reads'] > 1 else b'9500'
                         elif command[:3] == ['shell', 'mktemp', '-d']:
                             output = b'/data/local/tmp/gogogo-original-wechat-fixture123'
                         elif command[:2] == ['shell', 'sha256sum']:
@@ -219,10 +240,15 @@ class OriginalBaselineControlTest(unittest.TestCase):
                         elif command[:3] == ['exec-out', 'screencap', '-p']:
                             output = b'\x89PNG\r\n\x1a\ncontrolled-fixture'
                         elif command == ['logcat', '-d', '-b', 'crash']:
+                            if markers['ui']: markers['crash_reads'] += 1
                             if mode in ['native_crash', 'unrelated_ui']:
                                 output = b'pid: 12 >>> com.tencent.mm <<< signal 11'
                             elif mode == 'system_fatal':
                                 output = b'E AndroidRuntime: *** FATAL EXCEPTION IN SYSTEM PROCESS: FinalizerWatchdogDaemon'
+                            elif markers['crash_reads'] > 1 and mode == 'nonidle_hold_system_fatal':
+                                output = b'E AndroidRuntime: FATAL EXCEPTION IN SYSTEM PROCESS: FinalizerWatchdogDaemon'
+                            elif markers['crash_reads'] > 1 and mode == 'nonidle_hold_target_fatal':
+                                output = b'E AndroidRuntime: FATAL EXCEPTION: worker\nE AndroidRuntime: Process: com.tencent.mm, PID: 9500\n'
                         elif command[0] == 'uninstall':
                             code = int(mode == 'cleanup_failed' or mode == 'nonidle_cleanup_failed'
                                        and command[-1].endswith('.test'))
@@ -230,18 +256,24 @@ class OriginalBaselineControlTest(unittest.TestCase):
                         return subprocess.CompletedProcess(argv, code, output, b'')
 
                     with patch.object(baselines.subprocess, 'run', side_effect=adb), patch('builtins.print'), \
-                            patch.object(baselines, 'read_only_original_ui', return_value=(
-                                ['Log in', 'Sign up'], 'WELCOME_WITHOUT_LOGIN', {'controlled_fixture': True})):
+                            patch.object(baselines, 'read_only_original_ui', side_effect=read_ui), \
+                            patch.object(baselines.time, 'monotonic', side_effect=lambda: next(ticks)), \
+                            patch.object(baselines.time, 'sleep'):
                         result = baselines.installed_baseline(Path('/controlled/adb'), '127.0.0.1:6520',
                             apk, entry, root / mode, environment, properties,
-                            ui_apks=root if mode.startswith('nonidle_') else None)
-                    self.assertEqual(mode in ['welcome', 'nonidle_ready'], result['passed'])
+                            ui_apks=root if mode.startswith('nonidle_') else None,
+                            post_ui_hold_seconds=4 if mode.startswith('nonidle_hold_') else 0)
+                    self.assertEqual(mode in ['welcome', 'nonidle_ready', 'nonidle_hold_ready'], result['passed'])
+                    if mode.startswith('nonidle_hold_'):
+                        self.assertEqual(mode == 'nonidle_hold_ready', result['post_ui_observation']['passed'])
+                        if mode != 'nonidle_hold_ready':
+                            self.assertTrue(result['state'].startswith('ORIGINAL_POST_UI_') or result['state'].startswith('ENVIRONMENT_'))
                     if mode.startswith('nonidle_'):
                         if mode == 'nonidle_preexisting':
                             self.assertFalse(any(c[0] == 'uninstall' and c[-1] != entry['package'] for c in calls))
                         else:
                             self.assertEqual(2, len(result['owned_ui_package_cleanup']))
-                            self.assertEqual(mode == 'nonidle_ready', all(result['owned_ui_package_cleanup'].values()))
+                            self.assertEqual(mode != 'nonidle_cleanup_failed', all(result['owned_ui_package_cleanup'].values()))
                         self.assertFalse(any(c[:3] == ['shell', 'uiautomator', 'dump'] for c in calls))
                     if mode in ['preexisting', 'identity_changed']:
                         self.assertFalse(any(c[0] in ['install', 'uninstall'] for c in calls))

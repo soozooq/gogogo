@@ -59,6 +59,16 @@ def platform_failure(crash):
     return None
 
 
+def target_failure(crash, package):
+    """Scope a recorded fatal to this target, including its named subprocesses."""
+    name = re.escape(package.encode()) + rb'(?::[^,\s<>]+)?'
+    if re.search(rb'FATAL EXCEPTION:[^\r\n]*\r?\n[^\r\n]*Process:\s*' + name + rb',\s*PID:', crash):
+        return 'TARGET_JAVA_FATAL'
+    if re.search(rb'>>>\s*' + name + rb'\s*<<<', crash) and b'signal ' in crash:
+        return 'TARGET_NATIVE_FATAL'
+    return None
+
+
 def original_input(work, entry, url, environment):
     names = {'wechat': 'weixin-8.0.79-arm64.apk', 'douyin': 'douyin-40.8.0.apk'}
     directory = work / 'targets'
@@ -211,7 +221,8 @@ def read_only_original_ui(run, entry, out):
     return texts, stage if confirmed else None, report
 
 
-def installed_baseline(adb, serial, apk, entry, out, environment, expected_properties, ui_apks=None):
+def installed_baseline(adb, serial, apk, entry, out, environment, expected_properties, ui_apks=None,
+                       post_ui_hold_seconds=0):
     """A fresh system package control; never import a container or click app UI."""
     out.mkdir(parents=True, exist_ok=False)
     target, package = entry['source_key'], entry['package']
@@ -221,6 +232,8 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
               'terms_accepted': False, 'login_attempted': False, 'messages_sent': False,
               'location_business_tested': False, 'container_tested': False}
     result['startup_ui_wait_limit_seconds'] = 300
+    if not isinstance(post_ui_hold_seconds, int) or not 0 <= post_ui_hold_seconds <= 300:
+        raise ValueError('Post-UI observation must stay within 0..300 seconds')
     ui_driver = 'com.soozooq.tianwaitian.containerresearch.test'
     ui_host = 'com.soozooq.tianwaitian.containerresearch'
     ui_requested = []
@@ -336,6 +349,33 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
             if stage and re.fullmatch(r'[1-9][0-9]*(?:\s+[1-9][0-9]*)*', target_pid) \
                     and not result.get('platform_failure'):
                 result.update(state=stage, passed=True)
+                if post_ui_hold_seconds:
+                    hold = result['post_ui_observation'] = {'requested_seconds': post_ui_hold_seconds,
+                        'first_ui_stage': stage, 'initial_target_pid': target_pid, 'passed': False}
+                    started = time.monotonic()
+                    deadline = started + post_ui_hold_seconds
+                    while time.monotonic() < deadline:
+                        crash = read_crash()
+                        check_system_process('DURING_POST_UI_OBSERVATION')
+                        fatal = target_failure(crash, package)
+                        current = shell(['pidof', package], check=False)
+                        hold['last_target_pid'] = current
+                        if result.get('platform_failure'):
+                            break
+                        if fatal or current != target_pid:
+                            result.update(passed=False, state='ORIGINAL_POST_UI_' + (fatal or 'TARGET_PROCESS_CHANGED'))
+                            break
+                        time.sleep(min(2, max(0, deadline - time.monotonic())))
+                    else:
+                        crash = read_crash()
+                        check_system_process('AFTER_POST_UI_OBSERVATION')
+                        fatal = target_failure(crash, package)
+                        current = shell(['pidof', package], check=False)
+                        hold['last_target_pid'] = current
+                        hold['passed'] = not result.get('platform_failure') and fatal is None and current == target_pid
+                        if not hold['passed'] and not result.get('platform_failure'):
+                            result.update(passed=False, state='ORIGINAL_POST_UI_' + (fatal or 'TARGET_PROCESS_CHANGED'))
+                    hold['observed_seconds'] = round(time.monotonic() - started, 3)
             elif not result.get('platform_failure'):
                 result['state'] = 'STARTUP_UI_NOT_CONFIRMED_READ_ONLY_CAPTURE'
             return result
@@ -446,7 +486,7 @@ def container_startup(adb, serial, apk, entry, own_apks, out, environment, expec
         instrument = run(['shell', 'am', 'instrument', '-w', '-r', '-e', 'target', target,
             '-e', 'api', '33', '-e', 'runtime', 'cuttlefish-arm64', '-e', 'class',
             'com.soozooq.tianwaitian.containerresearch.OfficialTargetStartupInstrumentedTest#pinnedOfficialTargetColdStartup',
-            driver_package + '/androidx.test.runner.AndroidJUnitRunner'], timeout=900, check=False)
+                  driver_package + '/androidx.test.runner.AndroidJUnitRunner'], timeout=1200, check=False)
         transcript = instrument.stdout + instrument.stderr
         (out / 'junit.txt').write_bytes(transcript)
         observed = None
@@ -535,7 +575,8 @@ def run_original_baselines(work, spec_dir, report, record, environment, after_ta
             entry = next(x for x in pins['targets'] if x['source_key'] == key)
             apk = original_input(work, entry, pins['source'][key]['url'], environment)
             result = installed_baseline(work / 'host/bin/adb', report['serial'], apk, entry, out / key,
-                                        environment, report['properties'], ui_apks=ui_apks)
+                                        environment, report['properties'], ui_apks=ui_apks,
+                                        post_ui_hold_seconds=300 if ui_apks is not None and key == 'douyin' else 0)
         except Exception as error:
             result = {'target': key, 'passed': False, 'launch_requested': False,
                       'state': 'PREPARATION_FAILED_NO_STARTUP_CONCLUSION',

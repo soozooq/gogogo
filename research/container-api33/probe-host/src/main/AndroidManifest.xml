@@ -18,11 +18,15 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" tools:node="replace" />
     <uses-permission android:name="android.permission.INTERNET" tools:node="replace" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="replace" />
+    <!-- WifiP2pManager.initialize enforces both normal permissions on API33. -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" tools:node="replace" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" tools:node="replace" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="replace" />
     <application android:name=".ProbeApplication" android:label="容器研究（未适配微信）"
         android:allowBackup="false" android:extractNativeLibs="true"
         android:permission="${applicationId}.INTERNAL"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <uses-library android:name="org.apache.http.legacy" android:required="false" />
         <activity android:name=".ProbeActivity" android:exported="true" android:permission="">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

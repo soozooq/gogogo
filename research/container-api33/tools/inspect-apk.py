@@ -35,6 +35,7 @@ permissions = sorted(e.get(ns + 'name') for e in tree.findall('uses-permission')
 assert permissions == sorted([package + '.INTERNAL', 'android.permission.REORDER_TASKS',
     'android.permission.ACCESS_COARSE_LOCATION', 'android.permission.ACCESS_FINE_LOCATION',
     'android.permission.INTERNET', 'android.permission.ACCESS_NETWORK_STATE',
+    'android.permission.ACCESS_WIFI_STATE', 'android.permission.CHANGE_WIFI_STATE',
     'android.permission.FOREGROUND_SERVICE'])
 with zipfile.ZipFile(host) as apk:
     assert apk.testzip() is None
