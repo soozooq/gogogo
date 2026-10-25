@@ -467,7 +467,8 @@ def main():
                         (folder / 'summary.json').write_text(json.dumps(container, indent=2) + '\n')
 
                 baseline = run_original_baselines(work, spec_dir, report, launched, environment,
-                    after_target=after_target if args.container_apks else None)
+                    after_target=after_target if args.container_apks else None,
+                    ui_apks=own_apks if args.container_apks else None)
                 report['original_baselines_passed'] = baseline['passed']
                 report['apps_tested'] = any(x.get('launch_requested') for x in baseline['results'].values())
                 report['wechat_tested'] = baseline['results']['wechat'].get('launch_requested', False)

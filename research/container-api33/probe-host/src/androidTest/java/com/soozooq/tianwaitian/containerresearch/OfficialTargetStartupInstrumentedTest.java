@@ -124,21 +124,29 @@ public final class OfficialTargetStartupInstrumentedTest {
                 assertEquals(size, total); output.getFD().sync();
             }
             assertEquals(sha, hex(digest.digest())); assertTrue(apk.setReadOnly());
+            report.put("last_completed_stage", "PINNED_INPUT_VERIFIED");
             InstallResult imported = BlackBoxCore.get().installPackageAsUser(apk, 0);
             report.put("import_success", imported.success);
             assertTrue("Pinned virtual import must succeed", imported.success);
             assertEquals(pkg, imported.packageName);
+            report.put("last_completed_stage", "VIRTUAL_IMPORT_CONFIRMED");
             BLocationManager.disableFakeLocation(0, pkg);
             assertEquals(BLocationManager.CLOSE_MODE, BLocationManager.get().getPattern(0, pkg));
             PackageInfo identity = BlackBoxCore.getBPackageManager().getPackageInfo(pkg,
                     PackageManager.GET_SIGNING_CERTIFICATES, 0);
-            assertNotNull(identity); assertNotNull(identity.signingInfo);
+            report.put("package_info_present", identity != null);
+            report.put("signing_info_present", identity != null && identity.signingInfo != null);
+            assertNotNull("Imported virtual PackageInfo must be available", identity);
+            assertNotNull("Original APK SigningInfo must be available", identity.signingInfo);
+            assertNull("Internal legacy certificate flag must not change the requested fields", identity.signatures);
             assertEquals(1, identity.signingInfo.getApkContentsSigners().length);
             assertEquals(cert, hex(MessageDigest.getInstance("SHA-256")
                     .digest(identity.signingInfo.getApkContentsSigners()[0].toByteArray())));
             report.put("original_signer", true);
+            report.put("last_completed_stage", "ORIGINAL_SIGNER_CONFIRMED");
             Intent launch = BlackBoxCore.getBPackageManager().getLaunchIntentForPackage(pkg, 0);
             assertNotNull(launch); BlackBoxCore.get().startActivity(launch, 0);
+            report.put("last_completed_stage", "TARGET_LAUNCH_REQUESTED");
             long deadline = SystemClock.elapsedRealtime() + (cuttlefish ? 300000 : 90000);
             String stage = null;
             while (SystemClock.elapsedRealtime() < deadline) {
@@ -165,6 +173,10 @@ public final class OfficialTargetStartupInstrumentedTest {
             report.put("stage", stage == null ? "NOT_REACHED" : stage);
             report.put("passed", ready);
             assertTrue("Expected anonymous startup UI was not reached: " + lastText, ready);
+            report.put("last_completed_stage", "ANONYMOUS_UI_CONFIRMED");
+        } catch (Exception | AssertionError error) {
+            report.put("error_class", error.getClass().getName());
+            throw error;
         } finally {
             try {
                 report.put("visible_text", new JSONArray(lastText));

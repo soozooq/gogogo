@@ -56,7 +56,7 @@ GPS／NETWORK 的缓存、单次回调和持续批量回调均从 A 跟随到 B�
 
 ## 身份、组件与目标软件
 
-证书解析不再在现代接口之后再次调用已不存在的旧方法；现代分支执行签名验证，解析／验证错误向上传播以中止导入。`GET_SIGNATURES` 使用虚拟包自身证书，`GET_SIGNING_CERTIFICATES` 从该 Guest 的归档读取真实 SigningInfo，避免空对象构造或用另一份系统已安装版本覆盖身份。运行时代码不填写固定证书。
+证书解析不再在现代接口之后再次调用已不存在的旧方法；现代分支执行签名验证，解析／验证错误向上传播以中止导入。`GET_SIGNATURES` 使用虚拟包自身证书，`GET_SIGNING_CERTIFICATES` 从该 Guest 的归档读取真实 SigningInfo，避免空对象构造或用另一份系统已安装版本覆盖身份。运行时代码不填写固定证书。 固定构建 `16596636` 的 `PackageManager.getPackageArchiveInfo` 仅在传统标志存在时验证证书，因此内部归档查询同时带 `GET_SIGNATURES | GET_SIGNING_CERTIFICATES`，向外仍按调用者标志返回字段。新断言禁止现代单独请求泄漏 legacy signatures；目标 ARM64 修正结果尚待实测。
 
 系统未安装计算器时，原始发布文件 SHA-256、旧版 signatures 与新版 SigningInfo 均核对原证书 `affdb124d3f4720c2f98dbca9eacba0514fba4306e20a2786c861c3c0d6ff292`，真实 UI 操作及回桌面重开也再次通过。本轮相关日志没有旧证书反射错误；仅覆盖该已固定的签名输入，不代表签名轮换、多签名、分包及全部软件安装路径已通过。
 

@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.soozooq.tianwaitian.containerresearch">
+    <!-- Targets the own test APK's plain Application, without starting ProbeApplication. -->
+    <instrumentation android:name=".OriginalUiProbeInstrumentation"
+        android:targetPackage="com.soozooq.tianwaitian.containerresearch.test"
+        android:handleProfiling="false" android:functionalTest="false" />
     <!-- No broad permission inheritance from the reference engine. -->
     <uses-permission tools:node="removeAll" />
     <uses-permission-sdk-23 tools:node="removeAll" />

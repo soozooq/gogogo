@@ -4,7 +4,7 @@
 
 项目接手只认根目录 [PROJECT_STATUS.md](../../PROJECT_STATUS.md)。本轮继续使用同一个研发分支和 Draft #60，没有按修复或检查新增分支／PR。
 
-**当前实测**：[原生 ARM64 Android13 完整启动及两款原包分阶段安装已通过](evidence/cuttlefish-staged-install-and-runtime-limit.json)，并已请求启动。微信未读到实际界面，约131秒后才有欢迎 Activity 启动记录；抖音观察期间系统进程发生资源终结超时并重启。欢迎页、容器及位置业务均未通过。以下旧安装／系统失败保留为历史，不替代此结果。
+**当前实测**：[原生 ARM64 Android13 最新结果](evidence/cuttlefish-original-ui-and-package-identity-limit.json)已确认两款原包普通安装及实际启动界面：微信欢迎页由截图确认，原始文字门槛因空闲等待失败，仍记 false；抖音隐私页自动通过、未接受条款。抖音首次容器导入成功，随后在包身份查询处失败，尚未启动目标；微信容器跳过。四核系统本轮进程稳定、清理成功，不能推断容量调整已因果修复。容器启动、位置业务与 vivo 均无通过结果。
 
 ## 历史：ARM64 软件模拟与 Cuttlefish 前置核查
 
@@ -148,10 +148,10 @@ GitHub `40102349634 / 24584ae` 的独立回归也已通过：五项基站／Wi-F
 
 [`40107227047 / 8311ed0` 的独立结果](evidence/cuttlefish-qualified-boot-install-timeout.json)已确认上述配置实际生效并通过完整系统资格。随后两款原包安装均在180秒超时；目标应用未启动，卸载失败及未记录安装会话的缺口如实保留，VM 已停止。当前安装驱动先等待 `am get-started-user-state 0` 返回 `RUNNING_UNLOCKED`，将禁用传输压缩的文件传输、远端 SHA256、标准 `pm install-create/write/commit` 分开计时保存回执与超时前输出，失败放弃本次已记录会话。单次安装阶段总等待限定1500秒；后续结果见下段，不由旧180秒超时推断传输或解析原因。
 
-后续容器衔接使用明确的 `[cuttlefish-boot] [cuttlefish-container]` 标记，默认不执行：同一工作流 Linux 作业构建的自有宿主／测试对，以提交、完整研究源码和每份大小／SHA绑定，通过单日保留的独立 CI 产物传给 ARM 作业。仅含自有构建对与 manifest，原始微信／抖音不会进入该产物；它不是日常手机更新包。仍须先通过本次系统身份及该目标的普通安装对照，再调用既有匿名启动测试；CVD 模式再次核对固定构建／产品／安全状态，SDK 模式保留原限制。一个目标普通对照失败，只跳过该目标容器检查。此衔接尚无实际容器 ARM64 结果。
+后续容器衔接使用明确的 `[cuttlefish-boot] [cuttlefish-container]` 标记，默认不执行：同一工作流 Linux 作业构建的自有宿主／测试对，以提交、完整研究源码和每份大小／SHA绑定，通过单日保留的独立 CI 产物传给 ARM 作业。仅含自有构建对与 manifest，原始微信／抖音不会进入该产物；它不是日常手机更新包。仍须先通过本次系统身份及该目标的普通安装对照，再调用既有匿名启动测试；CVD 模式再次核对固定构建／产品／安全状态，SDK 模式保留原限制。一个目标普通对照失败，只跳过该目标容器检查。首次实际 ARM64 导入和后续身份查询失败见最新结果；目标容器启动仍未通过。
 
 [自有 APK 材料准备](evidence/ci-own-apk-materials-preparation.json)记录实际本地构建及检查：每份 APK 内保留11份许可／NOTICE／来源和相容库替换材料，字节与源码逐一匹配；两个 ABI 的实际 ELF 均有 `libxposed.so → liblsplant.so` 动态依赖。传递校验同时固定这些材料并拒绝嵌入其他 APK，13项受控驱动／材料检查通过。更改许可或来源材料也触发 CI。此材料包不是全部依赖逐文件许可审计或手机发行的完成证明，详见[来源记录](THIRD_PARTY_NOTICES.md)及[源码／库替换说明](CI_SOURCE_AND_RELINK.md)。
 
-[最新 ARM 实测 `40143188975 / 5e87841`](evidence/cuttlefish-staged-install-and-runtime-limit.json)确认上述分阶段安装全部成功，提交耗时757.125／680.084秒；新鲜系统身份和两款启动请求均记录。微信欢迎 Activity 约131秒才出现，旧窗口120秒内未读到界面；抖音期间 `system_server` 的 `ApkAssets.finalize()` 10秒终结超时导致重启，包清理未确认，VM 已停止。保留原始 UNKNOWN，不把平台崩溃写成目标原生故障。
+[历史 ARM 实测 `40143188975 / 5e87841`](evidence/cuttlefish-staged-install-and-runtime-limit.json)确认上述分阶段安装全部成功，提交耗时757.125／680.084秒；新鲜系统身份和两款启动请求均记录。微信欢迎 Activity 约131秒才出现，旧窗口120秒内未读到界面；抖音期间 `system_server` 的 `ApkAssets.finalize()` 10秒终结超时导致重启，包清理未确认，VM 已停止。保留原始 UNKNOWN，不把平台崩溃写成目标原生故障。
 
-下一轮准备使用实测宿主及亲和性至少4核的4 vCPU、原包及 CVD 界面300秒上限，内存3072MiB不变；新增系统进程 PID／致命异常的前后检查，每个普通对照通过清理后立即进入对应容器，再处理另一目标。13项受控检查及自有构建对14秒重建通过，尚无新 ARM 运行结果。ART 的固定源码确认终结默认10秒及独立配置入口，本轮没有改其属性或看门狗；容量调整能否避免故障仍待实际验证。
+后续[四核实测 `40149216340 / 7a2eaf5`](evidence/cuttlefish-original-ui-and-package-identity-limit.json)保留了上述原包界面和容器身份查询结果。当前修正固定镜像归档接口所需的内部签名标志，并用自有宿主中的只读 instrumentation 指向自有测试 APK 的普通 Application，直接读取可见目标节点，避开 CLI 空闲等待且不初始化容器引擎；两份自有包清理后才进入容器。15秒构建及14项受控检查通过。首次本地自有界面对照未通过，现将变化界面放到独立自有消费者，并将读取检查加入默认 CI；[准备记录](evidence/nonidle-ui-and-signature-preparation.json)保留失败。修正后的读取、计算器及目标 ARM64 结果待取得。ART属性和看门狗均未修改。

@@ -132,6 +132,7 @@ public final class ExternalGuestInstrumentedTest {
         assertNotNull("Virtual legacy package metadata", legacy);
         assertNotNull("Virtual modern package metadata", modern);
         assertNotNull("Original SigningInfo", modern.signingInfo);
+        assertNull("An internal certificate verification flag must not leak legacy fields", modern.signatures);
         Signature[] signers = modern.signingInfo.getApkContentsSigners();
         assertNotNull(legacy.signatures);
         assertEquals(1, legacy.signatures.length);

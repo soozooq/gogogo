@@ -1,39 +1,43 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
   "scope": "DEFAULT_RESEARCH_CHECKS_ONLY_NOT_TARGET_APP_COMPATIBILITY",
-  "run_id": 40143188975,
-  "commit": "5e878412edf642401450dcf2698ca1d1d84944d8",
-  "tree": "d6d58111c846008245e6a553f0fb89b53278db50",
+  "run_id": 40149216340,
+  "commit": "7a2eaf518367e579c5813fe14d9601a1a38103c8",
+  "tree": "fdc31bfd9d791a052329d036d0630baed1e37952",
   "conclusion": "failure",
   "default_checks_conclusion": "success",
   "jobs": [
     {
-      "id": 121019017276,
+      "id": 121036989928,
       "name": "Build, inspect and ordinary entry (Linux)",
       "conclusion": "success"
     },
     {
-      "id": 121019017482,
+      "id": 121036989867,
       "name": "Build and inspect (ARM Mac)",
       "conclusion": "success"
     },
     {
-      "id": 121019810765,
+      "id": 121038270558,
       "name": "Inspect ARM Linux host and optional Cuttlefish boot",
       "conclusion": "failure",
       "system_boot_passed": true,
       "original_installation_passed": true,
-      "original_ui_confirmed": false
+      "wechat_raw_text_gate_passed": false,
+      "wechat_visual_welcome_confirmed": true,
+      "douyin_ordinary_privacy_confirmed": true,
+      "douyin_virtual_import_confirmed": true,
+      "douyin_container_launch_reached": false
     },
     {
-      "id": 121019018532,
+      "id": 121036990401,
       "name": "Anonymous startup (official Android 12L translation)",
       "conclusion": "skipped"
     }
   ],
   "linux_artifact": {
-    "id": 12579846931,
-    "sha256": "515240115ae4814923870f96ffcca8b65c88967e3571532253e4212149af1c64",
+    "id": 12582487090,
+    "sha256": "6f90d8edaf3c43622950edda4eeb77038283e5f26850d3aeba0fb7ec50dcab8b",
     "digest_verified": true,
     "commit_verified": true,
     "every_case_source_map_verified_against_commit": true
@@ -42,45 +46,96 @@
     "x86_64-calculator": {
       "passed": true,
       "tests": 1,
-      "source_inputs_verified": 37,
+      "source_inputs_verified": 48,
       "junit": [
-        "Time: 5.69",
+        "Time: 6.157",
         "OK (1 test)"
       ]
     },
     "x86_64-ordinary-entry": {
       "passed": true,
       "tests": 1,
-      "source_inputs_verified": 37,
+      "source_inputs_verified": 48,
       "junit": [
-        "Time: 10.997",
+        "Time: 12.625",
         "OK (1 test)"
       ]
     },
     "x86_64-radio-privacy": {
       "passed": true,
       "tests": 5,
-      "source_inputs_verified": 37,
+      "source_inputs_verified": 48,
       "junit": [
-        "Time: 0.035",
+        "Time: 0.058",
         "OK (5 tests)"
       ]
     }
   },
-  "cuttlefish_boot_result": "cuttlefish-staged-install-and-runtime-limit.json",
+  "cuttlefish_boot_result": "cuttlefish-original-ui-and-package-identity-limit.json",
   "full_arm64_system_boot": "QUALIFIED_API33_BUILD16596636_UID2000_ENFORCING_NO_TRANSLATION",
-  "full_arm64_guest_apps": "ORIGINALS_INSTALLED_BOTH_LAUNCH_REQUESTED_UI_UNCONFIRMED_LATER_SYSTEM_JAVA_FATAL",
-  "target_probe": "OLD_TRANSLATED_JOB_SKIPPED_NOT_PASS_NATIVE_ORIGINAL_UI_UNCONFIRMED",
+  "full_arm64_guest_apps": "ORIGINAL_WECHAT_VISUAL_WELCOME_AND_DOUYIN_PRIVACY; DOUYIN_VIRTUAL_IMPORT_THEN_IDENTITY_QUERY_FAILURE_BEFORE_LAUNCH",
+  "target_probe": "TRANSLATED_JOB_SKIPPED_NOT_PASS; NATIVE_CONTAINER_STARTUP_UNCONFIRMED",
   "arm64_mac_runtime_probe": "SKIPPED_DEFAULT_FALSE_NOT_PASS",
   "wechat_send_and_live_location": "UNFULFILLED",
   "douyin_wireless_and_overseas": "UNFULFILLED",
   "physical_arm64_vivo": "NOT_VERIFIED",
   "phone_update_distributed": false,
   "previous_verified_default_run": {
-    "run_id": 40107227047,
-    "commit": "8311ed043ad3682763f7ea4c74a845ea675eadf9",
+    "run_id": 40143188975,
+    "commit": "5e878412edf642401450dcf2698ca1d1d84944d8",
     "default_checks_conclusion": "success"
   },
   "controlled_radio_proxy": "PASS_FIVE_CONTROLLED_CELL_WIFI_TESTS_NOT_GUEST_OR_ACTUAL_RADIO_PROOF",
-  "radio_result": "wifi-radio-privacy-contract-results.json"
+  "radio_result": "wifi-radio-privacy-contract-results.json",
+  "mac_artifact": {
+    "id": 12582262030,
+    "sha256": "0429832afab68271d8cb34f5965a0b84cbab5fc8bd0a0c2e2cae30c1ab152740",
+    "digest_verified": true,
+    "commit_verified": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "source_files_verified": 4,
+    "lint_error_or_fatal_count": 0
+  },
+  "own_transport": {
+    "artifact_id": 12581861653,
+    "artifact_sha256": "37e258234e3090b9d75361f12ee08342d5c553dc4b57ce128adf89ea8724a0ce",
+    "manifest_source_count": 46,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4525644,
+        "sha256": "f80453b05f1b71f765a7896583504fd7fa71d291ac45adb982eaabce7b0fdecd"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 491362,
+        "sha256": "841f736098b94196f1da6c46345e8f2479a6638e7b19d725c01b7b3c66f76393"
+      }
+    },
+    "all_notice_bytes_match": true,
+    "both_signatures_verified_and_same_certificate": true,
+    "original_target_apks_included": false,
+    "phone_candidate": false,
+    "actual_dynamic_library_links": {
+      "arm64-v8a": {
+        "consumer": "libxposed.so",
+        "dt_needed": "liblsplant.so",
+        "consumer_sha256": "cf79c6859f0c840a4cc5c2bc698f99622d23e7c9883d066588793cc9d6d4d40c",
+        "library_sha256": "692286b0e3b48cb2acc5c3182430594d1e66b84d877707896b0a34db46725097"
+      },
+      "x86_64": {
+        "consumer": "libxposed.so",
+        "dt_needed": "liblsplant.so",
+        "consumer_sha256": "9b1043eba75c297cdedd36569bea25e50767948c4321cffc524bca0e8c08a146",
+        "library_sha256": "86801b8e9c518acc6c31dfbe0310f42b4dff095eff8b6d9c5524a92a0cf1b014"
+      }
+    }
+  }
 }

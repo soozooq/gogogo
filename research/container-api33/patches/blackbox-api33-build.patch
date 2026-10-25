@@ -285,7 +285,7 @@ index 06e20a6..53ea4b1 100644
      }
  }
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/pm/PackageManagerCompat.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/pm/PackageManagerCompat.java
-index dc071ad..c4d702a 100644
+index dc071ad..c262d7e 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/core/system/pm/PackageManagerCompat.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/core/system/pm/PackageManagerCompat.java
 @@ -21,7 +21,6 @@ import java.util.Set;
@@ -296,7 +296,20 @@ index dc071ad..c4d702a 100644
  import top.niunaijun.bcore.BlackBoxCore;
  import top.niunaijun.bcore.core.env.AppSystemEnv;
  import top.niunaijun.bcore.core.env.BEnvironment;
-@@ -197,21 +196,19 @@ public class PackageManagerCompat {
+@@ -42,7 +41,11 @@ public class PackageManagerCompat {
+             PackageInfo packageInfo = null;
+             try {
+                 packageInfo = generatePackageInfo(p, flags, 0, 0, state, userId);
+-            } catch (Throwable ignored) { }
++            } catch (Throwable error) {
++                // Retain a structural failure reason without APK paths or exception messages.
++                android.util.Log.w("PackageManagerCompat", "generatePackageInfo failed: "
++                        + error.getClass().getName());
++            }
+             return packageInfo;
+         }
+         return null;
+@@ -197,21 +200,21 @@ public class PackageManagerCompat {
          }
  
          if ((flags & PackageManager.GET_SIGNATURES) != 0) {
@@ -316,8 +329,10 @@ index dc071ad..c4d702a 100644
 -                    pi.signingInfo = SigningInfo._new.newInstance();
 -                } else {
 -                    pi.signingInfo = base.signingInfo;
++                // Some API33 framework builds collect certificates only when GET_SIGNATURES
++                // is present. Request both internally; expose only the caller's requested fields.
 +                PackageInfo archive = BlackBoxCore.getPackageManager().getPackageArchiveInfo(
-+                        p.baseCodePath, PackageManager.GET_SIGNING_CERTIFICATES);
++                        p.baseCodePath, PackageManager.GET_SIGNING_CERTIFICATES | PackageManager.GET_SIGNATURES);
 +                if (archive == null || !p.packageName.equals(archive.packageName)
 +                        || archive.signingInfo == null) {
 +                    throw new IllegalStateException("Original guest signing information unavailable");

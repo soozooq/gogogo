@@ -1,0 +1,119 @@
+{
+  "schema": "GOGOGO_NONIDLE_UI_AND_ARCHIVE_SIGNATURE_PREPARATION_V1",
+  "scope": "LOCAL_BUILD_AND_CONTROLLED_CHECKS_ONLY_NOT_CORRECTED_TARGET_RUNTIME_OR_PHONE",
+  "base_commit": "7a2eaf518367e579c5813fe14d9601a1a38103c8",
+  "build": {
+    "passed": true,
+    "seconds": 15,
+    "tasks": [
+      ":probeHost:assembleDebug",
+      ":probeHost:assembleDebugAndroidTest",
+      ":locationConsumer:assembleDebug"
+    ]
+  },
+  "controlled_python_tests": {
+    "count": 14,
+    "passed": true,
+    "seconds": 0.044
+  },
+  "syntax_checks": [
+    "Python compilation",
+    "shell bash -n",
+    "workflow YAML parsed"
+  ],
+  "donor_patch_clean_index_application_verified": true,
+  "apks": {
+    "host": {
+      "sha256": "bdb0a2df291d7e07a5d3fda4c391f621b148fc5e311e93d80c4bca0141fdda49",
+      "size": 4789844
+    },
+    "driver": {
+      "sha256": "f7b81cf8855658296df288ffd3ec59c7e84b4279ebed7ec9eb92151711577051",
+      "size": 516466
+    },
+    "fixture": {
+      "sha256": "90c68f4300581fa43eb19962eeece7cc08e18a98e35e20365c526c4c0aa51416",
+      "size": 36201
+    }
+  },
+  "source_sha256": {
+    "CI_SOURCE_AND_RELINK.md": "2a213e39086c0f88af7b8da5f77aed35710f39870d174ae9bfb16bd2e69b292c",
+    "THIRD_PARTY_NOTICES.md": "e0091fea88b89467eaa82986cabc1189e544d7a657e62a68c6552a610f0c99f8",
+    "cuttlefish-inputs.json": "c7b479f49cc567d65aee12c5aba8eb745ac9cd5ea0ec641af07dc6e9b78803ba",
+    "evidence/official-target-apk-readiness.json": "477eeb8da6afea0a2eef19e2670deffd8ee95d176658734048206e553aa7f2c9",
+    "licenses/Apache-2.0.txt": "50e6751797c50dedd75ef1b8a0d9e42f5f8472e9fbce91f34718e9f97b0c780a",
+    "licenses/Apache-Commons-Lang-NOTICE.txt": "8e9063e0b4e04d7711f7c2c473ec0f1237492028de87c7e71ba3045cfbd3a0e6",
+    "licenses/EPL-1.0-JUnit.txt": "9648bb2891b9813970bddb68d4be8a5e6ec8280d0180a53dfb29236b579c55bb",
+    "licenses/GPL-3.0.txt": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+    "licenses/GPSTest-LICENSE.txt": "fd7c72bafdb07e5a926e9e2dbfc49b252841a3716f2472fa23c60b5ebb6b0b68",
+    "licenses/Hamcrest-LICENSE.txt": "1cde867cab5c8e842929da5391cef98b4017314822270e934e8e2eef3767c666",
+    "licenses/LGPL-3.0-LSPlant.txt": "09acdfb5bfb7aaed93d7d7fa5cebfc7350c555847d2ed07b5b9716da43670e04",
+    "licenses/ci-additional-provenance.json": "7fbc7c983596f006f2c3d239fcb72974433bf824aa74a9732ed8313f3c2fbe33",
+    "licenses/xCrash-LICENSE.txt": "bee83bba5b3f6502bb69700e20b024205fb6425740e054e63dda0c970d230790",
+    "patches/blackbox-api33-build.patch": "685061c84950ff67b164030f24fa58465392ec3a4c246d84c76f009e3df469c1",
+    "probe-host/build.gradle": "0fd90fb1fa95f35417e43f7f9569f8a1a384fe8193ab88ff023e5da0cb0807c9",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ExternalGuestInstrumentedTest.java": "14d55a69bef8234da9967db2362de313f64e154de6ed520be93ec2025df89a55",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/GuestLocationInstrumentedTest.java": "86b45c72096eeb021d311840f0d74039354afa798075cbc37e77f61bdf0e2b24",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/OfficialTargetStartupInstrumentedTest.java": "2ed6252b1a6af55d9bb7755d3ee25a2129a7963e5553c8a4095aac489d805728",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ThirdPartyLocationInstrumentedTest.java": "c3f7335a56b66a15533d87b193ac362602e3f08feceb4f11fae1cb2e5736ba88",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java": "b36cd994d40fa173fcd3c0830d688a102e0f63bf24584e3e1b6aa2e723f36e54",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/RadioPrivacyContractInstrumentedTest.java": "dad922464c6ff52a2e0db148b6dff3a594ae5ed2a9c0cbebdc01ecd7bd30449a",
+    "probe-host/src/main/AndroidManifest.xml": "5b3e1ae59339d940670d5c306029ac50a08ba8b7ae0a007fa4f656e59a5d09c2",
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/GuestImport.java": "9605255f9bf5e8681384146a52a89c35d93f9220e40625deeef9cd71d1a77fc9",
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/OriginalUiProbeInstrumentation.java": "e47af8d4c577924a9144159a0bc6c83fc20498cb92f6d4624aa716ded6dec169",
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeActivity.java": "f79b0f86217b2430699f1d3b3fbc0bee6b3c48afa9d3f2f0a8d8c752b8c61bc6",
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeApplication.java": "bcaf641d21a388213fc43fe6536cff4263c6e9c8ef9c87036fc903c12613deac",
+    "probe-host/src/main/res/values/ids.xml": "44bdab15a5b1a9cb5ae3059c592ad3897bdf672ff2ea177e73603e531b3d8079",
+    "sources.json": "50a6b0a01003f5c2f0f3af8cc996f4cb3d02f6ec4b4728820b73add7188f8f82",
+    "tools/build-environment.init.gradle": "5d47c36a41ae28792b6c47d4cf1a464935bcfdcfbdd4334ae9f710789f056ab7",
+    "tools/ci_owned_apks.py": "017ecab20df52c47233b46b84b810d64a51b9327a814110c7b37675e8efc5a73",
+    "tools/cuttlefish-tcg-qemu.py": "09383784ba253869bdb473578780449fb7a6aaea96709a068c67efc8ace1e737",
+    "tools/cuttlefish_target_baselines.py": "85db75f62954e54bb70c1e28816ad87dfaa42b62452666734a0decd998657809",
+    "tools/fetch-cuttlefish-inputs.py": "c73b6bec3171125521e8b37d30fb1c99559ceecf2fe31eb4d57744bc1dd78423",
+    "tools/inspect-apk.py": "856d58dd03a3c89d78dcbf34430fce65c189253d6c963b41f38bb47087edf6b4",
+    "tools/inspect-cuttlefish-arm-host.py": "b467ecd31e82709ada236d222b8ca4e09dd67914754f2505e29c0053598280d9",
+    "tools/inspect-location-consumer.py": "ecca05b3505ab8d7dc9c4a8f5800d408c3a84e25f8b5a962e2c0193f92526c69",
+    "tools/inspect-third-party-apk.py": "71c8f791c5febeed03221355508ca081f50f1bdb8ec802683644376d8adfd73a",
+    "tools/license-inventory.py": "db7967954a98c7e041d7b4a53f81a46703b5069661b15ef9ddff002c2ea2b2ed",
+    "tools/prepare.py": "42d315726e798fea95c316efdfba893d8f57c89403b7ffe04b6a2bac2e782e95",
+    "tools/qualify-arm64-software-boot.py": "d3bbc2fbebcbc381dd73712f08ccc1a31815c64202471b29a17b03627bb30066",
+    "tools/run-arm-mac-software-checks.sh": "4cff7f26be72beb5200d3bea7bc253cdd7d7dc784f356de1bace3394dbb98c0a",
+    "tools/run-build.sh": "ba7a3e3d5b233ca4200ac1f7bb160c0be5eb3686323caa992826022cfac045ad",
+    "tools/run-cloud-check.py": "29355ff600b3e5d3a4ae66e021890e7384cf335d08dfd725426b06cb07aa1a61",
+    "tools/run-cuttlefish-arm-boot.py": "734fd0c4dc87cf387625bd07ef9e741bc51e93f5f50dfb8395498c003f2ea50a",
+    "tools/run-emulator-checks.sh": "8b54521c483719cb2792a044084f3389ce073ee59dcee72f35434f7c3cdd7cc1",
+    "tools/run-read-only-ui-check.py": "c625dd25b2ae7b6d574bd08dae944b39ab51ac201d9d7009ee4e410746428439",
+    "tools/run-target-emulator-checks.sh": "29f9c09f8eda49468402891db9902d2ab15f467b45dadfc587f1ca969dd8ee0b",
+    "tools/run-target-startup-check.py": "48749c39a262f7dd64b2c4a7b13d9d6366c1c6af14e594f2804fd20a17808193",
+    "location-consumer/build.gradle": "21b119ff0a4988cd666b87090fe88778c43c05dc7ce4b8b3f61f3aa232a46dcc",
+    "location-consumer/src/main/AndroidManifest.xml": "6183708a93b7828ff3d02ab78c0abd7698cd44d05eb7856e14e61f5442eedd89",
+    "location-consumer/src/main/res/values/ids.xml": "d432b392a5beb2beffbc7a54cd0879df48a9aaf45c002b64cc81b30663d14c24",
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/LocationActivity.java": "81507dbca1d8b73b1d1164ed8233cb819fa43d5f1745535c9b592ce67df5fcb4",
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/ReadOnlyUiFixtureActivity.java": "36a0197ca1b56e3839c41039b3b5dfb9ee62ab2b6753ecb3374639f24368a184"
+  },
+  "material_bytes_in_both_own_apks_verified": true,
+  "materials_per_apk": 11,
+  "local_attempts": [
+    {
+      "state": "SDK_SOFTWARE_BOOT_240_SECOND_LIMIT",
+      "passed": false,
+      "own_emulator_stopped": true
+    },
+    {
+      "state": "OWN_FIXTURE_UI_NOT_REACHED",
+      "passed": false,
+      "own_emulator_stopped": true,
+      "ordinary_api33_x86_enforcing_uid2000_verified": true,
+      "read_only_instrumentation_started_with_plain_application": true,
+      "report_stage": "NOT_REACHED",
+      "root_package": "android",
+      "finding": "Starting instrumentation stops its target process; the initial fixture was in that same own target. It cannot be used to validate persistence of the external original UI.",
+      "candidate_correction": "Move moving UI into a separate own consumer APK. The probe still targets the own test APK plain Application. Add its read-only check to default cloud CI before original containers."
+    }
+  ],
+  "corrected_read_only_fixture_runtime": "PENDING_DEFAULT_CI",
+  "corrected_original_signer_arm64_runtime": "PENDING_NATIVE_CI",
+  "wechat_container_and_location": "UNFULFILLED",
+  "douyin_wireless_and_overseas": "UNFULFILLED",
+  "new_phone_release": false
+}

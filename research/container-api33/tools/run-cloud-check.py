@@ -112,6 +112,7 @@ source_inputs += [*sorted((spec / 'licenses').glob('*.txt')),
     *sorted((spec / 'licenses').glob('*provenance.json')),
     spec / 'THIRD_PARTY_NOTICES.md', spec / 'CI_SOURCE_AND_RELINK.md']
 source_inputs += sorted((spec / 'probe-host/src/main/res').rglob('*.xml'))
+source_inputs += sorted((spec / 'probe-host/src/androidTest').rglob('*.xml'))
 source_inputs += [*sorted((spec / 'location-consumer').rglob('*.java')),
     *sorted((spec / 'location-consumer').rglob('*.xml')), spec / 'location-consumer/build.gradle']
 metadata['research_source_sha256'] = {

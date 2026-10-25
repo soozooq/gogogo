@@ -166,7 +166,8 @@ class OriginalBaselineControlTest(unittest.TestCase):
                    '<node package="com.tencent.mm" text="Sign up"/></hierarchy>').encode()
             for mode in ['welcome', 'preexisting', 'identity_changed', 'install_failed',
                          'install_timed_out', 'native_crash', 'unrelated_ui', 'cleanup_failed',
-                         'system_changed', 'system_fatal', 'post_ui_changed']:
+                         'system_changed', 'system_fatal', 'post_ui_changed',
+                         'nonidle_ready', 'nonidle_cleanup_failed', 'nonidle_preexisting']:
                 with self.subTest(mode=mode):
                     calls = []
 
@@ -192,7 +193,11 @@ class OriginalBaselineControlTest(unittest.TestCase):
                         elif command == ['shell', 'am', 'get-started-user-state', '0']:
                             output = b'RUNNING_UNLOCKED'
                         elif command[:3] == ['shell', 'pm', 'path']:
-                            output = b'package:/preexisting.apk' if mode == 'preexisting' else b''
+                            existing = mode == 'preexisting' or (mode == 'nonidle_preexisting'
+                                and command[-1] == 'com.soozooq.tianwaitian.containerresearch')
+                            output = b'package:/preexisting.apk' if existing else b''
+                        elif command == ['shell', 'pidof', entry['package']]:
+                            output = b'9500'
                         elif command[:3] == ['shell', 'mktemp', '-d']:
                             output = b'/data/local/tmp/gogogo-original-wechat-fixture123'
                         elif command[:2] == ['shell', 'sha256sum']:
@@ -219,14 +224,25 @@ class OriginalBaselineControlTest(unittest.TestCase):
                             elif mode == 'system_fatal':
                                 output = b'E AndroidRuntime: *** FATAL EXCEPTION IN SYSTEM PROCESS: FinalizerWatchdogDaemon'
                         elif command[0] == 'uninstall':
-                            code = int(mode == 'cleanup_failed')
+                            code = int(mode == 'cleanup_failed' or mode == 'nonidle_cleanup_failed'
+                                       and command[-1].endswith('.test'))
                             output = b'Failure [FIXTURE]' if code else b'Success'
                         return subprocess.CompletedProcess(argv, code, output, b'')
 
-                    with patch.object(baselines.subprocess, 'run', side_effect=adb), patch('builtins.print'):
+                    with patch.object(baselines.subprocess, 'run', side_effect=adb), patch('builtins.print'), \
+                            patch.object(baselines, 'read_only_original_ui', return_value=(
+                                ['Log in', 'Sign up'], 'WELCOME_WITHOUT_LOGIN', {'controlled_fixture': True})):
                         result = baselines.installed_baseline(Path('/controlled/adb'), '127.0.0.1:6520',
-                            apk, entry, root / mode, environment, properties)
-                    self.assertEqual(mode == 'welcome', result['passed'])
+                            apk, entry, root / mode, environment, properties,
+                            ui_apks=root if mode.startswith('nonidle_') else None)
+                    self.assertEqual(mode in ['welcome', 'nonidle_ready'], result['passed'])
+                    if mode.startswith('nonidle_'):
+                        if mode == 'nonidle_preexisting':
+                            self.assertFalse(any(c[0] == 'uninstall' and c[-1] != entry['package'] for c in calls))
+                        else:
+                            self.assertEqual(2, len(result['owned_ui_package_cleanup']))
+                            self.assertEqual(mode == 'nonidle_ready', all(result['owned_ui_package_cleanup'].values()))
+                        self.assertFalse(any(c[:3] == ['shell', 'uiautomator', 'dump'] for c in calls))
                     if mode in ['preexisting', 'identity_changed']:
                         self.assertFalse(any(c[0] in ['install', 'uninstall'] for c in calls))
                     else:
@@ -250,7 +266,7 @@ class OriginalBaselineControlTest(unittest.TestCase):
             (root / 'evidence/official-target-apk-readiness.json').write_text(json.dumps(pins))
             events = []
 
-            def original(adb, serial, apk, entry, *args):
+            def original(adb, serial, apk, entry, *args, **kwargs):
                 key = entry['source_key']
                 events.append(('original', key))
                 return {'passed': key == 'wechat', 'state': 'CONTROLLED_FIXTURE'}
@@ -266,6 +282,47 @@ class OriginalBaselineControlTest(unittest.TestCase):
             self.assertFalse(result['passed'])
             self.assertEqual([('original', 'wechat'), ('after', 'wechat', True),
                               ('original', 'douyin'), ('after', 'douyin', False)], events)
+
+    def test_nonidle_read_only_capture_checks_report_identity_and_completion(self):
+        with tempfile.TemporaryDirectory() as folder:
+            entry = {'source_key': 'wechat', 'package': 'com.tencent.mm'}
+            accepted = {'scope': 'ORIGINAL_INSTALLED_READ_ONLY_UI_NOT_CONTAINER_OR_LOCATION',
+                        'capture_method': 'UI_AUTOMATION_WITHOUT_IDLE_WAIT',
+                        'target': 'wechat', 'package': entry['package'], 'root_package': entry['package'],
+                        'api': 33, 'own_driver_targeting': True, 'plain_application': True,
+                        'passed': True, 'terms_accepted': False,
+                        'login_attempted': False, 'messages_sent': False, 'input_events_sent': False,
+                        'visible_text': ['Log in', 'Sign up'], 'stage': 'WELCOME_WITHOUT_LOGIN'}
+            variants = [{}, {'root_package': 'unrelated'}, {'passed': False}, {'api': 32},
+                        {'scope': 'SELF_OWNED_UI_CAPTURE_ONLY_NOT_TARGET_STARTUP'},
+                        {'own_driver_targeting': False}, {'plain_application': False}, {'input_events_sent': True},
+                        {'visible_text': ['privacy']}, {'visible_text': 'Log in / Sign up'},
+                        {'stage': 'NOT_REACHED'}, {'unfinished_instrumentation': True}]
+            for index, changes in enumerate(variants):
+                with self.subTest(changes=changes):
+                    out = Path(folder) / str(index)
+                    out.mkdir()
+                    record = {**accepted, **changes}
+                    calls = []
+
+                    def run(command, **kwargs):
+                        calls.append(command)
+                        if command[:3] == ['shell', 'am', 'instrument']:
+                            self.assertEqual(360, kwargs['timeout'])
+                            output = b'INSTRUMENTATION_CODE: 0\n' if changes.get('unfinished_instrumentation') \
+                                else b'INSTRUMENTATION_CODE: -1\n'
+                        elif command[0] == 'exec-out' and command[-1].endswith('result.json'):
+                            output = json.dumps(record).encode()
+                        else:
+                            output = b''
+                        return subprocess.CompletedProcess(command, 0, output, b'')
+
+                    text, stage, report = baselines.read_only_original_ui(run, entry, out)
+                    self.assertEqual('WELCOME_WITHOUT_LOGIN' if index == 0 else None, stage)
+                    self.assertEqual(record, report)
+                    instrument = calls[0][-1]
+                    self.assertTrue(instrument.startswith('com.soozooq.tianwaitian.containerresearch/'))
+                    self.assertFalse(any(c[0] in ['install', 'uninstall'] or c[:2] == ['shell', 'input'] for c in calls))
 
     def test_failed_original_never_requests_container_inputs_or_guest_actions(self):
         with patch.object(baselines, 'require_owned_qualified_vm') as gate, \

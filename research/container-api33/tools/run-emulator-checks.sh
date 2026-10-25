@@ -45,6 +45,7 @@ until [ "$("$research_adb" -s emulator-5580 shell getprop sys.boot_completed 2>/
     fi
     sleep 5
 done
+python3 "$spec_root/tools/run-read-only-ui-check.py" --sdk "$ANDROID_HOME" --root "$CONTAINER_RESEARCH_WORKDIR" --serial emulator-5580
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-ordinary-entry" --third-party-location --ordinary-entry
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-calculator"
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-radio-privacy" --radio-contract

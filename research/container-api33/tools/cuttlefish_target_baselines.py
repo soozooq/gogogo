@@ -173,7 +173,45 @@ def staged_original_install(run, apk, entry, out, result):
                 install['staging_cleanup_error'] = type(error).__name__ + ': ' + str(error)[:500]
 
 
-def installed_baseline(adb, serial, apk, entry, out, environment, expected_properties):
+def read_only_original_ui(run, entry, out):
+    """Target the verified own test APK; its plain Application never starts the engine."""
+    driver = 'com.soozooq.tianwaitian.containerresearch.test'
+    target, package = entry['source_key'], entry['package']
+    instrumentation = 'com.soozooq.tianwaitian.containerresearch/' \
+        'com.soozooq.tianwaitian.containerresearch.OriginalUiProbeInstrumentation'
+    observed = run(['shell', 'am', 'instrument', '-w', '-r', '-e', 'target', target,
+                    instrumentation], timeout=360, check=False)
+    transcript = observed.stdout + observed.stderr
+    (out / 'ui-probe.txt').write_bytes(transcript)
+    report = None
+    for name in ['result.json', 'window.xml', 'screen.png']:
+        path = 'files/original-ui-' + target + '/' + name
+        exists = run(['shell', 'run-as', driver, 'test', '-f', path], check=False)
+        if exists.returncode == 0:
+            data = run(['exec-out', 'run-as', driver, 'cat', path]).stdout
+            (out / ('ui-probe-result.json' if name == 'result.json' else name)).write_bytes(data)
+            if name == 'result.json':
+                report = json.loads(data)
+    if not isinstance(report, dict):
+        return [], None, report
+    texts = report.get('visible_text', [])
+    if not isinstance(texts, list) or not all(isinstance(value, str) for value in texts):
+        return [], None, report
+    stage = anonymous_stage(target, texts)
+    confirmed = observed.returncode == 0 and re.search(rb'^INSTRUMENTATION_CODE:\s*-1\s*$', transcript, re.M) \
+        and report.get('scope') == 'ORIGINAL_INSTALLED_READ_ONLY_UI_NOT_CONTAINER_OR_LOCATION' \
+        and report.get('capture_method') == 'UI_AUTOMATION_WITHOUT_IDLE_WAIT' \
+        and report.get('target') == target and report.get('package') == package \
+        and report.get('root_package') == package and report.get('api') == 33 \
+        and report.get('own_driver_targeting') is True and report.get('plain_application') is True \
+        and report.get('passed') is True \
+        and all(report.get(name) is False for name in ['terms_accepted', 'login_attempted',
+                                                      'messages_sent', 'input_events_sent']) \
+        and stage is not None and report.get('stage') == stage
+    return texts, stage if confirmed else None, report
+
+
+def installed_baseline(adb, serial, apk, entry, out, environment, expected_properties, ui_apks=None):
     """A fresh system package control; never import a container or click app UI."""
     out.mkdir(parents=True, exist_ok=False)
     target, package = entry['source_key'], entry['package']
@@ -183,6 +221,9 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
               'terms_accepted': False, 'login_attempted': False, 'messages_sent': False,
               'location_business_tested': False, 'container_tested': False}
     result['startup_ui_wait_limit_seconds'] = 300
+    ui_driver = 'com.soozooq.tianwaitian.containerresearch.test'
+    ui_host = 'com.soozooq.tianwaitian.containerresearch'
+    ui_requested = []
 
     def run(args, timeout=30, check=True):
         response = subprocess.run([str(adb), '-s', serial, *args], capture_output=True, timeout=timeout,
@@ -270,6 +311,13 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
         if result.get('platform_failure'):
             raise RuntimeError('System process failed during installation')
         check_system_process('AFTER_INSTALL')
+        if ui_apks is not None:
+            for candidate in [ui_host, ui_driver]:
+                if shell(['pm', 'path', candidate], check=False):
+                    raise RuntimeError('Existing UI probe package preserved')
+            for candidate, name in [(ui_host, 'probeHost-debug.apk'), (ui_driver, 'probeHost-debug-androidTest.apk')]:
+                ui_requested.append(candidate)
+                run(['install', str(ui_apks / name)], timeout=240)
         component = shell(['cmd', 'package', 'resolve-activity', '--brief', '-a', 'android.intent.action.MAIN',
                            '-c', 'android.intent.category.LAUNCHER', '-p', package]).splitlines()[-1]
         if not re.fullmatch(re.escape(package) + r'/[A-Za-z0-9_.$]+', component):
@@ -277,6 +325,20 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
         started = run(['shell', 'am', 'start', '-n', component])
         (out / 'start.txt').write_bytes(started.stdout + started.stderr)
         result['launch_requested'] = True
+        if ui_apks is not None:
+            texts, stage, ui_report = read_only_original_ui(run, entry, out)
+            result['ui_capture'] = ui_report
+            (out / 'visible-text.json').write_text(json.dumps(texts, ensure_ascii=False, indent=2) + '\n')
+            read_crash()
+            check_system_process('AFTER_UI_CAPTURE')
+            target_pid = shell(['pidof', package], check=False)
+            result['target_pid_at_ui'] = target_pid
+            if stage and re.fullmatch(r'[1-9][0-9]*(?:\s+[1-9][0-9]*)*', target_pid) \
+                    and not result.get('platform_failure'):
+                result.update(state=stage, passed=True)
+            elif not result.get('platform_failure'):
+                result['state'] = 'STARTUP_UI_NOT_CONFIRMED_READ_ONLY_CAPTURE'
+            return result
         deadline = time.monotonic() + result['startup_ui_wait_limit_seconds']
         while time.monotonic() < deadline:
             crash = read_crash()
@@ -305,6 +367,17 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
             result['state'] = 'INSTALL_' + installation['failed_phase'] \
                 + ('_TIMEOUT' if isinstance(error, subprocess.TimeoutExpired) else '_FAILED')
     finally:
+        ui_cleanup = {}
+        for candidate in reversed(ui_requested):
+            try:
+                removed = run(['uninstall', candidate], timeout=120, check=False)
+                remaining = shell(['pm', 'path', candidate], check=False)
+                ui_cleanup[candidate] = removed.returncode == 0 and b'Success' in removed.stdout and not remaining
+            except Exception:
+                ui_cleanup[candidate] = False
+        if ui_requested:
+            result['owned_ui_package_cleanup'] = ui_cleanup
+            if not all(ui_cleanup.values()): result['passed'] = False
         if result.get('installation'):
             try:
                 read_crash()
@@ -447,8 +520,11 @@ def run_container_control(work, spec_dir, report, record, environment, own_apks,
     return result
 
 
-def run_original_baselines(work, spec_dir, report, record, environment, after_target=None):
+def run_original_baselines(work, spec_dir, report, record, environment, after_target=None, ui_apks=None):
     require_owned_qualified_vm(work, report, record)
+    if ui_apks is not None:
+        from ci_owned_apks import verify
+        verify(ui_apks, spec_dir, report['research_commit'])
     pins = json.loads((spec_dir / 'evidence/official-target-apk-readiness.json').read_text())
     out = work / 'evidence/original-target-baselines'
     out.mkdir(exist_ok=False)
@@ -459,7 +535,7 @@ def run_original_baselines(work, spec_dir, report, record, environment, after_ta
             entry = next(x for x in pins['targets'] if x['source_key'] == key)
             apk = original_input(work, entry, pins['source'][key]['url'], environment)
             result = installed_baseline(work / 'host/bin/adb', report['serial'], apk, entry, out / key,
-                                        environment, report['properties'])
+                                        environment, report['properties'], ui_apks=ui_apks)
         except Exception as error:
             result = {'target': key, 'passed': False, 'launch_requested': False,
                       'state': 'PREPARATION_FAILED_NO_STARTUP_CONCLUSION',
