@@ -68,9 +68,11 @@
     "patches/blackbox-api33-build.patch": "258c75a90e2fdf89e83d88a80a3f2ed01dbd1094bd5a4ae55d6fd9a2d7daa9b5"
   },
   "workflow_source_sha256": {
-    ".github/workflows/container-research.yml": "15b1a19d44f88a33ea259852db6819a526082605296886f3ff9eea344746a969"
+    ".github/workflows/container-research.yml": "ddafda585239e6fc13be2370e40667c460db7bd7a037a2ffb11467b4a7501cd2"
   },
   "phone_update_distributed": false,
   "subsequent_actual_default_result": "provider-attribution-results.json",
-  "actual_ci40_result": "native-pid-set-and-owned-stage-results.json"
+  "actual_ci40_result": "native-pid-set-and-owned-stage-results.json",
+  "active_native_42_commit": "96e925224b598432048f3cd72cee3009db582767",
+  "source_map_scope": "CURRENT_DRIVER_PREPARATION_NOT_REPLACEMENT_FOR_FIXED_NATIVE_CI42"
 }

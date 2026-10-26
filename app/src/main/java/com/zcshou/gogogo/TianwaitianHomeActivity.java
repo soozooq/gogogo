@@ -42,6 +42,7 @@ import java.util.Locale;
  * Shizuku controls remain in SimpleMockActivity, accessed with one tap.
  */
 public final class TianwaitianHomeActivity extends AppCompatActivity {
+    private MaterialButton previewButton;
     public static final String EXTRA_PREFILL_LONGITUDE = "twt.home.prefill.longitude";
     public static final String EXTRA_PREFILL_LATITUDE = "twt.home.prefill.latitude";
     public static final String EXTRA_PREFILL_LABEL = "twt.home.prefill.label";
@@ -286,6 +287,11 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
             locationActions.addView(places, GoGoUi.weighted());
             content.addView(locationActions, GoGoUi.matchWrap());
         }
+        previewButton = GoGoUi.textButton(this, "将选点带入微信 / 抖音预览",
+                v -> TianwaitianContainerPreview.chooseApp(this,
+                        selectedPoint.getLongitude(), selectedPoint.getLatitude()));
+        previewButton.setVisibility(TianwaitianContainerPreview.isAvailable(this) ? View.VISIBLE : View.GONE);
+        content.addView(previewButton, GoGoUi.matchWrap());
 
         ScrollView deckScroll = new ScrollView(this);
         deckScroll.setFillViewport(false);
@@ -408,6 +414,8 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
         super.onResume();
         TianwaitianBottomNav.syncSelection(this, TianwaitianBottomNav.Tab.LOCATION);
         syncSelectedTarget();
+        if (previewButton != null) previewButton.setVisibility(
+                TianwaitianContainerPreview.isAvailable(this) ? View.VISIBLE : View.GONE);
         if (mapView != null) mapView.onResume();
     }
 

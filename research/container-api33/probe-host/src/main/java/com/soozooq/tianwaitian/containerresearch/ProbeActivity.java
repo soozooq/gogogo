@@ -28,6 +28,7 @@ import top.niunaijun.bcore.fake.frameworks.BLocationManager;
 
 /** Single ordinary flow: select pinned app, import once, set coordinates and open. */
 public final class ProbeActivity extends Activity {
+    public static final String PREFILL_ACTION = "com.soozooq.tianwaitian.containerresearch.action.PREFILL_TARGET_V1";
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private TextView status;
     private Button open, choose, installed;
@@ -38,6 +39,34 @@ public final class ProbeActivity extends Activity {
     private SharedPreferences saved;
     private GuestImport.Entry pendingImport;
     private boolean destroyed, busy, waitingPermission;
+
+    private static final class IncomingTarget {
+        final String packageName;
+        final double latitude, longitude;
+        IncomingTarget(String packageName, double latitude, double longitude) {
+            this.packageName = packageName; this.latitude = latitude; this.longitude = longitude;
+        }
+    }
+
+    private IncomingTarget incomingTarget() {
+        try { return parseIncomingTarget(getIntent()); }
+        catch (RuntimeException malformedExternalInput) { return null; }
+    }
+
+    private IncomingTarget parseIncomingTarget(Intent intent) {
+        if (intent == null || !PREFILL_ACTION.equals(intent.getAction())
+                || !"WGS84".equals(intent.getStringExtra("coordinate_system"))) return null;
+        double lat = intent.getDoubleExtra("latitude", Double.NaN);
+        double lon = intent.getDoubleExtra("longitude", Double.NaN);
+        if (Double.isNaN(lat) || Double.isInfinite(lat) || lat < -90 || lat > 90
+                || Double.isNaN(lon) || Double.isInfinite(lon) || lon < -180 || lon > 180) return null;
+        String pkg = intent.getStringExtra("guest_package");
+        for (GuestImport.Entry entry : entries) {
+            if (entry.packageName.equals(pkg) && entry.location && entry.supportsDevice())
+                return new IncomingTarget(pkg, lat, lon);
+        }
+        return null;
+    }
 
     private GuestImport.Entry selected() { return entries.get(apps.getSelectedItemPosition()); }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
@@ -56,7 +85,9 @@ public final class ProbeActivity extends Activity {
         try { entries = GuestImport.catalog(this); }
         catch (Exception error) { title.setText("准入清单读取失败，请重新构建研究包。"); setContentView(root); return; }
         apps.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, entries));
+        IncomingTarget incoming = incomingTarget();
         String previous = saved.getString("selected", "com.android.gpstest.osmdroid");
+        if (incoming != null) previous = incoming.packageName;
         for (int i = 0; i < entries.size(); i++) if (entries.get(i).packageName.equals(previous)) apps.setSelection(i);
         root.addView(apps);
         Button download = new Button(this); download.setText("获取对应版本的原版 APK");
@@ -83,9 +114,13 @@ public final class ProbeActivity extends Activity {
         imports.addView(choose, new LinearLayout.LayoutParams(0, -2, 1));
         root.addView(imports);
         coordinates = new LinearLayout(this); coordinates.setOrientation(LinearLayout.VERTICAL);
-        TextView hint = new TextView(this); hint.setText("目标坐标（WGS84）"); coordinates.addView(hint);
-        latitude = coordinate(coordinates, R.id.target_latitude, "纬度 −90～90", saved.getString("latitude", "38.125"));
-        longitude = coordinate(coordinates, R.id.target_longitude, "经度 −180～180", saved.getString("longitude", "-121.875"));
+        TextView hint = new TextView(this);
+        hint.setText(incoming == null ? "目标坐标（WGS84）" : "已带入地图选点（WGS84），确认后应用");
+        coordinates.addView(hint);
+        latitude = coordinate(coordinates, R.id.target_latitude, "纬度 −90～90",
+                incoming == null ? saved.getString("latitude", "38.125") : Double.toString(incoming.latitude));
+        longitude = coordinate(coordinates, R.id.target_longitude, "经度 −180～180",
+                incoming == null ? saved.getString("longitude", "-121.875") : Double.toString(incoming.longitude));
         root.addView(coordinates);
         open = new Button(this); open.setId(R.id.open_guest); open.setOnClickListener(v -> openSelected()); root.addView(open);
         Button stop = new Button(this); stop.setId(R.id.stop_guest); stop.setText("停止容器内应用和模拟");
@@ -122,7 +157,8 @@ public final class ProbeActivity extends Activity {
         open.setEnabled(imported && !busy && supported);
         choose.setEnabled(!busy && supported && !imported);
         installed.setEnabled(!busy && supported && !imported); apps.setEnabled(!busy);
-        status.setText(!supported ? "所选原版仅支持原生 ARM64 设备。" : imported ? "已导入 " + entry + "。可直接打开；修改坐标后再次应用即可。"
+        status.setText(!supported ? "所选原版仅支持原生 ARM64 设备。" : imported ? "已导入 " + entry
+                + (entry.location ? "。确认坐标后应用并打开；以后可直接修改坐标。" : "。可直接打开。")
                 : "先导入 " + entry + " 的官方原版 APK。");
     }
 

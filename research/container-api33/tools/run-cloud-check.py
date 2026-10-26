@@ -232,6 +232,7 @@ for relative in (() if contract_case else
         ('result.json',) if args.startup_contract else
         ('window.xml', 'screen.png', 'entry.png', 'result.json', 'last-visible-text.json') if args.third_party_location else
         ('window.xml', 'screen.png', 'result.json', 'last-guest-ui.txt') if args.guest_location
+        else ('window.xml', 'screen.png', 'installed-import.json') if args.installed_baseline
         else ('window.xml', 'screen.png')):
     exists = run(['shell', 'run-as', 'com.soozooq.tianwaitian.containerresearch',
         'test', '-f', 'files/' + folder + '/' + relative], check=False).returncode == 0
@@ -261,8 +262,17 @@ passed = passed and cleanup_ok and not system_guest_after_cleanup
 if args.guest_location or args.third_party_location or args.startup_contract:
     guest_result = evidence / 'cloud-result.json'
     passed = passed and guest_result.is_file() and json.loads(guest_result.read_text()).get('passed') is True
+installed_import = None
+if args.installed_baseline:
+    imported = evidence / 'cloud-installed-import.json'
+    installed_import = json.loads(imported.read_text()) if imported.is_file() else {}
+    passed = passed and installed_import.get('scope') == 'INSTALLED_PUBLIC_APK_IMPORT_NOT_ACCOUNT_DATA_OR_TARGET_LOCATION' \
+        and installed_import.get('package') == guest_package and all(installed_import.get(key) is True for key in [
+            'passed', 'ordinary_import_button_used', 'original_uid_path_version_preserved',
+            'original_signatures_verified', 'temporary_apk_removed', 'virtual_copy_removed'])
 (evidence / 'case-result.json').write_text(json.dumps({
     'passed': passed, 'control_removed': cleanup_ok,
+    'installed_public_apk_import': installed_import,
     'guest_system_installed_after_cleanup': system_guest_after_cleanup,
     'wechat_result': 'NOT_TESTED',
     'location_replacement': 'OFFICIAL_GPSTEST_UI_ONLY' if args.third_party_location else

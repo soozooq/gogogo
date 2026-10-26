@@ -1,19 +1,24 @@
 {
   "schema": "GOGOGO_FRAMEWORK_STARTUP_PREREQUISITE_RESULTS_V1",
   "scope": "ACTUAL_API33_X86_64_SELF_OWNED_GUEST_NOT_TARGET_OR_PHONE",
-  "run_id": 40244887727,
-  "commit": "886225a703d32aa56b12ad51cc766f8557cb607b",
-  "tree": "1b3c937ccd8de8dfe3d1e0fca6d8c0046e31daf5",
+  "run_id": 40248613788,
+  "commit": "96e925224b598432048f3cd72cee3009db582767",
+  "tree": "7344cc5b4c4dbe7c43d8b09b9ec8bcb84510dec8",
   "conclusion": "success",
   "artifacts": {
     "linux": {
-      "id": 12618048517,
-      "sha256": "42ccbc4f126c91fc556ff356cf93458e024e2b6fbc5d48cbf904bb446039b5e7",
+      "id": 12620206867,
+      "sha256": "fe6d94e9c467bd9adfb7869496f044c677362238b1d89f002fa986e18852b7d4",
       "verified": true
     },
     "mac": {
-      "id": 12618526267,
-      "sha256": "2696978d91668b9483d293cbbf93a6da47a91246f18a58ce79952719bd5d027a",
+      "id": 12620061836,
+      "sha256": "e4c7aa3e26153e578a00ab08e5a89a99abdaa6e3e4310cd73197730797b1f81c",
+      "verified": true
+    },
+    "own": {
+      "id": 12619282983,
+      "sha256": "2510612c10d2aa6cd496811e0a8fa255d5534cb70d74233ebc49ebd73a5510e8",
       "verified": true
     }
   },
@@ -22,13 +27,13 @@
     "passed": true,
     "pending_intents_sent": false,
     "location_requested": false,
-    "startup_contract_run_id": "d197f656-4e98-433d-91eb-f6c9bc2abdd5",
+    "startup_contract_run_id": "490b19e6-cdee-4d6a-93b0-51ae8abcd108",
     "framework_http_legacy_class_resolved": true,
     "expected_real_host_uid": 10129,
     "process_api_uid": 10001,
     "binder_self_uid": 10129,
-    "binder_self_pid": 2658,
-    "process_api_pid": 2658,
+    "binder_self_pid": 2657,
+    "process_api_pid": 2657,
     "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
     "binder_self_uid_matches_real_host": true,
     "activity_attribution_uid": 10129,
@@ -39,22 +44,40 @@
     "pending_activity_created": true,
     "pending_service_created": true,
     "provider_call_nonce_matches": true,
-    "provider_pid": 2685,
-    "provider_caller_pid": 2658,
+    "provider_pid": 2684,
+    "provider_caller_pid": 2657,
     "provider_process_separate": true,
     "provider_process_api_uid": 10001,
     "provider_caller_binder_uid": 10129,
     "provider_query_nonce_matches": true,
-    "provider_query_pid": 2685
+    "provider_query_pid": 2684
   },
-  "source_inputs_verified": 57,
+  "source_inputs_verified": 58,
   "junit": [
-    "Time: 0.902",
+    "Time: 0.899",
     "OK (1 test)"
   ],
   "own_transport": {
-    "state": "NOT_PREPARED_IN_DEFAULT_ONLY_CI41",
-    "passed": false
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4534140,
+        "sha256": "b68d87a3bbb81cf9aa87e9d9def6a31888af80e7b9236d60898182ad5bce77b4"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 503242,
+        "sha256": "4d4d22bcd71bf1bc49d680b34286bf45b2b28d85e7cc4282c4a831cbb64cc126"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 72818,
+        "sha256": "a04d8246ca72392cd8079d2ab434a603186f78dcc5ad444d37765c0f7b789426"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
   },
   "read_only_ui_capture": {
     "source_count_verified": 59,
@@ -79,10 +102,10 @@
       "input_events_sent": false,
       "root_package": "com.soozooq.tianwaitian.locationconsumer",
       "visible_text": [
-        "Read-only moving fixture 109"
+        "Read-only moving fixture 107"
       ],
       "stage": "OWN_UI_VISIBLE",
-      "elapsed_ms": 30
+      "elapsed_ms": 27
     },
     "cleanup": {
       "com.soozooq.tianwaitian.locationconsumer": true,
@@ -102,10 +125,11 @@
     "passed": true
   },
   "native_job_this_run": {
-    "id": 121325857282,
-    "conclusion": "skipped",
-    "reason": "INTENTIONAL_DEFAULT_ONLY_OPT_IN_FALSE",
-    "passed": false
+    "id": 121337102085,
+    "status_at_capture": "in_progress",
+    "commit": "96e925224b598432048f3cd72cee3009db582767",
+    "passed": false,
+    "actual_location_result": "NOT_YET_REPORTED"
   },
   "binder_self_identity_checked": true,
   "new_async_cell_callback_checks": "PASS_TWO_CONTROLLED_FRAMEWORK_WRAPPER_TESTS_WITH_BOTH_REQUEST_FORMS_NOT_GUEST_RADIO_PROOF",
@@ -161,17 +185,19 @@
     "result": "critical-native-and-async-results.json"
   },
   "latest_radio_contract_result": "connectivity-array-contract-results.json",
-  "new_provider_contract_runtime": "CI41_ACTUAL_FUNCTIONAL_QUERY_AND_CALL_PASS",
+  "new_provider_contract_runtime": "CI42_ACTUAL_FUNCTIONAL_QUERY_AND_CALL_PASS",
   "provider_failure_result": "provider-attribution-failure-and-correction.json",
   "latest_actual_native_baseline": "native-container-startup-pass-results.json",
   "provider_contract_result": "provider-attribution-results.json",
   "active_native_run": {
-    "run_id": 40242481707,
-    "commit": "cf4e28221a712aa7837622e9665d0d8d4d78af83",
-    "job_id": 121318547685,
+    "run_id": 40248613788,
+    "id": 121337102085,
     "status_at_capture": "in_progress",
-    "new_query_fixture_is_not_in_that_run": true,
-    "owned_location_result": "NOT_YET_REPORTED"
+    "commit": "96e925224b598432048f3cd72cee3009db582767",
+    "passed": false,
+    "actual_location_result": "NOT_YET_REPORTED"
   },
-  "provider_query_result": "private-provider-query-results.json"
+  "provider_query_result": "private-provider-query-results.json",
+  "latest_default_result": "installed-original-import-results.json",
+  "latest_actual_native_result": "native-pid-set-and-owned-stage-results.json"
 }

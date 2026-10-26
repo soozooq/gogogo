@@ -25,7 +25,7 @@
 | 图像／日志 | 微信截图已查看，确有登录页；抖音没有PNG，不能声称查看了截图；两份XML与JUnit已核对。crash buffer未匹配Fatal不等于没有任何异常 |
 | 未覆盖 | 定位关闭；没有接受条款、登录、发送消息或位置业务。不是vivo真机、微信发送／实时共享或无线／海外抖音通过 |
 
-整轮3993.935秒包含输入、安装及所有阶段，不是启动耗时。微信JUnit445.766秒，抖音784.372秒。专用TAP不等于互联网或物理蜂窝可达；无线业务仍未验证。该历史轮普通入口仅准入计算器和GPSTest。本轮候选增加固定原版微信／抖音及已安装APK导入，实际新入口待CI；不改签、嵌入或分发第三方原包。
+整轮3993.935秒包含输入、安装及所有阶段，不是启动耗时。微信JUnit445.766秒，抖音784.372秒。专用TAP不等于互联网或物理蜂窝可达；无线业务仍未验证。该历史轮普通入口仅准入计算器和GPSTest。后续候选增加固定原版微信／抖音及已安装APK导入，CI42已验证计算器的真实按钮导入／原应用保留；不改签、嵌入或分发第三方原包。
 
 [CI35／b04ac30d](research/container-api33/evidence/native-container-startup-pass-results.json)也已进入两个Guest界面：微信通过；抖音在隐私页后的2069ms，pidof集合从9448/10120变为9448，严格集合检查失败。消失PID角色未知，crash buffer没有匹配Fatal，不能写成主进程或JIT崩溃。CI35已有CriticalNative修正、尚无网络数组修正，因此CI38的成功不能归因于单一组件。两轮失败／成功均保留。
 
@@ -51,13 +51,17 @@ Provider调用归属改为真实宿主UID后，[CI40／cf4e2822公共跨进程�
 
 候选改按Core注册的主进程角色与真实ActivityManager PID／UID持续观察300秒，保留同名集合变化并复查最后隐私页；主进程消失、UID不符或界面失败仍失败。自有定位阶段改为普通原包对照及同一合格VM通过后独立执行，身份、已有文件／包保护、清理及总结果门槛不变，不再因目标UI失败跳过整项定位。
 
-[手机导入入口候选](research/container-api33/evidence/installed-original-import-preparation.json)用一个页面选择应用、一次导入、填坐标和打开。新增“导入手机已装版本”，只读所选应用公开的完整APK，不复制账号或私有数据；版本不符／分包时提示选择固定官方APK。原应用保持不变。固定微信8.0.79和抖音40.8.0仅在主ABI为原生ARM64时准入；大小、摘要、包名、版本及原证书核验保留，不允许任意版本。13秒构建、宿主／消费者静态检查及25项驱动检查通过；新增云端真实按钮导入、原应用保留及清理检查仍待CI。没有新手机包或复测任务。
+[手机导入入口候选](research/container-api33/evidence/installed-original-import-preparation.json)用一个页面选择应用、一次导入、填坐标和打开。新增“导入手机已装版本”，只读所选应用公开的完整APK，不复制账号或私有数据；版本不符／分包时提示选择固定官方APK。原应用保持不变。固定微信8.0.79和抖音40.8.0仅在主ABI为原生ARM64时准入；大小、摘要、包名、版本及原证书核验保留，不允许任意版本。13秒构建、宿主／消费者静态检查及25项驱动检查通过；[CI42真实按钮导入／原应用保留及清理已通过](research/container-api33/evidence/installed-original-import-results.json)，7.971秒／1项，原证书及system-installed=true的日志也已核对，最终宿主截图已查看。该固定驱动未传递自定义JSON，不能声称已经查看该JSON；后续补齐结构化传递与严格核对。没有新手机包或复测任务。
+
+[地图选点衔接候选](research/container-api33/evidence/map-point-prefill-preparation.json)已接到原有首页：仅在原生ARM64且已安装预览入口时显示，选择微信／抖音后，将所选WGS84坐标带入同一普通页。接收端只预填，用户确认后才导入／应用／打开；无效坐标、坐标系、非定位清单项目及畸形输入忽略。新增云端界面检查确认无自动启动／启用模拟，再延用GPSTest A→B／停止回归。14秒宿主构建、47秒主程序447项及lint、编译后两端action常量核对通过；实际新衔接待默认CI。本轮不再开新的原生轮次，CI42固定96e92522继续运行，其输入没有这项衔接。主程序源码仅在研究分支候选变化，#59及手机版本未更新。
+
+[目标SDK只读核对](research/container-api33/evidence/target-location-sdk-boundary-review.json)：固定微信原包包含`sapp`命名空间及`libtencentlocsapp.so`，与自有公开腾讯SDK不能当成同一配置；抖音含AMap／BDLocation及模拟判断方法标识，但不证明活动路径或开关值。官方2024年7.5.4.8变更说明中的防作弊默认关闭不能直接推到微信。未执行SDK或读取账号／私有数据，也未认定微信失败原因；不再用自有SDK开关冒充目标应用采用。
 
 ## 定位及默认检查的实际范围
 
 定位功能的既有实测仍为Android13 **x86_64**：[独立自有Guest](research/container-api33/evidence/owned-guest-location-results.json)六条GPS／NETWORK路径A→B、停止稳定及取消零回调；[官方GPSTest](research/container-api33/evidence/official-gpstest-location-results.json)实际界面采用A→B、GNSS零卫星；[普通入口](research/container-api33/evidence/cloud-ordinary-entry-pass.json)经系统文件选择、原包导入、精确授权与同进程更新。**ARM64真实自有Guest定位尚无已核对结果；当前匿名启动不能填补它。**
 
-[最新默认CI41](research/container-api33/evidence/default-ci-state.json)：Linux／Mac与四项case通过；框架0.902秒、计算器6.258秒、普通入口11.998秒、九项受控无线0.106秒，每case57份源码，变化UI59份，447项及lint通过，两归档已核对。本轮没有同轮APK传递；先前[CI40三件／59份源码／三签名及每包11份材料](research/container-api33/evidence/provider-attribution-results.json)单列保留，不混作CI41新产物。自有框架确认真实Binder身份、新鲜nonce、Context归属、旧HTTP和两类PendingIntent创建，未验证发送／后台投递。
+[最新默认CI42](research/container-api33/evidence/default-ci-state.json)：Linux／Mac与五项case通过；框架0.899秒、已装导入7.971秒、计算器6.589秒、普通入口11.959秒、九项受控无线0.092秒，每case58份源码，变化UI59份，447项及lint通过。三档已API摘要核对，同轮宿主／测试／消费者共59份来源、三份签名及每包11份材料均核对；原生作业121337102085仍运行，不能凭默认通过推断原生定位。自有框架确认真实Binder身份、新鲜nonce、Context归属、旧HTTP和两类PendingIntent创建，未验证发送／后台投递。
 
 九项检查使用受控服务、实际框架包装和合成输入；[网络数组修正](research/container-api33/evidence/connectivity-array-contract-results.json)保留关闭模式数组、Network句柄与连接状态，开启时只清除NetworkInfo框架副本的extraInfo；两项异步CellInfo请求完成空列表回调。没有真实无线查询，不证明Guest无线Hook、持续订阅或腾讯／字节SDK采用。样本保留mock标记；Guest与宿主共享UID，不是独立UID安全沙箱。详见[审计](research/container-api33/AUDIT.md)。
 
@@ -67,7 +71,7 @@ Provider调用归属改为真实宿主UID后，[CI40／cf4e2822公共跨进程�
 
 用户10月23日VPN开／关日志中，导出时GPS／NETWORK／GMS缓存新鲜且接近模拟目标，但微信截图及反馈失败；导出快照不是微信前台连续采样，10月13日旧实验也不是本轮结果。#59保留脱敏失败验收，实际地址截图未上传公共仓库；更新#59只改标记的后续研发段，保留此前正文。
 
-1. CI40／cf4e2822原生作业121318547685已经失败，已核对四档及9份原生输入；自有定位被同名PID集合门槛跳过。继续同分支验证新的主进程身份检查、独立自有定位阶段与简化导入，保留CI38通过及CI39／40失败，不重复手机实验。
+1. CI40／cf4e2822原生作业121318547685已经失败，已核对四档及9份原生输入；自有定位被同名PID集合门槛跳过。新的主进程身份检查及独立自有定位随CI42／96e92522／121337102085运行，默认简化导入已通过；后续地图选点及结构化导入报告只跑默认CI，不重复原生轮次。继续同分支，保留CI38通过及CI39／40失败，不重复手机实验。
 2. 核对新三件自有传递与原生自有Guest A→B／更新／停止／取消结果，再推进目标SDK和业务。账号与业务未验证的阶段不能写成成功，不接受条款、登录或发送消息，不发新手机实验任务。
 3. 原生作业同锁且不取消运行中的前轮；push须带齐`[cuttlefish-boot] [cuttlefish-container]`，检查实际job，不能凭绿色基础CI推断原生运行。工作区、代理／CA及SDK安装串行约束保持。
 4. 构建使用仓库外CONTAINER_RESEARCH_WORKDIR与tools/run-build.sh，生成物不入库；回执按固定Git提交的源码核对，新输出保留旧文件。许可见[记录](research/container-api33/THIRD_PARTY_NOTICES.md)。

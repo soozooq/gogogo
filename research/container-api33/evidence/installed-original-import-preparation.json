@@ -26,7 +26,7 @@
   "maximum_allowed_catalog_apk_bytes": 536870912,
   "new_cloud_ui_check": "installedCalculatorControl now clicks the ordinary installed import button, checks original signatures, temp cleanup, original system UID/path/version preservation, and removes only its virtual copy; baseline original is removed later by the existing dedicated cloud driver.",
   "existing_document_picker_location_ui_regression_kept": true,
-  "actual_new_import_runtime": "PENDING_NEXT_CI",
+  "actual_new_import_runtime": "CI42_X86_64_REAL_BUTTON_AND_ORIGINAL_PRESERVATION_PASS_7.971S",
   "actual_target_location_business": "NOT_VERIFIED",
   "build": {
     "passed": true,
@@ -53,5 +53,7 @@
     "evidence/official-target-apk-readiness.json": "477eeb8da6afea0a2eef19e2670deffd8ee95d176658734048206e553aa7f2c9"
   },
   "native_followup": "native-pid-set-and-owned-stage-results.json",
-  "phone_update_distributed": false
+  "phone_update_distributed": false,
+  "recorded_build_and_source_commit": "96e925224b598432048f3cd72cee3009db582767",
+  "subsequent_actual_result": "installed-original-import-results.json"
 }

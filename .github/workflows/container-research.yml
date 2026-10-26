@@ -121,6 +121,7 @@ jobs:
           mkdir -p "$feedback_evidence/unit"
           git rev-parse HEAD > "$feedback_evidence/commit.txt"
           sha256sum app/src/main/java/com/zcshou/gogogo/LabFeedbackReport.java app/src/main/java/com/zcshou/gogogo/LabSupportLog.java app/src/main/java/com/zcshou/gogogo/LabHubActivity.java app/src/test/java/com/zcshou/gogogo/LabFeedbackReportTest.java > "$feedback_evidence/source-sha256.txt"
+          sha256sum app/src/main/java/com/zcshou/gogogo/TianwaitianContainerPreview.java app/src/main/java/com/zcshou/gogogo/TianwaitianHomeActivity.java app/src/main/AndroidManifest.xml >> "$feedback_evidence/source-sha256.txt"
           if [ -d app/build/test-results/testDebugUnitTest ]; then
             cp app/build/test-results/testDebugUnitTest/TEST-*.xml "$feedback_evidence/unit/"
           fi

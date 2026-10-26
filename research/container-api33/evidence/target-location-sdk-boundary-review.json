@@ -1,0 +1,114 @@
+{
+  "schema": "GOGOGO_TARGET_LOCATION_SDK_BOUNDARY_REVIEW_V1",
+  "scope": "PUBLIC_DOCUMENTATION_AND_PINNED_ORIGINAL_DEX_IDENTIFIERS_NOT_RUNTIME_OR_PHONE",
+  "original_targets_source": "official-target-apk-readiness.json",
+  "original_apks_modified_or_executed_for_this_review": false,
+  "private_or_account_data_read": false,
+  "own_public_sdk": {
+    "scope": "PUBLIC_API_SURFACE_INSPECTION_ONLY_NO_SDK_INITIALIZATION_OR_NETWORK_REQUEST",
+    "artifact": "com.tencent.map.geolocation:TencentLocationSdk-openplatform:7.6.1.12",
+    "aar_sha256": "73e36e92faf076778a5739f8d5b213e29f7ccba500a787685767c8281dbc63d9",
+    "public_api_sha256": "e6f0fb52ae017845c91983dd6e52f1fda1ab0772b46521370011b5d81d31a4b7",
+    "public_mock_named_methods": [
+      "public void setMockEnable(boolean);",
+      "public boolean isEnableAntiMock();",
+      "public com.tencent.map.geolocation.TencentLocationRequest setEnableAntiMock(boolean);"
+    ],
+    "wechat_same_sdk_version_verified": false,
+    "target_app_adoption_verified": false,
+    "privacy_consent_changed": false
+  },
+  "official_public_sdk_changelog": {
+    "url": "https://lbs.qq.com/mobile/androidLocationSDK/androidGeoDownload",
+    "section_date": "2024-06-06",
+    "maven_version_in_section": "7.5.4.8",
+    "quote": "新增定位反作弊外部控制接口，默认关闭。 可在构建TencentLocationRequest对象时增加setEnableAntiMock(true)打开定位反作弊模块，返回结果仍然通过TencentLocation对象的getFakeReason和getFakeProbability接口获取",
+    "retrieval_cache_at": "2026-10-25T08:46:08.511Z",
+    "does_not_prove_later_or_wechat_defaults": true
+  },
+  "wechat": {
+    "location_sdk_class_descriptors": [
+      "Lcom/tencent/map/geolocation/sapp/R;",
+      "Lcom/tencent/map/geolocation/sapp/TencentLocation;",
+      "Lcom/tencent/map/geolocation/sapp/TencentLocationListener;",
+      "Lcom/tencent/map/geolocation/sapp/TencentLocationManager;",
+      "Lcom/tencent/map/geolocation/sapp/TencentLocationManagerOptions;",
+      "Lcom/tencent/map/geolocation/sapp/TencentLocationRequest;",
+      "Lcom/tencent/map/geolocation/sapp/TencentLocationUtils;",
+      "Lcom/tencent/map/geolocation/sapp/TencentPoi;",
+      "Lcom/tencent/map/geolocation/sapp/databus/DataBusJni;",
+      "Lcom/tencent/map/geolocation/sapp/databus/DataBusNativeInterface;",
+      "Lcom/tencent/map/geolocation/sapp/internal/LocationLogCallback;",
+      "Lcom/tencent/map/geolocation/sapp/internal/TencentExtraKeys;"
+    ],
+    "native_location_libraries": [
+      {
+        "path": "lib/arm64-v8a/libtencentlocsapp.so",
+        "sha256": "d8f8c70b5871ae0fccd40b0fec4b117f7cc97ed4be41c615a412f89c0a55b16e"
+      }
+    ],
+    "same_public_sdk_artifact_version_verified": false,
+    "package": "com.tencent.mm",
+    "version": "8.0.79",
+    "apk_sha256": "f2a725bc04302ad218a563533ae79356e66b64aa711b275bc919a8d432f7e15d",
+    "runtime_configuration": "UNKNOWN",
+    "conclusion": "Fixed original contains the sapp namespace and libtencentlocsapp.so; public SDK method/switch documentation cannot be treated as its active settings."
+  },
+  "douyin": {
+    "location_sdk_class_descriptors": [],
+    "native_location_libraries": [],
+    "same_public_sdk_artifact_version_verified": false,
+    "package": "com.ss.android.ugc.aweme",
+    "version": "40.8.0",
+    "apk_sha256": "9fc10c40b81b8244e515f9588d381f43e6ed870e6d9bebf14754a5e309ba380a",
+    "method_identifiers": [
+      {
+        "dex": "classes.dex",
+        "class": "Lcom/bytedance/android/shopping/verse/api/bean/ABSettingsInfo;",
+        "method": "setMockEnable",
+        "declaring_class_defined_in_this_dex": true
+      },
+      {
+        "dex": "classes48.dex",
+        "class": "Landroid/location/Location;",
+        "method": "isFromMockProvider",
+        "declaring_class_defined_in_this_dex": false
+      },
+      {
+        "dex": "classes48.dex",
+        "class": "Lcom/amap/api/location/AMapLocation;",
+        "method": "isMock",
+        "declaring_class_defined_in_this_dex": true
+      },
+      {
+        "dex": "classes48.dex",
+        "class": "Lcom/amap/api/location/AMapLocationClientOption;",
+        "method": "setMockEnable",
+        "declaring_class_defined_in_this_dex": true
+      },
+      {
+        "dex": "classes48.dex",
+        "class": "Lcom/autonavi/amap/mapcore2d/Inner_3dMap_locationOption;",
+        "method": "setMockEnable",
+        "declaring_class_defined_in_this_dex": true
+      },
+      {
+        "dex": "classes48.dex",
+        "class": "Lcom/bytedance/bdlocation/BDLocation;",
+        "method": "isMock",
+        "declaring_class_defined_in_this_dex": true
+      }
+    ],
+    "runtime_configuration_or_active_provider": "UNKNOWN",
+    "conclusion": "AMap/BDLocation and platform mock identifiers are present; identifiers alone do not establish the active path or switch values. The shopping ABSettingsInfo method is not classified as location evidence."
+  },
+  "android_location_mock_definition": {
+    "url": "https://developer.android.com/reference/android/location/Location#isMock()",
+    "api_level_added": 31,
+    "quote": "Returns true if this location is marked as a mock location. If this location comes from the Android framework, this indicates that the location was provided by a test location provider, and thus may not be related to the actual location of the device.",
+    "wechat_rejection_proven": false
+  },
+  "decision": "Do not present an own Tencent SDK option, platform cache success or a matching method name as changing WeChat/Douyin runtime behavior; preserve mock flags and verify actual target adoption separately.",
+  "user_experiment_requested": false,
+  "target_business": "UNVERIFIED"
+}

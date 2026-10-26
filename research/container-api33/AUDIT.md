@@ -121,3 +121,9 @@ CI39新增公共跨进程call并未通过：实际Binder UID10129与被ContentPr
 四包可见性仅声明具体package，未添加QUERY_ALL_PACKAGES或存储权限。已装导入只读public sourceDir，拒绝分包及版本不符，复制到私有临时文件后仍核对精确字节摘要及原证书，再虚拟安装并删除临时文件。无需电脑／Root，系统原应用和账号不迁移；新增真实按钮回归待CI，不以编译代替手机结果。
 
 CI40的同名PID集合变化不能证明主进程退出：9665仍在、新增10333角色未知。新检查从Core注册ProcessRecord与实际ActivityManager的交集选择唯一processName等于包名且UID为宿主的PID，持续300秒并复查隐私页；保留同名集合变化，不声称检查内核进程出生时间。自有定位独立于目标UI结果，但仍要求普通原包通过、同一合格VM／system_server及所有清理门槛；全轮仍需各项通过。详见[实际失败](evidence/native-pid-set-and-owned-stage-results.json)及[导入候选](evidence/installed-original-import-preparation.json)。
+
+## 地图选点衔接与SDK证据边界
+
+首页候选仅在ARM64且明确预览组件存在时显示衔接按钮，发送显式component、版本化action和WGS84目标。接收端限制清单、有限坐标及范围，忽略畸形外部输入；仅预填，不自动导入、启用模拟、启动Guest或请求真实定位。新的界面回归待默认CI；主程序447项和lint通过是编译／已有单元检查，不是该主页面或vivo真机操作证明。
+
+固定原包只读核对发现微信使用`sapp`命名空间／独立native库；公开腾讯SDK的setMockEnable与setEnableAntiMock不能代表其配置。抖音的AMap／BDLocation及平台方法标识只证明标识存在，非活动调用、开关值或拒绝因果。未改目标APK／mock标记、执行SDK、接受条款或读私有数据；详见[核对](evidence/target-location-sdk-boundary-review.json)。

@@ -12,13 +12,15 @@ CI35已达到两个Guest界面，但抖音在2069ms后pidof集合少一个PID，
 
 [原生自有定位阶段](evidence/native-owned-location-preparation.json)已准备：普通原包对照通过后，在同一合格VM独立运行独立自有Guest的公共框架／跨进程Provider及六条GPS／NETWORK A→B、停止与取消。严格新三件自有APK传递、旧两件兼容、已有包／文件保留与清理保护；不读取目标账号或测试SDK。11秒构建、静态检查、三件材料／同签名、25项驱动检查及8种选择组合通过，CI40三件同轮传递、59份源码、三份签名和每包11份材料已核对，原生CI40已经失败，实际ARM定位未执行，见下段。
 
-[CI38默认基线](evidence/native-container-startup-pass-results.json)的9项受控无线、框架身份、两项UI回归、447项及lint已通过，但不代表真实无线／SDK。CI39失败保留；[最新默认CI41](evidence/default-ci-state.json)已通过完整回归与447项／lint，每case57份、移动UI59份源码已核对。原生push已在CI38实际验证，手动路径只静态验证。继续同一分支，不发手机实验。
+[CI38默认基线](evidence/native-container-startup-pass-results.json)的9项受控无线、框架身份、两项UI回归、447项及lint已通过，但不代表真实无线／SDK。CI39失败保留；[最新默认CI42](evidence/default-ci-state.json)五项case、移动UI及447项／lint通过，每case58份、移动UI59份源码和三件同轮APK来源／签名／材料已核对。原生push已在CI38实际验证，手动路径只静态验证。继续同一分支，不发手机实验。
 
 新增[自有私有Provider查询检查](evidence/private-provider-query-preparation.json)单独核对query的UID／权限分支，返回合成数据，不改引擎或exported／权限；[CI41实际查询通过](evidence/private-provider-query-results.json)：call与query回传同一nonce／远程PID2685、调用者2658；全回归、57份case／59份移动UI源码、447项及lint通过，两档已核对，本轮不传递APK或启动原生。原引擎旧URI授权GRANTED规则保留，不能把功能通过当权限拒绝／隔离证明；CI40保持cf4e固定输入，不包含这项query；现已完成，结果不替代ARM64 query。
 
 [CI40原生实际失败](evidence/native-pid-set-and-owned-stage-results.json)已核对四归档及9份源码：系统稳定，两个普通原包和容器微信通过；容器抖音看到隐私页后，同名PID9665增加10333，5730ms时严格集合检查失败。原PID仍在、新PID角色未知，不能写成主进程或JIT崩溃。后续自有定位被跳过；本轮有抖音PNG且已查看，没有微信PNG。候选将持续观察绑定Core主进程角色及真实ActivityManager PID／UID、复查最后隐私页，并把自有契约与目标UI结果分别记录；总结果仍要求每项通过。
 
-[简化手机导入候选](evidence/installed-original-import-preparation.json)增加已安装公开APK直接导入，保留文件选择；固定微信／抖音清单只允许原生ARM64。13秒构建、静态检查和25项驱动检查通过，新增真实按钮及原应用保留回归待CI；未发布手机更新。
+[简化手机导入候选](evidence/installed-original-import-preparation.json)增加已安装公开APK直接导入，保留文件选择；固定微信／抖音清单只允许原生ARM64。13秒构建、静态检查和25项驱动检查通过，[CI42真实按钮及原应用保留回归7.971秒通过](evidence/installed-original-import-results.json)，原证书日志及宿主截图已核对；固定驱动未传递自定义JSON，后续补齐严格传递。原生CI42仍运行，未发布手机更新。
+
+[地图选点衔接候选](evidence/map-point-prefill-preparation.json)将现有地图所选WGS84坐标带入已安装的ARM64预览入口，先选择微信／抖音，再在普通页确认导入／应用；收到Intent不自动改模拟或启动Guest。14秒宿主构建、47秒主447项／lint及编译action一致性通过，新增实际界面回归待默认CI；不会重开正在运行的固定96e92522原生CI42。[SDK边界核对](evidence/target-location-sdk-boundary-review.json)只说明原包标识和公开文档，不能从自有腾讯SDK或方法名称推断微信／抖音运行配置。
 
 ## 核对下载的 CI 回执（维护用）
 
@@ -71,7 +73,7 @@ python3 research/container-api33/tools/verify-ci-receipts.py \
 
 ![统一入口：修改坐标后应用，一键停止](evidence/unified-entry.png)
 
-该历史普通入口结果覆盖上述两个固定发布文件。本轮候选将[已核验的官方微信8.0.79／抖音40.8.0](evidence/official-target-apk-readiness.json)加入清单，限原生ARM64；已安装版本必须完全匹配，否则选择固定完整原版APK。新增入口待CI，不改签或分发原包，也不等于用户手机版本已匹配。微信／抖音的定位、腾讯／字节SDK、GMS、海外及vivo仍未验证。
+该历史普通入口结果覆盖上述两个固定发布文件。本轮候选将[已核验的官方微信8.0.79／抖音40.8.0](evidence/official-target-apk-readiness.json)加入清单，限原生ARM64；已安装版本必须完全匹配，否则选择固定完整原版APK。计算器已装导入已通过，目标定位仍待实际验证；不改签或分发原包，也不等于用户手机版本已匹配。微信／抖音的定位、腾讯／字节SDK、GMS、海外及vivo仍未验证。
 
 本云端 x86_64 模拟器[拒绝 ARM64 镜像](evidence/arm64-cloud-runtime-limit.json)。[GitHub ARM Mac 构建通过，VM 因 HVF 不可用未启动](evidence/cloud-arm-mac-build-and-vm-limit.json)。Linux 的 KVM 启动、存储和构建已通过，最近[文件选择器抽屉遮挡导致未完成选择](evidence/cloud-picker-occlusion-failure.json)，现改为默认下载目录并等待真实返回，已通过导入并实际打开 Guest；随后[首次启动更新说明遮挡坐标](evidence/cloud-fresh-gpstest-dialog-failure.json)，已按实际 XML 修正关闭按钮。[全新 KVM 普通流程 10.563 秒及计算器回归 5.778 秒通过](evidence/cloud-ordinary-entry-pass.json)，全部输入与实测提交逐项核对。失败不算引擎或定位结果。[云端流程](../../.github/workflows/container-research.yml)只上传证据，不上传 APK，继续研发统一留在 #60。
 

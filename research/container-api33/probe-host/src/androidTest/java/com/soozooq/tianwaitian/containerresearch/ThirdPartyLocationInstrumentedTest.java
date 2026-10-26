@@ -66,8 +66,19 @@ public final class ThirdPartyLocationInstrumentedTest {
             BlackBoxCore.get().stopPackage(GUEST, 0);
             BlackBoxCore.get().uninstallPackageAsUser(GUEST, 0);
             BLocationManager.disableFakeLocation(0, GUEST);
-            assertTrue(context.getSharedPreferences("research-entry", Context.MODE_PRIVATE).edit().clear().commit());
-            openOrdinaryHost(context);
+            assertTrue(context.getSharedPreferences("research-entry", Context.MODE_PRIVATE).edit().clear()
+                    .putString("latitude", "0.0").putString("longitude", "0.0").commit());
+            openHostWithPrefill(context, Double.NaN, -121.875);
+            assertEquals("Malformed incoming target keeps the previous latitude", "0.0",
+                    fresh(By.res(context.getPackageName(), "target_latitude"), UiObject2::getText, "Latitude"));
+            openHostWithPrefill(context, 38.125, -121.875);
+            assertNotNull("The new prefilled screen is visible", device.wait(Until.findObject(
+                    By.text("已带入地图选点（WGS84），确认后应用")), 30000));
+            assertEquals("38.125", fresh(By.res(context.getPackageName(), "target_latitude"), UiObject2::getText, "Prefilled latitude"));
+            assertEquals("-121.875", fresh(By.res(context.getPackageName(), "target_longitude"), UiObject2::getText, "Prefilled longitude"));
+            assertEquals("Prefill must not enable simulation", BLocationManager.CLOSE_MODE,
+                    BLocationManager.get().getPattern(0, GUEST));
+            assertEquals("Prefill must not launch the Guest", "", shell("pidof " + GUEST));
             clickFresh(By.res(context.getPackageName(), "import_guest"), "Import button");
             assertNotNull("Normal Android document picker", device.wait(Until.findObject(By.desc("Show roots")), 30000));
             // The ordinary product requests Download as initial directory. Do not click a file
@@ -82,7 +93,7 @@ public final class ThirdPartyLocationInstrumentedTest {
             assertNotNull("Ordinary import completed", device.wait(Until.findObject(By.res(
                     context.getPackageName(), "open_guest").enabled(true)), 60000));
             assertTrue(BlackBoxCore.get().isInstalled(GUEST, 0));
-            setOrdinaryTarget("38.125", "-121.875");
+            clickFresh(By.res(context.getPackageName(), "open_guest"), "Apply prefilled target/open button");
             stages.put(new JSONObject().put("stage", "ORDINARY_ENTRY_TARGET_A")
                     .put("visible_text", awaitCoordinates(38.125, -121.875)));
             assertTrue("Actual normal system permission UI was used", permissionActions.length() > 0);
@@ -109,6 +120,7 @@ public final class ThirdPartyLocationInstrumentedTest {
             write(new File(evidence, "result.json"), new JSONObject()
                     .put("scope", "ORDINARY_IMPORT_COORDINATE_LAUNCH_STOP_OFFICIAL_GPSTEST_NOT_WECHAT")
                     .put("package", GUEST).put("apk_sha256", SHA).put("permission_actions", permissionActions)
+                    .put("wgs84_prefill_received_without_autostart", true).put("invalid_prefill_ignored", true)
                     .put("stages", stages).put("same_guest_pid", firstPid).put("stop_process_absent", true)
                     .put("stop_virtual_mode", "CLOSE_MODE").put("passed", true).toString(2));
         } finally {
@@ -124,6 +136,14 @@ public final class ThirdPartyLocationInstrumentedTest {
                 Configurator.getInstance().setWaitForIdleTimeout(idle);
             }
         }
+    }
+
+    private void openHostWithPrefill(Context context, double lat, double lon) {
+        context.startActivity(new Intent(context, ProbeActivity.class).setAction(ProbeActivity.PREFILL_ACTION)
+                .putExtra("coordinate_system", "WGS84").putExtra("guest_package", GUEST)
+                .putExtra("latitude", lat).putExtra("longitude", lon)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
+        hostControl("import_guest");
     }
 
     private void openOrdinaryHost(Context context) {
