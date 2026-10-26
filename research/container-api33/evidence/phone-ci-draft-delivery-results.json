@@ -1,0 +1,94 @@
+{
+  "schema": "GOGOGO_VERIFIED_PHONE_CI_DRAFT_DELIVERY_V1",
+  "scope": "ACTUAL_CI_OWN_APK_STAGING_AND_DRAFT_ASSETS_NOT_NATIVE_OR_PHONE_BUSINESS",
+  "delivery_run_id": 40300753741,
+  "delivery_commit": "e133bae2e1434f5b91ca2bd477b8182fc3daec00",
+  "runtime_source_commit": "ff12e8d3cf2dde2884333bd78515727d17c284b3",
+  "artifact_api_digests": {
+    "phone": {
+      "id": 12640517118,
+      "sha256": "c23c89aef3315089fee2eb095d784b7d7537367a551eae9884b6961272934965"
+    },
+    "diagnostics": {
+      "id": 12639963709,
+      "sha256": "c1535d83183b6663f85b7c0d7c5097fabc418438d98897b0df5096673ea44b9a"
+    }
+  },
+  "archives_api_sha_and_safe_six_file_flat_set_verified": true,
+  "manifest": {
+    "schema": "GOGOGO_CI_PHONE_PREVIEW_STAGING_V1",
+    "source_commit": "ff12e8d3cf2dde2884333bd78515727d17c284b3",
+    "delivery_run_id": 40300753741,
+    "apks": {
+      "main": {
+        "package": "com.soozooq.gogogo.test",
+        "version_name": "2.4.32-container-preview",
+        "version_code": 2400100,
+        "bytes": 40408202,
+        "sha256": "033c0f6bce6ef97c183928e349be7a1cf778105bada734bcb9ce5322871a96c2",
+        "certificate_sha256": "6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081",
+        "signature_and_alignment_verified": true,
+        "debuggable": true,
+        "file": "Tianwaitian-2.4.32-container-preview-arm64.apk"
+      },
+      "host": {
+        "package": "com.soozooq.tianwaitian.containerresearch",
+        "version_name": "0.1-research",
+        "version_code": 1,
+        "bytes": 4581891,
+        "sha256": "2308c0bac2400f0da6ea781a098ee2c9cfd245a089c0f2837c53ab89a8f9f3f1",
+        "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+        "signature_and_alignment_verified": true,
+        "debuggable": true,
+        "file": "Tianwaitian-Original-Preview-ff12e8d3.apk"
+      }
+    },
+    "metadata_profile_sha256": "00ee9ae07b12d9c7acc42c9b2952982d7ae439aeb9e174ccf0ba7395d3d27ca8",
+    "main_checks": {
+      "junit": {
+        "tests": 447,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "lint_error_fatal_count": 0
+    },
+    "host_original_ci_run": 40292596352,
+    "host_ci_non_signature_entries_equal": 415,
+    "private_key_used_or_included": false,
+    "original_target_apks_included": false,
+    "native_gate": "NOT_CHECKED_BY_THIS_DELIVERY_JOB",
+    "phone_and_target_business": "NOT_VERIFIED",
+    "published": false
+  },
+  "release_assets": {
+    "main": {
+      "id": 677684540,
+      "digest": "sha256:033c0f6bce6ef97c183928e349be7a1cf778105bada734bcb9ce5322871a96c2",
+      "size": 40408202,
+      "state": "uploaded"
+    },
+    "host": {
+      "id": 677684544,
+      "digest": "sha256:2308c0bac2400f0da6ea781a098ee2c9cfd245a089c0f2837c53ab89a8f9f3f1",
+      "size": 4581891,
+      "state": "uploaded"
+    }
+  },
+  "actual_server_asset_digests_equal_local_archive_apks": true,
+  "local_signature_alignment_package_and_version_independently_verified": true,
+  "local_vs_cloud_main_non_signature_entry_differences": [
+    "assets/twt-fixture-v0.apk",
+    "classes3.dex",
+    "classes4.dex",
+    "classes5.dex",
+    "classes6.dex"
+  ],
+  "private_signing_key_not_used_by_ci_or_transferred": true,
+  "public_signature_recipe_restores_exact_existing_host": true,
+  "release_is_draft": true,
+  "published": false,
+  "matching_native47": "COMPLETED_FAILURE_WECHAT_PRIVATE_FIELD_LOOKUP_DRAFT_PUBLICATION_BLOCKED",
+  "wechat_douyin_and_phone": "NOT_VERIFIED",
+  "matching_native47_result": "native-phone-callback-field-failure-results.json"
+}

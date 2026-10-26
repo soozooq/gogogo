@@ -1,6 +1,6 @@
 # 可复用基础审计
 
-当前实测以根PROJECT_STATUS.md为准：CI47默认六项／15受控无线和447项／lint已核对；CI46原生独立Guest六路径全部通过但使用旧416补丁，新aad5的CI47原生仍运行。手机草稿上传401，仓库CI交付准备已本地验证，未发布。下列早期记录按当时范围保留。
+当前实测以根PROJECT_STATUS.md为准：CI47默认通过，但匹配原生微信电话监听读取私有TRANSACTION字段失败，整轮失败；自有框架／六路径和抖音匿名UI通过。旧ff12两APK已由交付CI2上传核验，仍禁止发布。当前改用运行时AIDL回调名称，构建／静态／重放／25驱动检查通过，16项受控回归实际3.298秒通过，常量不可读前置条件确已执行；新默认／原生待核对，首轮0方法初始化失败保留。CI46旧416完整通过不能替代新候选。下列早期记录按当时范围保留。
 
 本轮结论：API 33 云端中，原版计算器与官方 GPSTest 均实际运行；后者在正常精确定位授权后，其可见坐标跟随两次目标。现代定位、GNSS 回调和原签名信息已修正，自有消费者用于相关接口回归。腾讯／字节 SDK、微信／抖音、完整组件及权限隔离仍未完成。接手从根目录 [PROJECT_STATUS.md](../../PROJECT_STATUS.md) 开始。
 
@@ -149,3 +149,5 @@ CI40的同名PID集合变化不能证明主进程退出：9665仍在、新增103
 [现代持续电话候选](evidence/persistent-phone-callback-preparation.json)使用runtime AIDL交易码及同进程Binder relay，并替换已创建的Registry缓存。注册参数与空事件注销身份保留，开启／未知模式抑制6类位置消息，关闭及其他回调原字节转发。真实公共框架+受控服务／本地Binder仅证明其标明范围；非本地监听拒绝、已交付缓存无法回收、SIM／国家／IP等仍有边界，不宣称全无线或目标SDK覆盖。原生CI46运行的是旧416补丁，新aad5须独立同轮验证。反馈只改指引，不修改证据判定或申请新权限。
 
 [CI46原生六路径完整通过](evidence/native-owned-private-snapshot-pass-results.json)已固定源码／四归档／9输入／自有三件核对，A→B／停止／取消及清理均过，目标匿名UI保持定位关闭。新监听的[CI47默认15项](evidence/persistent-phone-callback-results.json)也已实际通过，但其匹配原生仍独立等待。工作区Release附件鉴权401保留；[交付流程](evidence/phone-ci-draft-delivery-preparation.json)用标准仓库CI和仅公开签名／ZIP元数据恢复同一私签APK，未传私钥、未改415份payload或目标原包，不自动发布或宣称业务成功。
+
+[交付CI2实际结果](evidence/phone-ci-draft-delivery-results.json)已核对两个归档API摘要、平铺六文件、主447项／lint、实际APK包名／版本／签名／对齐和服务器资产digest。云主包033c与本地0224不同，按各自真实构建记录；预览2308与既有私签包相同。Release保持草稿，交付工作流未作原生／手机业务成功判断，首轮旧SDK工具包失败保留。

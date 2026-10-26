@@ -4,8 +4,8 @@
   "run_id": 40292596352,
   "commit": "ff12e8d3cf2dde2884333bd78515727d17c284b3",
   "tree": "a628fb53343ebd4356bc67cc72a318e41570662d",
-  "conclusion": null,
-  "status": "in_progress",
+  "conclusion": "failure",
+  "status": "completed",
   "default_checks_conclusion": "success",
   "jobs": [
     {
@@ -152,30 +152,28 @@
   "douyin_wireless_and_overseas": "NOT_VERIFIED",
   "physical_arm64_vivo": "NOT_VERIFIED",
   "latest_actual_native_run": {
-    "run_id": 40287040444,
-    "commit": "42cd5eb5c269b39ce689191f3a0292009bbf24a8",
-    "job_id": 121455067092,
-    "result": "native-owned-private-snapshot-pass-results.json",
-    "passed": true,
+    "run_id": 40292596352,
+    "commit": "ff12e8d3cf2dde2884333bd78515727d17c284b3",
+    "job_id": 121473513629,
+    "conclusion": "failure",
+    "result": "native-phone-callback-field-failure-results.json",
+    "passed": false,
     "owned_location_passed": true,
-    "new_persistent_phone_patch_included": false
+    "wechat_anonymous_startup_passed": false,
+    "new_persistent_phone_patch_included": true
   },
   "native_job_this_run": {
     "run_id": 40292596352,
     "commit": "ff12e8d3cf2dde2884333bd78515727d17c284b3",
     "job_id": 121473513629,
-    "status_at_capture": "in_progress",
-    "passed": false
+    "conclusion": "failure",
+    "result": "native-phone-callback-field-failure-results.json",
+    "passed": false,
+    "owned_location_passed": true,
+    "wechat_anonymous_startup_passed": false,
+    "new_persistent_phone_patch_included": true
   },
-  "active_native_runs": [
-    {
-      "run_id": 40292596352,
-      "commit": "ff12e8d3cf2dde2884333bd78515727d17c284b3",
-      "job_id": 121473513629,
-      "status_at_capture": "in_progress",
-      "passed": false
-    }
-  ],
+  "active_native_runs": [],
   "pending_native_run": null,
   "latest_passed_default_run": {
     "run_id": 40292596352,
@@ -192,5 +190,16 @@
     "native-container-startup-pass-results.json",
     "provider-attribution-failure-and-correction.json"
   ],
-  "phone_delivery": "SOURCE_FF12_OWN_APKS_READY; WORKSPACE_UPLOAD_401; REPOSITORY_CI_DRAFT_PREPARATION"
+  "phone_delivery": "CI2_ASSETS_VERIFIED_BUT_MATCHING_NATIVE47_FAILED_KEEP_DRAFT_UNPUBLISHED",
+  "phone_delivery_result": "phone-ci-draft-delivery-results.json",
+  "latest_passed_native_run": {
+    "run_id": 40287040444,
+    "commit": "42cd5eb5c269b39ce689191f3a0292009bbf24a8",
+    "job_id": 121455067092,
+    "result": "native-owned-private-snapshot-pass-results.json",
+    "passed": true,
+    "owned_location_passed": true,
+    "new_persistent_phone_patch_included": false
+  },
+  "next_candidate_preparation": "phone-transaction-name-preparation.json"
 }

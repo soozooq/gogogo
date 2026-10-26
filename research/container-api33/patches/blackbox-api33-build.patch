@@ -1003,10 +1003,10 @@ index 33686f0..4ee563d 100644
              return method.invoke(who, args);
          }
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyRegistryProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyRegistryProxy.java
-index 1faafb8..82ffcbf 100644
+index 1faafb8..bf0e976 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyRegistryProxy.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyRegistryProxy.java
-@@ -1,15 +1,37 @@
+@@ -1,15 +1,39 @@
  package top.niunaijun.bcore.fake.service;
  
 +import android.os.Binder;
@@ -1016,6 +1016,8 @@ index 1faafb8..82ffcbf 100644
 +import android.os.Parcel;
 +import android.os.RemoteException;
 +import android.util.Log;
++
++import org.lsposed.hiddenapibypass.HiddenApiBypass;
 +
 +import java.lang.ref.WeakReference;
 +import java.lang.reflect.Field;
@@ -1044,7 +1046,7 @@ index 1faafb8..82ffcbf 100644
      public ITelephonyRegistryProxy() {
          super(ServiceManager.getService.call("telephony.registry"));
      }
-@@ -21,14 +43,108 @@ public class ITelephonyRegistryProxy extends BinderInvocationStub {
+@@ -21,14 +45,120 @@ public class ITelephonyRegistryProxy extends BinderInvocationStub {
  
      @Override
      protected void inject(Object baseInvocation, Object proxyInvocation) {
@@ -1116,15 +1118,27 @@ index 1faafb8..82ffcbf 100644
 +            this.destination = destination;
 +            attachInterface(null, LISTENER);
 +            Class<?> stub = Class.forName(LISTENER + "$Stub");
-+            for (String name : new String[] {"onCellLocationChanged", "onCellInfoChanged",
++            Set<String> names = new HashSet<>();
++            java.util.Collections.addAll(names, "onCellLocationChanged", "onCellInfoChanged",
 +                    "onServiceStateChanged", "onBarringInfoChanged",
-+                    "onPhysicalChannelConfigChanged", "onRegistrationFailed"}) {
-+                Field code = stub.getDeclaredField("TRANSACTION_" + name);
-+                code.setAccessible(true);
-+                int value = code.getInt(null);
-+                if (value < FIRST_CALL_TRANSACTION || !protectedTransactions.add(value)) {
-+                    throw new IllegalStateException("Invalid API33 phone callback transaction map");
++                    "onPhysicalChannelConfigChanged", "onRegistrationFailed");
++            // Private TRANSACTION_* constants are not reflectively available in
++            // every API33 Guest. Resolve names from this runtime's generated AIDL
++            // instead, through the existing library without changing VM policy.
++            Method transactionName = HiddenApiBypass.getDeclaredMethod(stub,
++                    "getDefaultTransactionName", int.class);
++            Set<String> found = new HashSet<>();
++            for (int code = FIRST_CALL_TRANSACTION; code < FIRST_CALL_TRANSACTION + 256; code++) {
++                Object name = transactionName.invoke(null, code);
++                if (names.contains(name)) {
++                    if (!found.add((String) name)) {
++                        throw new IllegalStateException("Ambiguous API33 phone callback transaction map");
++                    }
++                    protectedTransactions.add(code);
 +                }
++            }
++            if (!found.equals(names)) {
++                throw new IllegalStateException("Incomplete API33 phone callback transaction map");
 +            }
 +        }
 +

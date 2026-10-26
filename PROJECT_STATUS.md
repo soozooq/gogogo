@@ -15,27 +15,21 @@
 
 ## 当前实际结果与交付
 
-[CI47默认](research/container-api33/evidence/persistent-phone-callback-results.json)已完整核对三档API摘要、固定ff12e8d3源码、六项case各58份／自有及移动UI59份、三同签名／每包11份材料、主447项／lint及7份关键主输入。新增持续电话三项确已执行，共15项无线0.178秒；六路径4.303秒、框架0.909秒、已装导入8.091秒、普通入口13.677秒、计算器5.896秒。
+**[CI47原生失败](research/container-api33/evidence/native-phone-callback-field-failure-results.json)，不能发布旧ff12候选。** 四档API摘要、固定源码、9份原生输入及三件自有APK的59份来源／同签名／每包11份材料已完整核对。合格Android13原生ARM64系统、两个普通原包、容器抖音匿名UI、自有框架16.280秒及六路径51.538秒全部通过；微信容器在电话监听注册时反复崩溃，596.421秒未到登录页。栈直接指向`PhoneCallbackRelay`读取`TRANSACTION_onCellLocationChanged`失败，13个微信／sandbox PID记录同类错误。没有独立区分字段被隐藏或被省略，不能直接认定微信主动拦截。
 
-[CI46完整原生](research/container-api33/evidence/native-owned-private-snapshot-pass-results.json)已实际通过并核对四档、9份原生输入及三件同轮来源／签名／材料：两个普通原包与两个容器匿名UI、自有框架14.734秒、独立自有Guest六路径46.183秒，A→B／注销稳定／取消全部完成。系统合格、system_server稳定、VM与包／staging清理通过；整轮3983.186秒不是启动耗时。保留mock，未接受条款／登录／发送业务。**这是固定42cd5eb5／旧416补丁；新aad5持续电话候选的原生CI47／121473513629仍在运行，不能借用旧轮背书。**
+已实际查看微信截图：应用区域为黑屏，系统状态栏及导航栏可见。抖音主PID10875／宿主UID10102保持300,427ms，末尾隐私页仍在；system_server647稳定，VM与自有包／staging清理通过。自有六路径保留mock，A→B／注销稳定／取消四阶段完成，来源为私有原子快照。这不是目标SDK、真实modem事件、微信位置业务或vivo验收。
 
-两份ff12e8d3自有候选已在仓库外重建，主2.4.32／2400100，预览0.1-research／1；签名／对齐和预览全部415非签名文件与CI47相同均已核对。工作区上传Release附件实际返回401，现有草稿仍无附件、未发布。
+[CI47默认](research/container-api33/evidence/persistent-phone-callback-results.json)仍为真实通过：六项case、15项受控无线、主447项／lint及三档来源／签名／材料均核对。另有[CI46完整原生通过](research/container-api33/evidence/native-owned-private-snapshot-pass-results.json)，固定42cd5eb5／旧416补丁，不包含失败的aad5持续电话变更，不能替代新候选验证。
 
-[仓库交付准备](research/container-api33/evidence/phone-ci-draft-delivery-preparation.json)让标准仓库CI构建固定ff12主包，并用公开APK签名与ZIP元数据恢复原私签预览；415份压缩payload原字节复制，恢复后SHA／签名／对齐全同，私钥不上传。5项有效检查、YAML／各shell块与完整本地打包通过。新工作流只写同一未发布草稿，另外保存一个平铺下载包；不发布Release，不改变运行时源码、不取消原生47，也不要求手机实验。远程交付尚未运行，实际云主包摘要须以该轮回执为准。
+[交付CI2](research/container-api33/evidence/phone-ci-draft-delivery-results.json)已成功上传同一草稿中的两份ff12自有APK，主2.4.32／2400100、预览0.1-research／1。实际云主包SHA033c0f6b…、预览2308c0ba…；归档API／服务器摘要、包名／版本、签名及对齐均已独立核对。**匹配原生47失败，草稿继续未发布，说明已标注阻断；不要求手机安装或重做实验。** 工作区上传401及交付首轮SDK准备失败保留，第二轮标准仓库CI已解决上传，私钥未上传。
 
-## 当前候选：Android13持续电话监听与反馈简化
+## 当前修正：电话回调读取兼容
 
-[持续电话回调候选](research/container-api33/evidence/persistent-phone-callback-preparation.json)补齐`listenWithEventList`及已创建的`TelephonyRegistryManager.sRegistry`缓存。公共框架的本地监听Stub转入同进程Binder，保持注册参数、更新／空事件注销的同一Binder。六类位置相关回调在交付时检查模拟状态；开启或状态无法读取时抑制整条消息，关闭时和其他回调转发原Parcel／flag，不编造基站或网络身份。非本地形状监听明确拒绝，避免改变其远程调用者／死亡身份；没有新增权限、依赖、JNI或mock标志变化。
+[修正准备](research/container-api33/evidence/phone-transaction-name-preparation.json)移除私有`TRANSACTION_*`字段依赖，改用运行时生成AIDL的`getDefaultTransactionName`识别六类回调。沿用现有库读取方法，生产代码不改变全局隐藏API策略；在有界范围内解析，缺名或重名明确失败，不回退原始敏感数据。交付时检查模拟状态、原始Parcel／调用身份、原注册参数及同Binder注销保持原逻辑，没有新增权限／依赖／JNI或mock标志变化。
 
-23秒构建、宿主静态、完整补丁干净索引重放及25项驱动检查通过。自有软件API33环境实际执行**15项检查／2.837秒通过**，包含真实公共TelephonyManager／TelephonyCallback与受控服务、预先缓存旧服务、同一监听关闭→开启→关闭、六类真实AIDL编码消息、关闭时原字节／本地PID与UID、非敏感DataActivity、未知模式不回退原数据、同Binder注销及平台权限拒绝。新引擎下独立Guest原六路径A→B／停止／取消也实际通过51.982秒；自有VM已正常停止。
+30秒构建、宿主静态、完整补丁干净索引重放及25项驱动检查已通过。新增一项受控回归要求私有常量查询先真实抛出异常，再走公共TelephonyManager／TelephonyCallback、旧服务缓存替换、关闭→开启→关闭和同Binder注销；仅在自有检查进程临时收窄可见范围，finally恢复。16项软件API33检查实际3.298秒通过，包含“常量不可读”的前置断言及公共框架完整流程。软件VM首轮在0方法执行前因Provider发布超时／空Bundle初始化失败，原记录保留；同一VM及同一APK预热后通过，未改镜像或平台超时。自有软件VM已按时限停止，新源码六路径将由匹配的默认／原生CI复核。当前完整补丁SHA为d6b29e92…；旧aad5失败与旧416通过分别保留。
 
-首轮软件VM在Provider发布超时后、0方法执行时失败，原始证据保留；同一自有VM预热后的两次15项通过分别记录，未更改镜像或平台超时。上述检查不是实际modem、真实Guest持续电话注册、目标SDK、内核死亡事件或vivo证明；已交付给应用的旧缓存也无法回收，SIM／运营商／国家／IP及其他接口未由此覆盖。
-
-**新完整引擎补丁为aad5ff14，CI47默认已通过；匹配原生仍在运行。** 已通过的CI46使用旧416e8dd4，不能代替新候选的原生结果。
-
-[反馈文案简化](research/container-api33/evidence/no-extra-experiment-feedback-preparation.json)让默认摘要直接引导已有的「一键复制反馈」，不再要求先跑Consumer Matrix、另开实验或补做启动／停止对照。权限阻断、历史／第三方不确定性与原判定保留。已有断言同步更新，没有新增实验或测试场景；主程序447项／lint实际通过，最终36秒。此变化只在研发源码中，待重建候选包。
-
-[CI46默认结果](research/container-api33/evidence/owned-private-snapshot-results.json)已完整核对三档、每case58份／自有及移动UI59份来源、三同签名／11材料、主447项／lint及7份关键主输入。原子私有报告六路径3.309秒完成四阶段；框架0.529秒、导入7.590秒、普通入口10.640秒、计算器5.680秒及旧12项无线0.085秒。**该轮原生121455067092现已通过，固定42cd5eb5／旧补丁，不含新持续电话候选。**
+[反馈文案简化](research/container-api33/evidence/no-extra-experiment-feedback-preparation.json)已进入ff12源码及交付CI2主包，默认摘要直接引导「一键复制反馈」，不再要求先跑Consumer Matrix或补做实验。原权限阻断和证据范围保留；高级检查供维护使用，不要求手机重复操作。
 
 ## 原生历史：CI44／45整项失败保留
 
@@ -76,9 +70,9 @@ API33网络回调仅转接requestNetwork／listenForNetwork的Messenger，交付
 
 ## 手机交付草稿
 
-[三步说明](docs/original-app-preview-flow.md)收敛为地图选点、首次原版导入／精确定位授权、确认并打开。预览需自行登录，原应用保留。当前两份新候选固定ff12e8d3，旧CCD候选仅作历史；私有签名材料保留仓库外，不进入Git、工作流或交付。
+[三步说明](docs/original-app-preview-flow.md)收敛为地图选点、首次原版导入／精确定位授权、确认并打开。预览需自行登录，原应用保留。当前同一Release草稿`preview-2.4.32-container-ff12e8d3`中的两份APK均已上传并核验，但匹配原生47失败，必须保持未发布；它们不是新修正候选。私有签名材料保留仓库外，不进入Git、工作流或交付。
 
-当前Release为`preview-2.4.32-container-ff12e8d3`未发布草稿，工作区附件上传401。准备[Phone preview draft工作流](.github/workflows/phone-preview-draft.yml)处理标准仓库CI交付；云主包嵌入自有fixture的签名可改变APK摘要，必须核对其实际回执。匹配原生CI47完成前保持草稿；云端自有通过仍不是微信／抖音／vivo业务验收。主页使用免腾讯Key的MapLibre／OpenFreeMap，旧腾讯功能为占位配置，联网地图未实机验证。
+[Phone preview draft工作流](.github/workflows/phone-preview-draft.yml)只上传两份自有APK及平铺回执，不自动发布、不改写原包、不启动或取消原生任务。公开签名／ZIP配方保持415份非签名压缩payload原字节，恢复私签预览时不使用私钥。主页使用免腾讯Key的MapLibre／OpenFreeMap，旧腾讯功能为占位配置，联网地图未实机验证。
 
 ## 证据边界与历史
 

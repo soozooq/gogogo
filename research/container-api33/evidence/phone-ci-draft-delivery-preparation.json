@@ -60,14 +60,14 @@
   "temporary_detached_validation_checkout_removed": true,
   "runner_main_apk_hash_may_differ_from_local_fixture_signing": true,
   "runner_records_actual_main_apk_hash": true,
-  "remote_pipeline": "FIRST_RUN_FAILED_AT_SDK_SETUP_BEFORE_BUILD_OR_UPLOAD; CORRECTED_SETUP_PREPARED",
+  "remote_pipeline": "SECOND_RUN_SUCCESS_AND_ARCHIVES_APKS_SERVER_ASSET_DIGESTS_VERIFIED",
   "workflow_can_publish_release": false,
   "requires_existing_matching_unpublished_draft": true,
   "only_two_own_apks_attached": true,
   "flat_artifact_retention_days": 14,
   "repository_actions_token_used_only_for_normal_repository_artifact_and_draft_upload_operations": true,
   "new_environment_credential_configuration": false,
-  "native47_matching_source": "IN_PROGRESS_NOT_PASS",
+  "native47_matching_source": "COMPLETED_FAILURE_OLD_DRAFT_NOT_TO_BE_PUBLISHED",
   "wechat_douyin_and_phone": "NOT_VERIFIED",
   "source_sha256": {
     ".github/workflows/phone-preview-draft.yml": "3b8c58fad1928d6d70796a23cf9b3680e359f4efcb41a9dd57409cfa1671b54b",
@@ -83,5 +83,7 @@
     "reason": "Default legacy tools package no longer exists",
     "apk_build_or_upload_started": false
   },
-  "sdk_setup_matches_existing_working_container_workflow": true
+  "sdk_setup_matches_existing_working_container_workflow": true,
+  "subsequent_actual_delivery_result": "phone-ci-draft-delivery-results.json",
+  "subsequent_actual_native_result": "native-phone-callback-field-failure-results.json"
 }

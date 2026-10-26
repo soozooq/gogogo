@@ -1,0 +1,181 @@
+{
+  "schema": "GOGOGO_NATIVE_PHONE_CALLBACK_FIELD_LOOKUP_FAILURE_RESULTS_V1",
+  "scope": "ACTUAL_NATIVE_ARM64_WECHAT_STARTUP_REGRESSION_AND_OWN_LOCATION_PASS_NOT_TARGET_BUSINESS_OR_PHONE",
+  "run_id": 40292596352,
+  "commit": "ff12e8d3cf2dde2884333bd78515727d17c284b3",
+  "job_id": 121473513629,
+  "conclusion": "failure",
+  "engine_patch_sha256": "aad5ff1428b3d3944c40eaf1ceaa95f2757ff23dde4ab4b2ba3b6cfe6c5aa1e4",
+  "artifacts": {
+    "linux": {
+      "id": 12636862042,
+      "sha256": "e5822824a8786ae6e1a9d8ff1e970915aca18f670ede1f7bc963057fb19086ca",
+      "verified": true
+    },
+    "mac": {
+      "id": 12636871337,
+      "sha256": "dc769deb0ba38f0d14cb414764e2771f377fa78d8e1b9256d8efb0ec3bb15f00",
+      "verified": true
+    },
+    "own": {
+      "id": 12637415675,
+      "sha256": "8c3b14f2eed0cda58d6c037459a781381b8915f3fdb1057770c8a0b1aca52570",
+      "verified": true
+    },
+    "native": {
+      "id": 12641263963,
+      "sha256": "96e9bf8c883aa43a5caa071d50aedd96087eb0850a2b3c8a6e6bccbc0f13a0ca",
+      "verified": true
+    }
+  },
+  "all_four_api_archive_digests_fixed_commit_sources_and_own_apks_verified": true,
+  "native_source_count_verified": 9,
+  "same_run_own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4538424,
+        "sha256": "0ad23d05f4541693ee445b9f785efab922f8bf94b824c86af4b77121907335b9"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 516706,
+        "sha256": "47795264bdb81afd4db9909edaf6e26cad8c321866365e1fd8df3dd72e6cbde8"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 74158,
+        "sha256": "61ed47d0a87527d291624cb2a8160a5aaf3a2e83d454a124fbd7fa3d8ef7442b"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "native_state": "PREREQUISITE_OR_OWNED_CONTRACT_NOT_CONFIRMED",
+  "native_passed": false,
+  "qualified_environment": {
+    "properties": {
+      "ro.build.version.sdk": "33",
+      "ro.build.version.incremental": "16596636",
+      "ro.build.fingerprint": "generic/aosp_cf_arm64_phone/vsoc_arm64:13/TP1A.220624.019/16596636:userdebug/test-keys",
+      "ro.product.name": "aosp_cf_arm64_phone",
+      "ro.hardware": "cutf_cvm",
+      "ro.product.cpu.abi": "arm64-v8a",
+      "ro.product.cpu.abilist": "arm64-v8a,armeabi-v7a,armeabi",
+      "ro.dalvik.vm.native.bridge": "0",
+      "ro.hw_timeout_multiplier": "50",
+      "sys.boot_completed": "1"
+    },
+    "kernel_arch": "aarch64",
+    "shell_uid": "2000",
+    "selinux": "Enforcing",
+    "guest_cpu_online": "0-3",
+    "system_server_crash_pids": [],
+    "system_boot_passed": true
+  },
+  "system_server_pid": "647",
+  "system_server_stable_at_case_checkpoints": true,
+  "ordinary_originals_both_passed": true,
+  "wechat_container": {
+    "passed": false,
+    "import_success": true,
+    "package_and_original_signer_confirmed": true,
+    "stage": "NOT_REACHED",
+    "junit_seconds": 596.421,
+    "visible_text": [],
+    "recorded_guest_pid": "7527",
+    "fatal_exception": "java.lang.reflect.UndeclaredThrowableException in listenWithEventList",
+    "caused_by": "java.lang.NoSuchFieldException: TRANSACTION_onCellLocationChanged on runtime IPhoneStateListener$Stub",
+    "source_frame": "ITelephonyRegistryProxy$PhoneCallbackRelay constructor line 117",
+    "crash_process_ids": [
+      "5928",
+      "6047",
+      "6089",
+      "6269",
+      "6317",
+      "6508",
+      "6549",
+      "6735",
+      "6781",
+      "6966",
+      "7015",
+      "7229",
+      "7292"
+    ],
+    "private_field_failure_repeated_during_startup": true,
+    "hidden_api_filtering_or_constant_omission_not_independently_distinguished": true,
+    "png_available": true,
+    "png_reviewed": true,
+    "png_observation": "BLACK_APP_AREA_WITH_SYSTEM_STATUS_AND_NAVIGATION_BARS",
+    "other_secondary_provider_initialization_errors_also_present": true
+  },
+  "douyin_container": {
+    "passed": true,
+    "stage": "PRIVACY_WITHOUT_ACCEPTANCE",
+    "guest_pid": "10875",
+    "post_ui_observation": {
+      "requested_seconds": 300,
+      "observed_ms": 300427,
+      "initial_target_pid": "10875",
+      "last_target_pid": "10875",
+      "identity_basis": "CORE_REGISTERED_MAIN_PROCESS_AND_ACTUAL_ACTIVITY_MANAGER_PID_UID",
+      "main_pid": 10875,
+      "main_uid": 10102,
+      "initial_registered_processes": [
+        {
+          "pid": 10875,
+          "uid": 10102,
+          "process_name": "com.ss.android.ugc.aweme"
+        }
+      ],
+      "last_registered_processes": [
+        {
+          "pid": 10875,
+          "uid": 10102,
+          "process_name": "com.ss.android.ugc.aweme"
+        }
+      ],
+      "same_name_pid_set_changed": true,
+      "passed": true
+    },
+    "post_hold_privacy_ui_visible": true
+  },
+  "owned_framework": {
+    "passed": true,
+    "junit_seconds": 16.28
+  },
+  "owned_location": {
+    "passed": true,
+    "junit_seconds": 51.538,
+    "host_pid": 13045,
+    "guest_pid": 13121,
+    "kernel_process": "PID   UID NAME                       \n13121 10104 com.soozooq.tianwaitian.locationconsumer",
+    "report_source": "OWN_GUEST_ATOMIC_PRIVATE_FILE",
+    "stage_names": [
+      "TARGET_A",
+      "TARGET_B",
+      "UNREGISTERED_STABLE",
+      "CURRENT_CANCELLED"
+    ],
+    "all_samples_keep_mock": true,
+    "consumer_system_installed": false
+  },
+  "cleanup": {
+    "vm_stopped": true,
+    "own_staging_removed": true,
+    "owned_packages": {
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true
+    }
+  },
+  "whole_probe_seconds_not_startup_time": 4311.436,
+  "phone_candidate_release_gate": "BLOCKED_KEEP_EXISTING_RELEASE_UNPUBLISHED",
+  "terms_accepted": false,
+  "login_attempted": false,
+  "messages_sent": false,
+  "target_location_business_tested": false,
+  "wechat_send_and_live_location": "UNVERIFIED_USER_REPORTED_FAILURE_UNRESOLVED",
+  "douyin_wireless_and_overseas": "UNVERIFIED",
+  "physical_vivo": "UNVERIFIED"
+}

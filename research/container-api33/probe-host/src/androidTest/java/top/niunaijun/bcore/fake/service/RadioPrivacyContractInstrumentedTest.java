@@ -713,4 +713,28 @@ public final class RadioPrivacyContractInstrumentedTest {
     @Test public void publicTelephonyCallbackKeepsRegistryPermissionRejection() throws Throwable {
         exercisePublicRegistryCallback(true);
     }
+
+    @Test public void publicPhoneCallbackWorksWhenPrivateTransactionConstantsAreDenied() throws Throwable {
+        // Reproduce the failed native Guest lookup in this self-owned process.
+        // Keep the other framework interfaces visible; do not query a real radio.
+        Class<?> stub = Class.forName(PHONE_LISTENER + "$Stub");
+        Class<?> hiddenApi = Class.forName("org.lsposed.hiddenapibypass.HiddenApiBypass");
+        Method addExemptions = hiddenApi.getMethod("addHiddenApiExemptions", String[].class);
+        try {
+            assertEquals(Boolean.TRUE, hiddenApi.getMethod("clearHiddenApiExemptions").invoke(null));
+            assertEquals(Boolean.TRUE, addExemptions.invoke(null, (Object) new String[] {
+                    "Landroid/", "Ldalvik/", "Ljava/",
+                    "Lcom/android/internal/telephony/ITelephony;",
+                    "Lcom/android/internal/telephony/ITelephonyRegistry;",
+                    "Lcom/android/internal/telephony/IPhoneStateListener;",
+                    "Lcom/android/internal/telephony/IPhoneStateListener$Stub;->asInterface"}));
+            try {
+                stub.getDeclaredField("TRANSACTION_onCellLocationChanged");
+                fail("The regression requires the private transaction constant to be unavailable");
+            } catch (NoSuchFieldException expected) { /* Native CI47 failure shape. */ }
+            exercisePublicRegistryCallback(false);
+        } finally {
+            assertEquals(Boolean.TRUE, addExemptions.invoke(null, (Object) new String[] {"L"}));
+        }
+    }
 }

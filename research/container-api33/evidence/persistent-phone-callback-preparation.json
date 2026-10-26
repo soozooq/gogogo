@@ -94,7 +94,7 @@
     "stop_reason": "REQUESTED",
     "elapsed_seconds": 1357.03
   },
-  "actual_native_for_this_new_patch": "CI47_MATCHING_SOURCE_IN_PROGRESS_NOT_PASS",
+  "actual_native_for_this_new_patch": "CI47_COMPLETED_FAILURE_WECHAT_PRIVATE_FIELD_LOOKUP",
   "no_new_runtime_permissions_dependencies_or_jni_changes": true,
   "mock_flags_kept": true,
   "previous_delivered_values_not_retracted_from_app_memory": true,
@@ -106,5 +106,6 @@
     "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/RadioPrivacyContractInstrumentedTest.java": "e65eba4305525375c0275662519b95209cc1732ccee86434a79ae17c557d0b91",
     "tools/run-cloud-check.py": "c5ab270809aac9b0d43f64ac11703040fc6b1636ad326580ec3da301715b65d6"
   },
-  "subsequent_actual_default_result": "persistent-phone-callback-results.json"
+  "subsequent_actual_default_result": "persistent-phone-callback-results.json",
+  "subsequent_actual_native_result": "native-phone-callback-field-failure-results.json"
 }

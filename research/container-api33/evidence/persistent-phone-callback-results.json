@@ -538,8 +538,10 @@
   },
   "native_job": {
     "id": 121473513629,
-    "status_at_capture": "in_progress",
-    "passed": false
+    "status_at_capture": "completed",
+    "passed": false,
+    "conclusion": "failure",
+    "result": "native-phone-callback-field-failure-results.json"
   },
   "separate_passed_native_run": {
     "run_id": 40287040444,
