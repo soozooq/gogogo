@@ -147,7 +147,7 @@
   "framework_startup_result": "phone-transaction-name-results.json",
   "radio_result": "phone-transaction-name-results.json",
   "controlled_radio_proxy": "16_ACTUAL_CONTROLLED_FRAMEWORK_CHECKS_0.218_SECONDS_NOT_REAL_MODEM",
-  "phone_update_distributed": false,
+  "phone_update_distributed": true,
   "wechat_send_and_live_location": "NOT_VERIFIED",
   "douyin_wireless_and_overseas": "NOT_VERIFIED",
   "physical_arm64_vivo": "NOT_VERIFIED",
@@ -188,8 +188,8 @@
     "native-container-startup-pass-results.json",
     "provider-attribution-failure-and-correction.json"
   ],
-  "phone_delivery": "SAME_DRAFT_RETARGETED_NEW_HOST_VERIFIED_AWAIT_NEW_CI_UPLOAD",
-  "phone_delivery_result": "phone-ci-draft-delivery-results.json",
+  "phone_delivery": "PUBLISHED_PRERELEASE_TWO_VERIFIED_OWN_APKS_NOT_PHYSICAL_PHONE_OR_TARGET_LOCATION_ACCEPTANCE",
+  "phone_delivery_result": "phone-e081-published-delivery-results.json",
   "latest_passed_native_run": {
     "run_id": 40320078192,
     "commit": "e0811cf46726e3bae9fcb839312b9efb6b92ce9e",
@@ -201,5 +201,7 @@
     "wechat_anonymous_startup_passed": true
   },
   "next_candidate_preparation": "phone-transaction-name-preparation.json",
-  "next_phone_delivery_preparation": "phone-e081-draft-delivery-preparation.json"
+  "next_phone_delivery_preparation": "phone-e081-draft-delivery-preparation.json",
+  "phone_update_installed_on_user_device": "UNKNOWN",
+  "release_url": "https://github.com/soozooq/gogogo/releases/tag/preview-2.4.32-container-e0811cf4"
 }

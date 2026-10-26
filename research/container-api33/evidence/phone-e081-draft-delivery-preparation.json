@@ -56,12 +56,12 @@
   },
   "runtime_inputs_changed_by_delivery_files": false,
   "matching_native48": "COMPLETED_PASS_FOUR_ARCHIVES_AND_FIXED_SOURCE_VERIFIED",
-  "release_published": false,
+  "release_published": true,
   "wechat_douyin_and_phone": "UNVERIFIED",
   "native_result": "native-phone-transaction-name-pass-results.json",
   "same_existing_draft_retargeted": true,
   "old_failed_assets_archived_and_removed": true,
-  "repository_ci_upload": "PENDING_NEW_WORKFLOW_PUBLICATION",
+  "repository_ci_upload": "CI3_COMPLETED_SUCCESS_AND_INDEPENDENTLY_VERIFIED",
   "runtime_inputs_59_unchanged_by_delivery_edits": true,
   "workflow_can_publish_release": false,
   "requires_existing_matching_unpublished_draft": true,
@@ -71,5 +71,9 @@
     "ci/stage_rootless_phone_preview.py": "d3e0a6c8d0112da70e8191632229da04f28491c9ffdf4de6f821db13f52a82fa",
     "ci/phone-preview/host-signature-e0811cf4.json": "8fc5a6c1144df8294f04f4a5f9dc9408198fcb5806f9669d68a9cbfca4f81037",
     "docs/build-profiles/main-preview-version.init.gradle": "00ee9ae07b12d9c7acc42c9b2952982d7ae439aeb9e174ccf0ba7395d3d27ca8"
-  }
+  },
+  "delivery_run_id": 40360448252,
+  "delivery_commit": "ecdec310a71e9c2fdc634b15fa7a9d97bae18120",
+  "subsequent_actual_delivery_result": "phone-e081-published-delivery-results.json",
+  "phone_installed_version": "UNKNOWN"
 }

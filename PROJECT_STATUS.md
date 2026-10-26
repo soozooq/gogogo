@@ -11,9 +11,11 @@
 | 唯一研发主线 | **`research/container-api33-20261023` · [Draft #60](https://github.com/soozooq/gogogo/pull/60)** | 从本分支HEAD继续，修正和证据留在这里 |
 | 日常候选 | `fix/location-input-validation` · [Draft #59](https://github.com/soozooq/gogogo/pull/59) | 固定`2620b741dd6a971143577737c64ebc4496120d77`，`2.4.31-simple-support / 2400099`，未更新 |
 
-不新增分支／PR、删除、强推、重置他人工作区或自动合并。保留其他工作区与未提交内容。手机交付仍为草稿，当前不安排新手机实验。
+不新增分支／PR、删除、强推、重置他人工作区或自动合并。保留其他工作区与未提交内容。手机预览已发布；发布不代表已安装或目标业务验收，不安排额外手机实验。
 
 ## 当前实际结果与交付
+
+**[手机预览2.4.32已发布](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.32-container-e0811cf4)**，仍沿用同一研发分支与同一个Release。主程序`2.4.32-container-preview / 2400100`，SHA`3ddd90ae…`；原版预览`0.1-research / 1`，SHA`14cdb415…`。两份APK已核对归档API与服务器摘要、包名／版本、签名、对齐及原415份非签名内容；两个公开下载链接均实际返回HTTP200。见[交付及发布回执](research/container-api33/evidence/phone-e081-published-delivery-results.json)。
 
 **[CI48完整通过](research/container-api33/evidence/native-phone-transaction-name-pass-results.json)，固定源码e0811cf4／新d6b29e92补丁。** 四档API摘要、9份原生输入及三件自有APK的59份来源／同签名／每包11份材料已独立核对。两个普通原包与两个容器匿名UI、自有框架15.550秒、独立Guest六路径48.947秒全部通过；A→B／注销稳定／取消四阶段完成，保留mock，报告来源为私有原子快照。
 
@@ -23,7 +25,7 @@
 
 **以上不是微信发送／实时共享、抖音无线／海外、实际modem事件或vivo验收。** 目标定位关闭，未接受条款、登录或发送业务。[CI47失败](research/container-api33/evidence/native-phone-callback-field-failure-results.json)及旧ff12候选保留为历史：电话注册读取私有TRANSACTION字段失败、13个微信／sandbox PID反复崩溃；不能把该旧包发布为修正包。旧[CI46完整通过](research/container-api33/evidence/native-owned-private-snapshot-pass-results.json)使用42cd5eb5／416补丁，也不能替新源码背书。
 
-[新手机交付准备](research/container-api33/evidence/phone-e081-draft-delivery-preparation.json)沿用同一个未发布Release，已改为`preview-2.4.32-container-e0811cf4`／固定e081源码。旧ff12两附件先核对本地完整备份及服务器摘要后移除，当前待新CI上传。新预览宿主SHA14cdb415…，证书25bfd6e2…与先前自有签名一致；包名／版本、对齐、415份非签名内容及公开配方逐字节恢复均已核对，私钥不上传。主程序将按2.4.32／2400100版本配方在仓库CI重建，实际摘要以新交付回执为准。此时仍未发布，不要求手机安装／实验。
+[交付CI3](https://github.com/soozooq/gogogo/actions/runs/40360448252)已按固定e081源码成功构建、上传两份APK，交付工作流源码为ecdec310。主程序实际云端SHA为3ddd90ae…，不能借用旧033c0f6b…或本地0224b762…摘要；预览14cdb415…沿用25bfd6e2…证书。公开签名／ZIP配方逐字节恢复并保持415份非签名内容，私钥不上传。旧ff12附件经完整备份及服务器摘要核对后移除，旧失败与证据保留。发布仅提供预览，不宣称用户已安装、已登录或位置业务成功。
 
 ## 当前修正：电话回调读取兼容
 
@@ -70,13 +72,20 @@ API33网络回调仅转接requestNetwork／listenForNetwork的Messenger，交付
 
 首页在ARM64且预览已安装时出现衔接按钮，WGS84选点带入普通页。接收端无效输入忽略、有效预填且不自动启动／模拟，随后GPSTest正常文件选择／精确授权、A→B／停止均通过。首页发送端只有编译、主单元和静态常量证据，没有真实主页面或vivo结果。
 
-## 手机交付草稿
+## 手机预览交付与继续研发
 
-[三步说明](docs/original-app-preview-flow.md)收敛为地图选点、首次原版导入／精确定位授权、确认并打开。预览需自行登录，原应用保留。当前同一个Release已改为`preview-2.4.32-container-e0811cf4`，匹配CI48完整通过；新预览宿主已核验，新主包和两份附件待仓库交付CI构建／上传后核对，尚未发布。私有签名材料保留仓库外，不进入Git、工作流或交付。
+[下载入口](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.32-container-e0811cf4)只保留两份可直接安装的自有APK：
 
-[Phone preview draft工作流](.github/workflows/phone-preview-draft.yml)固定e081源码和同轮自有归档，只上传两份自有APK及平铺回执，不自动发布、不改写原包、不启动或取消原生任务。公开签名／ZIP配方保持415份非签名压缩payload原字节，恢复私签预览时不使用私钥。主页使用免腾讯Key的MapLibre／OpenFreeMap，旧腾讯功能为占位配置，联网地图未实机验证。
+- [天外天主程序](https://github.com/soozooq/gogogo/releases/download/preview-2.4.32-container-e0811cf4/Tianwaitian-2.4.32-container-preview-arm64.apk)：2.4.32／2400100，40,408,202字节，SHA3ddd90ae…，证书6eec4ddd…。
+- [原版应用预览](https://github.com/soozooq/gogogo/releases/download/preview-2.4.32-container-e0811cf4/Tianwaitian-Original-Preview-e0811cf4.apk)：0.1-research／1，4,581,891字节，SHA14cdb415…，证书25bfd6e2…。
 
-旧[交付CI2](research/container-api33/evidence/phone-ci-draft-delivery-results.json)固定ff12，曾上传主033c0f6b…／预览2308c0ba…，已核验并备份；它的匹配原生失败，该旧包不得发布或当作当前版本。工作区上传401和交付首轮SDK准备失败均保留，标准仓库CI已解决上传。
+[三步说明](docs/original-app-preview-flow.md)：地图选点、首次原版导入／精确授权、确认并打开。作用于从预览入口打开的应用；需自行登录，系统原应用保留，账号私有数据不迁移。不要求遍历入口、切换VPN或跑实验；正常使用有问题只反馈当前入口及三种页面结果之一，未使用入口保留未验证。
+
+同一Release已从草稿发布为prerelease，2026-10-26T16:47:07Z，tag确实指向运行时源码e0811cf4；两附件服务器摘要及两个公开HTTP200下载均复核。交付工作流固定同源，仅写草稿且不能自行发布；实际发布发生在独立核验完成之后。发布回执明示“已公开下载”不等于“用户手机已安装”。
+
+接手继续沿本分支HEAD，不开新主线，不改日常#59，也不自动合并。先看最新交付与真实反馈，不把新的自有检查计数当作目标业务推进。目标SDK、微信发送／实时共享、抖音无线／海外及vivo仍需各自实际证据，保留用户原失败。高级检查只供维护，不转交手机用户逐项操作。
+
+主页使用免腾讯Key的MapLibre／OpenFreeMap，旧腾讯功能为占位配置；首页发送端、联网地图及vivo仍未实机核对。私有签名材料保留仓库外，不进入Git、CI或交付。旧[交付CI2](research/container-api33/evidence/phone-ci-draft-delivery-results.json)固定ff12，主033c0f6b…／预览2308c0ba…为已备份的失败候选，不能作为当前包。
 
 ## 证据边界与历史
 

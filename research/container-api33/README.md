@@ -8,7 +8,7 @@
 
 [修正](evidence/phone-transaction-name-preparation.json)使用运行时AIDL回调名称替代私有常量字段，不改变生产全局策略，保留mock／原始调用身份／无敏感回退。软件16项3.298秒通过，首轮0方法初始化失败保留，未改镜像或平台超时。[旧CI47失败](evidence/native-phone-callback-field-failure-results.json)及[旧CI46通过](evidence/native-owned-private-snapshot-pass-results.json)分别保留，均不替新源码背书。
 
-[新手机交付准备](evidence/phone-e081-draft-delivery-preparation.json)复用同一个Release草稿，改为e081源码。旧ff12两附件核对备份后移除，新宿主14cdb415…已核对同一私签、415份非签名内容和公开配方逐字节恢复；主包及两附件待新仓库CI构建／上传，仍未发布，不要求手机实验。私钥不离开本地，只交付两份自有APK；旧交付CI2回执仅作历史。
+[手机预览已发布](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.32-container-e0811cf4)，[交付／发布回执](evidence/phone-e081-published-delivery-results.json)已核对CI3归档API与服务器摘要、包名／版本、签名和对齐。实际云主包3ddd90ae…、预览14cdb415…，两份公开下载均HTTP200。固定e081源码，交付ecdec310；415份非签名内容和公开配方逐字节恢复已核对，私钥不上传。旧ff12失败包备份后移除，同一个Release发布为prerelease，既不新增分支，也不表示用户已安装或目标位置业务完成。
 
 [反馈简化](evidence/no-extra-experiment-feedback-preparation.json)统一已有「一键复制反馈」。[三步流程](../../docs/original-app-preview-flow.md)为预览说明。固定完整微信8.0.79／抖音40.8.0不改签、不内嵌、不分发，账号私有数据不迁移。
 

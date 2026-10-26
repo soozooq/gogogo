@@ -1,8 +1,10 @@
 # 原版应用预览的手机流程
 
-本说明随候选安装包交付使用。当前研发状态见[PROJECT_STATUS.md](../PROJECT_STATUS.md)；现阶段只有未发布的安装包草稿，微信发送／实时位置、抖音无线及海外业务仍未完成验收。
+本说明随候选安装包交付使用。当前研发状态见[PROJECT_STATUS.md](../PROJECT_STATUS.md)；[2.4.32预览版已发布](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.32-container-e0811cf4)，微信发送／实时位置、抖音无线及海外业务仍未完成真机验收。
 
 面向一部Android13／vivo手机，无Root、无电脑。预览页接收选点和已装原版导入已经完成云端界面检查；主程序首页发送端和vivo真机仍待实际结果。
+
+先安装[主程序APK](https://github.com/soozooq/gogogo/releases/download/preview-2.4.32-container-e0811cf4/Tianwaitian-2.4.32-container-preview-arm64.apk)和[原版预览APK](https://github.com/soozooq/gogogo/releases/download/preview-2.4.32-container-e0811cf4/Tianwaitian-Original-Preview-e0811cf4.apk)，不需要电脑。
 
 ## 三步使用
 

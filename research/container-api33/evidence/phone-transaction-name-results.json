@@ -506,5 +506,6 @@
   "douyin_wireless_and_overseas": "UNVERIFIED",
   "physical_vivo": "UNVERIFIED",
   "phone_update_distributed": false,
-  "previous_candidate_native_failure": "native-phone-callback-field-failure-results.json"
+  "previous_candidate_native_failure": "native-phone-callback-field-failure-results.json",
+  "subsequent_published_phone_delivery": "phone-e081-published-delivery-results.json"
 }
