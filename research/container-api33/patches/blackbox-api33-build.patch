@@ -568,16 +568,28 @@ index 2985eb4..2dddb10 100644
  
          @Override
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IConnectivityManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IConnectivityManagerProxy.java
-index 0ff8a3c..97093fe 100644
+index 0ff8a3c..3696087 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IConnectivityManagerProxy.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IConnectivityManagerProxy.java
-@@ -1,11 +1,16 @@
+@@ -1,11 +1,30 @@
  package top.niunaijun.bcore.fake.service;
  
  import android.content.Context;
 +import android.net.NetworkInfo;
++import android.net.NetworkCapabilities;
++import android.net.TransportInfo;
++import android.net.wifi.WifiInfo;
++import android.os.Build;
++import android.os.Bundle;
++import android.os.Handler;
++import android.os.HandlerThread;
++import android.os.Message;
++import android.os.Messenger;
 +import android.os.Parcel;
++import android.os.RemoteException;
++import android.util.Log;
 +import java.lang.reflect.Method;
++import java.lang.reflect.InvocationTargetException;
  
  import black.android.net.IConnectivityManager;
  import black.android.os.ServiceManager;
@@ -585,11 +597,13 @@ index 0ff8a3c..97093fe 100644
 -import top.niunaijun.bcore.fake.service.base.ValueMethodProxy;
 +import top.niunaijun.bcore.fake.hook.MethodHook;
 +import top.niunaijun.bcore.fake.hook.ProxyMethod;
++import top.niunaijun.bcore.fake.hook.ProxyMethods;
 +import top.niunaijun.bcore.fake.frameworks.BLocationManager;
++import top.niunaijun.bcore.utils.MethodParameterUtils;
  
  public class IConnectivityManagerProxy extends BinderInvocationStub {
      public static final String TAG = "IConnectivityManagerProxy";
-@@ -24,11 +29,33 @@ public class IConnectivityManagerProxy extends BinderInvocationStub {
+@@ -24,11 +43,107 @@ public class IConnectivityManagerProxy extends BinderInvocationStub {
          replaceSystemService(Context.CONNECTIVITY_SERVICE);
      }
  
@@ -625,6 +639,80 @@ index 0ff8a3c..97093fe 100644
 +                return new NetworkInfo[0];
 +            }
 +        }
++    }
++
++    @ProxyMethods({"requestNetwork", "listenForNetwork"})
++    public static class NetworkCallbacks extends MethodHook {
++        @Override
++        protected Object hook(Object who, Method method, Object[] args) throws Throwable {
++            if (Build.VERSION.SDK_INT != 33) return invokeBase(who, method, args);
++            Object[] outbound = args.clone();
++            MethodParameterUtils.replaceFirstAppPkg(outbound);
++            // Only the callback Messenger is relayed. Preserve the separate death
++            // token, request flags, capabilities, timeout and returned request ID.
++            for (int i = 0; i < outbound.length; i++) {
++                if (outbound[i] instanceof Messenger) {
++                    outbound[i] = callbackMessenger((Messenger) outbound[i]);
++                }
++            }
++            return invokeBase(who, method, outbound);
++        }
++    }
++
++    private static Object invokeBase(Object who, Method method, Object[] args) throws Throwable {
++        try { return method.invoke(who, args); }
++        catch (InvocationTargetException error) { throw error.getCause(); }
++    }
++
++    private static HandlerThread callbackThread;
++
++    private static synchronized Messenger callbackMessenger(Messenger destination) {
++        if (callbackThread == null) {
++            callbackThread = new HandlerThread("gogogo-network-callback");
++            callbackThread.start();
++        }
++        return new Messenger(new Handler(callbackThread.getLooper()) {
++            @Override public void handleMessage(Message input) {
++                Message output = Message.obtain(input);
++                try {
++                    // Check at delivery as an already-registered callback may
++                    // outlive a virtual-location mode change.
++                    if (BLocationManager.isFakeLocationEnable()) {
++                        Bundle data = output.peekData();
++                        if (data != null) {
++                            String key = NetworkCapabilities.class.getSimpleName();
++                            NetworkCapabilities original = data.getParcelable(key);
++                            if (original != null) data.putParcelable(key, redactedCapabilities(original));
++                        }
++                    }
++                    destination.send(output);
++                    // The destination Handler owns this message after send.
++                } catch (RemoteException | ReflectiveOperationException | RuntimeException unavailable) {
++                    output.recycle();
++                    // Never fall back to an unredacted payload on copy failure.
++                    Log.w(TAG, "Network callback delivery unavailable: " + unavailable.getClass().getSimpleName());
++                }
++            }
++        });
++    }
++
++    private static NetworkCapabilities redactedCapabilities(NetworkCapabilities original)
++            throws ReflectiveOperationException {
++        NetworkCapabilities copy = new NetworkCapabilities(original);
++        TransportInfo info = original.getTransportInfo();
++        TransportInfo redacted = null;
++        if (info instanceof WifiInfo) {
++            WifiInfo wifi = (WifiInfo) info;
++            redacted = wifi.makeCopy(wifi.getApplicableRedactions());
++        } else if (info != null) {
++            Method mask = TransportInfo.class.getDeclaredMethod("getApplicableRedactions");
++            Method makeCopy = TransportInfo.class.getDeclaredMethod("makeCopy", long.class);
++            mask.setAccessible(true); makeCopy.setAccessible(true);
++            redacted = (TransportInfo) makeCopy.invoke(info, ((Number) mask.invoke(info)).longValue());
++        }
++        Method setInfo = NetworkCapabilities.class.getDeclaredMethod("setTransportInfo", TransportInfo.class);
++        setInfo.setAccessible(true); setInfo.invoke(copy, redacted);
++        return copy;
      }
  
      @Override

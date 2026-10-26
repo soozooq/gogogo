@@ -6,9 +6,17 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkInfo;
+import android.net.NetworkCapabilities;
+import android.net.NetworkRequest;
+import android.net.TransportInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Binder;
+import android.os.IBinder;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Message;
+import android.os.Messenger;
 import android.os.WorkSource;
 import android.telephony.CellInfo;
 import android.telephony.TelephonyManager;
@@ -32,6 +40,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -390,5 +400,134 @@ public final class RadioPrivacyContractInstrumentedTest {
             assertEquals("synthetic-ssid", original.getExtraInfo());
         });
         assertEquals(2, baseCalls.get());
+    }
+
+    private void exercisePublicNetworkCallback(boolean listen, boolean reject) throws Throwable {
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        Class<?> service = Class.forName("android.net.IConnectivityManager");
+        AtomicReference<Messenger> delivery = new AtomicReference<>();
+        AtomicReference<IBinder> originalDeathToken = new AtomicReference<>();
+        NetworkRequest request = new NetworkRequest.Builder().build();
+        Field requestId = NetworkRequest.class.getDeclaredField("requestId");
+        requestId.setAccessible(true); requestId.setInt(request, 4242);
+        AtomicInteger registered = new AtomicInteger(), released = new AtomicInteger();
+        String expectedMethod = listen ? "listenForNetwork" : "requestNetwork";
+        Object controlled = Proxy.newProxyInstance(service.getClassLoader(), new Class<?>[] {service},
+                (proxy, method, args) -> {
+                    if (expectedMethod.equals(method.getName())) {
+                        registered.incrementAndGet();
+                        assertSame("Original system death token must be preserved", originalDeathToken.get(), args[listen ? 2 : 5]);
+                        assertEquals(ConnectivityManager.NetworkCallback.FLAG_INCLUDE_LOCATION_INFO, args[listen ? 3 : 7]);
+                        assertEquals(context.getOpPackageName(), args[listen ? 4 : 8]);
+                        if (reject) throw new SecurityException("CONTROLLED_FRAMEWORK_REJECTION");
+                        delivery.set((Messenger) args[listen ? 1 : 3]); return request;
+                    }
+                    if ("releaseNetworkRequest".equals(method.getName())) {
+                        assertEquals(request, args[0]); released.incrementAndGet(); return null;
+                    }
+                    throw new AssertionError("Unexpected controlled network callback method: " + method.getName());
+                });
+        IConnectivityManagerProxy.NetworkCallbacks hook = new IConnectivityManagerProxy.NetworkCallbacks();
+        Object intercepted = Proxy.newProxyInstance(service.getClassLoader(), new Class<?>[] {service},
+                (proxy, method, args) -> {
+                    if ("asBinder".equals(method.getName())) return new Binder();
+                    try {
+                        if (expectedMethod.equals(method.getName())) {
+                            originalDeathToken.set((IBinder) args[listen ? 2 : 5]);
+                            return hook.hook(controlled, method, args);
+                        }
+                        return method.invoke(controlled, args);
+                    } catch (InvocationTargetException error) { throw error.getCause(); }
+                });
+        Field instance = ConnectivityManager.class.getDeclaredField("sInstance");
+        instance.setAccessible(true); Object previous = instance.get(null);
+        HandlerThread destination = new HandlerThread("controlled-network-callback"); destination.start();
+        BlockingQueue<NetworkCapabilities> received = new LinkedBlockingQueue<>();
+        BlockingQueue<Network> lost = new LinkedBlockingQueue<>();
+        Network network = syntheticNetworks()[0];
+        ConnectivityManager.NetworkCallback callback = new ConnectivityManager.NetworkCallback(
+                ConnectivityManager.NetworkCallback.FLAG_INCLUDE_LOCATION_INFO) {
+            @Override public void onCapabilitiesChanged(Network value, NetworkCapabilities caps) {
+                assertEquals(network, value); received.add(caps);
+            }
+            @Override public void onLost(Network value) { lost.add(value); }
+        };
+        ConnectivityManager manager = null; boolean active = false;
+        try {
+            java.lang.reflect.Constructor<?> constructor = ConnectivityManager.class.getDeclaredConstructor(Context.class, service);
+            constructor.setAccessible(true); manager = (ConnectivityManager) constructor.newInstance(context, intercepted);
+            BLocationManager.disableFakeLocation(user, pkg);
+            try {
+                if (listen) manager.registerNetworkCallback(request, callback, new Handler(destination.getLooper()));
+                else manager.requestNetwork(request, callback, new Handler(destination.getLooper()));
+                active = true;
+                assertFalse("A platform rejection must propagate", reject);
+            } catch (SecurityException denied) {
+                assertTrue(reject); assertEquals("CONTROLLED_FRAMEWORK_REJECTION", denied.getMessage());
+                assertEquals(1, registered.get()); assertEquals(0, released.get()); return;
+            }
+            assertNotNull(delivery.get());
+            WifiInfo wifi = new WifiInfo.Builder().setSsid("synthetic-callback-fixture".getBytes(StandardCharsets.UTF_8))
+                    .setBssid("02:11:22:33:44:55").setNetworkId(41).setRssi(-55).build();
+            NetworkCapabilities original = new NetworkCapabilities();
+            Method addTransport = NetworkCapabilities.class.getDeclaredMethod("addTransportType", int.class);
+            Method setInfo = NetworkCapabilities.class.getDeclaredMethod("setTransportInfo", TransportInfo.class);
+            addTransport.setAccessible(true); setInfo.setAccessible(true);
+            addTransport.invoke(original, NetworkCapabilities.TRANSPORT_WIFI); setInfo.invoke(original, wifi);
+            for (boolean virtual : new boolean[] {false, true, false}) {
+                BLocationManager.get().setPattern(user, pkg, virtual ? BLocationManager.OWN_MODE : BLocationManager.CLOSE_MODE);
+                Message update = Message.obtain(); update.what = 6; // fixed API33 CALLBACK_CAP_CHANGED
+                update.getData().putParcelable(NetworkRequest.class.getSimpleName(), request);
+                update.getData().putParcelable(Network.class.getSimpleName(), network);
+                update.getData().putParcelable(NetworkCapabilities.class.getSimpleName(), original);
+                delivery.get().send(update);
+                NetworkCapabilities result = received.poll(5, TimeUnit.SECONDS);
+                assertNotNull("Public NetworkCallback must receive the relayed message", result);
+                assertTrue(result.hasTransport(NetworkCapabilities.TRANSPORT_WIFI));
+                assertArrayEquals(original.getCapabilities(), result.getCapabilities());
+                WifiInfo delivered = (WifiInfo) result.getTransportInfo(); assertNotNull(delivered);
+                if (virtual) {
+                    assertNotSame(wifi, delivered); assertEquals(WifiManager.UNKNOWN_SSID, delivered.getSSID());
+                    assertTrue(delivered.getBSSID() == null || "02:00:00:00:00:00".equals(delivered.getBSSID()));
+                    assertEquals(-1, delivered.getNetworkId());
+                } else {
+                    assertEquals(wifi.getSSID(), delivered.getSSID()); assertEquals(wifi.getBSSID(), delivered.getBSSID());
+                    assertEquals(wifi.getNetworkId(), delivered.getNetworkId());
+                }
+                assertEquals(-55, delivered.getRssi());
+                assertEquals("02:11:22:33:44:55", wifi.getBSSID()); assertEquals(41, wifi.getNetworkId());
+            }
+            BLocationManager.get().setPattern(user, pkg, BLocationManager.OWN_MODE);
+            NetworkCapabilities cellular = new NetworkCapabilities();
+            addTransport.invoke(cellular, NetworkCapabilities.TRANSPORT_CELLULAR);
+            Message cellUpdate = Message.obtain(); cellUpdate.what = 6;
+            cellUpdate.getData().putParcelable(NetworkRequest.class.getSimpleName(), request);
+            cellUpdate.getData().putParcelable(Network.class.getSimpleName(), network);
+            cellUpdate.getData().putParcelable(NetworkCapabilities.class.getSimpleName(), cellular);
+            delivery.get().send(cellUpdate);
+            NetworkCapabilities cellResult = received.poll(5, TimeUnit.SECONDS);
+            assertNotNull(cellResult); assertTrue(cellResult.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR));
+            assertNull("No fabricated Wi-Fi info on a cellular callback", cellResult.getTransportInfo());
+            Message removed = Message.obtain(); removed.what = 4; // fixed API33 CALLBACK_LOST
+            removed.getData().putParcelable(NetworkRequest.class.getSimpleName(), request);
+            removed.getData().putParcelable(Network.class.getSimpleName(), network); delivery.get().send(removed);
+            assertEquals(network, lost.poll(5, TimeUnit.SECONDS));
+        } finally {
+            try { if (active) manager.unregisterNetworkCallback(callback); }
+            finally { instance.set(null, previous); destination.quitSafely(); destination.join(5000); }
+        }
+        assertEquals(1, registered.get()); assertEquals(1, released.get());
+    }
+
+    @Test public void publicRequestedNetworkCallbackChecksModeAtDeliveryAndKeepsDeathAndRelease() throws Throwable {
+        exercisePublicNetworkCallback(false, false);
+    }
+
+    @Test public void publicListenedNetworkCallbackChecksModeAtDeliveryAndKeepsDeathAndRelease() throws Throwable {
+        exercisePublicNetworkCallback(true, false);
+    }
+
+    @Test public void publicNetworkCallbackKeepsPlatformPermissionRejection() throws Throwable {
+        exercisePublicNetworkCallback(true, true);
     }
 }

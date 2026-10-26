@@ -10,6 +10,10 @@
 
 [读取修正候选](evidence/stale-ui-location-read-preparation.json)只重找旧节点，保留原120秒等待、30秒样本时效和所有六路径／停止／取消／mock／身份断言；已过阶段落盘为明确的部分证据。16秒构建、静态与25项驱动检查通过，新增默认同VM六路径回归先检，再等待完整原生实际结果。用户的微信实时／发送、无线抖音和海外定位仍未完成。[SDK只读核对](evidence/target-location-sdk-boundary-review.json)不能从自有公开SDK推断微信`sapp`或抖音活动配置。
 
+[CI44最新默认](evidence/stale-ui-location-read-results.json)六项case均已实核，自有Guest六路径3.298秒完成A→B／停止／取消；本次stale重试计数为零。三归档、58份case／59份移动UI与同轮自有来源／签名／11份材料及447项／lint均通过。原生121405382190固定774c6e7a／旧补丁258c75a9仍运行，不包含新网络回调候选。
+
+[网络回调候选](evidence/network-callback-transport-preparation.json)在API33仅转接requestNetwork／listenForNetwork的Messenger，交付时检查模拟状态并复制／脱敏TransportInfo。原死亡Binder、请求参数／请求ID与释放、Network句柄／路由保持；复制失败不回退原数据。18／14秒构建和补丁重放已过，三个新增受控公共API回调检查待实际CI，受控无线总数将为12。真实Guest、目标SDK、其他敏感NC字段和持续Telephony路径未由此证明。
+
 下方保留此前各轮的命令和历史结果，不替代顶部当前状态。[CI38匿名启动通过](evidence/native-container-startup-pass-results.json)、[CI40旧PID集合失败](evidence/native-pid-set-and-owned-stage-results.json)、[CI39真实Provider归属失败](evidence/provider-attribution-failure-and-correction.json)均保留，不覆盖为成功。
 
 ## 核对下载的 CI 回执（维护用）

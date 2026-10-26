@@ -1,0 +1,84 @@
+{
+  "schema": "GOGOGO_NETWORK_CALLBACK_TRANSPORT_PREPARATION_V1",
+  "scope": "LOCAL_BUILD_AND_CONTROLLED_PUBLIC_CALLBACK_TEST_PREPARATION_NOT_ACTUAL_RADIO_OR_TARGET_SDK",
+  "base_commit": "774c6e7a1cda900e2a919401014e076d728e0030",
+  "previous_donor_patch_sha256": "258c75a90e2fdf89e83d88a80a3f2ed01dbd1094bd5a4ae55d6fd9a2d7daa9b5",
+  "candidate_donor_patch_sha256": "416e8dd4fd539ed1ac6b1011e50174e180b5c94bb5b12c90b8486af39c4055cc",
+  "fixed_scope_api": 33,
+  "reviewed_framework_source": {
+    "commit": "177e2e25ba95429dd646a30091bae499ccb50ca0",
+    "ConnectivityManager_url": "https://android.googlesource.com/platform/packages/modules/Connectivity/+/177e2e25ba95429dd646a30091bae499ccb50ca0/framework/src/android/net/ConnectivityManager.java",
+    "ConnectivityManager_sha256": "b7e1fbdecbeb179d7d7a02625ee93c1ab1a8acf2e454bf2e1d7fbcc0a00d9d71",
+    "source_lines": {
+      "callback_location_flag": 3716,
+      "callback_capabilities": 4115,
+      "request_and_listen_messenger_and_original_binder": 4174
+    },
+    "TransportInfo_url": "https://android.googlesource.com/platform/packages/modules/Connectivity/+/177e2e25ba95429dd646a30091bae499ccb50ca0/framework/src/android/net/TransportInfo.java",
+    "standard_default_makeCopy_returns_this_and_getApplicableRedactions_returns_REDACT_NONE_verified": true
+  },
+  "new_hook_entries": [
+    "requestNetwork",
+    "listenForNetwork"
+  ],
+  "delivery": "Relay only the callback Messenger on one process HandlerThread. Check virtual mode when delivering each message so an existing closed-mode registration is covered after enabling.",
+  "redaction": "Copy NetworkCapabilities; apply the actual TransportInfo redaction contract, including public WifiInfo.makeCopy(getApplicableRedactions()). Never mutate the original or fabricate network/cell identities.",
+  "preserved": [
+    "original separate death Binder",
+    "request flags",
+    "requested capabilities",
+    "timeout",
+    "returned request identity",
+    "releaseNetworkRequest path",
+    "Network handles",
+    "capabilities and transports",
+    "ordinary-mode callback payload",
+    "non-capability lifecycle messages",
+    "registration exceptions including SecurityException"
+  ],
+  "redaction_copy_failure": "No raw-payload fallback; log only exception class and stop that delivery.",
+  "new_controlled_test_count": 3,
+  "total_controlled_radio_test_count": 12,
+  "test_scope": "Actual public ConnectivityManager request/register/unregister and NetworkCallback delivery with synthetic Network/WifiInfo and a controlled IConnectivityManager base. No real radio, location or system-network query.",
+  "test_subcases": [
+    "registered while closed then CLOSED->VIRTUAL->CLOSED on the same callback",
+    "original wifi and capabilities unchanged",
+    "redacted WifiInfo with RSSI retained",
+    "cellular callback without fabricated WifiInfo",
+    "network-lost callback preserved in virtual mode",
+    "original Binder death token, location flag and release request preserved",
+    "controlled platform-style SecurityException propagated"
+  ],
+  "not_proven": [
+    "real Guest hook installation for this new callback path",
+    "target Tencent/ByteDance SDK invocation",
+    "non-WifiInfo TransportInfo branch runtime",
+    "all other NetworkCapabilities location-sensitive fields",
+    "persistent TelephonyRegistry callbacks",
+    "vivo or physical mobile-data behavior",
+    "target business adoption"
+  ],
+  "build": {
+    "passed": true,
+    "first_seconds": 18,
+    "final_seconds": 14,
+    "final_driver_only_seconds": 12
+  },
+  "static_host_inspection_passed": true,
+  "full_donor_patch_clean_index_replay_verified": true,
+  "new_actual_callback_runtime": "PENDING_NEXT_CI",
+  "active_native_ci44_old_source_unchanged": {
+    "run_id": 40271080579,
+    "commit": "774c6e7a1cda900e2a919401014e076d728e0030",
+    "job_id": 121405382190,
+    "state": "IN_PROGRESS_NOT_PASS"
+  },
+  "source_sha256": {
+    "patches/blackbox-api33-build.patch": "416e8dd4fd539ed1ac6b1011e50174e180b5c94bb5b12c90b8486af39c4055cc",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/RadioPrivacyContractInstrumentedTest.java": "555b1f125c80aabd5c56ecaaa906e5d141bf4ea01453a932dba06e83b2303408",
+    "tools/run-cloud-check.py": "433666d2a1c1d81ea1cba13c1bbca16366ca4798630f3fb53a54b77538ebe58f"
+  },
+  "phone_update_or_experiment_requested": false,
+  "mock_flag_retained": true,
+  "original_target_apks_or_certificates_changed": false
+}

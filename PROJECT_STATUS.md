@@ -23,6 +23,8 @@
 
 此前[CI42默认及三件同轮来源](research/container-api33/evidence/installed-original-import-results.json)也已核对：58份case输入、59份自有传递源码、三份同签名及每包11份材料。固定CI42驱动没有传递导入自定义JSON，CI43已补齐，不能倒填CI42的证据。
 
+[CI44／774c6e7a最新默认回归](research/container-api33/evidence/stale-ui-location-read-results.json)也已实际通过：新增的既有自有Guest六路径3.298秒完成A→B、停止稳定及取消零回调，四阶段和最终JSON核对；本次没有出现旧节点重试，不声称实际注入了旧节点故障。六项case各58份来源、移动UI59份、主447项／lint与7份关键输入均核对；同轮三件自有APK的59份来源、三份签名及每包11份材料通过。**原生作业121405382190仍运行，固定774c6e7a及旧补丁258c75a9；不包含本轮网络回调候选。**
+
 ## 最新原生：匿名启动与框架通过，定位整项失败
 
 [CI42／96e92522完整原生回执](research/container-api33/evidence/native-owned-location-stale-ui-results.json)已核对四归档、9份原生源码及三件自有APK。固定Android13／build16596636、原生ARM64、Native Bridge 0、UID2000、SELinux Enforcing、实际4CPU及超时倍数50合格；system_server PID651稳定，VM、自有包及staging清理通过。
@@ -40,9 +42,11 @@
 
 [动态界面读取修正](research/container-api33/evidence/stale-ui-location-read-preparation.json)仅捕获旧节点异常，沿原120秒等待重新寻找节点；不返回缓存报告，不吞SDK错误、JSON错误或断言失败。30秒样本时效、坐标、provider、mock、真实PID／UID、六路径A→B、注销稳定、GNSS零卫星和取消零回调均保留。已过阶段另存`stages.json`，明确`passed=false`且只作部分证据；最终成功仍需全部条件。即使界面取证失败也执行虚拟清理及idle恢复。
 
-16秒构建、宿主静态核验及25项驱动检查通过。默认同一云端VM新增现有自有Guest六路径回归，先取快速实际结果，再运行同一固定原生环境；修正后的实际结果尚待下一CI。没有新增手机实验或SDK／引擎修改。
+16秒构建、宿主静态核验及25项驱动检查通过；CI44同一云端VM的既有六路径已经实际通过，完整原生结果仍在运行。这个读取修正没有新增手机实验或SDK／引擎修改。
 
-1. 跟进本分支下一CI的默认六路径回归及原生自有定位，按该轮固定提交核对来源、归档摘要、签名、JUnit和清理。失败保留，不复用旧成功或只靠截图改判通过。
+另准备[网络回调TransportInfo副本](research/container-api33/evidence/network-callback-transport-preparation.json)：固定API33的`requestNetwork`／`listenForNetwork`回调携带NetworkCapabilities，位置权限允许时可含WifiInfo。候选只转接Messenger，原死亡Binder、请求flag／能力／超时、返回请求及释放路径保留；在交付时检查模拟开关，采用框架TransportInfo／WifiInfo标准脱敏副本，不改变Network句柄、连接或路由、不修改原对象、不编造网络身份。复制失败没有原始敏感数据回退。18／14秒构建、宿主静态及完整补丁重放通过，新增三个受控公共API回调检查已编译，实际回执待下一CI。它不证明真实Guest此路径、SDK采用、其他NC敏感字段或持续Telephony回调已覆盖，也不是用户微信失败的因果判断。
+
+1. 跟进CI44固定774c6e7a的原生自有定位；下一候选另外核对12项受控无线／回调、完整默认及原生对照，不能把旧补丁的原生结果冒充新回调证据。按各轮固定提交核对来源、归档摘要、签名、JUnit和清理，保留失败。
 2. 原生push提交须带齐`[cuttlefish-boot] [cuttlefish-container]`，或显式手动选项。原生共用锁，不取消运行中的前轮；pending替换／跳过不算通过。当前CI42已完成失败，CI43有意仅默认，二者不能混写。
 3. 账号、目标SDK和实际位置业务仍需各自证据；不自动接受条款、登录或发送消息。原生自有六路径通过也不能宣布用户目标完成。
 

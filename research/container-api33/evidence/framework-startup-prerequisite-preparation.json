@@ -32,7 +32,7 @@
     "licenses/LGPL-3.0-LSPlant.txt": "09acdfb5bfb7aaed93d7d7fa5cebfc7350c555847d2ed07b5b9716da43670e04",
     "licenses/ci-additional-provenance.json": "7fbc7c983596f006f2c3d239fcb72974433bf824aa74a9732ed8313f3c2fbe33",
     "licenses/xCrash-LICENSE.txt": "bee83bba5b3f6502bb69700e20b024205fb6425740e054e63dda0c970d230790",
-    "patches/blackbox-api33-build.patch": "258c75a90e2fdf89e83d88a80a3f2ed01dbd1094bd5a4ae55d6fd9a2d7daa9b5",
+    "patches/blackbox-api33-build.patch": "416e8dd4fd539ed1ac6b1011e50174e180b5c94bb5b12c90b8486af39c4055cc",
     "probe-host/build.gradle": "cc00912130068cf7558c04df465ab3f1b97ea8de59806d9a526ea308348622c3",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ExternalGuestInstrumentedTest.java": "fdc0ed6a116ef2950eacae8664785584981608b23da8cddc5d97f7525f7386e4",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/GuestLocationInstrumentedTest.java": "148f61de68ef88379cd20f98e9f4daca332c21596a90727a1fddc0faea91517e",
@@ -40,7 +40,7 @@
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/StartupFrameworkInstrumentedTest.java": "839d2c46b133f910632d8e8a7262718f8a62624a2263d9dabb3e09921e1406be",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ThirdPartyLocationInstrumentedTest.java": "d066b1d65eafbeaa1392c925d44003c234c3c5f2c477e8d260f01c214983e5b4",
     "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java": "b36cd994d40fa173fcd3c0830d688a102e0f63bf24584e3e1b6aa2e723f36e54",
-    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/RadioPrivacyContractInstrumentedTest.java": "63d97268bce78204d68e08852f89d0dda882f150937854a6e6e2b71be8e0589c",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/RadioPrivacyContractInstrumentedTest.java": "555b1f125c80aabd5c56ecaaa906e5d141bf4ea01453a932dba06e83b2303408",
     "probe-host/src/main/AndroidManifest.xml": "45c69238759399aa995a8413e6a967e94d717a9e8129a23fcc01536f5ea217ff",
     "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/GuestImport.java": "ce777203d7d6ec0c6d53361f682ad5a4561db2db60db304e2edf9e8670ef360b",
     "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/OriginalUiProbeInstrumentation.java": "e47af8d4c577924a9144159a0bc6c83fc20498cb92f6d4624aa716ded6dec169",
@@ -62,7 +62,7 @@
     "tools/qualify-arm64-software-boot.py": "d3bbc2fbebcbc381dd73712f08ccc1a31815c64202471b29a17b03627bb30066",
     "tools/run-arm-mac-software-checks.sh": "4cff7f26be72beb5200d3bea7bc253cdd7d7dc784f356de1bace3394dbb98c0a",
     "tools/run-build.sh": "ba7a3e3d5b233ca4200ac1f7bb160c0be5eb3686323caa992826022cfac045ad",
-    "tools/run-cloud-check.py": "0f983387d723c63a0e921fea16b63a4805a673088deffc55ddf914e6ed6e17a4",
+    "tools/run-cloud-check.py": "433666d2a1c1d81ea1cba13c1bbca16366ca4798630f3fb53a54b77538ebe58f",
     "tools/run-cuttlefish-arm-boot.py": "687d5198b13e7f32ca70562454f970219b38f624f798827e870a1090a95951f8",
     "tools/run-emulator-checks.sh": "b443d29c371db6146573802c7dd6fae931633ca9a0d762b9142bc644757ddd9d",
     "tools/run-read-only-ui-check.py": "c625dd25b2ae7b6d574bd08dae944b39ab51ac201d9d7009ee4e410746428439",
@@ -153,7 +153,9 @@
     "active_native_42_unchanged": true,
     "own_import_structured_report_transfer_required": true
   },
-  "latest_actual_default_result": "map-point-prefill-results.json",
+  "latest_actual_default_result": "stale-ui-location-read-results.json",
   "latest_actual_native_result": "native-owned-location-stale-ui-results.json",
-  "stale_ui_read_followup": "stale-ui-location-read-preparation.json"
+  "stale_ui_read_followup": "stale-ui-location-read-preparation.json",
+  "network_callback_followup": "network-callback-transport-preparation.json",
+  "active_native_44_commit": "774c6e7a1cda900e2a919401014e076d728e0030"
 }

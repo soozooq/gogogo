@@ -65,7 +65,7 @@
     "tests/test_cuttlefish_target_baselines.py": "3d88f05e24e5c2965abc1601bb16ab5f77e1d12f7fd8ba768d809590c2578a51",
     "location-consumer/build.gradle": "d97419bad7cae29a6f7aec8fa86413ae0f4150f01a6c38ffb2c7f7b009df3322",
     "CI_SOURCE_AND_RELINK.md": "225f80ea2d37fd357faaa9d2a4769f68cfc6e0efe230a71b8913873245f71990",
-    "patches/blackbox-api33-build.patch": "258c75a90e2fdf89e83d88a80a3f2ed01dbd1094bd5a4ae55d6fd9a2d7daa9b5"
+    "patches/blackbox-api33-build.patch": "416e8dd4fd539ed1ac6b1011e50174e180b5c94bb5b12c90b8486af39c4055cc"
   },
   "workflow_source_sha256": {
     ".github/workflows/container-research.yml": "ddafda585239e6fc13be2370e40667c460db7bd7a037a2ffb11467b4a7501cd2"
@@ -74,8 +74,10 @@
   "subsequent_actual_default_result": "provider-attribution-results.json",
   "actual_ci40_result": "native-pid-set-and-owned-stage-results.json",
   "active_native_42_commit": "96e925224b598432048f3cd72cee3009db582767",
-  "source_map_scope": "CURRENT_DRIVER_PREPARATION_NOT_REPLACEMENT_FOR_FIXED_NATIVE_CI42",
+  "source_map_scope": "CURRENT_CANDIDATE_NOT_REPLACEMENT_FOR_FIXED_NATIVE_CI44",
   "latest_actual_native_result": "native-owned-location-stale-ui-results.json",
-  "latest_actual_default_result": "map-point-prefill-results.json",
-  "stale_ui_read_followup": "stale-ui-location-read-preparation.json"
+  "latest_actual_default_result": "stale-ui-location-read-results.json",
+  "stale_ui_read_followup": "stale-ui-location-read-preparation.json",
+  "network_callback_followup": "network-callback-transport-preparation.json",
+  "active_native_44_commit": "774c6e7a1cda900e2a919401014e076d728e0030"
 }

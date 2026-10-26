@@ -23,7 +23,7 @@
     "passed": true
   },
   "engine_or_consumer_apk_code_changed": false,
-  "new_corrected_runtime": "PENDING_NEXT_CI",
+  "new_corrected_runtime": "CI44_X86_64_FULL_SIX_PATH_A_TO_B_STOP_CANCEL_PASS_3.298S; NATIVE_PENDING",
   "native_rerun_requested_after_default_six_path_check": true,
   "source_sha256": {
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/GuestLocationInstrumentedTest.java": "148f61de68ef88379cd20f98e9f4daca332c21596a90727a1fddc0faea91517e",
@@ -32,5 +32,7 @@
     "tools/run-emulator-checks.sh": "b443d29c371db6146573802c7dd6fae931633ca9a0d762b9142bc644757ddd9d",
     "patches/blackbox-api33-build.patch": "258c75a90e2fdf89e83d88a80a3f2ed01dbd1094bd5a4ae55d6fd9a2d7daa9b5"
   },
-  "phone_experiment_or_update_requested": false
+  "phone_experiment_or_update_requested": false,
+  "recorded_source_commit": "774c6e7a1cda900e2a919401014e076d728e0030",
+  "subsequent_actual_default_result": "stale-ui-location-read-results.json"
 }

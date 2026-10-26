@@ -135,3 +135,11 @@ CI40的同名PID集合变化不能证明主进程退出：9665仍在、新增103
 固定96e92522四归档／9原生输入已核对。系统651稳定，两个目标匿名UI与300秒主角色观察通过；原生自有call/query15.548秒通过，真实UID10104、主11428／Provider11460，新鲜nonce一致。URI授权旧边界不变，仍非独立UID或拒绝验证。自有定位在目标B等待的getText发生StaleObjectException，整项145.73秒失败；最终PNG可见B值也不能补写完整时效／停止／取消通过。
 
 修正只对旧节点重新find，沿原有界等待，未放宽30秒时效／六路径／坐标／mock／PID／UID或吞API错误；每过阶段单独保存passed=false部分文件，只有最终result.json可作为完整成功。取证失败仍保证虚拟模式／进程／临时文件及idle清理。新增默认同一VM既有六路径回归，实际修正结果待CI；没有用户实验或引擎修改。
+
+## API33网络回调TransportInfo候选
+
+固定ConnectivityManager源码表明requestNetwork／listenForNetwork传递Messenger及单独死亡Binder，FLAG_INCLUDE_LOCATION_INFO允许回调含位置相关TransportInfo。当前数组getter修正不能覆盖这条回调。新候选仅转接Messenger，在交付时检查虚拟模式，复制NetworkCapabilities并调用框架TransportInfo／WifiInfo标准脱敏；保留原对象、Network句柄、能力与传输、其他生命周期消息、请求参数、死亡Binder和释放路径，不改变系统网络／VPN／IP或伪造网络身份。共享单进程HandlerThread处理，无每次回调忙循环。
+
+三个新增检查通过真实公共ConnectivityManager注册／请求／注销及NetworkCallback接收，后端为受控IConnectivityManager，输入为合成Network／WifiInfo：同一注册关闭→模拟→关闭、无WifiInfo的蜂窝回调、模拟时onLost、原Binder／flags／释放及受控SecurityException传递。18／14秒构建已过，实际新检查待CI；没有真实无线请求或目标SDK结果。非WifiInfo分支、真实Guest安装、其他NetworkCapabilities敏感字段和持续Telephony回调仍未证明。
+
+原生CI44固定旧补丁258c75a9；默认六路径已通过也不能替代这条新回调的结果。新完整补丁416e8dd4已干净重放，代码与回执按不同提交区分。
