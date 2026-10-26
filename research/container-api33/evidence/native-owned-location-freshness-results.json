@@ -1,0 +1,410 @@
+{
+  "schema": "GOGOGO_NATIVE_OWNED_LOCATION_FRESHNESS_WAIT_RESULTS_V1",
+  "scope": "ACTUAL_NATIVE_ANONYMOUS_AND_FRAMEWORK_PASS_LOCATION_FULL_CASES_FAILED_NOT_TARGET_BUSINESS",
+  "runs": [
+    {
+      "ci_number": 44,
+      "run_id": 40271080579,
+      "commit": "774c6e7a1cda900e2a919401014e076d728e0030",
+      "job_id": 121405382190,
+      "conclusion": "failure",
+      "artifacts": {
+        "mac": {
+          "id": 12628886701,
+          "sha256": "4a847a67b2b99c0aa2a5a89199a41eaaa25ba6901bc3c0ffbc85f70bdd9ab973",
+          "verified": true
+        },
+        "linux": {
+          "id": 12628767411,
+          "sha256": "32e2fe0711e241dfa4bea73928cb2c17daf32451ff0a6269f2b8abe2e02f399c",
+          "verified": true
+        },
+        "own": {
+          "id": 12628696282,
+          "sha256": "572f702f92ce15e830e2536099ce9900b413df525f3a9621257eba6d23abb366",
+          "verified": true
+        },
+        "native": {
+          "id": 12630719000,
+          "sha256": "df6a37659924db0f5e52a309c4959d9a8b61dd9aced4764655665c52244f8b84",
+          "verified": true
+        }
+      },
+      "all_four_api_digests_fixed_commit_sources_and_own_apks_verified": true,
+      "native_source_count_verified": 9,
+      "own_transport": {
+        "source_count_verified": 59,
+        "apks": {
+          "host": {
+            "name": "probeHost-debug.apk",
+            "size": 4534984,
+            "sha256": "8b2bd76291147d9f4f1fabefa2f012e45ac140948081c0af9ac155453f9b8691"
+          },
+          "driver": {
+            "name": "probeHost-debug-androidTest.apk",
+            "size": 504846,
+            "sha256": "96a1b95bc40b53d73de061ecbbd23a3c3ddefba398f82ddaef301d4df87af72f"
+          },
+          "consumer": {
+            "name": "locationConsumer-debug.apk",
+            "size": 72818,
+            "sha256": "bfd3aebb6c4c080d664e1b33e7d2e173048071856657219dbcc3796f43ee809d"
+          }
+        },
+        "notice_materials_per_apk": 11,
+        "signatures_verified_and_same": true
+      },
+      "qualified_environment": {
+        "api": 33,
+        "build_id": "16596636",
+        "native_abi": "arm64-v8a",
+        "bridge": "0",
+        "shell_uid": "2000",
+        "selinux": "Enforcing",
+        "guest_cpu_online": "0-3",
+        "hw_timeout_multiplier": "50",
+        "system_server_pid_before_and_after": "662",
+        "system_server_crash_pids": []
+      },
+      "ordinary_originals": {
+        "both_passed": true,
+        "douyin_hold": {
+          "requested_seconds": 300,
+          "first_ui_stage": "PRIVACY_WITHOUT_ACCEPTANCE",
+          "initial_target_pid": "7313",
+          "passed": true,
+          "last_target_pid": "7313",
+          "observed_seconds": 302.539
+        },
+        "both_packages_removed": true
+      },
+      "container_targets": {
+        "wechat": {
+          "passed": true,
+          "stage": "WELCOME_WITHOUT_LOGIN",
+          "guest_pid": "6055",
+          "import_success": true,
+          "package_info_present": true,
+          "signing_info_present": true,
+          "original_signer": true,
+          "location_enabled": false,
+          "terms_accepted": false,
+          "login_attempted": false,
+          "junit_seconds": 436.8,
+          "png_available": true,
+          "png_reviewed": false
+        },
+        "douyin": {
+          "passed": true,
+          "stage": "PRIVACY_WITHOUT_ACCEPTANCE",
+          "guest_pid": "9667",
+          "import_success": true,
+          "package_info_present": true,
+          "signing_info_present": true,
+          "original_signer": true,
+          "location_enabled": false,
+          "terms_accepted": false,
+          "login_attempted": false,
+          "junit_seconds": 787.094,
+          "png_available": false,
+          "png_reviewed": false,
+          "post_ui_observation": {
+            "requested_seconds": 300,
+            "observed_ms": 300758,
+            "initial_target_pid": "9667",
+            "last_target_pid": "9667",
+            "identity_basis": "CORE_REGISTERED_MAIN_PROCESS_AND_ACTUAL_ACTIVITY_MANAGER_PID_UID",
+            "main_pid": 9667,
+            "main_uid": 10102,
+            "initial_registered_processes": [
+              {
+                "pid": 9667,
+                "uid": 10102,
+                "process_name": "com.ss.android.ugc.aweme"
+              }
+            ],
+            "last_registered_processes": [
+              {
+                "pid": 9667,
+                "uid": 10102,
+                "process_name": "com.ss.android.ugc.aweme"
+              }
+            ],
+            "same_name_pid_set_changed": false,
+            "passed": true
+          },
+          "post_hold_privacy_ui_visible": true
+        }
+      },
+      "owned_framework": {
+        "passed": true,
+        "junit_seconds": 15.192,
+        "observed": {
+          "scope": "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION",
+          "passed": true,
+          "pending_intents_sent": false,
+          "location_requested": false,
+          "startup_contract_run_id": "23a2728e-10b2-43ea-b66d-3ff0908b61df",
+          "framework_http_legacy_class_resolved": true,
+          "expected_real_host_uid": 10104,
+          "process_api_uid": 10001,
+          "binder_self_uid": 10104,
+          "binder_self_pid": 11695,
+          "process_api_pid": 11695,
+          "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
+          "binder_self_uid_matches_real_host": true,
+          "activity_attribution_uid": 10104,
+          "application_attribution_uid": 10104,
+          "activity_attribution_uid_matches_real_host": true,
+          "application_attribution_uid_matches_real_host": true,
+          "activity_attribution_package": "com.soozooq.tianwaitian.containerresearch",
+          "pending_activity_created": true,
+          "pending_service_created": true,
+          "provider_call_nonce_matches": true,
+          "provider_pid": 11724,
+          "provider_caller_pid": 11695,
+          "provider_process_separate": true,
+          "provider_process_api_uid": 10001,
+          "provider_caller_binder_uid": 10104,
+          "provider_query_nonce_matches": true,
+          "provider_query_pid": 11724
+        },
+        "scope_limit": "FUNCTIONAL_CALL_QUERY_HTTP_AND_PENDING_INTENT_CREATION_NOT_DELIVERY_PERMISSION_DENIAL_OR_UID_ISOLATION"
+      },
+      "owned_location": {
+        "passed": false,
+        "junit_seconds": 162.206,
+        "failure": "Guest condition timed out",
+        "wait_position": "TARGET_A",
+        "partial_stage_file_available": false,
+        "partial_stages_passed": [],
+        "partial_receipt_passed": null,
+        "final_success_json_available": false,
+        "last_report_pid": 11918,
+        "last_report_read_sequence": 1,
+        "last_report_six_values_all_mock": true,
+        "last_report_six_values_all_match_target_at_that_stage": true,
+        "latest_stream_fix_minus_oldest_single_fix_ms": 121013,
+        "full_freshness_stop_cancel_contract_passed": false,
+        "stale_node_exception_in_transcript": false,
+        "crash_buffer_bytes": 0,
+        "scope_limit": "SIX_VALUES_IN_SAVED_TEXT_ARE_NOT_A_PASSED_FRESHNESS_OR_STOP_CANCEL_CONTRACT; EXACT_EARLY_READ_LATENCY_NOT_RECORDED"
+      },
+      "owned_phase_cleanup": {
+        "consumer_system_installed": false,
+        "staging_removed": true,
+        "packages": {
+          "com.soozooq.tianwaitian.containerresearch.test": true,
+          "com.soozooq.tianwaitian.containerresearch": true
+        }
+      },
+      "qemu_process_stopped": true,
+      "whole_probe_seconds_not_startup_time": 4304.571
+    },
+    {
+      "ci_number": 45,
+      "run_id": 40273974755,
+      "commit": "ccd6d3e23d48c0432e0ea9324dcfb04d62a0fd25",
+      "job_id": 121414860784,
+      "conclusion": "failure",
+      "artifacts": {
+        "own": {
+          "id": 12629677191,
+          "sha256": "858a7a8317321d2e9812d3d21336120ced68542b5f3c2da4e1be0641b4289028",
+          "verified": true
+        },
+        "linux": {
+          "id": 12629223770,
+          "sha256": "7f16f1d33cffa5417de235190d55a21dce6eaa87a6269af4843a78c04aadbfe0",
+          "verified": true
+        },
+        "mac": {
+          "id": 12629188255,
+          "sha256": "042fefae826caa21725731392ca90bc962cbfb947aab15fa0c8eb53d39d19c9b",
+          "verified": true
+        },
+        "native": {
+          "id": 12633696892,
+          "sha256": "f7915cd6d9bf159b29308a7ad2d11bb3202f14158c6acc928625aaa42e613620",
+          "verified": true
+        }
+      },
+      "all_four_api_digests_fixed_commit_sources_and_own_apks_verified": true,
+      "native_source_count_verified": 9,
+      "own_transport": {
+        "source_count_verified": 59,
+        "apks": {
+          "host": {
+            "name": "probeHost-debug.apk",
+            "size": 4536460,
+            "sha256": "40b82ae6f63c2a4e39097484f80056cf1e1ad075b0d8cee1cfa55f899352a96c"
+          },
+          "driver": {
+            "name": "probeHost-debug-androidTest.apk",
+            "size": 509814,
+            "sha256": "87e5cae41ba5f47729c98381151e31de1fb8bbc538846de4790efe6cb6480c90"
+          },
+          "consumer": {
+            "name": "locationConsumer-debug.apk",
+            "size": 72818,
+            "sha256": "8adaffb9380b15ab82b04bc70da77f65bc6b9181790a200c7f2e8485922471a9"
+          }
+        },
+        "notice_materials_per_apk": 11,
+        "signatures_verified_and_same": true
+      },
+      "qualified_environment": {
+        "api": 33,
+        "build_id": "16596636",
+        "native_abi": "arm64-v8a",
+        "bridge": "0",
+        "shell_uid": "2000",
+        "selinux": "Enforcing",
+        "guest_cpu_online": "0-3",
+        "hw_timeout_multiplier": "50",
+        "system_server_pid_before_and_after": "650",
+        "system_server_crash_pids": []
+      },
+      "ordinary_originals": {
+        "both_passed": true,
+        "douyin_hold": {
+          "requested_seconds": 300,
+          "first_ui_stage": "PRIVACY_WITHOUT_ACCEPTANCE",
+          "initial_target_pid": "7118",
+          "passed": true,
+          "last_target_pid": "7118",
+          "observed_seconds": 302.477
+        },
+        "both_packages_removed": true
+      },
+      "container_targets": {
+        "wechat": {
+          "passed": true,
+          "stage": "WELCOME_WITHOUT_LOGIN",
+          "guest_pid": "5860",
+          "import_success": true,
+          "package_info_present": true,
+          "signing_info_present": true,
+          "original_signer": true,
+          "location_enabled": false,
+          "terms_accepted": false,
+          "login_attempted": false,
+          "junit_seconds": 420.002,
+          "png_available": true,
+          "png_reviewed": false
+        },
+        "douyin": {
+          "passed": true,
+          "stage": "PRIVACY_WITHOUT_ACCEPTANCE",
+          "guest_pid": "9448",
+          "import_success": true,
+          "package_info_present": true,
+          "signing_info_present": true,
+          "original_signer": true,
+          "location_enabled": false,
+          "terms_accepted": false,
+          "login_attempted": false,
+          "junit_seconds": 774.289,
+          "png_available": false,
+          "png_reviewed": false,
+          "post_ui_observation": {
+            "requested_seconds": 300,
+            "observed_ms": 300431,
+            "initial_target_pid": "9448",
+            "last_target_pid": "9448",
+            "identity_basis": "CORE_REGISTERED_MAIN_PROCESS_AND_ACTUAL_ACTIVITY_MANAGER_PID_UID",
+            "main_pid": 9448,
+            "main_uid": 10102,
+            "initial_registered_processes": [
+              {
+                "pid": 9448,
+                "uid": 10102,
+                "process_name": "com.ss.android.ugc.aweme"
+              }
+            ],
+            "last_registered_processes": [
+              {
+                "pid": 9448,
+                "uid": 10102,
+                "process_name": "com.ss.android.ugc.aweme"
+              }
+            ],
+            "same_name_pid_set_changed": false,
+            "passed": true
+          },
+          "post_hold_privacy_ui_visible": true
+        }
+      },
+      "owned_framework": {
+        "passed": true,
+        "junit_seconds": 14.195,
+        "observed": {
+          "scope": "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION",
+          "passed": true,
+          "pending_intents_sent": false,
+          "location_requested": false,
+          "startup_contract_run_id": "32f92308-4492-4452-abdb-cd31f2f8b85d",
+          "framework_http_legacy_class_resolved": true,
+          "expected_real_host_uid": 10104,
+          "process_api_uid": 10001,
+          "binder_self_uid": 10104,
+          "binder_self_pid": 11503,
+          "process_api_pid": 11503,
+          "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
+          "binder_self_uid_matches_real_host": true,
+          "activity_attribution_uid": 10104,
+          "application_attribution_uid": 10104,
+          "activity_attribution_uid_matches_real_host": true,
+          "application_attribution_uid_matches_real_host": true,
+          "activity_attribution_package": "com.soozooq.tianwaitian.containerresearch",
+          "pending_activity_created": true,
+          "pending_service_created": true,
+          "provider_call_nonce_matches": true,
+          "provider_pid": 11534,
+          "provider_caller_pid": 11503,
+          "provider_process_separate": true,
+          "provider_process_api_uid": 10001,
+          "provider_caller_binder_uid": 10104,
+          "provider_query_nonce_matches": true,
+          "provider_query_pid": 11534
+        },
+        "scope_limit": "FUNCTIONAL_CALL_QUERY_HTTP_AND_PENDING_INTENT_CREATION_NOT_DELIVERY_PERMISSION_DENIAL_OR_UID_ISOLATION"
+      },
+      "owned_location": {
+        "passed": false,
+        "junit_seconds": 202.585,
+        "failure": "Guest condition timed out",
+        "wait_position": "TARGET_B",
+        "partial_stage_file_available": true,
+        "partial_stages_passed": [
+          "TARGET_A"
+        ],
+        "partial_receipt_passed": false,
+        "final_success_json_available": false,
+        "last_report_pid": 11727,
+        "last_report_read_sequence": 2,
+        "last_report_six_values_all_mock": true,
+        "last_report_six_values_all_match_target_at_that_stage": true,
+        "latest_stream_fix_minus_oldest_single_fix_ms": 121745,
+        "full_freshness_stop_cancel_contract_passed": false,
+        "stale_node_exception_in_transcript": false,
+        "crash_buffer_bytes": 0,
+        "scope_limit": "SIX_VALUES_IN_SAVED_TEXT_ARE_NOT_A_PASSED_FRESHNESS_OR_STOP_CANCEL_CONTRACT; EXACT_EARLY_READ_LATENCY_NOT_RECORDED"
+      },
+      "owned_phase_cleanup": {
+        "consumer_system_installed": false,
+        "staging_removed": true,
+        "packages": {
+          "com.soozooq.tianwaitian.containerresearch.test": true,
+          "com.soozooq.tianwaitian.containerresearch": true
+        }
+      },
+      "qemu_process_stopped": true,
+      "whole_probe_seconds_not_startup_time": 4232.212
+    }
+  ],
+  "observed_boundary": "CI44 timed out before A was saved. CI45 saved A as partial passed=false, then timed out waiting for B. All six values in each final text match that stage with mock=true, but one-shot values are over 120 seconds older than the continuing stream. First-read timing is not independently recorded; do not assert the engine or target SDK caused this.",
+  "next_preparation": "owned-private-snapshot-preparation.json",
+  "target_location_business_tested": false,
+  "phone_update_distributed": false
+}

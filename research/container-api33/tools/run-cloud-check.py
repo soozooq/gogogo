@@ -231,7 +231,7 @@ text = result.stdout.decode(errors='replace') + result.stderr.decode(errors='rep
 for relative in (() if contract_case else
         ('result.json',) if args.startup_contract else
         ('window.xml', 'screen.png', 'entry.png', 'result.json', 'last-visible-text.json') if args.third_party_location else
-        ('window.xml', 'screen.png', 'result.json', 'stages.json', 'last-guest-ui.txt') if args.guest_location
+        ('window.xml', 'screen.png', 'result.json', 'stages.json', 'last-guest-report.json') if args.guest_location
         else ('window.xml', 'screen.png', 'installed-import.json') if args.installed_baseline
         else ('window.xml', 'screen.png')):
     exists = run(['shell', 'run-as', 'com.soozooq.tianwaitian.containerresearch',
@@ -262,6 +262,14 @@ passed = passed and cleanup_ok and not system_guest_after_cleanup
 if args.guest_location or args.third_party_location or args.startup_contract:
     guest_result = evidence / 'cloud-result.json'
     passed = passed and guest_result.is_file() and json.loads(guest_result.read_text()).get('passed') is True
+if args.guest_location and passed:
+    observed = json.loads(guest_result.read_text())
+    passed = observed.get('scope') == 'OWNED_GUEST_REAL_PROCESS_NOT_THIRD_PARTY_OR_WECHAT' \
+        and observed.get('report_source') == 'OWN_GUEST_ATOMIC_PRIVATE_FILE' \
+        and observed.get('consumer_sha256') == hashlib.sha256(guest.read_bytes()).hexdigest() \
+        and observed.get('host_pid') != observed.get('guest_pid') \
+        and {s.get('name') for s in observed.get('stages', [])} == {
+            'TARGET_A', 'TARGET_B', 'UNREGISTERED_STABLE', 'CURRENT_CANCELLED'}
 installed_import = None
 if args.installed_baseline:
     imported = evidence / 'cloud-installed-import.json'

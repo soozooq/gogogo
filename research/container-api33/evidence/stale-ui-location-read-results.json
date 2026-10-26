@@ -493,10 +493,12 @@
     "host_engine_process_absent": true
   },
   "native_job": {
-    "id": 121405382190,
-    "status_at_capture": "in_progress",
-    "passed": false,
-    "corrected_native_result": "NOT_YET_REPORTED"
+    "run_id": 40271080579,
+    "commit": "774c6e7a1cda900e2a919401014e076d728e0030",
+    "job_id": 121405382190,
+    "status": "completed",
+    "conclusion": "failure",
+    "result": "native-owned-location-freshness-results.json"
   },
   "previous_actual_native_failure": "native-owned-location-stale-ui-results.json",
   "new_network_callback_candidate_not_in_this_fixed_commit": true,

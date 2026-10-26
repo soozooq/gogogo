@@ -10,8 +10,11 @@ import android.location.LocationRequest;
 import android.location.GnssStatus;
 import android.os.Bundle;
 import android.os.CancellationSignal;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Process;
 import android.os.SystemClock;
+import android.util.AtomicFile;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -20,9 +23,19 @@ import android.widget.TextView;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
 /** Independent owned Android consumer. No engine imports, hooks, or expected coordinates. */
 public final class LocationActivity extends Activity {
     private final JSONObject report = new JSONObject();
+    private final Handler main = new Handler(Looper.getMainLooper());
+    private final Runnable publish = this::publishReport;
+    private AtomicFile receipt;
+    private boolean publishPending;
+    private long reportSequence;
     private LocationManager locations;
     private TextView status;
     private boolean listening;
@@ -41,6 +54,7 @@ public final class LocationActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        receipt = new AtomicFile(new File(getFilesDir(), "location-status.json"));
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
         button(content, R.id.start, "开始监听", () -> {
@@ -169,11 +183,35 @@ public final class LocationActivity extends Activity {
     private void put(String name, Object value) {
         try { report.put(name, value == null ? JSONObject.NULL : value); }
         catch (JSONException e) { throw new IllegalStateException(e); }
-        if (status != null) status.setText(report.toString());
+        // One snapshot per main-loop turn keeps each callback's related fields together.
+        if (!publishPending) {
+            publishPending = true;
+            main.post(publish);
+        }
+    }
+
+    private void publishReport() {
+        publishPending = false;
+        try {
+            report.put("report_sequence", ++reportSequence);
+            report.put("report_elapsed_ns", SystemClock.elapsedRealtimeNanos());
+        } catch (JSONException e) { throw new IllegalStateException(e); }
+        String text = report.toString();
+        FileOutputStream output = null;
+        try {
+            output = receipt.startWrite();
+            output.write(text.getBytes(StandardCharsets.UTF_8));
+            receipt.finishWrite(output);
+        } catch (IOException e) {
+            if (output != null) receipt.failWrite(output);
+            throw new IllegalStateException("Owned location report could not be saved", e);
+        }
+        if (status != null) status.setText(text);
     }
 
     @Override public void onDestroy() {
         if (locations != null) stop();
+        main.removeCallbacks(publish);
         super.onDestroy();
     }
 }

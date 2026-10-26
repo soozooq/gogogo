@@ -1,18 +1,14 @@
 # Android13免Root容器与普通应用入口
 
-当前状态以根 [PROJECT_STATUS.md](../../PROJECT_STATUS.md)为准。唯一研发分支仍为`research/container-api33-20261023`／Draft #60；日常#59固定2.4.31／2400099。用户无Root、无电脑、只有一部vivo手机，未发布新手机包或安排复测。
+当前状态以根[PROJECT_STATUS.md](../../PROJECT_STATUS.md)为准。唯一研发主线`research/container-api33-20261023`／Draft #60，日常#59固定2.4.31／2400099。用户只有一部vivo手机，无Root／电脑，当前不安排手机复测。
 
-[最新默认CI43](evidence/map-point-prefill-results.json)五项case、移动UI与主447项／lint通过，58份case／59份移动UI及7份主程序关键输入按固定dfe8f511核对；两归档API摘要已验。真实普通入口已验证WGS84预填、无效输入忽略、无自动模拟／启动、文件选择／授权后的GPSTest A→B／停止，以及已装计算器原版导入／原应用与临时文件保留清理；结构化导入JSON已核对。首页发送端有编译和常量一致性证据，尚无真实主页面／vivo操作结果。该轮原生和APK传递有意跳过。
+[CI45默认六项](evidence/network-callback-transport-results.json)及12项受控无线／回调、447项／lint、来源／签名／材料通过。[CI43普通入口](evidence/map-point-prefill-results.json)已经验证地图预填／不自动启动、结构化已装导入与GPSTest实际A→B／停止；首页发送端没有真机结果。固定完整微信8.0.79／抖音40.8.0限原生ARM64，不复制账号私有数据或改签目标APK。
 
-清单保留计算器／GPSTest，候选另准入固定ARM64微信8.0.79及抖音40.8.0；精确版本、大小、摘要、包名和原证书必须匹配，只读公开完整APK，不迁移账号或私有数据，不改签、内嵌或分发目标原包。清单和模拟设置不证明目标应用采用定位。
+[最新原生CI44与45](evidence/native-owned-location-freshness-results.json)四档已完整核对：两个普通原包与两个Guest匿名UI、原始证书、300秒抖音主角色PID／UID观察、自有框架call／query均通过，系统及清理合格。自有定位44等待A超时，45保存A部分证据后等待B超时，两轮整项均失败；末尾六值虽然为对应目标／mock，单次样本已比持续回调旧超过120秒，不作时效成功。没有停止／取消完成结果，目标定位关闭且未接受条款／登录。
 
-[最新原生CI42](evidence/native-owned-location-stale-ui-results.json)四档、9份原生源码及三件同轮来源／签名／材料已核对。固定Android13原生ARM64系统合格、PID651稳定且VM／包／staging清理通过；两个普通原包及两个Guest匿名UI通过，抖音按主角色PID／UID保持301,832ms、末尾隐私页仍在。本轮两目标均无PNG。原生自有框架／跨进程Provider call/query通过15.548秒；定位case在B等待时发生旧UI节点异常，145.73秒失败，没有最终成功JSON。最终失败后自有PNG虽可见六条B坐标，仍非完整时效／停止／取消通过。目标定位关闭，没有接受条款、登录或业务。
+[新自有报告准备](evidence/owned-private-snapshot-preparation.json)让独立消费者将相同状态原子写到自身私有文件，控制器直接核对nonce／序号／真实时间；按钮仍走真实界面，定位仍走公共Android API。报告及六路径仍30秒时效，全部原断言保留，未改引擎／权限／依赖。15秒构建、两APK静态与25项驱动检查通过，新默认／原生尚待实际运行。
 
-[读取修正候选](evidence/stale-ui-location-read-preparation.json)只重找旧节点，保留原120秒等待、30秒样本时效和所有六路径／停止／取消／mock／身份断言；已过阶段落盘为明确的部分证据。16秒构建、静态与25项驱动检查通过，新增默认同VM六路径回归先检，再等待完整原生实际结果。用户的微信实时／发送、无线抖音和海外定位仍未完成。[SDK只读核对](evidence/target-location-sdk-boundary-review.json)不能从自有公开SDK推断微信`sapp`或抖音活动配置。
-
-[CI44最新默认](evidence/stale-ui-location-read-results.json)六项case均已实核，自有Guest六路径3.298秒完成A→B／停止／取消；本次stale重试计数为零。三归档、58份case／59份移动UI与同轮自有来源／签名／11份材料及447项／lint均通过。原生121405382190固定774c6e7a／旧补丁258c75a9仍运行，不包含新网络回调候选。
-
-[网络回调候选](evidence/network-callback-transport-preparation.json)在API33仅转接requestNetwork／listenForNetwork的Messenger，交付时检查模拟状态并复制／脱敏TransportInfo。原死亡Binder、请求参数／请求ID与释放、Network句柄／路由保持；复制失败不回退原数据。18／14秒构建和补丁重放已过，[CI45实际三个新增受控公共API回调及原9项，共12项0.145秒通过](evidence/network-callback-transport-results.json)，六项默认及447项／lint也通过，三件同轮来源／签名／材料已核对。新原生121414860784按同锁排队，旧原生44未取消。真实Guest、目标SDK、其他敏感NC字段和持续Telephony路径未由此证明。
+[手机三步流程](../../docs/original-app-preview-flow.md)是交付草稿。仓库外已准备两份自有候选但未上传或发布，主包外部SDK使用构建占位键、联网地图未验；微信发送／实时共享、抖音无线／海外仍未完成。自有Guest共享真实宿主UID，不能称为独立安全隔离或目标SDK采用。
 
 下方保留此前各轮的命令和历史结果，不替代顶部当前状态。[CI38匿名启动通过](evidence/native-container-startup-pass-results.json)、[CI40旧PID集合失败](evidence/native-pid-set-and-owned-stage-results.json)、[CI39真实Provider归属失败](evidence/provider-attribution-failure-and-correction.json)均保留，不覆盖为成功。
 

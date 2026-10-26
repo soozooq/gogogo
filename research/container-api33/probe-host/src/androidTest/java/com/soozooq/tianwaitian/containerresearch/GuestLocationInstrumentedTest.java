@@ -8,6 +8,7 @@ import android.content.pm.PackageInfo;
 import android.os.ParcelFileDescriptor;
 import android.os.Process;
 import android.os.SystemClock;
+import android.util.AtomicFile;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -15,13 +16,13 @@ import androidx.test.uiautomator.By;
 import androidx.test.uiautomator.Configurator;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject2;
-import androidx.test.uiautomator.StaleObjectException;
 import androidx.test.uiautomator.Until;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.Locale;
 import java.util.UUID;
@@ -32,6 +33,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import top.niunaijun.bcore.BlackBoxCore;
+import top.niunaijun.bcore.core.env.BEnvironment;
 import top.niunaijun.bcore.entity.location.BLocation;
 import top.niunaijun.bcore.entity.pm.InstallResult;
 import top.niunaijun.bcore.fake.frameworks.BLocationManager;
@@ -44,7 +46,9 @@ public final class GuestLocationInstrumentedTest {
     private final JSONArray stages = new JSONArray();
     private String lastText = "NO_GUEST_REPORT";
     private File stageEvidence;
-    private int staleUiReads;
+    private File guestReceipt;
+    private String expectedNonce;
+    private long lastReportSequence;
 
     private interface Condition { boolean matches(JSONObject report) throws Exception; }
 
@@ -102,6 +106,10 @@ public final class GuestLocationInstrumentedTest {
             BLocationManager.get().setLocation(0, GUEST, new BLocation(38.0, -121.0));
             BLocationManager.get().setPattern(0, GUEST, BLocationManager.OWN_MODE);
             String nonce = UUID.randomUUID().toString();
+            expectedNonce = nonce;
+            guestReceipt = new File(BEnvironment.getDataDir(GUEST, 0), "files/location-status.json");
+            new AtomicFile(guestReceipt).delete();
+            assertFalse("Do not accept a previous own Guest report", guestReceipt.exists());
             Intent launch = BlackBoxCore.getBPackageManager().getLaunchIntentForPackage(GUEST, 0);
             assertNotNull(launch);
             launch.putExtra("test_nonce", nonce); // correlation only; no expected coordinates
@@ -162,12 +170,12 @@ public final class GuestLocationInstrumentedTest {
             summary.put("consumer_sha256", expected);
             summary.put("nonce", nonce);
             summary.put("stages", stages);
-            summary.put("stale_ui_reads_retried", staleUiReads);
+            summary.put("report_source", "OWN_GUEST_ATOMIC_PRIVATE_FILE");
             summary.put("passed", true);
             write(new File(evidence, "result.json"), summary.toString(2));
         } finally {
             try {
-                write(new File(evidence, "last-guest-ui.txt"), lastText);
+                write(new File(evidence, "last-guest-report.json"), lastText);
                 device.dumpWindowHierarchy(new File(evidence, "window.xml"));
                 device.takeScreenshot(new File(evidence, "screen.png"));
             } finally {
@@ -183,7 +191,8 @@ public final class GuestLocationInstrumentedTest {
     private void saveStage(String name, JSONObject report) throws Exception {
         stages.put(new JSONObject().put("name", name).put("guest_report", report));
         write(stageEvidence, new JSONObject().put("scope", "PARTIAL_OWNED_GUEST_STAGES_NOT_FULL_PASS")
-                .put("stages", stages).put("stale_ui_reads_retried", staleUiReads).put("passed", false).toString(2));
+                .put("stages", stages).put("report_source", "OWN_GUEST_ATOMIC_PRIVATE_FILE")
+                .put("passed", false).toString(2));
     }
 
     private static void write(File path, String value) throws Exception {
@@ -200,19 +209,18 @@ public final class GuestLocationInstrumentedTest {
     }
 
     private JSONObject current() throws Exception {
-        String text;
-        try {
-            UiObject2 view = device.findObject(By.res(GUEST, "status"));
-            if (view == null) return new JSONObject();
-            text = view.getText();
-        } catch (StaleObjectException changedWhileReading) {
-            // Let the existing bounded await loop locate a fresh node. Never use a cached report.
-            staleUiReads++;
-            return new JSONObject();
-        }
-        lastText = text;
+        if (!guestReceipt.isFile()) return new JSONObject();
+        assertTrue("Own report size bound", guestReceipt.length() <= 32768);
+        lastText = new String(Files.readAllBytes(guestReceipt.toPath()), StandardCharsets.UTF_8);
         JSONObject report = new JSONObject(lastText);
+        assertEquals("Own report must belong to this launch", expectedNonce, report.getString("nonce"));
+        long sequence = report.getLong("report_sequence");
+        assertTrue("Own report sequence cannot go backwards", sequence > 0 && sequence >= lastReportSequence);
+        lastReportSequence = sequence;
+        long reportAge = SystemClock.elapsedRealtimeNanos() - report.getLong("report_elapsed_ns");
+        assertTrue("Own report cannot come from the future", reportAge >= 0);
         assertFalse("Guest API failure: " + lastText, report.has("error"));
+        if (reportAge > 30_000_000_000L) return new JSONObject();
         return report;
     }
 

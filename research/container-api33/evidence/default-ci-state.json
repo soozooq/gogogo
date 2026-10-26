@@ -4,7 +4,7 @@
   "run_id": 40273974755,
   "commit": "ccd6d3e23d48c0432e0ea9324dcfb04d62a0fd25",
   "tree": "0a83756e533e0b15a0719e3405e26c32ab89ca04",
-  "conclusion": null,
+  "conclusion": "failure",
   "default_checks_conclusion": "success",
   "jobs": [
     {
@@ -25,8 +25,8 @@
     {
       "id": 121414860784,
       "name": "Inspect ARM Linux host and optional Cuttlefish boot",
-      "status": "pending",
-      "conclusion": null
+      "status": "completed",
+      "conclusion": "failure"
     }
   ],
   "linux_artifact": {
@@ -205,9 +205,10 @@
   "default_cases_not_run": [],
   "framework_startup_result": "network-callback-transport-results.json",
   "latest_actual_native_run": {
-    "run_id": 40248613788,
-    "commit": "96e925224b598432048f3cd72cee3009db582767",
-    "result": "native-owned-location-stale-ui-results.json",
+    "run_id": 40273974755,
+    "commit": "ccd6d3e23d48c0432e0ea9324dcfb04d62a0fd25",
+    "job_id": 121414860784,
+    "result": "native-owned-location-freshness-results.json",
     "passed": false,
     "system_boot_passed": true,
     "both_target_anonymous_ui_passed": true,
@@ -215,8 +216,8 @@
     "owned_location_executed": true,
     "owned_location_passed": false
   },
-  "native_job_this_run": "PENDING_NOT_PASS",
-  "status": "in_progress",
+  "native_job_this_run": "COMPLETED_FAILURE_NOT_FULL_LOCATION_PASS",
+  "status": "completed",
   "previous_completed_run": {
     "run_id": 40248613788,
     "commit": "96e925224b598432048f3cd72cee3009db582767",
@@ -224,13 +225,13 @@
     "native_conclusion": "failure",
     "result": "native-owned-location-stale-ui-results.json"
   },
-  "new_provider_contract_runtime": "CI45_X86_64_CALL_QUERY_PASS_AND_SEPARATE_CI42_NATIVE_PASS",
+  "new_provider_contract_runtime": "CI45_X86_64_AND_NATIVE_CALL_QUERY_PASS_NOT_LOCATION_BUSINESS",
   "latest_passed_default_run": {
     "run_id": 40273974755,
     "commit": "ccd6d3e23d48c0432e0ea9324dcfb04d62a0fd25",
     "result": "network-callback-transport-results.json"
   },
-  "new_arm64_owned_location_stage": "CORRECTED_CI44_RUNNING_AND_NEW_PATCH_CI45_PENDING",
+  "new_arm64_owned_location_stage": "CI44_AND_CI45_FULL_CASES_FAILED_FRESHNESS_WAIT; OWN_PRIVATE_SNAPSHOT_PREPARED",
   "previous_provider_failure_result": "provider-attribution-failure-and-correction.json",
   "previous_verified_own_transport": {
     "run_id": 40271080579,
@@ -259,49 +260,14 @@
     },
     "result": "stale-ui-location-read-results.json"
   },
-  "active_native_run": {
-    "run_id": 40271080579,
-    "commit": "774c6e7a1cda900e2a919401014e076d728e0030",
-    "job_id": 121405382190,
-    "status_at_capture": "in_progress",
-    "patch_sha256": "258c75a90e2fdf89e83d88a80a3f2ed01dbd1094bd5a4ae55d6fd9a2d7daa9b5",
-    "network_callback_candidate_included": false,
-    "passed": false
-  },
+  "active_native_run": null,
   "latest_passed_native_anonymous_baseline": {
     "run_id": 40210036099,
     "commit": "adfc6173a4c60433a80f6a2e017f25013e844105",
     "result": "native-container-startup-pass-results.json"
   },
-  "pending_native_run": {
-    "run_id": 40273974755,
-    "commit": "ccd6d3e23d48c0432e0ea9324dcfb04d62a0fd25",
-    "job_id": 121414860784,
-    "status_at_capture": "pending",
-    "patch_sha256": "416e8dd4fd539ed1ac6b1011e50174e180b5c94bb5b12c90b8486af39c4055cc",
-    "network_callback_candidate_included": true,
-    "passed": false
-  },
-  "active_native_runs": [
-    {
-      "run_id": 40271080579,
-      "commit": "774c6e7a1cda900e2a919401014e076d728e0030",
-      "job_id": 121405382190,
-      "status_at_capture": "in_progress",
-      "patch_sha256": "258c75a90e2fdf89e83d88a80a3f2ed01dbd1094bd5a4ae55d6fd9a2d7daa9b5",
-      "network_callback_candidate_included": false,
-      "passed": false
-    },
-    {
-      "run_id": 40273974755,
-      "commit": "ccd6d3e23d48c0432e0ea9324dcfb04d62a0fd25",
-      "job_id": 121414860784,
-      "status_at_capture": "pending",
-      "patch_sha256": "416e8dd4fd539ed1ac6b1011e50174e180b5c94bb5b12c90b8486af39c4055cc",
-      "network_callback_candidate_included": true,
-      "passed": false
-    }
-  ],
+  "pending_native_run": null,
+  "active_native_runs": [],
   "historical_uid_assertion_failure": {
     "run_id": 40182108173,
     "commit": "3f0087fbfad04b915e0b4c67a9b364d8aa544863",
@@ -314,5 +280,6 @@
     "default_checks_conclusion": "success",
     "native_conclusion": "intentional_skip",
     "result": "map-point-prefill-results.json"
-  }
+  },
+  "next_owned_location_preparation": "owned-private-snapshot-preparation.json"
 }

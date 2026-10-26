@@ -27,7 +27,7 @@ class NativeOwnContractControlTest(unittest.TestCase):
     def test_no_false_pass_from_green_junit_or_stale_environment_and_cleanup_is_preserved(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            for mode in ['ready', 'wrong_hash', 'same_pid', 'missing_stage', 'false_framework',
+            for mode in ['ready', 'wrong_hash', 'same_pid', 'missing_stage', 'old_report_source', 'false_framework',
                          'junit_failed', 'wrong_api', 'changed_system', 'preexisting_package',
                          'preexisting_staging', 'cleanup_failed', 'staging_cleanup_timeout', 'diagnostic_unavailable']:
                 with self.subTest(mode=mode):
@@ -76,6 +76,7 @@ class NativeOwnContractControlTest(unittest.TestCase):
                                              'provider_call_nonce_matches': True, 'provider_process_separate': mode != 'false_framework'}
                                 else:
                                     value = {'passed': True, 'scope': 'OWNED_GUEST_REAL_PROCESS_NOT_THIRD_PARTY_OR_WECHAT',
+                                             'report_source': 'OLD_UI_SOURCE' if mode == 'old_report_source' else 'OWN_GUEST_ATOMIC_PRIVATE_FILE',
                                              'host_pid': 31, 'guest_pid': 31 if mode == 'same_pid' else 32,
                                              'consumer_sha256': ('b' if mode == 'wrong_hash' else 'a') * 64,
                                              'stages': [{'name': n} for n in ['TARGET_A', 'TARGET_B', 'UNREGISTERED_STABLE']

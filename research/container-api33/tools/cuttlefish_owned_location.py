@@ -93,7 +93,7 @@ def owned_contracts(adb, serial, own_apks, manifest, out, environment, expected_
             transcript = completed.stdout + completed.stderr
             (case_out / 'junit.txt').write_bytes(transcript)
             observed = None
-            for filename in ['result.json', 'stages.json', 'window.xml', 'screen.png', 'last-guest-ui.txt']:
+            for filename in ['result.json', 'stages.json', 'window.xml', 'screen.png', 'last-guest-report.json']:
                 path = 'files/' + folder + '/' + filename
                 if run(['shell', 'run-as', host, 'test', '-f', path], check=False).returncode == 0:
                     data = run(['exec-out', 'run-as', host, 'cat', path]).stdout
@@ -104,6 +104,7 @@ def owned_contracts(adb, serial, own_apks, manifest, out, environment, expected_
                 and isinstance(observed, dict) and observed.get('passed') is True
             if case_passed and name == 'location':
                 case_passed = observed.get('scope') == 'OWNED_GUEST_REAL_PROCESS_NOT_THIRD_PARTY_OR_WECHAT' \
+                    and observed.get('report_source') == 'OWN_GUEST_ATOMIC_PRIVATE_FILE' \
                     and observed.get('consumer_sha256') == manifest['apks']['consumer']['sha256'] \
                     and observed.get('host_pid') != observed.get('guest_pid') \
                     and {s.get('name') for s in observed.get('stages', [])} == {

@@ -543,23 +543,19 @@
     "run_id": 40273974755,
     "commit": "ccd6d3e23d48c0432e0ea9324dcfb04d62a0fd25",
     "job_id": 121414860784,
-    "status_at_capture": "pending",
-    "patch_sha256": "416e8dd4fd539ed1ac6b1011e50174e180b5c94bb5b12c90b8486af39c4055cc",
-    "network_callback_candidate_included": true,
-    "passed": false
+    "result": "native-owned-location-freshness-results.json",
+    "passed": false,
+    "system_boot_passed": true,
+    "both_target_anonymous_ui_passed": true,
+    "own_framework_passed": true,
+    "owned_location_executed": true,
+    "owned_location_passed": false
   },
-  "separate_active_native_run": {
-    "run_id": 40271080579,
-    "commit": "774c6e7a1cda900e2a919401014e076d728e0030",
-    "job_id": 121405382190,
-    "status_at_capture": "in_progress",
-    "patch_sha256": "258c75a90e2fdf89e83d88a80a3f2ed01dbd1094bd5a4ae55d6fd9a2d7daa9b5",
-    "network_callback_candidate_included": false,
-    "passed": false
-  },
+  "separate_active_native_run": null,
   "pending_native_does_not_cancel_running_previous_run": true,
   "phone_update_distributed": false,
   "mock_flags_kept": true,
   "wechat_send_and_live_location": "UNFULFILLED",
-  "douyin_wireless_and_overseas": "UNFULFILLED"
+  "douyin_wireless_and_overseas": "UNFULFILLED",
+  "actual_native_result": "native-owned-location-freshness-results.json"
 }

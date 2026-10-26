@@ -1,6 +1,6 @@
 # 可复用基础审计
 
-当前实测以根PROJECT_STATUS.md为准：CI43普通入口／结构化导入通过，CI42原生匿名UI及自有Provider call/query通过，定位case旧UI节点读取失败且全轮失败。下列早期记录按当时范围保留，不把“仅构建／尚待”当成最新运行状态。
+当前实测以根PROJECT_STATUS.md为准：CI45默认六项和12项受控回调通过；CI44／45原生匿名UI及自有Provider call/query通过，但完整定位分别等待A／B超时。新的自有私有快照仅构建／静态／驱动检查通过，尚无新运行。下列早期记录按当时范围保留。
 
 本轮结论：API 33 云端中，原版计算器与官方 GPSTest 均实际运行；后者在正常精确定位授权后，其可见坐标跟随两次目标。现代定位、GNSS 回调和原签名信息已修正，自有消费者用于相关接口回归。腾讯／字节 SDK、微信／抖音、完整组件及权限隔离仍未完成。接手从根目录 [PROJECT_STATUS.md](../../PROJECT_STATUS.md) 开始。
 
@@ -143,3 +143,5 @@ CI40的同名PID集合变化不能证明主进程退出：9665仍在、新增103
 三个新增检查通过真实公共ConnectivityManager注册／请求／注销及NetworkCallback接收，后端为受控IConnectivityManager，输入为合成Network／WifiInfo：同一注册关闭→模拟→关闭、无WifiInfo的蜂窝回调、模拟时onLost、原Binder／flags／释放及受控SecurityException传递。18／14秒构建已过，CI45新增三项和既有九项实际共12项0.145秒通过；三档与源码／签名／材料均核对，没有真实无线请求或目标SDK结果。非WifiInfo分支、真实Guest安装、其他NetworkCapabilities敏感字段和持续Telephony回调仍未证明。
 
 原生CI44固定旧补丁258c75a9；默认六路径已通过也不能替代这条新回调的结果。新完整补丁416e8dd4已干净重放，代码与回执按不同提交区分。
+
+最新[原生两轮时效失败](evidence/native-owned-location-freshness-results.json)均已固定Git／四归档／来源／签名核对，不将文本中的六个正确值当作时效／停止／取消成功。CI45的A仅部分证据passed=false。候选采用[自有私有原子快照](evidence/owned-private-snapshot-preparation.json)，仍保留30秒时效及全部六路径／mock／身份断言；只读取独立自有测试应用文件，不读取第三方私有数据，不改引擎或定位时间。当前候选手机主包使用外部SDK构建占位键，联网地图未验；未发布安装包。
