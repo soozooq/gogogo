@@ -77,7 +77,7 @@ public class Lab33DiagnosticBundleTest {
         assertEquals(Lab33DiagnosticBundle.Priority.VERIFY_CONSUMERS,
                 Lab33DiagnosticBundle.priority(q, r));
         String report = Lab33DiagnosticBundle.render(q, r);
-        assertTrue(report.contains("Consumer Matrix"));
+        assertFalse(report.contains("Consumer Matrix"));
         assertTrue(report.contains("没有实时读取或验证微信"));
         assertFalse(report.contains("微信兼容已验证"));
     }

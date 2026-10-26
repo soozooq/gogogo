@@ -13,13 +13,18 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Binder;
 import android.os.IBinder;
+import android.os.IInterface;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.Parcel;
+import android.os.RemoteException;
 import android.os.WorkSource;
 import android.telephony.CellInfo;
 import android.telephony.TelephonyManager;
+import android.telephony.TelephonyCallback;
+import android.telephony.ServiceState;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -529,5 +534,183 @@ public final class RadioPrivacyContractInstrumentedTest {
 
     @Test public void publicNetworkCallbackKeepsPlatformPermissionRejection() throws Throwable {
         exercisePublicNetworkCallback(true, true);
+    }
+
+    private static final String PHONE_LISTENER = "com.android.internal.telephony.IPhoneStateListener";
+    private static final String[] LOCATION_PHONE_METHODS = {"onCellLocationChanged", "onCellInfoChanged",
+            "onServiceStateChanged", "onBarringInfoChanged", "onPhysicalChannelConfigChanged", "onRegistrationFailed"};
+
+    private static Method named(Class<?> type, String name) {
+        for (Method method : type.getMethods()) if (method.getName().equals(name)) return method;
+        throw new AssertionError("Missing framework method: " + name);
+    }
+
+    private static void sendSyntheticPhoneEvent(Object listener, String name) throws Exception {
+        Method event = named(Class.forName(PHONE_LISTENER), name);
+        Class<?>[] types = event.getParameterTypes(); Object[] args = new Object[types.length];
+        for (int i = 0; i < types.length; i++) {
+            if (types[i] == int.class) args[i] = 17;
+            else if (types[i] == String.class) args[i] = "synthetic-only";
+            else if (types[i] == List.class) args[i] = new ArrayList<>();
+        }
+        event.invoke(listener, args); // The actual framework AIDL Proxy encodes each transaction.
+    }
+
+    @Test public void persistentPhoneBinderGatesAllSixPayloadsAtDeliveryAndKeepsIdentity() throws Throwable {
+        Class<?> registry = Class.forName("com.android.internal.telephony.ITelephonyRegistry");
+        Method listen = named(registry, "listenWithEventList");
+        AtomicReference<Object[]> delegated = new AtomicReference<>();
+        AtomicInteger registrations = new AtomicInteger();
+        Object controlled = Proxy.newProxyInstance(registry.getClassLoader(), new Class<?>[] {registry},
+                (proxy, method, args) -> { registrations.incrementAndGet(); delegated.set(args.clone()); return null; });
+        List<Integer> codes = new ArrayList<>(); List<byte[]> bytes = new ArrayList<>();
+        Binder destination = new Binder() {
+            @Override protected boolean onTransact(int code, Parcel data, Parcel reply, int flags) {
+                assertEquals(IBinder.FLAG_ONEWAY, flags);
+                assertEquals(android.os.Process.myUid(), Binder.getCallingUid());
+                assertEquals(android.os.Process.myPid(), Binder.getCallingPid());
+                codes.add(code); bytes.add(data.marshall()); return true;
+            }
+        };
+        Class<?> stub = Class.forName(PHONE_LISTENER + "$Stub");
+        Object original = stub.getDeclaredMethod("asInterface", IBinder.class).invoke(null, destination);
+        Object[] incoming = {true, false, 3, InstrumentationRegistry.getInstrumentation().getTargetContext().getOpPackageName(),
+                "synthetic-feature", original, new int[] {1, 5, 11}, true};
+        ITelephonyRegistryProxy.ListenWithEventList hook = new ITelephonyRegistryProxy.ListenWithEventList();
+        BLocationManager.disableFakeLocation(user, pkg);
+        hook.hook(controlled, listen, incoming);
+        Object delivered = delegated.get()[5]; IBinder relay = ((IInterface) delivered).asBinder();
+        assertNotSame(destination, relay); assertTrue(relay instanceof Binder);
+        for (int i = 0; i < incoming.length; i++) if (i != 5) assertSame(incoming[i], delegated.get()[i]);
+        for (String name : LOCATION_PHONE_METHODS) sendSyntheticPhoneEvent(delivered, name);
+        assertEquals(6, codes.size()); assertEquals(6, new java.util.HashSet<>(codes).size());
+        List<byte[]> baseline = new ArrayList<>(bytes);
+        codes.clear(); bytes.clear();
+        BLocationManager.get().setPattern(user, pkg, BLocationManager.OWN_MODE);
+        for (String name : LOCATION_PHONE_METHODS) sendSyntheticPhoneEvent(delivered, name);
+        assertTrue("No location-bearing transaction reaches the delegate in virtual mode", codes.isEmpty());
+        sendSyntheticPhoneEvent(delivered, "onDataActivity"); assertEquals(1, codes.size());
+        codes.clear(); bytes.clear();
+        BLocationManager.disableFakeLocation(user, pkg);
+        for (String name : LOCATION_PHONE_METHODS) sendSyntheticPhoneEvent(delivered, name);
+        assertEquals(6, bytes.size());
+        for (int i = 0; i < 6; i++) assertArrayEquals("Closed mode must retain original AIDL bytes", baseline.get(i), bytes.get(i));
+        // A failed mode lookup cannot fall back to a raw cell/location-bearing payload.
+        Field cache = Class.forName("top.niunaijun.bcore.fake.frameworks.BlackManager").getDeclaredField("mService");
+        cache.setAccessible(true); Object previous = cache.get(BLocationManager.get());
+        Class<?> modes = Class.forName("top.niunaijun.bcore.core.system.location.IBLocationManagerService");
+        Binder live = new Binder();
+        Object unavailable = Proxy.newProxyInstance(modes.getClassLoader(), new Class<?>[] {modes}, (proxy, method, args) -> {
+            if (method.getName().equals("asBinder")) return live;
+            throw new RemoteException("CONTROLLED_MODE_UNAVAILABLE");
+        });
+        try {
+            cache.set(BLocationManager.get(), unavailable); codes.clear(); bytes.clear();
+            for (String name : LOCATION_PHONE_METHODS) sendSyntheticPhoneEvent(delivered, name);
+            assertTrue(codes.isEmpty());
+            sendSyntheticPhoneEvent(delivered, "onDataActivity"); assertEquals(1, codes.size());
+        } finally { cache.set(BLocationManager.get(), previous); }
+        Object[] removal = incoming.clone(); removal[6] = new int[0];
+        hook.hook(controlled, listen, removal);
+        assertSame("Unregistration must use the registered Binder", relay, ((IInterface) delegated.get()[5]).asBinder());
+        assertEquals(0, ((int[]) delegated.get()[6]).length); assertEquals(2, registrations.get());
+        assertSame("Caller arguments remain untouched", original, incoming[5]);
+        // Only public framework local Stubs are supported. Reject a nonlocal-shaped
+        // Binder facade rather than change a remote delegate's caller/death identity.
+        IBinder nonlocal = (IBinder) Proxy.newProxyInstance(IBinder.class.getClassLoader(), new Class<?>[] {IBinder.class},
+                (proxy, method, args) -> method.invoke(destination, args));
+        Object[] unsupported = incoming.clone();
+        unsupported[5] = stub.getDeclaredMethod("asInterface", IBinder.class).invoke(null, nonlocal);
+        try { hook.hook(controlled, listen, unsupported); fail("Unsupported callback must not reach the registry"); }
+        catch (IllegalArgumentException expected) { assertEquals(2, registrations.get()); }
+    }
+
+    private void exercisePublicRegistryCallback(boolean reject) throws Throwable {
+        Class<?> registry = Class.forName("com.android.internal.telephony.ITelephonyRegistry");
+        Class<?> managerType = Class.forName("android.telephony.TelephonyRegistryManager");
+        Field registryCache = managerType.getDeclaredField("sRegistry"); registryCache.setAccessible(true);
+        Field phoneCache = TelephonyManager.class.getDeclaredField("sITelephony"); phoneCache.setAccessible(true);
+        Field caching = TelephonyManager.class.getDeclaredField("sServiceHandleCacheEnabled"); caching.setAccessible(true);
+        Object oldRegistry = registryCache.get(null), oldPhone = phoneCache.get(null);
+        boolean oldCaching = caching.getBoolean(null);
+        AtomicReference<Object[]> incoming = new AtomicReference<>(), delegated = new AtomicReference<>();
+        AtomicInteger registered = new AtomicInteger(), removed = new AtomicInteger();
+        AtomicReference<IBinder> firstRelay = new AtomicReference<>();
+        Object controlled = Proxy.newProxyInstance(registry.getClassLoader(), new Class<?>[] {registry}, (proxy, method, args) -> {
+            assertEquals("listenWithEventList", method.getName());
+            if (reject) throw new SecurityException("CONTROLLED_REGISTRY_REJECTION");
+            delegated.set(args.clone());
+            for (int i = 0; i < args.length; i++) if (i != 5) assertSame(incoming.get()[i], args[i]);
+            IBinder relay = ((IInterface) args[5]).asBinder();
+            assertNotSame(((IInterface) incoming.get()[5]).asBinder(), relay);
+            if (((int[]) args[6]).length == 0) { removed.incrementAndGet(); assertSame(firstRelay.get(), relay); }
+            else { registered.incrementAndGet(); firstRelay.set(relay); }
+            return null;
+        });
+        ITelephonyRegistryProxy.ListenWithEventList hook = new ITelephonyRegistryProxy.ListenWithEventList();
+        Object intercepted = Proxy.newProxyInstance(registry.getClassLoader(), new Class<?>[] {registry}, (proxy, method, args) -> {
+            if (method.getName().equals("asBinder")) return new Binder();
+            incoming.set(args.clone()); return hook.hook(controlled, method, args);
+        });
+        Object noModem = Proxy.newProxyInstance(telephony.getClassLoader(), new Class<?>[] {telephony}, (proxy, method, args) -> {
+            if (method.getName().equals("asBinder")) return new Binder();
+            throw new AssertionError("No modem query is allowed in the controlled registry check");
+        });
+        ExecutorService executor = Executors.newSingleThreadExecutor(task -> new Thread(task, "controlled-phone-callback"));
+        BlockingQueue<String> received = new LinkedBlockingQueue<>();
+        class Callback extends TelephonyCallback implements TelephonyCallback.ServiceStateListener,
+                TelephonyCallback.CellInfoListener, TelephonyCallback.DataActivityListener {
+            @Override public void onServiceStateChanged(ServiceState value) { received.add("service:" + value.getOperatorAlphaLong()); }
+            @Override public void onCellInfoChanged(List<CellInfo> cells) { received.add("cell:" + cells.size()); }
+            @Override public void onDataActivity(int direction) { received.add("data:" + direction); }
+        }
+        Callback callback = new Callback(); TelephonyManager manager = null; boolean active = false;
+        try {
+            registryCache.set(null, controlled); // Deliberately preload a non-null stale service.
+            ITelephonyRegistryProxy.replaceCachedRegistry(intercepted);
+            assertSame(intercepted, registryCache.get(null));
+            phoneCache.set(null, noModem); caching.setBoolean(null, true);
+            manager = InstrumentationRegistry.getInstrumentation().getTargetContext()
+                    .getSystemService(TelephonyManager.class).createForSubscriptionId(1);
+            BLocationManager.disableFakeLocation(user, pkg);
+            try {
+                manager.registerTelephonyCallback(executor, callback); active = true;
+                assertFalse("A registry permission rejection must propagate", reject);
+            } catch (SecurityException denied) {
+                assertTrue(reject); assertEquals("CONTROLLED_REGISTRY_REJECTION", denied.getMessage()); return;
+            }
+            ServiceState state = new ServiceState(); state.setOperatorName("synthetic-operator", "synthetic", "00101");
+            List<CellInfo> cells = new ArrayList<>();
+            cells.add((CellInfo) Class.forName("android.telephony.CellInfoGsm").getDeclaredConstructor().newInstance());
+            Class<?> listener = Class.forName(PHONE_LISTENER);
+            for (boolean virtual : new boolean[] {false, true, false}) {
+                BLocationManager.get().setPattern(user, pkg, virtual ? BLocationManager.OWN_MODE : BLocationManager.CLOSE_MODE);
+                Object destination = delegated.get()[5];
+                listener.getMethod("onServiceStateChanged", ServiceState.class).invoke(destination, state);
+                listener.getMethod("onCellInfoChanged", List.class).invoke(destination, cells);
+                listener.getMethod("onDataActivity", int.class).invoke(destination, 2);
+                executor.submit(() -> {}).get(5, TimeUnit.SECONDS); // barrier after all local Binder deliveries
+                assertEquals(virtual ? 1 : 3, received.size());
+                if (!virtual) { assertEquals("service:synthetic-operator", received.remove()); assertEquals("cell:1", received.remove()); }
+                assertEquals("data:2", received.remove());
+                assertEquals("synthetic-operator", state.getOperatorAlphaLong()); assertEquals(1, cells.size());
+            }
+            manager.unregisterTelephonyCallback(callback); active = false;
+            assertEquals(1, registered.get()); assertEquals(1, removed.get());
+        } finally {
+            try { if (active) manager.unregisterTelephonyCallback(callback); }
+            finally {
+                registryCache.set(null, oldRegistry); phoneCache.set(null, oldPhone); caching.setBoolean(null, oldCaching);
+                executor.shutdownNow();
+            }
+        }
+    }
+
+    @Test public void publicTelephonyCallbackChecksModeAtDeliveryAndUnregistersSameBinder() throws Throwable {
+        exercisePublicRegistryCallback(false);
+    }
+
+    @Test public void publicTelephonyCallbackKeepsRegistryPermissionRejection() throws Throwable {
+        exercisePublicRegistryCallback(true);
     }
 }

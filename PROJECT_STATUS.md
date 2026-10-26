@@ -13,6 +13,20 @@
 
 不新增分支／PR、删除、强推、重置他人工作区或自动合并。保留其他工作区与未提交内容。手机交付仍为草稿，当前不安排新手机实验。
 
+## 当前候选：Android13持续电话监听与反馈简化
+
+[持续电话回调候选](research/container-api33/evidence/persistent-phone-callback-preparation.json)补齐`listenWithEventList`及已创建的`TelephonyRegistryManager.sRegistry`缓存。公共框架的本地监听Stub转入同进程Binder，保持注册参数、更新／空事件注销的同一Binder。六类位置相关回调在交付时检查模拟状态；开启或状态无法读取时抑制整条消息，关闭时和其他回调转发原Parcel／flag，不编造基站或网络身份。非本地形状监听明确拒绝，避免改变其远程调用者／死亡身份；没有新增权限、依赖、JNI或mock标志变化。
+
+23秒构建、宿主静态、完整补丁干净索引重放及25项驱动检查通过。自有软件API33环境实际执行**15项检查／2.837秒通过**，包含真实公共TelephonyManager／TelephonyCallback与受控服务、预先缓存旧服务、同一监听关闭→开启→关闭、六类真实AIDL编码消息、关闭时原字节／本地PID与UID、非敏感DataActivity、未知模式不回退原数据、同Binder注销及平台权限拒绝。新引擎下独立Guest原六路径A→B／停止／取消也实际通过51.982秒；自有VM已正常停止。
+
+首轮软件VM在Provider发布超时后、0方法执行时失败，原始证据保留；同一自有VM预热后的两次15项通过分别记录，未更改镜像或平台超时。上述检查不是实际modem、真实Guest持续电话注册、目标SDK、内核死亡事件或vivo证明；已交付给应用的旧缓存也无法回收，SIM／运营商／国家／IP及其他接口未由此覆盖。
+
+**新完整引擎补丁为aad5ff14；正在运行的CI46仍是旧416e8dd4，不能替新候选背书。** 新补丁需各自同轮CI核对。
+
+[反馈文案简化](research/container-api33/evidence/no-extra-experiment-feedback-preparation.json)让默认摘要直接引导已有的「一键复制反馈」，不再要求先跑Consumer Matrix、另开实验或补做启动／停止对照。权限阻断、历史／第三方不确定性与原判定保留。已有断言同步更新，没有新增实验或测试场景；主程序447项／lint实际通过，最终36秒。此变化只在研发源码中，待重建候选包。
+
+[CI46默认结果](research/container-api33/evidence/owned-private-snapshot-results.json)已完整核对三档、每case58份／自有及移动UI59份来源、三同签名／11材料、主447项／lint及7份关键主输入。原子私有报告六路径3.309秒完成四阶段；框架0.529秒、导入7.590秒、普通入口10.640秒、计算器5.680秒及旧12项无线0.085秒。**原生121455067092仍运行，固定42cd5eb5／旧补丁，不含新持续电话候选。**
+
 ## 最新实际原生：CI44／45整项仍失败
 
 [两轮完整回执](research/container-api33/evidence/native-owned-location-freshness-results.json)均已核对四档API摘要、固定Git源码、9份原生输入及三件自有APK的59份来源／同签名／每包11份材料。两轮固定Android13／build16596636、原生ARM64、Native Bridge 0、UID2000、SELinux Enforcing、4CPU及超时倍数50合格；system_server分别662／650稳定，VM、包及staging均清理。
@@ -34,7 +48,7 @@
 
 随机nonce、旧文件清理、序号不回退、真实单调时钟均核对；报告和原六类样本仍须在30秒内，120秒等待不变。坐标、provider、mock、真实PID／UID、A→B、注销稳定、GNSS零卫星和取消零回调断言保留，JSON／API错误仍失败。两个驱动要求新的报告来源，不能拿旧UI报告或绿色JUnit冒充成功。阶段文件仍为部分证据，最终成功需所有条件。
 
-15秒构建、宿主／独立消费者静态核验及25项受控驱动检查通过，含旧来源拒绝场景。**修正后的实际默认与原生尚未运行**；引擎补丁416e8dd4未改，没有新增权限、依赖或手机实验。
+15秒构建、宿主／独立消费者静态核验及25项受控驱动检查通过，含旧来源拒绝场景；CI46默认实际3.309秒完成全部四阶段。原生仍在运行。该轮引擎416e8dd4未改；上述持续电话候选属于后续独立变更。
 
 1. 同一主线提交后先核对默认六项，再核对同轮原生；按各自固定Git提交、API摘要、来源、签名、JUnit与清理判断，保留失败。
 2. 原生push须带齐`[cuttlefish-boot] [cuttlefish-container]`，或显式手动选项。共用锁不取消前轮；排队、被替换和跳过不算通过。
@@ -52,7 +66,7 @@ API33网络回调仅转接requestNetwork／listenForNetwork的Messenger，交付
 
 ## 手机交付草稿
 
-[三步说明](docs/original-app-preview-flow.md)收敛为地图选点、导入一次、确认并打开。预览需自行登录；原应用与私有数据保留。已在仓库外准备两份自有候选与签名／摘要核验，另有[仅版本元数据构建覆盖](docs/build-profiles/main-preview-version.init.gradle)。主包为2.4.32／2400100预览，固定CI45源码，外部SDK键为构建占位配置，联网地图未验；不能称为最终可用交付。预览宿主415份非签名文件与CI45产物一致，固定自有签名材料不入Git或交付。
+[三步说明](docs/original-app-preview-flow.md)收敛为地图选点、导入一次、确认并打开。预览需自行登录；原应用与私有数据保留。已在仓库外准备两份自有候选与签名／摘要核验，另有[仅版本元数据构建覆盖](docs/build-profiles/main-preview-version.init.gradle)。这两份旧候选固定CI45源码，不含当前持续电话或反馈文案改动，需在新源码通过后重建。主包预定2.4.32／2400100；主页使用免腾讯Key的MapLibre／OpenFreeMap，旧腾讯功能使用构建占位键，联网地图仍未验。旧预览宿主415份非签名文件与CI45及CI46产物均一致，固定自有签名材料不入Git或交付。
 
 GitHub只建立未发布的Release草稿，没有上传安装包。原生完整定位仍失败，不要求现在安装或重复实验。每日#59源码／版本保持。
 

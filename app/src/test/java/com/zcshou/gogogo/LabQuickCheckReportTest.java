@@ -46,7 +46,7 @@ public class LabQuickCheckReportTest {
 
     @Test public void activeFlagCannotCertifyThirdPartyConsumer() {
         String s = LabQuickCheckReport.render(signals(YES, YES, YES, YES, NO, true));
-        assertTrue(s.contains("可打开 Consumer Matrix"));
+        assertFalse(s.contains("Consumer Matrix"));
         assertTrue(s.contains("只是当前进程的标记"));
         assertTrue(s.contains("不验证第三方应用"));
     }

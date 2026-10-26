@@ -1,0 +1,109 @@
+{
+  "schema": "GOGOGO_PERSISTENT_PHONE_CALLBACK_PREPARATION_AND_LOCAL_RESULTS_V1",
+  "scope": "BUILD_LOCAL_PUBLIC_FRAMEWORK_WITH_CONTROLLED_REGISTRY_AND_OWN_GUEST_LOCATION_NOT_NATIVE_REGISTRY_OR_TARGET_BUSINESS",
+  "base_commit": "42cd5eb5c269b39ce689191f3a0292009bbf24a8",
+  "pinned_android_sources": [
+    {
+      "name": "IPhoneStateListener.aidl",
+      "source_commit": "e554ee0e1b19758e7023950731581a314a74cb7d",
+      "url": "https://android.googlesource.com/platform/frameworks/base/+/e554ee0e1b19758e7023950731581a314a74cb7d/core/java/com/android/internal/telephony/IPhoneStateListener.aidl",
+      "sha256": "3fe7f013a0aeffb6fa83faa9c360ffd1218d5dc7f494dca0d8068d65ae05f1a5",
+      "bytes": 3974
+    },
+    {
+      "name": "TelephonyRegistryManager.java",
+      "source_commit": "e554ee0e1b19758e7023950731581a314a74cb7d",
+      "url": "https://android.googlesource.com/platform/frameworks/base/+/e554ee0e1b19758e7023950731581a314a74cb7d/core/java/android/telephony/TelephonyRegistryManager.java",
+      "sha256": "8b7eeee9d8c7228e1f77aa4dcf6ac68e1361591571e481fa533000aa831eed1a",
+      "bytes": 60039
+    }
+  ],
+  "api": 33,
+  "change": "Wrap listenWithEventList local IPhoneStateListener Binder; replace an already-created TelephonyRegistryManager.sRegistry; check virtual mode at each protected callback delivery.",
+  "protected_callback_names": [
+    "onCellLocationChanged",
+    "onCellInfoChanged",
+    "onServiceStateChanged",
+    "onBarringInfoChanged",
+    "onPhysicalChannelConfigChanged",
+    "onRegistrationFailed"
+  ],
+  "virtual_or_unknown_mode": "SUPPRESS_WHOLE_LOCATION_BEARING_CALLBACK_NO_RAW_FALLBACK_OR_FABRICATED_CELL_IDENTITY",
+  "closed_and_other_callbacks": "ORIGINAL_TRANSACTION_BYTES_FLAGS_AND_LOCAL_CALLER_IDENTITY",
+  "registration_fields_and_caller_args_preserved": true,
+  "same_binder_for_updates_and_empty_event_unregistration": true,
+  "cache_lifetime": "Weak keys and weak relay values; live system registration retains the local Binder. No manual cache deletion race on unregister.",
+  "remote_callback_limit": "Only public framework local Stubs supported; nonlocal-shaped callback rejected before calling the base registry rather than alter its caller/death identity.",
+  "cache_preloaded_non_null_and_replaced_in_actual_framework_test": true,
+  "build": {
+    "passed": true,
+    "seconds": 23
+  },
+  "host_static_passed": true,
+  "full_patch_clean_index_replay_passed": true,
+  "patch_sha256": "aad5ff1428b3d3944c40eaf1ceaa95f2757ff23dde4ab4b2ba3b6cfe6c5aa1e4",
+  "controlled_framework_runtime": {
+    "passed": true,
+    "test_count": 15,
+    "seconds": 2.837,
+    "new_test_names": [
+      "persistentPhoneBinderGatesAllSixPayloadsAtDeliveryAndKeepsIdentity",
+      "publicTelephonyCallbackChecksModeAtDeliveryAndUnregistersSameBinder",
+      "publicTelephonyCallbackKeepsRegistryPermissionRejection"
+    ],
+    "public_TelephonyManager_and_TelephonyCallback_with_controlled_process_caches": true,
+    "same_callback_close_own_close_and_nonlocation_data_activity": true,
+    "same_binder_unregister_and_original_arguments": true,
+    "actual_aidl_proxy_six_payloads_original_bytes_flags_local_pid_uid": true,
+    "mode_lookup_failure_no_raw_forwarding": true,
+    "platform_permission_rejection_preserved": true,
+    "real_radio_queried": false
+  },
+  "own_guest_regression_with_new_engine": {
+    "passed": true,
+    "seconds": 51.982,
+    "host_pid": 4216,
+    "guest_pid": 4308,
+    "report_source": "OWN_GUEST_ATOMIC_PRIVATE_FILE",
+    "stage_names": [
+      "TARGET_A",
+      "TARGET_B",
+      "UNREGISTERED_STABLE",
+      "CURRENT_CANCELLED"
+    ],
+    "scope_limit": "REAL_GUEST_SIX_PUBLIC_LOCATION_PATHS_A_B_STOP_CANCEL_NOT_PROOF_OF_REAL_GUEST_REGISTRY_CALL_OR_MODEM_EVENT"
+  },
+  "initial_environment_failure": {
+    "scope": "OWNED_SOFTWARE_VM_INITIALIZATION_FAILURE_NOT_EXECUTED_CALLBACK_TESTS",
+    "passed": false,
+    "label": "api33-persistent-telephony-01",
+    "test_methods_executed": 0,
+    "failure": "Own black process killed for timeout publishing content providers; ProbeApplication startup then receives null provider result",
+    "controlled_registry_callback_executed": false,
+    "same_apks_retained_for_warm_attempt": true,
+    "image_and_platform_timeout_changed": false,
+    "system_or_target_failure_inference": false
+  },
+  "same_owned_software_vm_window": {
+    "scope": "SELF_OWNED_API33_SOFTWARE_CHECKS_NOT_PHONE",
+    "reused_own_userdata_after_first_boot": true,
+    "platform_image_and_timeout_settings_changed": false,
+    "maximum_seconds": 1800,
+    "stopped": true,
+    "pid": 26584,
+    "stop_reason": "REQUESTED",
+    "elapsed_seconds": 1357.03
+  },
+  "actual_native_for_this_new_patch": "NOT_YET_RUN; CI46_ACTIVE_USES_OLD_416E_PATCH",
+  "no_new_runtime_permissions_dependencies_or_jni_changes": true,
+  "mock_flags_kept": true,
+  "previous_delivered_values_not_retracted_from_app_memory": true,
+  "sim_operator_country_ip_other_callbacks_and_target_sdk_not_proven_covered": true,
+  "kernel_death_and_remote_system_caller_identity_not_runtime_tested": true,
+  "phone_update_distributed": false,
+  "source_sha256": {
+    "patches/blackbox-api33-build.patch": "aad5ff1428b3d3944c40eaf1ceaa95f2757ff23dde4ab4b2ba3b6cfe6c5aa1e4",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/RadioPrivacyContractInstrumentedTest.java": "e65eba4305525375c0275662519b95209cc1732ccee86434a79ae17c557d0b91",
+    "tools/run-cloud-check.py": "c5ab270809aac9b0d43f64ac11703040fc6b1636ad326580ec3da301715b65d6"
+  }
+}

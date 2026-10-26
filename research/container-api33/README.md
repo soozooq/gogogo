@@ -2,13 +2,13 @@
 
 当前状态以根[PROJECT_STATUS.md](../../PROJECT_STATUS.md)为准。唯一研发主线`research/container-api33-20261023`／Draft #60，日常#59固定2.4.31／2400099。用户只有一部vivo手机，无Root／电脑，当前不安排手机复测。
 
-[CI45默认六项](evidence/network-callback-transport-results.json)及12项受控无线／回调、447项／lint、来源／签名／材料通过。[CI43普通入口](evidence/map-point-prefill-results.json)已经验证地图预填／不自动启动、结构化已装导入与GPSTest实际A→B／停止；首页发送端没有真机结果。固定完整微信8.0.79／抖音40.8.0限原生ARM64，不复制账号私有数据或改签目标APK。
+[CI46默认六项](evidence/owned-private-snapshot-results.json)及旧12项受控无线、主447项／lint、三档来源／签名／材料均实核通过。自有原子私有报告3.309秒完成A→B／停止／取消；原生121455067092仍执行，固定42cd5eb5和旧416e8dd4补丁。
 
-[最新原生CI44与45](evidence/native-owned-location-freshness-results.json)四档已完整核对：两个普通原包与两个Guest匿名UI、原始证书、300秒抖音主角色PID／UID观察、自有框架call／query均通过，系统及清理合格。自有定位44等待A超时，45保存A部分证据后等待B超时，两轮整项均失败；末尾六值虽然为对应目标／mock，单次样本已比持续回调旧超过120秒，不作时效成功。没有停止／取消完成结果，目标定位关闭且未接受条款／登录。
+[后续持续电话监听候选](evidence/persistent-phone-callback-preparation.json)补API33现代注册及已建缓存，交付时抑制六类带位置消息，保留其他消息、关闭模式原Parcel／flags及同Binder注销。未知模式无原数据回退；仅公共框架本地Stub，非本地形状拒绝。23秒构建、静态／完整补丁重放、25驱动、实际15项受控公共框架检查2.837秒及新引擎独立Guest六路径51.982秒通过；不证明真实Guest电话注册、modem、目标SDK或vivo。新补丁aad5ff14尚无原生结果，不能拿旧CI46代替。
 
-[新自有报告准备](evidence/owned-private-snapshot-preparation.json)让独立消费者将相同状态原子写到自身私有文件，控制器直接核对nonce／序号／真实时间；按钮仍走真实界面，定位仍走公共Android API。报告及六路径仍30秒时效，全部原断言保留，未改引擎／权限／依赖。15秒构建、两APK静态与25项驱动检查通过，新默认／原生尚待实际运行。
+[最新完成原生44／45](evidence/native-owned-location-freshness-results.json)普通和容器匿名UI、自有框架call／query通过，完整定位分别等待A／B超时；CI45只有A的部分证据，整轮失败保留。[CI43普通入口](evidence/map-point-prefill-results.json)验证预填／不自动启动、结构化导入和GPSTest A→B／停止；首页发送端无真机结果。固定完整微信8.0.79／抖音40.8.0限原生ARM64，原包不改签／分发，私有数据不迁移。
 
-[手机三步流程](../../docs/original-app-preview-flow.md)是交付草稿。仓库外已准备两份自有候选但未上传或发布，主包外部SDK使用构建占位键、联网地图未验；微信发送／实时共享、抖音无线／海外仍未完成。自有Guest共享真实宿主UID，不能称为独立安全隔离或目标SDK采用。
+[反馈简化](evidence/no-extra-experiment-feedback-preparation.json)将默认提示收敛为已有「一键复制反馈」，不要求先运行实验；原权限及证据判定保留，447项／lint通过。旧的两份仓库外安装包不含新变更，尚未发布；主页使用免腾讯Key的MapLibre／OpenFreeMap，联网地图未实测。[三步流程](../../docs/original-app-preview-flow.md)仍是交付草稿，微信发送／实时共享、抖音无线／海外均未完成。
 
 下方保留此前各轮的命令和历史结果，不替代顶部当前状态。[CI38匿名启动通过](evidence/native-container-startup-pass-results.json)、[CI40旧PID集合失败](evidence/native-pid-set-and-owned-stage-results.json)、[CI39真实Provider归属失败](evidence/provider-attribution-failure-and-correction.json)均保留，不覆盖为成功。
 

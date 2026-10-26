@@ -1002,6 +1002,157 @@ index 33686f0..4ee563d 100644
              }
              return method.invoke(who, args);
          }
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyRegistryProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyRegistryProxy.java
+index 1faafb8..82ffcbf 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyRegistryProxy.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyRegistryProxy.java
+@@ -1,15 +1,37 @@
+ package top.niunaijun.bcore.fake.service;
+ 
++import android.os.Binder;
++import android.os.Build;
++import android.os.IBinder;
++import android.os.IInterface;
++import android.os.Parcel;
++import android.os.RemoteException;
++import android.util.Log;
++
++import java.lang.ref.WeakReference;
++import java.lang.reflect.Field;
++import java.lang.reflect.InvocationTargetException;
+ import java.lang.reflect.Method;
++import java.util.HashSet;
++import java.util.Map;
++import java.util.Set;
++import java.util.WeakHashMap;
+ 
+ import black.android.os.ServiceManager;
+ import black.com.android.internal.telephony.ITelephonyRegistry;
+ import top.niunaijun.bcore.fake.hook.BinderInvocationStub;
+ import top.niunaijun.bcore.fake.hook.MethodHook;
+ import top.niunaijun.bcore.fake.hook.ProxyMethod;
++import top.niunaijun.bcore.app.BActivityThread;
++import top.niunaijun.bcore.core.system.location.IBLocationManagerService;
++import top.niunaijun.bcore.fake.frameworks.BLocationManager;
+ import top.niunaijun.bcore.utils.MethodParameterUtils;
+ 
+ public class ITelephonyRegistryProxy extends BinderInvocationStub {
++    private static final String LISTENER = "com.android.internal.telephony.IPhoneStateListener";
++    // Weak values avoid retaining the listener through its own weak map key.
++    // A live system registration retains the local Binder and therefore its delegate.
++    private static final Map<IBinder, WeakReference<PhoneCallbackRelay>> CALLBACKS = new WeakHashMap<>();
+     public ITelephonyRegistryProxy() {
+         super(ServiceManager.getService.call("telephony.registry"));
+     }
+@@ -21,14 +43,108 @@ public class ITelephonyRegistryProxy extends BinderInvocationStub {
+ 
+     @Override
+     protected void inject(Object baseInvocation, Object proxyInvocation) {
++        if (Build.VERSION.SDK_INT == 33) replaceCachedRegistry(proxyInvocation);
+         replaceSystemService("telephony.registry");
+     }
+ 
++    static void replaceCachedRegistry(Object proxyInvocation) {
++        try {
++            // A manager created before Guest hook installation can retain the old
++            // service even after ServiceManager.sCache has been replaced.
++            Field cache = Class.forName("android.telephony.TelephonyRegistryManager").getDeclaredField("sRegistry");
++            cache.setAccessible(true);
++            cache.set(null, proxyInvocation);
++        } catch (ReflectiveOperationException unavailable) {
++            throw new IllegalStateException("API33 telephony registry cache unavailable", unavailable);
++        }
++    }
++
+     @Override
+     public boolean isBadEnv() {
+         return false;
+     }
+ 
++    @ProxyMethod("listenWithEventList")
++    public static class ListenWithEventList extends MethodHook {
++        @Override protected Object hook(Object who, Method method, Object[] args) throws Throwable {
++            if (Build.VERSION.SDK_INT != 33) return invokeBase(who, method, args);
++            Object[] outbound = args.clone();
++            MethodParameterUtils.replaceFirstAppPkg(outbound);
++            for (int i = 0; i < outbound.length; i++) {
++                if (method.getParameterTypes()[i].getName().equals(LISTENER) && outbound[i] != null) {
++                    IInterface listener = (IInterface) outbound[i];
++                    IBinder destination = listener.asBinder();
++                    // Public TelephonyCallback/PhoneStateListener create a local Stub.
++                    // A remote delegate would change the caller/death identity on forwarding.
++                    if (!(destination instanceof Binder)) {
++                        throw new IllegalArgumentException("API33 telephony callback must be local");
++                    }
++                    PhoneCallbackRelay relay;
++                    synchronized (CALLBACKS) {
++                        WeakReference<PhoneCallbackRelay> known = CALLBACKS.get(destination);
++                        relay = known == null ? null : known.get();
++                        if (relay == null) {
++                            relay = new PhoneCallbackRelay(destination);
++                            CALLBACKS.put(destination, new WeakReference<>(relay));
++                        }
++                    }
++                    Class<?> stub = Class.forName(LISTENER + "$Stub");
++                    outbound[i] = stub.getDeclaredMethod("asInterface", IBinder.class).invoke(null, relay);
++                }
++            }
++            // Preserve event arrays, renounce flags, subscription, feature tag and notifyNow.
++            // The same local Binder is used for updates and empty-event unregistration.
++            return invokeBase(who, method, outbound);
++        }
++    }
++
++    private static Object invokeBase(Object who, Method method, Object[] args) throws Throwable {
++        try { return method.invoke(who, args); }
++        catch (InvocationTargetException error) { throw error.getCause(); }
++    }
++
++    private static final class PhoneCallbackRelay extends Binder {
++        private final IBinder destination;
++        private final Set<Integer> protectedTransactions = new HashSet<>();
++
++        PhoneCallbackRelay(IBinder destination) throws ReflectiveOperationException {
++            this.destination = destination;
++            attachInterface(null, LISTENER);
++            Class<?> stub = Class.forName(LISTENER + "$Stub");
++            for (String name : new String[] {"onCellLocationChanged", "onCellInfoChanged",
++                    "onServiceStateChanged", "onBarringInfoChanged",
++                    "onPhysicalChannelConfigChanged", "onRegistrationFailed"}) {
++                Field code = stub.getDeclaredField("TRANSACTION_" + name);
++                code.setAccessible(true);
++                int value = code.getInt(null);
++                if (value < FIRST_CALL_TRANSACTION || !protectedTransactions.add(value)) {
++                    throw new IllegalStateException("Invalid API33 phone callback transaction map");
++                }
++            }
++        }
++
++        @Override protected boolean onTransact(int code, Parcel data, Parcel reply, int flags)
++                throws RemoteException {
++            if (protectedTransactions.contains(code)) {
++                try {
++                    IBLocationManagerService modes = BLocationManager.get().getService();
++                    if (modes == null || modes.getPattern(BActivityThread.getUserId(),
++                            BActivityThread.getAppPackageName()) != BLocationManager.CLOSE_MODE) {
++                        return true;
++                    }
++                } catch (RemoteException | RuntimeException unavailable) {
++                    // Unknown mode must not deliver the raw location-bearing payload.
++                    Log.w("ITelephonyRegistryProxy", "Phone callback mode unavailable: "
++                            + unavailable.getClass().getSimpleName());
++                    return true;
++                }
++            }
++            // No parcel parsing/copying and no identity clearing. The local delegate
++            // receives the original transaction bytes/flags and original Binder caller.
++            return destination.transact(code, data, reply, flags);
++        }
++    }
++
+     @ProxyMethod("listenForSubscriber")
+     public static class ListenForSubscriber extends MethodHook {
+ 
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IWifiManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IWifiManagerProxy.java
 index 98e849a..71c6d32 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IWifiManagerProxy.java

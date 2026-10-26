@@ -50,11 +50,11 @@ public final class Lab33DiagnosticBundle {
                 return "优先检查系统定位开关、本应用精确定位授权和开发者选项中的模拟位置应用。"
                         + "UNKNOWN 表示没有足够证据，不等于授权已成功。";
             case REVIEW_RECOVERY:
-                return "优先打开异常退出与恢复取证，核对未完成的清理 API 或 GMS 异步回调。"
+                return "存在待核对的异常退出或清理记录；可一键复制反馈，无需重新运行实验。"
                         + "请勿在服务运行时强行移除 Provider。";
             default:
-                return "基础条件没有发现明确阻断项；请用 Consumer Matrix 检查实时定位流。"
-                        + "之后才能按需对照其他应用的实际 UI。";
+                return "基础条件没有发现明确阻断项；目标应用效果仍以实际页面为准。"
+                        + "遇到问题可在「诊断与反馈」一键复制反馈，无需先运行其他实验。";
         }
     }
 

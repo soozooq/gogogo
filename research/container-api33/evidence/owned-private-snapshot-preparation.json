@@ -26,7 +26,7 @@
     "seconds": 0.429,
     "passed": true
   },
-  "corrected_runtime": "NOT_YET_RUN",
+  "corrected_runtime": "CI46_X86_64_FULL_A_B_STOP_CANCEL_PASS_3.309S; NATIVE_IN_PROGRESS",
   "phone_experiment_or_update_requested": false,
   "source_sha256": {
     "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/LocationActivity.java": "5a0a92ce0f26aaefc014666e04a18c57f0f695e951cc939200dedbc6b9ada6f6",
@@ -35,5 +35,6 @@
     "tools/run-cloud-check.py": "43ea6fbde51428ebed64313813e4b97ca99b9831ffb8de2d2e19b13cbc5792bb",
     "tests/test_cuttlefish_owned_location.py": "66548d74b1773fa895a5983e5bc8bada40fc6c35c105afa17017543abd81e153",
     "patches/blackbox-api33-build.patch": "416e8dd4fd539ed1ac6b1011e50174e180b5c94bb5b12c90b8486af39c4055cc"
-  }
+  },
+  "subsequent_actual_result": "owned-private-snapshot-results.json"
 }

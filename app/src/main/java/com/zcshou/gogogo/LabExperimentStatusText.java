@@ -5,7 +5,7 @@ public final class LabExperimentStatusText {
     private LabExperimentStatusText() {}
 
     public static String serviceFlag(Boolean running) {
-        if (running == null) return "无法读取主进程标记；请在 Consumer Matrix 看实际定位样本";
+        if (running == null) return "无法读取主进程标记；可在「诊断与反馈」一键复制反馈";
         return running
                 ? "主进程 ServiceGo 标记 RUNNING（不等于所有定位接口已模拟）"
                 : "主进程 ServiceGo 标记 STOPPED（不等于系统缓存已清理）";

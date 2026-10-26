@@ -1,0 +1,25 @@
+{
+  "schema": "GOGOGO_NO_EXTRA_EXPERIMENT_FEEDBACK_PREPARATION_V1",
+  "scope": "LOCAL_COMPILED_JVM_AND_LINT_NOT_NEW_PHONE_UI",
+  "change": "Default basic/recovery feedback points to the existing one-click feedback action, without requiring Consumer Matrix, another experiment or a new start/stop comparison.",
+  "readiness_decisions_and_permission_guidance_unchanged": true,
+  "third_party_and_service_marker_uncertainty_kept": true,
+  "existing_tests_updated_without_new_test_cases": true,
+  "build_and_checks_seconds": 36,
+  "junit": {
+    "tests": 447,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint_error_fatal_count": 0,
+  "phone_experiment_requested": false,
+  "source_sha256": {
+    "app/src/main/java/com/zcshou/gogogo/LabQuickCheckReport.java": "5b4fdd1a2f0ec7cffe958fa4754b5c21454acfd0c23d48dd8f7f9c08543b14b7",
+    "app/src/main/java/com/zcshou/gogogo/Lab33DiagnosticBundle.java": "d84dd429589e5ec5ab0a1b7312e1cf8b9cc0b970997e770b69d4a93f35234f3b",
+    "app/src/main/java/com/zcshou/gogogo/LabRecoveryTriage.java": "4f7cc419209117d58a3b21404d78704fa72edb7c55c680acb9ac4dedeaaad098",
+    "app/src/main/java/com/zcshou/gogogo/LabExperimentStatusText.java": "879a1b61f2df03ed63f5162a66e3b44570a73814b6e0297072ab566e524a15a1",
+    "app/src/test/java/com/zcshou/gogogo/LabQuickCheckReportTest.java": "28f686cf02a4d35a9afd8be5d2ce2e88b9625906cf57833c45d2e3fce43cc78a",
+    "app/src/test/java/com/zcshou/gogogo/Lab33DiagnosticBundleTest.java": "00e83a188def09da3143b32d29d1c62c915ace819fd021c5744d6b1d1a74816f"
+  }
+}

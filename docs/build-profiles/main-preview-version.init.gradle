@@ -1,4 +1,4 @@
-// Reproducible candidate metadata override; source is fixed to CI45 ccd6d3e2.
+// Reproducible candidate metadata override; run against the recorded source commit.
 gradle.beforeProject { project ->
     if (project.path == ':app') {
         project.pluginManager.withPlugin('com.android.application') {
