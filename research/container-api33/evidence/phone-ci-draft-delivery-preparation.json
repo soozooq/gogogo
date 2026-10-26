@@ -1,0 +1,79 @@
+{
+  "schema": "GOGOGO_PHONE_CI_DRAFT_DELIVERY_PREPARATION_V1",
+  "scope": "LOCAL_VALIDATED_PACKAGING_AND_DRAFT_UPLOAD_WORKFLOW_NOT_REMOTE_DELIVERY_OR_PHONE_SUCCESS",
+  "source_commit": "ff12e8d3cf2dde2884333bd78515727d17c284b3",
+  "local_own_apks": {
+    "main": {
+      "file": "Tianwaitian-2.4.32-container-preview-arm64.apk",
+      "package": "com.soozooq.gogogo.test",
+      "version_name": "2.4.32-container-preview",
+      "version_code": 2400100,
+      "debuggable": true,
+      "bytes": 40408202,
+      "sha256": "0224b76230f04c9afe12319acd115eac77183b3dfe37fd66b90a30d523b65b5a",
+      "certificate_sha256": "6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081",
+      "signature_and_alignment_verified": true,
+      "manifest_and_generated_BuildConfig_agree": true
+    },
+    "host": {
+      "file": "Tianwaitian-Original-Preview-ff12e8d3.apk",
+      "package": "com.soozooq.tianwaitian.containerresearch",
+      "version_name": "0.1-research",
+      "version_code": 1,
+      "debuggable": true,
+      "bytes": 4581891,
+      "sha256": "2308c0bac2400f0da6ea781a098ee2c9cfd245a089c0f2837c53ab89a8f9f3f1",
+      "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+      "signature_and_alignment_verified": true,
+      "non_signature_ci_entries_verified": 415,
+      "every_non_signature_entry_equals_fixed_CI47_host": true,
+      "ci_original_host_sha256": "0ad23d05f4541693ee445b9f785efab922f8bf94b824c86af4b77121907335b9"
+    }
+  },
+  "workspace_draft_upload": {
+    "succeeded": false,
+    "http_status": 401,
+    "reason": "Bad credentials at the release upload API; normal release metadata access works",
+    "assets_after_failed_attempts": 0,
+    "private_key_or_managed_credential_not_transferred": true
+  },
+  "draft_tag": "preview-2.4.32-container-ff12e8d3",
+  "draft_published": false,
+  "public_signature_recipe": {
+    "path": "ci/phone-preview/host-signature-ff12e8d3.json",
+    "sha256": "324ef203cac3c6dcfea80978fdd04748f5536cd3deb1a0b18c61b28a2fd2cd31",
+    "bytes": 179179,
+    "copied_non_signature_compressed_entry_count": 415,
+    "copied_payload_bytes": 4462230,
+    "literal_public_signature_and_zip_metadata_bytes": 119661,
+    "private_key_included": false,
+    "restored_apk_sha256": "2308c0bac2400f0da6ea781a098ee2c9cfd245a089c0f2837c53ab89a8f9f3f1",
+    "restored_apk_certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+    "actual_restoration_signature_and_alignment_passed": true
+  },
+  "controlled_reconstruction_tests": {
+    "count": 5,
+    "passed": true
+  },
+  "workflow_yaml_and_all_shell_blocks_parse": true,
+  "actual_local_full_staging_with_fixed_clean_checkout_passed": true,
+  "temporary_detached_validation_checkout_removed": true,
+  "runner_main_apk_hash_may_differ_from_local_fixture_signing": true,
+  "runner_records_actual_main_apk_hash": true,
+  "remote_pipeline": "NOT_YET_RUN",
+  "workflow_can_publish_release": false,
+  "requires_existing_matching_unpublished_draft": true,
+  "only_two_own_apks_attached": true,
+  "flat_artifact_retention_days": 14,
+  "repository_actions_token_used_only_for_normal_repository_artifact_and_draft_upload_operations": true,
+  "new_environment_credential_configuration": false,
+  "native47_matching_source": "IN_PROGRESS_NOT_PASS",
+  "wechat_douyin_and_phone": "NOT_VERIFIED",
+  "source_sha256": {
+    ".github/workflows/phone-preview-draft.yml": "054019305442c24511a74153dc8a245c2ade8bcf46feef20639a20b74d8b70c1",
+    "ci/restore_preview_signature.py": "85a7e298ec565d45f9a81f4062047d9c8e40b518efd14045a636cb1c96170b77",
+    "ci/stage_rootless_phone_preview.py": "a1d501a880e7ccb66fc3ff46eb1241d7d5611475b47dea970eb00968e076d83a",
+    "ci/test_restore_preview_signature.py": "0835ebdaafb22087782079eb7a709a6eb18db3558182fe2f436624a0ec6beea8",
+    "ci/phone-preview/host-signature-ff12e8d3.json": "324ef203cac3c6dcfea80978fdd04748f5536cd3deb1a0b18c61b28a2fd2cd31"
+  }
+}

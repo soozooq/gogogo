@@ -1,0 +1,145 @@
+name: Phone preview draft
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [research/container-api33-20261023]
+    paths:
+      - .github/workflows/phone-preview-draft.yml
+      - ci/restore_preview_signature.py
+      - ci/stage_rootless_phone_preview.py
+      - ci/test_restore_preview_signature.py
+      - ci/phone-preview/**
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tianwaitian-phone-preview-draft
+  cancel-in-progress: false
+
+jobs:
+  stage-draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_REPO: soozooq/gogogo
+      SOURCE_COMMIT: ff12e8d3cf2dde2884333bd78515727d17c284b3
+      PREVIEW_TAG: preview-2.4.32-container-ff12e8d3
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: delivery
+          persist-credentials: false
+      - uses: actions/checkout@v5
+        with:
+          ref: ff12e8d3cf2dde2884333bd78515727d17c284b3
+          path: source
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Check public signature reconstruction without credentials
+        run: python3 -m unittest discover -s delivery/ci -p test_restore_preview_signature.py -v
+      - name: Prepare the fixed SDK and placeholder build profile
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager --sdk_root="$ANDROID_HOME" 'platform-tools' 'platforms;android-36' 'build-tools;33.0.2' 'build-tools;35.0.0' 'build-tools;36.0.0'
+          printf 'sdk.dir=%s\nTENCENT_MAP_KEY=DUMMY\nMAPS_API_KEY=DUMMY\nMAPS_SAFE_CODE=DUMMY\n' "$ANDROID_HOME" > source/local.properties
+          mkdir package-work
+      - name: Build and check the fixed-source main preview
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash ./gradlew --no-daemon --init-script docs/build-profiles/main-preview-version.init.gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --console=plain
+      - name: Receive only the pinned CI47 self-owned set
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api repos/soozooq/gogogo/actions/artifacts/12637415675 > package-work/artifact-api.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          value = json.loads(Path('package-work/artifact-api.json').read_text())
+          assert value['id'] == 12637415675 and not value['expired']
+          assert value['workflow_run']['id'] == 40292596352
+          assert value['workflow_run']['head_sha'] == 'ff12e8d3cf2dde2884333bd78515727d17c284b3'
+          assert value['digest'] == 'sha256:8c3b14f2eed0cda58d6c037459a781381b8915f3fdb1057770c8a0b1aca52570'
+          PY
+          gh api repos/soozooq/gogogo/actions/artifacts/12637415675/zip > package-work/owned.zip
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          inputs = {'run_id': 40292596352, 'commit': 'ff12e8d3cf2dde2884333bd78515727d17c284b3',
+                    'artifacts': {'own': {'id': 12637415675, 'path': str(Path('package-work/owned.zip').resolve()),
+                    'sha256': '8c3b14f2eed0cda58d6c037459a781381b8915f3fdb1057770c8a0b1aca52570'}}}
+          Path('package-work/verification-inputs.json').write_text(json.dumps(inputs))
+          PY
+          python3 source/research/container-api33/tools/verify-ci-receipts.py --repo source --sdk "$ANDROID_HOME" --inputs package-work/verification-inputs.json --output package-work/verified-owned.json
+          python3 - <<'PY'
+          import zipfile
+          from pathlib import Path
+          with zipfile.ZipFile('package-work/owned.zip') as archive:
+              Path('package-work/base-host.apk').write_bytes(archive.read('probeHost-debug.apk'))
+          PY
+      - name: Restore the exact privately signed host using public APK metadata
+        run: python3 delivery/ci/restore_preview_signature.py --base package-work/base-host.apk --recipe delivery/ci/phone-preview/host-signature-ff12e8d3.json --output package-work/signed-host.apk
+      - name: Stage only the two verified phone APKs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 delivery/ci/stage_rootless_phone_preview.py --source source --host package-work/signed-host.apk --base-host package-work/base-host.apk --sdk "$ANDROID_HOME" --output package-work/staged --delivery-run-id "$GITHUB_RUN_ID"
+      - name: Save one flat phone download and its receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: tianwaitian-phone-preview-2.4.32-ff12e8d3
+          path: package-work/staged/*
+          if-no-files-found: error
+          retention-days: 14
+      - name: Attach only the two APKs to the existing unpublished draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release view "$PREVIEW_TAG" --repo "$GH_REPO" --json isDraft,targetCommitish,assets > package-work/draft-before.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          value = json.loads(Path('package-work/draft-before.json').read_text())
+          assert value['isDraft'] is True
+          assert value['targetCommitish'] == 'ff12e8d3cf2dde2884333bd78515727d17c284b3'
+          assert value['assets'] == [], 'Existing draft assets are preserved; inspect before retrying'
+          PY
+          gh release upload "$PREVIEW_TAG" --repo "$GH_REPO" package-work/staged/Tianwaitian-2.4.32-container-preview-arm64.apk package-work/staged/Tianwaitian-Original-Preview-ff12e8d3.apk
+          gh release view "$PREVIEW_TAG" --repo "$GH_REPO" --json isDraft,targetCommitish,assets > package-work/draft-after.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          value = json.loads(Path('package-work/draft-after.json').read_text())
+          assert value['isDraft'] is True, 'This job never publishes'
+          assert value['targetCommitish'] == 'ff12e8d3cf2dde2884333bd78515727d17c284b3'
+          assert {a['name'] for a in value['assets']} == {'Tianwaitian-2.4.32-container-preview-arm64.apk', 'Tianwaitian-Original-Preview-ff12e8d3.apk'}
+          PY
+      - name: Preserve staging diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phone-preview-staging-diagnostics
+          path: |
+            package-work/artifact-api.json
+            package-work/verification-inputs.json
+            package-work/verified-owned.json
+            package-work/draft-before.json
+            package-work/draft-after.json
+          if-no-files-found: ignore
+          retention-days: 14

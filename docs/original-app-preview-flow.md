@@ -22,6 +22,6 @@
 
 - [普通入口与已装导入](../research/container-api33/evidence/map-point-prefill-results.json)：接收端预填／无效输入忽略、原版导入、原应用保留及GPSTest实际界面。
 - [自有六路径回归](../research/container-api33/evidence/stale-ui-location-read-results.json)：云端x86_64中的A→B、停止稳定、取消零回调；原生复核单独记录。
-- [已核对原生轮次](../research/container-api33/evidence/native-owned-location-freshness-results.json)：CI44／45匿名启动和Provider接口通过，完整定位等待A／B超时；CI45只有A的部分证据。新私有快照准备不能当作运行成功。
+- [已核对原生六路径](../research/container-api33/evidence/native-owned-private-snapshot-pass-results.json)：CI46独立Guest的A→B／停止／取消完整通过；它是旧补丁的自有证据，新持续电话及目标实际业务单独判定。
 
 这些记录用于维护者核对，不是需要手机用户逐项完成的操作清单。

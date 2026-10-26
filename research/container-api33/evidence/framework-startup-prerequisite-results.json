@@ -1,24 +1,24 @@
 {
   "schema": "GOGOGO_FRAMEWORK_STARTUP_PREREQUISITE_RESULTS_V1",
   "scope": "OWNED_GUEST_FRAMEWORK_FUNCTIONAL_CALL_QUERY_NOT_TARGET_OR_ISOLATION",
-  "run_id": 40287040444,
-  "commit": "42cd5eb5c269b39ce689191f3a0292009bbf24a8",
-  "tree": "477abf7adba45dd160a3215becc88cec6b4284a2",
+  "run_id": 40292596352,
+  "commit": "ff12e8d3cf2dde2884333bd78515727d17c284b3",
+  "tree": "a628fb53343ebd4356bc67cc72a318e41570662d",
   "default_checks_conclusion": "success",
   "artifacts": {
     "linux": {
-      "id": 12635380024,
-      "sha256": "70eb057c81475601bb915693571de08061d7813fecaaa3420421941443280377",
+      "id": 12636862042,
+      "sha256": "e5822824a8786ae6e1a9d8ff1e970915aca18f670ede1f7bc963057fb19086ca",
       "verified": true
     },
     "mac": {
-      "id": 12635305017,
-      "sha256": "7d49e37807b95a63743d4f8aacf1026855e716e6ad15fc3b2454cecdfeb4932e",
+      "id": 12636871337,
+      "sha256": "dc769deb0ba38f0d14cb414764e2771f377fa78d8e1b9256d8efb0ec3bb15f00",
       "verified": true
     },
     "own": {
-      "id": 12634866570,
-      "sha256": "9021d3c2af2ca48889e91e7a09c8c61f4912fbc619b10b9de5fbbb512569af98",
+      "id": 12637415675,
+      "sha256": "8c3b14f2eed0cda58d6c037459a781381b8915f3fdb1057770c8a0b1aca52570",
       "verified": true
     }
   },
@@ -27,13 +27,13 @@
     "passed": true,
     "pending_intents_sent": false,
     "location_requested": false,
-    "startup_contract_run_id": "d30b306c-adf9-41db-a405-d5085262a20e",
+    "startup_contract_run_id": "57c9ca97-e47b-48a1-9062-f5ae76d5c2c4",
     "framework_http_legacy_class_resolved": true,
     "expected_real_host_uid": 10129,
     "process_api_uid": 10001,
     "binder_self_uid": 10129,
-    "binder_self_pid": 2634,
-    "process_api_pid": 2634,
+    "binder_self_pid": 2639,
+    "process_api_pid": 2639,
     "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
     "binder_self_uid_matches_real_host": true,
     "activity_attribution_uid": 10129,
@@ -44,16 +44,16 @@
     "pending_activity_created": true,
     "pending_service_created": true,
     "provider_call_nonce_matches": true,
-    "provider_pid": 2660,
-    "provider_caller_pid": 2634,
+    "provider_pid": 2666,
+    "provider_caller_pid": 2639,
     "provider_process_separate": true,
     "provider_process_api_uid": 10001,
     "provider_caller_binder_uid": 10129,
     "provider_query_nonce_matches": true,
-    "provider_query_pid": 2660
+    "provider_query_pid": 2666
   },
   "junit": {
-    "seconds": 0.529,
+    "seconds": 0.909,
     "ok": [
       "OK (1 test)"
     ]
@@ -64,18 +64,18 @@
     "apks": {
       "host": {
         "name": "probeHost-debug.apk",
-        "size": 4536460,
-        "sha256": "384274426350520dc979318d49078a2d8c8158320b9a5aeee0d5193048206aa6"
+        "size": 4538424,
+        "sha256": "0ad23d05f4541693ee445b9f785efab922f8bf94b824c86af4b77121907335b9"
       },
       "driver": {
         "name": "probeHost-debug-androidTest.apk",
-        "size": 510238,
-        "sha256": "bee2bfd32bbebf0da3a82f63e0aaaa00d7052e93b90f302990846712c9fdeee3"
+        "size": 516706,
+        "sha256": "47795264bdb81afd4db9909edaf6e26cad8c321866365e1fd8df3dd72e6cbde8"
       },
       "consumer": {
         "name": "locationConsumer-debug.apk",
         "size": 74158,
-        "sha256": "7b43118b5cc007709b20a0119c9e1bcc6788c359e36732a962796c625c42e553"
+        "sha256": "61ed47d0a87527d291624cb2a8160a5aaf3a2e83d454a124fbd7fa3d8ef7442b"
       }
     },
     "notice_materials_per_apk": 11,
@@ -91,23 +91,20 @@
     "lint_error_fatal_count": 0,
     "passed": true
   },
-  "latest_default_result": "owned-private-snapshot-results.json",
+  "latest_default_result": "persistent-phone-callback-results.json",
   "native_job_this_run": {
-    "run_id": 40287040444,
-    "commit": "42cd5eb5c269b39ce689191f3a0292009bbf24a8",
-    "job_id": 121455067092,
+    "run_id": 40292596352,
+    "commit": "ff12e8d3cf2dde2884333bd78515727d17c284b3",
+    "job_id": 121473513629,
     "status_at_capture": "in_progress",
-    "passed": false,
-    "patch_sha256": "416e8dd4fd539ed1ac6b1011e50174e180b5c94bb5b12c90b8486af39c4055cc",
-    "persistent_phone_candidate_included": false
+    "passed": false
   },
-  "latest_actual_native_result": "native-owned-location-freshness-results.json",
-  "actual_native_framework_query_result": "native-owned-location-freshness-results.json",
+  "latest_actual_native_result": "native-owned-private-snapshot-pass-results.json",
+  "actual_native_framework_query_result": "native-owned-private-snapshot-pass-results.json",
   "pending_intent_scope": "CREATION_AND_CANCEL_NOT_SEND_OR_BACKGROUND_DELIVERY",
   "guest_shares_real_host_uid": true,
   "uri_permission_denial_and_isolation_proven": false,
   "previous_provider_failure": "provider-attribution-failure-and-correction.json",
-  "persistent_phone_candidate_not_in_fixed_CI46": "persistent-phone-callback-preparation.json",
   "wechat_and_douyin_location": "NOT_VERIFIED",
   "phone_update_distributed": false
 }

@@ -534,8 +534,10 @@
   },
   "native_job": {
     "id": 121455067092,
-    "status_at_capture": "in_progress",
-    "passed": false
+    "status_at_capture": "completed",
+    "conclusion": "success",
+    "passed": true,
+    "result": "native-owned-private-snapshot-pass-results.json"
   },
   "engine_patch_sha256": "416e8dd4fd539ed1ac6b1011e50174e180b5c94bb5b12c90b8486af39c4055cc",
   "engine_unchanged_by_this_run": true,
