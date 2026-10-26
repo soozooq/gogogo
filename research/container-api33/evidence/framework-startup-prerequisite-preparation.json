@@ -35,7 +35,7 @@
     "patches/blackbox-api33-build.patch": "258c75a90e2fdf89e83d88a80a3f2ed01dbd1094bd5a4ae55d6fd9a2d7daa9b5",
     "probe-host/build.gradle": "cc00912130068cf7558c04df465ab3f1b97ea8de59806d9a526ea308348622c3",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ExternalGuestInstrumentedTest.java": "fdc0ed6a116ef2950eacae8664785584981608b23da8cddc5d97f7525f7386e4",
-    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/GuestLocationInstrumentedTest.java": "86b45c72096eeb021d311840f0d74039354afa798075cbc37e77f61bdf0e2b24",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/GuestLocationInstrumentedTest.java": "148f61de68ef88379cd20f98e9f4daca332c21596a90727a1fddc0faea91517e",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/OfficialTargetStartupInstrumentedTest.java": "51b0befe91b84543f4f1127f23ee4ee089ed640688798404339ef6fde917300b",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/StartupFrameworkInstrumentedTest.java": "839d2c46b133f910632d8e8a7262718f8a62624a2263d9dabb3e09921e1406be",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ThirdPartyLocationInstrumentedTest.java": "d066b1d65eafbeaa1392c925d44003c234c3c5f2c477e8d260f01c214983e5b4",
@@ -62,9 +62,9 @@
     "tools/qualify-arm64-software-boot.py": "d3bbc2fbebcbc381dd73712f08ccc1a31815c64202471b29a17b03627bb30066",
     "tools/run-arm-mac-software-checks.sh": "4cff7f26be72beb5200d3bea7bc253cdd7d7dc784f356de1bace3394dbb98c0a",
     "tools/run-build.sh": "ba7a3e3d5b233ca4200ac1f7bb160c0be5eb3686323caa992826022cfac045ad",
-    "tools/run-cloud-check.py": "e6d486e47d6f8b27603ae12413da49a3e891ea8d7c647fce309ba8dfbeaf61d2",
+    "tools/run-cloud-check.py": "0f983387d723c63a0e921fea16b63a4805a673088deffc55ddf914e6ed6e17a4",
     "tools/run-cuttlefish-arm-boot.py": "687d5198b13e7f32ca70562454f970219b38f624f798827e870a1090a95951f8",
-    "tools/run-emulator-checks.sh": "8ca4e027525fb461c6e266e629f1d407a2f959d30ae710a70f62996203d5c65d",
+    "tools/run-emulator-checks.sh": "b443d29c371db6146573802c7dd6fae931633ca9a0d762b9142bc644757ddd9d",
     "tools/run-read-only-ui-check.py": "c625dd25b2ae7b6d574bd08dae944b39ab51ac201d9d7009ee4e410746428439",
     "tools/run-target-emulator-checks.sh": "6fc1dc9fa307d20760b27db8afd8fe8bfc5f7c550db5c60f9d31301da3375cb0",
     "tools/run-target-startup-check.py": "48749c39a262f7dd64b2c4a7b13d9d6366c1c6af14e594f2804fd20a17808193",
@@ -77,7 +77,7 @@
     "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractActivity.java": "30bda83babbe59f6161c1180fac9ab67b22e6354d8d1dfa0083c5ad100f0806b",
     "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/ReadOnlyUiFixtureActivity.java": "36a0197ca1b56e3839c41039b3b5dfb9ee62ab2b6753ecb3374639f24368a184",
     "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractProvider.java": "c8311359d441056512fe959f18815d0642511e3a3cc830273e64db5b8c70e87d",
-    "tools/cuttlefish_owned_location.py": "bf2f1a572259d4b3c69defdd4bb48fb194828c22399140da203dccae3dc6efc9"
+    "tools/cuttlefish_owned_location.py": "47c50c0052cf5cd05b5a90fc274cf58be2982d033644600e835cf32222d6ae06"
   },
   "test_source_sha256": {
     "tests/test_cuttlefish_monitor.py": "f1110afb0f7e5182207055eb1fda393c38b56475767c2194498915d3777d46cb",
@@ -153,5 +153,7 @@
     "active_native_42_unchanged": true,
     "own_import_structured_report_transfer_required": true
   },
-  "latest_actual_default_result": "installed-original-import-results.json"
+  "latest_actual_default_result": "map-point-prefill-results.json",
+  "latest_actual_native_result": "native-owned-location-stale-ui-results.json",
+  "stale_ui_read_followup": "stale-ui-location-read-preparation.json"
 }

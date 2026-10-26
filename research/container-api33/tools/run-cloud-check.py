@@ -231,7 +231,7 @@ text = result.stdout.decode(errors='replace') + result.stderr.decode(errors='rep
 for relative in (() if contract_case else
         ('result.json',) if args.startup_contract else
         ('window.xml', 'screen.png', 'entry.png', 'result.json', 'last-visible-text.json') if args.third_party_location else
-        ('window.xml', 'screen.png', 'result.json', 'last-guest-ui.txt') if args.guest_location
+        ('window.xml', 'screen.png', 'result.json', 'stages.json', 'last-guest-ui.txt') if args.guest_location
         else ('window.xml', 'screen.png', 'installed-import.json') if args.installed_baseline
         else ('window.xml', 'screen.png')):
     exists = run(['shell', 'run-as', 'com.soozooq.tianwaitian.containerresearch',

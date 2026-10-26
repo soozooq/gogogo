@@ -93,7 +93,7 @@ def owned_contracts(adb, serial, own_apks, manifest, out, environment, expected_
             transcript = completed.stdout + completed.stderr
             (case_out / 'junit.txt').write_bytes(transcript)
             observed = None
-            for filename in ['result.json', 'window.xml', 'screen.png', 'last-guest-ui.txt']:
+            for filename in ['result.json', 'stages.json', 'window.xml', 'screen.png', 'last-guest-ui.txt']:
                 path = 'files/' + folder + '/' + filename
                 if run(['shell', 'run-as', host, 'test', '-f', path], check=False).returncode == 0:
                     data = run(['exec-out', 'run-as', host, 'cat', path]).stdout

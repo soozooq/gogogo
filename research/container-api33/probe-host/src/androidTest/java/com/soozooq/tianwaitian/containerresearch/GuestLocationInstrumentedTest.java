@@ -15,6 +15,7 @@ import androidx.test.uiautomator.By;
 import androidx.test.uiautomator.Configurator;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject2;
+import androidx.test.uiautomator.StaleObjectException;
 import androidx.test.uiautomator.Until;
 
 import java.io.File;
@@ -42,6 +43,8 @@ public final class GuestLocationInstrumentedTest {
     private final UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
     private final JSONArray stages = new JSONArray();
     private String lastText = "NO_GUEST_REPORT";
+    private File stageEvidence;
+    private int staleUiReads;
 
     private interface Condition { boolean matches(JSONObject report) throws Exception; }
 
@@ -56,6 +59,7 @@ public final class GuestLocationInstrumentedTest {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         File evidence = new File(context.getFilesDir(), "guest-location-evidence");
         assertTrue(evidence.isDirectory() || evidence.mkdirs());
+        stageEvidence = new File(evidence, "stages.json");
         File apk = new File(context.getFilesDir(), "owned-location-consumer.apk");
         long oldIdleTimeout = Configurator.getInstance().getWaitForIdleTimeout();
         // Streaming text deliberately keeps changing. Waiting for global UI idleness is invalid here.
@@ -133,9 +137,11 @@ public final class GuestLocationInstrumentedTest {
             tap("stop");
             await(report -> !report.optBoolean("listening", true));
             SystemClock.sleep(350); // allow a delivery already in flight to settle
-            JSONObject stopped = current();
+            JSONObject stopped = await(report -> nonce.equals(report.optString("nonce"))
+                    && !report.optBoolean("listening", true));
             SystemClock.sleep(800);
-            JSONObject stable = current();
+            JSONObject stable = await(report -> nonce.equals(report.optString("nonce"))
+                    && !report.optBoolean("listening", true));
             assertEquals(stopped.getInt("gps_count"), stable.getInt("gps_count"));
             assertEquals(stopped.getInt("network_count"), stable.getInt("network_count"));
             assertEquals(stopped.getInt("gnss_status_count"), stable.getInt("gnss_status_count"));
@@ -143,7 +149,8 @@ public final class GuestLocationInstrumentedTest {
             tap("cancel");
             await(report -> report.optInt("cancel_attempts") == 1);
             SystemClock.sleep(500);
-            JSONObject cancelled = current();
+            JSONObject cancelled = await(report -> nonce.equals(report.optString("nonce"))
+                    && report.optInt("cancel_attempts") == 1);
             assertEquals(0, cancelled.getInt("cancelled_callbacks"));
             saveStage("CURRENT_CANCELLED", cancelled);
             assertEquals("Guest remains absent from system", "", shell("pm path " + GUEST));
@@ -155,21 +162,28 @@ public final class GuestLocationInstrumentedTest {
             summary.put("consumer_sha256", expected);
             summary.put("nonce", nonce);
             summary.put("stages", stages);
+            summary.put("stale_ui_reads_retried", staleUiReads);
             summary.put("passed", true);
             write(new File(evidence, "result.json"), summary.toString(2));
         } finally {
-            write(new File(evidence, "last-guest-ui.txt"), lastText);
-            device.dumpWindowHierarchy(new File(evidence, "window.xml"));
-            device.takeScreenshot(new File(evidence, "screen.png"));
-            BLocationManager.disableFakeLocation(0, GUEST);
-            BlackBoxCore.get().stopPackage(GUEST, 0);
-            apk.delete();
-            Configurator.getInstance().setWaitForIdleTimeout(oldIdleTimeout);
+            try {
+                write(new File(evidence, "last-guest-ui.txt"), lastText);
+                device.dumpWindowHierarchy(new File(evidence, "window.xml"));
+                device.takeScreenshot(new File(evidence, "screen.png"));
+            } finally {
+                try { BLocationManager.disableFakeLocation(0, GUEST); }
+                finally {
+                    try { BlackBoxCore.get().stopPackage(GUEST, 0); }
+                    finally { apk.delete(); Configurator.getInstance().setWaitForIdleTimeout(oldIdleTimeout); }
+                }
+            }
         }
     }
 
     private void saveStage(String name, JSONObject report) throws Exception {
         stages.put(new JSONObject().put("name", name).put("guest_report", report));
+        write(stageEvidence, new JSONObject().put("scope", "PARTIAL_OWNED_GUEST_STAGES_NOT_FULL_PASS")
+                .put("stages", stages).put("stale_ui_reads_retried", staleUiReads).put("passed", false).toString(2));
     }
 
     private static void write(File path, String value) throws Exception {
@@ -186,9 +200,17 @@ public final class GuestLocationInstrumentedTest {
     }
 
     private JSONObject current() throws Exception {
-        UiObject2 view = device.findObject(By.res(GUEST, "status"));
-        if (view == null) return new JSONObject();
-        lastText = view.getText();
+        String text;
+        try {
+            UiObject2 view = device.findObject(By.res(GUEST, "status"));
+            if (view == null) return new JSONObject();
+            text = view.getText();
+        } catch (StaleObjectException changedWhileReading) {
+            // Let the existing bounded await loop locate a fresh node. Never use a cached report.
+            staleUiReads++;
+            return new JSONObject();
+        }
+        lastText = text;
         JSONObject report = new JSONObject(lastText);
         assertFalse("Guest API failure: " + lastText, report.has("error"));
         return report;

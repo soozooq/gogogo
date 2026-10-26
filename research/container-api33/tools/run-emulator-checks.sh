@@ -47,6 +47,7 @@ until [ "$("$research_adb" -s emulator-5580 shell getprop sys.boot_completed 2>/
 done
 python3 "$spec_root/tools/run-read-only-ui-check.py" --sdk "$ANDROID_HOME" --root "$CONTAINER_RESEARCH_WORKDIR" --serial emulator-5580
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-startup-framework" --startup-contract
+python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-owned-location" --guest-location
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-ordinary-entry" --third-party-location --ordinary-entry
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-installed-import" --installed-baseline
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-calculator"

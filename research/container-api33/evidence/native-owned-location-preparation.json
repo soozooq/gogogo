@@ -52,10 +52,10 @@
     "ci39_three_archives_and_actual_failed_case_preserved": true
   },
   "donor_patch_clean_index_replay_verified": true,
-  "new_actual_arm64_owned_location": "CI40_NOT_EXECUTED_TARGET_PID_SET_GATE_FAILED; NEXT_CANDIDATE_PENDING",
+  "new_actual_arm64_owned_location": "CI42_FAILED_STALE_UI_READ_AT_TARGET_B_WAIT; NEXT_FIX_PENDING",
   "planned_native_source_input_count": 9,
   "source_sha256": {
-    "tools/cuttlefish_owned_location.py": "bf2f1a572259d4b3c69defdd4bb48fb194828c22399140da203dccae3dc6efc9",
+    "tools/cuttlefish_owned_location.py": "47c50c0052cf5cd05b5a90fc274cf58be2982d033644600e835cf32222d6ae06",
     "tools/cuttlefish_target_baselines.py": "bf286fe892df67aa78965b7c9aef7b35e16b24b22b93d34f32110b96d37e6d85",
     "tools/ci_owned_apks.py": "3997810904fb1d9633678c3225a0663193926107baec06e16be5909e6196709b",
     "tools/run-cuttlefish-arm-boot.py": "687d5198b13e7f32ca70562454f970219b38f624f798827e870a1090a95951f8",
@@ -74,5 +74,8 @@
   "subsequent_actual_default_result": "provider-attribution-results.json",
   "actual_ci40_result": "native-pid-set-and-owned-stage-results.json",
   "active_native_42_commit": "96e925224b598432048f3cd72cee3009db582767",
-  "source_map_scope": "CURRENT_DRIVER_PREPARATION_NOT_REPLACEMENT_FOR_FIXED_NATIVE_CI42"
+  "source_map_scope": "CURRENT_DRIVER_PREPARATION_NOT_REPLACEMENT_FOR_FIXED_NATIVE_CI42",
+  "latest_actual_native_result": "native-owned-location-stale-ui-results.json",
+  "latest_actual_default_result": "map-point-prefill-results.json",
+  "stale_ui_read_followup": "stale-ui-location-read-preparation.json"
 }

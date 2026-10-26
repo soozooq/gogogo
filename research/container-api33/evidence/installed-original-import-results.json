@@ -173,5 +173,7 @@
   "previous_native_failure": "native-pid-set-and-owned-stage-results.json",
   "phone_update_distributed": false,
   "wechat_send_and_live_location": "UNFULFILLED",
-  "douyin_wireless_and_overseas": "UNFULFILLED"
+  "douyin_wireless_and_overseas": "UNFULFILLED",
+  "subsequent_native_result": "native-owned-location-stale-ui-results.json",
+  "subsequent_structured_import_report": "map-point-prefill-results.json"
 }

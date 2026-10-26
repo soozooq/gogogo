@@ -29,13 +29,13 @@
     "seconds": 0.781,
     "passed": true
   },
-  "new_runtime": "PENDING_DEFAULT_ONLY_CI",
+  "new_runtime": "CI43_RECEIVER_UI_AND_STRUCTURED_INSTALLED_IMPORT_ACTUALLY_PASS",
   "native_followup_requested": false,
   "active_native_ci42_unchanged": {
     "run_id": 40248613788,
     "commit": "96e925224b598432048f3cd72cee3009db582767",
     "job_id": 121337102085,
-    "state": "IN_PROGRESS_NOT_PASS"
+    "state": "COMPLETED_LOCATION_STALE_UI_FAILURE"
   },
   "new_main_handoff_sources_added_to_ci_receipt": true,
   "source_sha256": {
@@ -49,5 +49,7 @@
     "app/src/main/AndroidManifest.xml": "f3fbbb3cd56b07392fdba06ec3b96b13352697fee9f398ea97583c038f36cdfd",
     ".github/workflows/container-research.yml": "ddafda585239e6fc13be2370e40667c460db7bd7a037a2ffb11467b4a7501cd2"
   },
-  "phone_update_distributed": false
+  "phone_update_distributed": false,
+  "recorded_build_and_source_commit": "dfe8f511f1f16e8946d203f0ee7e7c5755033926",
+  "subsequent_actual_result": "map-point-prefill-results.json"
 }

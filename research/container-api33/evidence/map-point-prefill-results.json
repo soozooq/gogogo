@@ -1,0 +1,259 @@
+{
+  "schema": "GOGOGO_MAP_POINT_PREFILL_RESULTS_V1",
+  "scope": "ACTUAL_X86_64_RECEIVER_UI_AND_INSTALLED_IMPORT_NOT_MAIN_PAGE_OR_PHONE_OR_TARGET_LOCATION",
+  "run_id": 40250060141,
+  "commit": "dfe8f511f1f16e8946d203f0ee7e7c5755033926",
+  "tree": "74687ab0f99e2de002272f97d25333f14b5d9ed0",
+  "default_checks_conclusion": "success",
+  "artifacts": {
+    "linux": {
+      "id": 12620144627,
+      "sha256": "28944edafad7f8fde8c702fbcaaf73934c21408427961bd6f5c963d2ec77c219",
+      "verified": true
+    },
+    "mac": {
+      "id": 12620144083,
+      "sha256": "7535460d5b207caf7316f64c4ed1fdea53e122dcc91571f96760a0d1f743db02",
+      "verified": true
+    }
+  },
+  "source_inputs_per_case_verified": 58,
+  "feedback_main_sources_verified": 7,
+  "case_junit": {
+    "x86_64-calculator": {
+      "seconds": 5.876,
+      "result": "OK (1 test)",
+      "passed": true
+    },
+    "x86_64-installed-import": {
+      "seconds": 7.623,
+      "result": "OK (1 test)",
+      "passed": true
+    },
+    "x86_64-ordinary-entry": {
+      "seconds": 12.604,
+      "result": "OK (1 test)",
+      "passed": true
+    },
+    "x86_64-radio-privacy": {
+      "seconds": 0.082,
+      "result": "OK (9 tests)",
+      "passed": true
+    },
+    "x86_64-startup-framework": {
+      "seconds": 0.539,
+      "result": "OK (1 test)",
+      "passed": true
+    }
+  },
+  "ordinary_prefill_observed": {
+    "scope": "ORDINARY_IMPORT_COORDINATE_LAUNCH_STOP_OFFICIAL_GPSTEST_NOT_WECHAT",
+    "package": "com.android.gpstest.osmdroid",
+    "apk_sha256": "897b91fe6a1ea0c3a7f6e2b041d5ace0d582941f67cf454fb7778f031d89ce41",
+    "permission_actions": [
+      {
+        "system_package": "com.android.permissioncontroller",
+        "action": "ALLOW_WHILE_IN_USE",
+        "elapsed_ms": 54353
+      }
+    ],
+    "wgs84_prefill_received_without_autostart": true,
+    "invalid_prefill_ignored": true,
+    "stages": [
+      {
+        "stage": "ORDINARY_ENTRY_TARGET_A",
+        "visible_text": [
+          "Status",
+          "Lat:",
+          "Long:",
+          "Alt:",
+          "Alt (MSL):",
+          "Speed:",
+          "S. Acc:",
+          "PDOP:",
+          "38.1250000°",
+          "-121.8750000°",
+          "0.0 m/s",
+          "Time:",
+          "TTFF:",
+          "E H Acc:",
+          "# Sats:",
+          "Bearing:",
+          "B. Acc:",
+          "H/V DOP:",
+          "12:41:52.426 AM",
+          "40.0 m",
+          "0/0/0",
+          "0.0°",
+          "ID",
+          "GNSS",
+          "CF",
+          "C/N0",
+          "Flags",
+          "Elev",
+          "Azim",
+          "Satellite-based Augmentation System (SBAS) satellites not available",
+          "ERROR",
+          "/",
+          "m",
+          "AVG 0 FIXES",
+          "/",
+          "m",
+          "Horizontal Error",
+          "Error",
+          "Fix #",
+          "Vertical Error",
+          "Error",
+          "Fix #"
+        ]
+      },
+      {
+        "stage": "ORDINARY_ENTRY_TARGET_B",
+        "visible_text": [
+          "Status",
+          "Lat:",
+          "Long:",
+          "Alt:",
+          "Alt (MSL):",
+          "Speed:",
+          "S. Acc:",
+          "PDOP:",
+          "-33.8600000°",
+          "151.2000000°",
+          "0.0 m/s",
+          "Time:",
+          "TTFF:",
+          "E H Acc:",
+          "# Sats:",
+          "Bearing:",
+          "B. Acc:",
+          "H/V DOP:",
+          "12:41:55.430 AM",
+          "40.0 m",
+          "0/0/0",
+          "0.0°",
+          "ID",
+          "GNSS",
+          "CF",
+          "C/N0",
+          "Flags",
+          "Elev",
+          "Azim",
+          "Satellite-based Augmentation System (SBAS) satellites not available",
+          "ERROR",
+          "/",
+          "m",
+          "AVG 0 FIXES",
+          "/",
+          "m",
+          "Horizontal Error",
+          "Error",
+          "Fix #",
+          "Vertical Error",
+          "Error",
+          "Fix #"
+        ]
+      }
+    ],
+    "same_guest_pid": "2954",
+    "stop_process_absent": true,
+    "stop_virtual_mode": "CLOSE_MODE",
+    "passed": true
+  },
+  "structured_installed_import": {
+    "scope": "INSTALLED_PUBLIC_APK_IMPORT_NOT_ACCOUNT_DATA_OR_TARGET_LOCATION",
+    "package": "org.fossify.math",
+    "ordinary_import_button_used": true,
+    "original_uid_path_version_preserved": true,
+    "original_signatures_verified": true,
+    "temporary_apk_removed": true,
+    "virtual_copy_removed": true,
+    "passed": true
+  },
+  "framework_observed": {
+    "scope": "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION",
+    "passed": true,
+    "pending_intents_sent": false,
+    "location_requested": false,
+    "startup_contract_run_id": "34c12a8f-d580-4eda-910f-0b3a5287166e",
+    "framework_http_legacy_class_resolved": true,
+    "expected_real_host_uid": 10129,
+    "process_api_uid": 10001,
+    "binder_self_uid": 10129,
+    "binder_self_pid": 2615,
+    "process_api_pid": 2615,
+    "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
+    "binder_self_uid_matches_real_host": true,
+    "activity_attribution_uid": 10129,
+    "application_attribution_uid": 10129,
+    "activity_attribution_uid_matches_real_host": true,
+    "application_attribution_uid_matches_real_host": true,
+    "activity_attribution_package": "com.soozooq.tianwaitian.containerresearch",
+    "pending_activity_created": true,
+    "pending_service_created": true,
+    "provider_call_nonce_matches": true,
+    "provider_pid": 2641,
+    "provider_caller_pid": 2615,
+    "provider_process_separate": true,
+    "provider_process_api_uid": 10001,
+    "provider_caller_binder_uid": 10129,
+    "provider_query_nonce_matches": true,
+    "provider_query_pid": 2641
+  },
+  "read_only_ui_capture": {
+    "source_count_verified": 59,
+    "passed": true,
+    "scope": "SELF_OWNED_MOVING_UI_ONLY_NOT_TARGET_STARTUP_OR_LOCATION",
+    "old_cli": {
+      "returncode": 0,
+      "idle_error_observed": true
+    },
+    "observed": {
+      "scope": "SELF_OWNED_UI_CAPTURE_ONLY_NOT_TARGET_STARTUP",
+      "target": "owned-fixture",
+      "package": "com.soozooq.tianwaitian.locationconsumer",
+      "api": 33,
+      "capture_method": "UI_AUTOMATION_WITHOUT_IDLE_WAIT",
+      "own_driver_targeting": true,
+      "plain_application": true,
+      "passed": true,
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "input_events_sent": false,
+      "root_package": "com.soozooq.tianwaitian.locationconsumer",
+      "visible_text": [
+        "Read-only moving fixture 108"
+      ],
+      "stage": "OWN_UI_VISIBLE",
+      "elapsed_ms": 32
+    },
+    "cleanup": {
+      "com.soozooq.tianwaitian.locationconsumer": true,
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true
+    },
+    "host_engine_process_absent": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "native_job": {
+    "id": 121341557871,
+    "conclusion": "skipped",
+    "reason": "INTENTIONAL_UI_ONLY_NO_NATIVE_OPT_IN",
+    "passed": false
+  },
+  "same_run_own_transport": "INTENTIONALLY_NOT_PREPARED_DEFAULT_ONLY",
+  "separate_actual_native_result": "native-owned-location-stale-ui-results.json",
+  "main_sender_actual_ui_or_physical_phone_tested": false,
+  "wechat_or_douyin_location_tested": false,
+  "phone_update_distributed": false
+}

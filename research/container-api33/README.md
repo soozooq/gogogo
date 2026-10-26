@@ -1,26 +1,16 @@
-# Android 13 免 Root 容器可行性验证
+# Android13免Root容器与普通应用入口
 
-此目录保存独立研究宿主、固定源码补丁与云端验证证据。天外天日常候选仍为 #59 的 `2.4.31-simple-support / 2400099`。同一研发分支另准备[简短默认反馈](../../docs/simple-support-flow.md)，未发布；定位服务及签名不变。本轮没有需要用户安装的手机更新包。
+当前状态以根 [PROJECT_STATUS.md](../../PROJECT_STATUS.md)为准。唯一研发分支仍为`research/container-api33-20261023`／Draft #60；日常#59固定2.4.31／2400099。用户无Root、无电脑、只有一部vivo手机，未发布新手机包或安排复测。
 
-项目接手只认根目录 [PROJECT_STATUS.md](../../PROJECT_STATUS.md)。本轮继续使用同一个研发分支和 Draft #60，没有按修复或检查新增分支／PR。
+[最新默认CI43](evidence/map-point-prefill-results.json)五项case、移动UI与主447项／lint通过，58份case／59份移动UI及7份主程序关键输入按固定dfe8f511核对；两归档API摘要已验。真实普通入口已验证WGS84预填、无效输入忽略、无自动模拟／启动、文件选择／授权后的GPSTest A→B／停止，以及已装计算器原版导入／原应用与临时文件保留清理；结构化导入JSON已核对。首页发送端有编译和常量一致性证据，尚无真实主页面／vivo操作结果。该轮原生和APK传递有意跳过。
 
-**当前实测**：[CI38原生ARM64匿名启动通过](evidence/native-container-startup-pass-results.json)，全部4归档、8份原生源码、自有APK签名与材料已核对。两款普通原包、两款容器导入及原证书通过；微信到登录页，抖音到隐私页并保持PID301,750ms，普通抖音302.664秒。系统PID658稳定且VM／自有包清理。微信PNG已查看；抖音仅XML／真实UI文本，无PNG。定位关闭，没有接受条款、登录或位置业务，ARM64自有Guest定位与vivo仍未验证。
+清单保留计算器／GPSTest，候选另准入固定ARM64微信8.0.79及抖音40.8.0；精确版本、大小、摘要、包名和原证书必须匹配，只读公开完整APK，不迁移账号或私有数据，不改签、内嵌或分发目标原包。清单和模拟设置不证明目标应用采用定位。
 
-CI35已达到两个Guest界面，但抖音在2069ms后pidof集合少一个PID，严格检查失败；消失PID角色未知、crash buffer无匹配Fatal，不归为主进程或JIT崩溃。CI35尚无网络数组修正，不能把新成功归因于单一组件。CI36pending被替换，CI37漏标记跳过，CI34下载未启动；全部历史保留。
+[最新原生CI42](evidence/native-owned-location-stale-ui-results.json)四档、9份原生源码及三件同轮来源／签名／材料已核对。固定Android13原生ARM64系统合格、PID651稳定且VM／包／staging清理通过；两个普通原包及两个Guest匿名UI通过，抖音按主角色PID／UID保持301,832ms、末尾隐私页仍在。本轮两目标均无PNG。原生自有框架／跨进程Provider call/query通过15.548秒；定位case在B等待时发生旧UI节点异常，145.73秒失败，没有最终成功JSON。最终失败后自有PNG虽可见六条B坐标，仍非完整时效／停止／取消通过。目标定位关闭，没有接受条款、登录或业务。
 
-现代Provider holder候选在[CI39自有跨进程检查](evidence/provider-attribution-failure-and-correction.json)暴露第二层错误：真实Binder UID10129，AttributionSource却被改成虚拟10001，系统明确拒绝。该case0.528秒／1项失败，后续回归未运行、原生跳过；三档及源码、签名与材料已核对。按真实宿主UID发送后，[CI40公共跨进程调用实际通过](evidence/provider-attribution-results.json)：调用2634、Provider2661、调用者PID2634与新鲜nonce一致，保留系统权限和归属检查及原始异常。此为x86_64自有应用，不是SDK或位置业务。
+[读取修正候选](evidence/stale-ui-location-read-preparation.json)只重找旧节点，保留原120秒等待、30秒样本时效和所有六路径／停止／取消／mock／身份断言；已过阶段落盘为明确的部分证据。16秒构建、静态与25项驱动检查通过，新增默认同VM六路径回归先检，再等待完整原生实际结果。用户的微信实时／发送、无线抖音和海外定位仍未完成。[SDK只读核对](evidence/target-location-sdk-boundary-review.json)不能从自有公开SDK推断微信`sapp`或抖音活动配置。
 
-[原生自有定位阶段](evidence/native-owned-location-preparation.json)已准备：普通原包对照通过后，在同一合格VM独立运行独立自有Guest的公共框架／跨进程Provider及六条GPS／NETWORK A→B、停止与取消。严格新三件自有APK传递、旧两件兼容、已有包／文件保留与清理保护；不读取目标账号或测试SDK。11秒构建、静态检查、三件材料／同签名、25项驱动检查及8种选择组合通过，CI40三件同轮传递、59份源码、三份签名和每包11份材料已核对，原生CI40已经失败，实际ARM定位未执行，见下段。
-
-[CI38默认基线](evidence/native-container-startup-pass-results.json)的9项受控无线、框架身份、两项UI回归、447项及lint已通过，但不代表真实无线／SDK。CI39失败保留；[最新默认CI42](evidence/default-ci-state.json)五项case、移动UI及447项／lint通过，每case58份、移动UI59份源码和三件同轮APK来源／签名／材料已核对。原生push已在CI38实际验证，手动路径只静态验证。继续同一分支，不发手机实验。
-
-新增[自有私有Provider查询检查](evidence/private-provider-query-preparation.json)单独核对query的UID／权限分支，返回合成数据，不改引擎或exported／权限；[CI41实际查询通过](evidence/private-provider-query-results.json)：call与query回传同一nonce／远程PID2685、调用者2658；全回归、57份case／59份移动UI源码、447项及lint通过，两档已核对，本轮不传递APK或启动原生。原引擎旧URI授权GRANTED规则保留，不能把功能通过当权限拒绝／隔离证明；CI40保持cf4e固定输入，不包含这项query；现已完成，结果不替代ARM64 query。
-
-[CI40原生实际失败](evidence/native-pid-set-and-owned-stage-results.json)已核对四归档及9份源码：系统稳定，两个普通原包和容器微信通过；容器抖音看到隐私页后，同名PID9665增加10333，5730ms时严格集合检查失败。原PID仍在、新PID角色未知，不能写成主进程或JIT崩溃。后续自有定位被跳过；本轮有抖音PNG且已查看，没有微信PNG。候选将持续观察绑定Core主进程角色及真实ActivityManager PID／UID、复查最后隐私页，并把自有契约与目标UI结果分别记录；总结果仍要求每项通过。
-
-[简化手机导入候选](evidence/installed-original-import-preparation.json)增加已安装公开APK直接导入，保留文件选择；固定微信／抖音清单只允许原生ARM64。13秒构建、静态检查和25项驱动检查通过，[CI42真实按钮及原应用保留回归7.971秒通过](evidence/installed-original-import-results.json)，原证书日志及宿主截图已核对；固定驱动未传递自定义JSON，后续补齐严格传递。原生CI42仍运行，未发布手机更新。
-
-[地图选点衔接候选](evidence/map-point-prefill-preparation.json)将现有地图所选WGS84坐标带入已安装的ARM64预览入口，先选择微信／抖音，再在普通页确认导入／应用；收到Intent不自动改模拟或启动Guest。14秒宿主构建、47秒主447项／lint及编译action一致性通过，新增实际界面回归待默认CI；不会重开正在运行的固定96e92522原生CI42。[SDK边界核对](evidence/target-location-sdk-boundary-review.json)只说明原包标识和公开文档，不能从自有腾讯SDK或方法名称推断微信／抖音运行配置。
+下方保留此前各轮的命令和历史结果，不替代顶部当前状态。[CI38匿名启动通过](evidence/native-container-startup-pass-results.json)、[CI40旧PID集合失败](evidence/native-pid-set-and-owned-stage-results.json)、[CI39真实Provider归属失败](evidence/provider-attribution-failure-and-correction.json)均保留，不覆盖为成功。
 
 ## 核对下载的 CI 回执（维护用）
 

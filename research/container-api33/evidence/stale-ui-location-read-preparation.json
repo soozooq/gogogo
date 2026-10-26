@@ -1,0 +1,36 @@
+{
+  "schema": "GOGOGO_STALE_UI_LOCATION_READ_PREPARATION_V1",
+  "scope": "BUILD_AND_DRIVER_CHECKS_NOT_CORRECTED_NATIVE_LOCATION_RUNTIME",
+  "base_commit": "dfe8f511f1f16e8946d203f0ee7e7c5755033926",
+  "observed_failure": "native-owned-location-stale-ui-results.json",
+  "change": "On StaleObjectException, locate a new status node through the existing bounded await loop. No cached report is returned. Freshly read JSON/API errors and failed assertions remain failures.",
+  "existing_await_limit_seconds": 120,
+  "sample_freshness_limit_seconds_unchanged": 30,
+  "coordinate_mock_provider_pid_uid_and_six_path_assertions_unchanged": true,
+  "unregister_gnss_and_cancel_zero_callback_checks_retained": true,
+  "partial_stage_reports": "stages.json has passed=false and a partial-only scope; never accepted as the final successful result.",
+  "ui_capture_failure_does_not_skip_virtual_cleanup_and_idle_restore": true,
+  "both_drivers_transfer_partial_stage_evidence": true,
+  "existing_owned_guest_location_added_to_default_same_vm": true,
+  "build": {
+    "passed": true,
+    "seconds": 16
+  },
+  "static_host_inspection_passed": true,
+  "controlled_python_tests": {
+    "count": 25,
+    "seconds": 0.98,
+    "passed": true
+  },
+  "engine_or_consumer_apk_code_changed": false,
+  "new_corrected_runtime": "PENDING_NEXT_CI",
+  "native_rerun_requested_after_default_six_path_check": true,
+  "source_sha256": {
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/GuestLocationInstrumentedTest.java": "148f61de68ef88379cd20f98e9f4daca332c21596a90727a1fddc0faea91517e",
+    "tools/cuttlefish_owned_location.py": "47c50c0052cf5cd05b5a90fc274cf58be2982d033644600e835cf32222d6ae06",
+    "tools/run-cloud-check.py": "0f983387d723c63a0e921fea16b63a4805a673088deffc55ddf914e6ed6e17a4",
+    "tools/run-emulator-checks.sh": "b443d29c371db6146573802c7dd6fae931633ca9a0d762b9142bc644757ddd9d",
+    "patches/blackbox-api33-build.patch": "258c75a90e2fdf89e83d88a80a3f2ed01dbd1094bd5a4ae55d6fd9a2d7daa9b5"
+  },
+  "phone_experiment_or_update_requested": false
+}
