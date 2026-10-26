@@ -44,6 +44,20 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '12266719'
+          packages: ''
+          log-accepted-android-sdk-licenses: false
+      - name: Expose the verified command-line tools path
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -x "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" ]; then
+            test -x "$ANDROID_HOME/cmdline-tools/16.0/bin/apkanalyzer"
+            test ! -e "$ANDROID_HOME/cmdline-tools/latest"
+            ln -s 16.0 "$ANDROID_HOME/cmdline-tools/latest"
+          fi
+          test -x "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
       - name: Check public signature reconstruction without credentials
         run: python3 -m unittest discover -s delivery/ci -p test_restore_preview_signature.py -v
       - name: Prepare the fixed SDK and placeholder build profile

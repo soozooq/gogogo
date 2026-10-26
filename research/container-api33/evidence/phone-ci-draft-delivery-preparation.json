@@ -60,7 +60,7 @@
   "temporary_detached_validation_checkout_removed": true,
   "runner_main_apk_hash_may_differ_from_local_fixture_signing": true,
   "runner_records_actual_main_apk_hash": true,
-  "remote_pipeline": "NOT_YET_RUN",
+  "remote_pipeline": "FIRST_RUN_FAILED_AT_SDK_SETUP_BEFORE_BUILD_OR_UPLOAD; CORRECTED_SETUP_PREPARED",
   "workflow_can_publish_release": false,
   "requires_existing_matching_unpublished_draft": true,
   "only_two_own_apks_attached": true,
@@ -70,10 +70,18 @@
   "native47_matching_source": "IN_PROGRESS_NOT_PASS",
   "wechat_douyin_and_phone": "NOT_VERIFIED",
   "source_sha256": {
-    ".github/workflows/phone-preview-draft.yml": "054019305442c24511a74153dc8a245c2ade8bcf46feef20639a20b74d8b70c1",
+    ".github/workflows/phone-preview-draft.yml": "3b8c58fad1928d6d70796a23cf9b3680e359f4efcb41a9dd57409cfa1671b54b",
     "ci/restore_preview_signature.py": "85a7e298ec565d45f9a81f4062047d9c8e40b518efd14045a636cb1c96170b77",
     "ci/stage_rootless_phone_preview.py": "a1d501a880e7ccb66fc3ff46eb1241d7d5611475b47dea970eb00968e076d83a",
     "ci/test_restore_preview_signature.py": "0835ebdaafb22087782079eb7a709a6eb18db3558182fe2f436624a0ec6beea8",
     "ci/phone-preview/host-signature-ff12e8d3.json": "324ef203cac3c6dcfea80978fdd04748f5536cd3deb1a0b18c61b28a2fd2cd31"
-  }
+  },
+  "first_remote_failure": {
+    "run_id": 40300013390,
+    "job_id": 121495308486,
+    "step": "android-actions/setup-android@v3",
+    "reason": "Default legacy tools package no longer exists",
+    "apk_build_or_upload_started": false
+  },
+  "sdk_setup_matches_existing_working_container_workflow": true
 }
