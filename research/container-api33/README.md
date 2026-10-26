@@ -10,11 +10,15 @@ CI35已达到两个Guest界面，但抖音在2069ms后pidof集合少一个PID，
 
 现代Provider holder候选在[CI39自有跨进程检查](evidence/provider-attribution-failure-and-correction.json)暴露第二层错误：真实Binder UID10129，AttributionSource却被改成虚拟10001，系统明确拒绝。该case0.528秒／1项失败，后续回归未运行、原生跳过；三档及源码、签名与材料已核对。按真实宿主UID发送后，[CI40公共跨进程调用实际通过](evidence/provider-attribution-results.json)：调用2634、Provider2661、调用者PID2634与新鲜nonce一致，保留系统权限和归属检查及原始异常。此为x86_64自有应用，不是SDK或位置业务。
 
-[原生自有定位阶段](evidence/native-owned-location-preparation.json)已准备：两目标匿名UI通过后，在同一合格VM运行独立自有Guest的公共框架／跨进程Provider及六条GPS／NETWORK A→B、停止与取消。严格新三件自有APK传递、旧两件兼容、已有包／文件保留与清理保护；不读取目标账号或测试SDK。11秒构建、静态检查、三件材料／同签名、25项驱动检查及8种选择组合通过，CI40三件同轮传递、59份源码、三份签名和每包11份材料已核对，原生作业正在运行，实际ARM定位尚未返回。
+[原生自有定位阶段](evidence/native-owned-location-preparation.json)已准备：普通原包对照通过后，在同一合格VM独立运行独立自有Guest的公共框架／跨进程Provider及六条GPS／NETWORK A→B、停止与取消。严格新三件自有APK传递、旧两件兼容、已有包／文件保留与清理保护；不读取目标账号或测试SDK。11秒构建、静态检查、三件材料／同签名、25项驱动检查及8种选择组合通过，CI40三件同轮传递、59份源码、三份签名和每包11份材料已核对，原生CI40已经失败，实际ARM定位未执行，见下段。
 
-[CI38默认基线](evidence/native-container-startup-pass-results.json)的9项受控无线、框架身份、两项UI回归、447项及lint已通过，但不代表真实无线／SDK。CI39失败保留；[最新默认CI40](evidence/default-ci-state.json)已通过完整回归与447项／lint，每case57份、移动UI59份源码已核对。原生push已在CI38实际验证，手动路径只静态验证。继续同一分支，不发手机实验。
+[CI38默认基线](evidence/native-container-startup-pass-results.json)的9项受控无线、框架身份、两项UI回归、447项及lint已通过，但不代表真实无线／SDK。CI39失败保留；[最新默认CI41](evidence/default-ci-state.json)已通过完整回归与447项／lint，每case57份、移动UI59份源码已核对。原生push已在CI38实际验证，手动路径只静态验证。继续同一分支，不发手机实验。
 
-新增[自有私有Provider查询检查](evidence/private-provider-query-preparation.json)单独核对query的UID／权限分支，返回合成数据，不改引擎或exported／权限；[CI41实际查询通过](evidence/private-provider-query-results.json)：call与query回传同一nonce／远程PID2685、调用者2658；全回归、57份case／59份移动UI源码、447项及lint通过，两档已核对，本轮不传递APK或启动原生。原引擎旧URI授权GRANTED规则保留，不能把功能通过当权限拒绝／隔离证明；CI40保持cf4e固定输入继续运行，不包含这项query。
+新增[自有私有Provider查询检查](evidence/private-provider-query-preparation.json)单独核对query的UID／权限分支，返回合成数据，不改引擎或exported／权限；[CI41实际查询通过](evidence/private-provider-query-results.json)：call与query回传同一nonce／远程PID2685、调用者2658；全回归、57份case／59份移动UI源码、447项及lint通过，两档已核对，本轮不传递APK或启动原生。原引擎旧URI授权GRANTED规则保留，不能把功能通过当权限拒绝／隔离证明；CI40保持cf4e固定输入，不包含这项query；现已完成，结果不替代ARM64 query。
+
+[CI40原生实际失败](evidence/native-pid-set-and-owned-stage-results.json)已核对四归档及9份源码：系统稳定，两个普通原包和容器微信通过；容器抖音看到隐私页后，同名PID9665增加10333，5730ms时严格集合检查失败。原PID仍在、新PID角色未知，不能写成主进程或JIT崩溃。后续自有定位被跳过；本轮有抖音PNG且已查看，没有微信PNG。候选将持续观察绑定Core主进程角色及真实ActivityManager PID／UID、复查最后隐私页，并把自有契约与目标UI结果分别记录；总结果仍要求每项通过。
+
+[简化手机导入候选](evidence/installed-original-import-preparation.json)增加已安装公开APK直接导入，保留文件选择；固定微信／抖音清单只允许原生ARM64。13秒构建、静态检查和25项驱动检查通过，新增真实按钮及原应用保留回归待CI；未发布手机更新。
 
 ## 核对下载的 CI 回执（维护用）
 
@@ -67,7 +71,7 @@ python3 research/container-api33/tools/verify-ci-receipts.py \
 
 ![统一入口：修改坐标后应用，一键停止](evidence/unified-entry.png)
 
-当前只准入上述两个固定发布文件，**微信／抖音、腾讯／字节 SDK、GMS、海外业务和 ARM64／vivo 尚未成功**。[已核验的官方目标安装包](evidence/official-target-apk-readiness.json)都只有 ARM64 原生库；未加入普通入口、未改签或分发，版本也不等于用户手机版本。
+该历史普通入口结果覆盖上述两个固定发布文件。本轮候选将[已核验的官方微信8.0.79／抖音40.8.0](evidence/official-target-apk-readiness.json)加入清单，限原生ARM64；已安装版本必须完全匹配，否则选择固定完整原版APK。新增入口待CI，不改签或分发原包，也不等于用户手机版本已匹配。微信／抖音的定位、腾讯／字节SDK、GMS、海外及vivo仍未验证。
 
 本云端 x86_64 模拟器[拒绝 ARM64 镜像](evidence/arm64-cloud-runtime-limit.json)。[GitHub ARM Mac 构建通过，VM 因 HVF 不可用未启动](evidence/cloud-arm-mac-build-and-vm-limit.json)。Linux 的 KVM 启动、存储和构建已通过，最近[文件选择器抽屉遮挡导致未完成选择](evidence/cloud-picker-occlusion-failure.json)，现改为默认下载目录并等待真实返回，已通过导入并实际打开 Guest；随后[首次启动更新说明遮挡坐标](evidence/cloud-fresh-gpstest-dialog-failure.json)，已按实际 XML 修正关闭按钮。[全新 KVM 普通流程 10.563 秒及计算器回归 5.778 秒通过](evidence/cloud-ordinary-entry-pass.json)，全部输入与实测提交逐项核对。失败不算引擎或定位结果。[云端流程](../../.github/workflows/container-research.yml)只上传证据，不上传 APK，继续研发统一留在 #60。
 
@@ -75,7 +79,7 @@ python3 research/container-api33/tools/verify-ci-receipts.py \
 
 另核对 [API31／32 官方镜像的局部元数据](evidence/api31-32-translation-metadata.json)，[API32 实际启动确认转译启用，但两款原包对照仍原生崩溃](evidence/official-target-api32-baseline-limit.json)，微信报告 `Cannot process signal 11`，抖音报告 `Bad ubidi_openSized_68 call`。容器没有启动，不能归因为容器或真机失败。
 
-[默认 CI 的 Linux 构建／审计／普通入口／计算器回归和 ARM Mac 构建均已通过](evidence/default-ci-state.json)。目标转译预检改为手动选择、默认关闭，本次跳过；运行条件变化后再复核，跳过不算目标通过。失败记录完整保留，不重复相同环境。下一项技术前提是可正常运行原包的原生 ARM64 环境；当前没有连接用户手机。[官方模拟器宿主归档](evidence/official-emulator-host-archives.json)不列 Linux ARM64，ARM Mac 的 HVF 限制也仍在。此历史轮当时尚无目标启动通过；当前CI38已通过匿名启动，但定位和海外业务仍未通过，也未加入普通入口。
+[默认 CI 的 Linux 构建／审计／普通入口／计算器回归和 ARM Mac 构建均已通过](evidence/default-ci-state.json)。目标转译预检改为手动选择、默认关闭，本次跳过；运行条件变化后再复核，跳过不算目标通过。失败记录完整保留，不重复相同环境。下一项技术前提是可正常运行原包的原生 ARM64 环境；当前没有连接用户手机。[官方模拟器宿主归档](evidence/official-emulator-host-archives.json)不列 Linux ARM64，ARM Mac 的 HVF 限制也仍在。此历史轮当时尚无目标启动通过；当前CI38已通过匿名启动，但定位和海外业务仍未通过。本轮候选普通清单已加入固定原包，运行结果待新CI。
 
 ## 前轮：官方 GPSTest 实际采用位置
 
@@ -123,7 +127,7 @@ python3 research/container-api33/tools/verify-ci-receipts.py \
 
 [BlackBox 补丁](patches/blackbox-api33-build.patch)保留原来的 AIDL 包名及资源镜像修正，并加入现代定位回调、取消、调度／注销、时间戳和原签名修正。沿用同一个补丁文件和固定上游提交；已从原始文件重新应用并逐文件核对本轮结果。
 
-研究宿主清除了引擎清单的大量权限继承，保留内部签名权限及 `REORDER_TASKS`，并为原版 GPSTest 增加普通的精确／粗略定位、网络、网络状态及前台服务权限。精确定位经过真实系统授权界面；Guest 共享宿主 UID／权限。普通入口准入固定计算器（定位关闭）与 GPSTest（应用坐标后启用）；自有消费者仅用于云端回归。未开启 Root／Xposed 隐藏或守护服务。
+研究宿主清除了引擎清单的大量权限继承，保留内部签名权限及 `REORDER_TASKS`，并为原版 GPSTest 增加普通的精确／粗略定位、网络、网络状态及前台服务权限。精确定位经过真实系统授权界面；Guest 共享宿主 UID／权限。普通入口保留固定计算器（定位关闭）与GPSTest，候选另准入原生ARM64的固定微信／抖音；应用坐标仅是设置虚拟会话，不证明应用采用。自有消费者仅用于云端回归。未开启 Root／Xposed 隐藏或守护服务。
 
 ## 尚未跨过的门槛
 

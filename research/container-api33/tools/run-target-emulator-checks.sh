@@ -9,7 +9,7 @@ test "$(uname -s)" = Linux
 test "$(uname -m)" = x86_64
 mkdir -p "$CONTAINER_RESEARCH_WORKDIR/evidence" "$ANDROID_AVD_HOME"
 
-# The targets remain research inputs, outside the ordinary host catalog and artifacts.
+# Original target APKs remain external research inputs; never embed or upload them.
 python3 - "$spec_root" "$CONTAINER_RESEARCH_WORKDIR" <<'PY'
 import hashlib, json, subprocess, sys, tempfile
 from pathlib import Path

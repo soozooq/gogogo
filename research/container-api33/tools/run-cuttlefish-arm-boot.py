@@ -484,9 +484,12 @@ def main():
                 if args.container_apks:
                     # Each successful control has already been followed immediately.
                     report['container_startups_passed'] = container['passed']
-                    if args.owned_location_check and baseline['passed'] and container['passed']:
+                    # Target UI and the own contracts are separate results. A target helper
+                    # process change must not prevent checking a still-qualified native VM.
+                    if args.owned_location_check and baseline['passed']:
                         from cuttlefish_owned_location import run_owned_location_control
-                        expected_pid = container['results']['douyin']['environment_after_container']['system_pid']
+                        expected_pid = baseline['results']['douyin']['system_server_pid_at_start']
+                        report['owned_location_prerequisites'] = 'QUALIFIED_OWNED_VM_AND_ORIGINAL_CONTROLS_NOT_TARGET_UI_PASS'
                         owned = run_owned_location_control(work, spec_dir, report, launched,
                             environment, own_apks, expected_pid)
                         report['owned_location_passed'] = owned['passed']

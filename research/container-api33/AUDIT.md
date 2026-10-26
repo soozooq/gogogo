@@ -30,7 +30,7 @@
 
 普通入口的原包导入、系统授权、坐标更新、重复进入和停止经过真实界面检查，63.652 秒通过；定位控制没有由测试直接替代。清单来自固定来源，导入同时核对文件与归档身份。详见[本轮输入与实际可见文本](evidence/unified-entry-results.json)。后加的云端启动脚本／工作流尚不属于这次本地运行，等待 GitHub 的独立结果。
 
-官方微信 8.0.79 与抖音 40.8.0 已下载并验证原包签名结构、记录 SHA-256，均仅含 ARM64 原生库。它们没有进入准入清单或运行；这也不确认用户手机安装版本。本机官方模拟器因宿主架构拒绝 ARM64 镜像，不能据此判定应用或引擎在 ARM64 上不兼容。GitHub ARM Mac 已完成实际构建／静态核验，镜像则在 HVF 初始化失败，未启动系统；修正后的流程只保留该机器的构建检查。Linux 全新构建／静态核验也通过，运行脚本的 GUI 版本探测缺库已修正，真正的运行仍等待结果。官方 Google 镜像的内置 ARM 转译另行核查，不改变目前没有 ARM64／vivo／微信运行证据的边界。
+官方微信 8.0.79 与抖音 40.8.0 已下载并验证原包签名结构、记录 SHA-256，均仅含 ARM64 原生库。历史上未进入普通清单；CI38已完成匿名原生启动，定位关闭。本轮候选将两份固定原包加入普通清单，限原生ARM64，并新增已安装公开APK读取；新入口待CI，不确认用户版本已匹配，不复制账号或私有数据。本机官方模拟器因宿主架构拒绝 ARM64 镜像，不能据此判定应用或引擎在 ARM64 上不兼容。GitHub ARM Mac 已完成实际构建／静态核验，镜像则在 HVF 初始化失败，未启动系统；修正后的流程只保留该机器的构建检查。Linux 全新构建／静态核验也通过，运行脚本的 GUI 版本探测缺库已修正，真正的运行仍等待结果。官方 Google 镜像的内置 ARM 转译另行核查，不改变没有vivo或微信位置业务证据的边界；当前匿名ARM64启动与最新CI40失败见根入口。
 
 ## 官方 GPSTest 与 GNSS 兼容
 
@@ -115,3 +115,9 @@ CI39新增公共跨进程call并未通过：实际Binder UID10129与被ContentPr
 私有Provider query后续只检查合成Cursor／nonce／PID往返。原引擎IActivityManagerProxy.CheckUriPermission始终返回PERMISSION_GRANTED，本轮没有修改该旧规则；因此即使query成功，也不能作为权限拒绝或隔离的验证。固定AOSP的UID缓存／检查与该旧hook分开记录，不据静态疑点断言实际查询失败。
 
 [CI41实际x86查询](evidence/private-provider-query-results.json)已返回本轮nonce、同一远程PID2685，call调用者2658；Provider Process API UID10001、Binder调用者UID10129也已记录。该功能通过不能隔离权限路径因果或证明拒绝策略。完整基础回归及两归档源码已核对；本轮无APK传递／原生运行，旧CI40固定消费者未包含新增query，不是ARM64 query证明。
+
+## 已装原版导入与主进程观察候选（2026-10-26）
+
+四包可见性仅声明具体package，未添加QUERY_ALL_PACKAGES或存储权限。已装导入只读public sourceDir，拒绝分包及版本不符，复制到私有临时文件后仍核对精确字节摘要及原证书，再虚拟安装并删除临时文件。无需电脑／Root，系统原应用和账号不迁移；新增真实按钮回归待CI，不以编译代替手机结果。
+
+CI40的同名PID集合变化不能证明主进程退出：9665仍在、新增10333角色未知。新检查从Core注册ProcessRecord与实际ActivityManager的交集选择唯一processName等于包名且UID为宿主的PID，持续300秒并复查隐私页；保留同名集合变化，不声称检查内核进程出生时间。自有定位独立于目标UI结果，但仍要求普通原包通过、同一合格VM／system_server及所有清理门槛；全轮仍需各项通过。详见[实际失败](evidence/native-pid-set-and-owned-stage-results.json)及[导入候选](evidence/installed-original-import-preparation.json)。

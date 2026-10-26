@@ -1,6 +1,7 @@
 <resources>
     <item name="guest_choice" type="id" />
     <item name="import_guest" type="id" />
+    <item name="import_installed_guest" type="id" />
     <item name="target_latitude" type="id" />
     <item name="target_longitude" type="id" />
     <item name="open_guest" type="id" />

@@ -1,6 +1,7 @@
 package com.soozooq.tianwaitian.containerresearch;
 
 import static org.junit.Assert.*;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
@@ -28,6 +29,8 @@ import java.util.Locale;
 import top.niunaijun.bcore.BlackBoxCore;
 import top.niunaijun.bcore.entity.pm.InstallResult;
 import top.niunaijun.bcore.fake.frameworks.BLocationManager;
+import top.niunaijun.bcore.fake.frameworks.BActivityManager;
+import top.niunaijun.bcore.entity.am.RunningAppProcessInfo;
 
 /** Cloud-only cold startup. Never accepts terms, logs in, sends messages or enables location. */
 @RunWith(AndroidJUnit4.class)
@@ -184,15 +187,37 @@ public final class OfficialTargetStartupInstrumentedTest {
                 long holdDeadline = holdStarted + 300000;
                 boolean stable = true;
                 String current = pid;
+                int hostUid = context.getApplicationInfo().uid;
+                JSONArray initialProcesses = registeredProcesses();
+                int mainPid = mainProcess(initialProcesses, hostUid);
+                assertTrue("The registered main process must have a live system record and host UID", mainPid > 0);
+                JSONArray currentProcesses = initialProcesses;
+                boolean sameNamePidSetChanged = false;
                 while (SystemClock.elapsedRealtime() < holdDeadline) {
                     SystemClock.sleep(1500);
                     current = shell("pidof " + pkg);
-                    if (!pid.equals(current)) { stable = false; break; }
+                    sameNamePidSetChanged |= !pid.equals(current);
+                    currentProcesses = registeredProcesses();
+                    if (mainProcess(currentProcesses, hostUid) != mainPid) { stable = false; break; }
                 }
                 report.put("post_ui_observation", new JSONObject().put("requested_seconds", 300)
                         .put("observed_ms", SystemClock.elapsedRealtime() - holdStarted)
-                        .put("initial_target_pid", pid).put("last_target_pid", current).put("passed", stable));
+                        .put("initial_target_pid", pid).put("last_target_pid", current)
+                        .put("identity_basis", "CORE_REGISTERED_MAIN_PROCESS_AND_ACTUAL_ACTIVITY_MANAGER_PID_UID")
+                        .put("main_pid", mainPid).put("main_uid", hostUid)
+                        .put("initial_registered_processes", initialProcesses)
+                        .put("last_registered_processes", currentProcesses)
+                        .put("same_name_pid_set_changed", sameNamePidSetChanged).put("passed", stable));
                 ready = stable;
+                if (ready) {
+                    List<String> text = new ArrayList<>();
+                    collect(InstrumentationRegistry.getInstrumentation().getUiAutomation().getRootInActiveWindow(), text);
+                    lastText = text;
+                    String joined = String.join("\n", text).toLowerCase(Locale.ROOT);
+                    ready = (joined.contains("隐私") || joined.contains("privacy"))
+                            && (joined.contains("同意") || joined.contains("agree"));
+                    report.put("post_hold_privacy_ui_visible", ready);
+                }
             }
             report.put("passed", ready);
             assertTrue("Expected anonymous startup UI was not reached: " + lastText, ready);
@@ -213,6 +238,26 @@ public final class OfficialTargetStartupInstrumentedTest {
                 apk.delete(); Configurator.getInstance().setWaitForIdleTimeout(idle);
             }
         }
+    }
+    private JSONArray registeredProcesses() throws Exception {
+        RunningAppProcessInfo running = BActivityManager.get().getRunningAppProcesses(pkg, 0);
+        assertNotNull("Actual ActivityManager and registered Guest process snapshot", running);
+        JSONArray snapshot = new JSONArray();
+        for (ActivityManager.RunningAppProcessInfo process : running.mAppProcessInfoList) {
+            snapshot.put(new JSONObject().put("pid", process.pid).put("uid", process.uid)
+                    .put("process_name", process.processName));
+        }
+        return snapshot;
+    }
+    private int mainProcess(JSONArray processes, int expectedUid) throws Exception {
+        int result = 0;
+        for (int i = 0; i < processes.length(); i++) {
+            JSONObject process = processes.getJSONObject(i);
+            if (!pkg.equals(process.getString("process_name"))) continue;
+            if (result != 0 || process.getInt("uid") != expectedUid) return 0;
+            result = process.getInt("pid");
+        }
+        return result;
     }
     private void collect(AccessibilityNodeInfo node, List<String> text) {
         if (node == null) return;

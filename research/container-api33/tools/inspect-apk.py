@@ -42,7 +42,8 @@ with zipfile.ZipFile(host) as apk:
     definitions = apk_defined_classes(apk)
     embedded_apks = [n for n in apk.namelist() if n.endswith('.apk')]
     guest_definitions = [n for n in definitions if n.startswith(('Lorg/fossify/',
-        'Lcom/android/gpstest/', 'Lcom/soozooq/tianwaitian/locationconsumer/'))]
+        'Lcom/android/gpstest/', 'Lcom/soozooq/tianwaitian/locationconsumer/',
+        'Lcom/tencent/mm/', 'Lcom/ss/android/ugc/aweme/'))]
     abis = sorted({n.split('/')[1] for n in apk.namelist() if n.startswith('lib/') and n.endswith('.so')})
     mirror = 'Lblack/com/android/internal/InternalResources$styleable;' in definitions
     catalog = json.loads(apk.read('assets/approved-guests.json'))
@@ -51,12 +52,21 @@ with zipfile.ZipFile(host) as apk:
                  spec / 'THIRD_PARTY_NOTICES.md', spec / 'CI_SOURCE_AND_RELINK.md']:
         assert apk.read('assets/research-notices/' + path.name) == path.read_bytes(), path.name
 sources = json.loads((spec / 'sources.json').read_text())
-assert len(catalog) == 2
+assert len(catalog) == 4
 for actual, key, location in zip(catalog, ['guest', 'third_party_location'], [False, True]):
     expected = sources[key]
     assert actual['location'] is location
+    assert actual['arm64_only'] is False
     for field in ['package', 'sha256', 'size', 'version_code', 'version_name', 'certificate_sha256', 'url']:
         assert actual[field] == expected[field], field
+targets = json.loads((spec / 'evidence/official-target-apk-readiness.json').read_text())
+for actual, key in zip(catalog[2:], ['wechat', 'douyin']):
+    expected = next(x for x in targets['targets'] if x['source_key'] == key)
+    assert actual['location'] is True and actual['arm64_only'] is True
+    for field in ['package', 'sha256', 'size', 'version_code', 'version_name', 'certificate_sha256']:
+        assert actual[field] == expected[field], field
+    assert actual['url'] == targets['source'][key]['url']
+assert {e.get(ns + 'name') for e in tree.findall('queries/package')} == {x['package'] for x in catalog}
 assert not embedded_apks and not guest_definitions and mirror
 assert abis == ['arm64-v8a', 'x86_64']
 signature = subprocess.check_output([str(sdk / 'build-tools/33.0.2/apksigner'), 'verify', '--print-certs', str(host)], text=True)

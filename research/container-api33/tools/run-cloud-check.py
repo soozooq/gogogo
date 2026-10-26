@@ -107,7 +107,8 @@ metadata = {
     'artifacts': {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs},
 }
 spec = Path(__file__).resolve().parents[1]
-source_inputs = [spec / 'sources.json', *sorted((spec / 'patches').glob('*.patch')),
+source_inputs = [spec / 'sources.json', spec / 'evidence/official-target-apk-readiness.json',
+    *sorted((spec / 'patches').glob('*.patch')),
     *sorted((spec / 'tools').glob('*.*')), *sorted((spec / 'probe-host').rglob('*.java')),
     spec / 'probe-host/build.gradle', spec / 'probe-host/src/main/AndroidManifest.xml']
 source_inputs += [*sorted((spec / 'licenses').glob('*.txt')),

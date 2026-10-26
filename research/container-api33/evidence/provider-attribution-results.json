@@ -138,13 +138,14 @@
   "provider_permission_exported_and_uid_checks_kept": true,
   "native_job": {
     "id": 121318547685,
-    "status_at_capture": "in_progress",
-    "phase": "QUALIFY_PINNED_SYSTEM_AND_OPTIONAL_STARTUP",
-    "owned_location_actual_result": "NOT_YET_REPORTED",
-    "passed": false
+    "status_at_capture": "completed",
+    "conclusion": "failure",
+    "owned_location_actual_result": "NOT_EXECUTED_TARGET_PID_SET_GATE_FAILED",
+    "passed": false,
+    "actual_result": "native-pid-set-and-owned-stage-results.json"
   },
   "latest_actual_native_startup_baseline": "native-container-startup-pass-results.json",
-  "actual_arm64_owned_location": "NOT_YET_REPORTED",
+  "actual_arm64_owned_location": "NOT_EXECUTED_NOT_PASS_OR_LOCATION_FAILURE",
   "wechat_send_and_live_location": "UNFULFILLED",
   "douyin_wireless_and_overseas": "UNFULFILLED",
   "phone_update_distributed": false

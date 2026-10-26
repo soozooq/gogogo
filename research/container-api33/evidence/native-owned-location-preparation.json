@@ -2,7 +2,7 @@
   "schema": "GOGOGO_NATIVE_OWNED_LOCATION_PREPARATION_V1",
   "scope": "BUILD_CONTROLLED_DRIVER_AND_ARCHIVE_COMPATIBILITY_NOT_NEW_NATIVE_LOCATION_RUNTIME",
   "base_commit": "53c94bb65838637c80f2dc815cc44f88dde844f0",
-  "new_phase": "Only after same qualified owned ARM64 VM and both ordinary/container target UI controls pass: own Guest framework/provider contract and existing public LocationManager six-path A-to-B/update/unregister/cancel contract.",
+  "new_phase": "After the same qualified owned native ARM64 VM and ordinary original controls pass, run own framework/provider and six-path location contracts independently of target container UI outcome. Overall success still requires every requested stage.",
   "consumer_does_not_receive_expected_coordinates": true,
   "consumer_only_virtually_imported_not_system_installed": true,
   "third_party_sdk_location_or_business_tested": false,
@@ -16,7 +16,7 @@
     "consumer_source_inventory_required": true,
     "old_two_apk_scope_still_supported": true,
     "all_three_materials_and_same_signer_locally_verified": true,
-    "actual_new_ci_transport": "PENDING_NEXT_CI"
+    "actual_new_ci_transport": "CI40_THREE_APKS_59_SOURCES_3_SIGNERS_11_MATERIALS_VERIFIED"
   },
   "runtime_guards": {
     "qualified_same_live_qemu_required": true,
@@ -52,13 +52,13 @@
     "ci39_three_archives_and_actual_failed_case_preserved": true
   },
   "donor_patch_clean_index_replay_verified": true,
-  "new_actual_arm64_owned_location": "PENDING_NEXT_CI",
+  "new_actual_arm64_owned_location": "CI40_NOT_EXECUTED_TARGET_PID_SET_GATE_FAILED; NEXT_CANDIDATE_PENDING",
   "planned_native_source_input_count": 9,
   "source_sha256": {
     "tools/cuttlefish_owned_location.py": "bf2f1a572259d4b3c69defdd4bb48fb194828c22399140da203dccae3dc6efc9",
     "tools/cuttlefish_target_baselines.py": "bf286fe892df67aa78965b7c9aef7b35e16b24b22b93d34f32110b96d37e6d85",
     "tools/ci_owned_apks.py": "3997810904fb1d9633678c3225a0663193926107baec06e16be5909e6196709b",
-    "tools/run-cuttlefish-arm-boot.py": "355c5b28689e8fd2e81d51bd7ade1adf1cdafe6b035736dbbec755199ff2a0fa",
+    "tools/run-cuttlefish-arm-boot.py": "687d5198b13e7f32ca70562454f970219b38f624f798827e870a1090a95951f8",
     "tools/verify-ci-receipts.py": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
     "tests/test_cuttlefish_owned_location.py": "06760ca5f55436343e10b2a8e89317876b3877b49abcd43ff772cdfc93bd3e45",
     "tests/test_ci_owned_apks.py": "ba61776c29fd6e020ca156ee9d7e05077f420181018f08a3433c8104c4d76645",
@@ -71,5 +71,6 @@
     ".github/workflows/container-research.yml": "15b1a19d44f88a33ea259852db6819a526082605296886f3ff9eea344746a969"
   },
   "phone_update_distributed": false,
-  "subsequent_actual_default_result": "provider-attribution-results.json"
+  "subsequent_actual_default_result": "provider-attribution-results.json",
+  "actual_ci40_result": "native-pid-set-and-owned-stage-results.json"
 }

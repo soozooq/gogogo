@@ -25,9 +25,11 @@ android {
 
 // One pinned source manifest supplies both the cloud verifier and the ordinary import UI.
 def researchSources = new File(System.getenv('CONTAINER_RESEARCH_SPEC_DIR'), 'sources.json')
+def reviewedTargets = new File(System.getenv('CONTAINER_RESEARCH_SPEC_DIR'), 'evidence/official-target-apk-readiness.json')
 def catalogOutput = layout.buildDirectory.file('generated/researchGuestAssets/approved-guests.json')
 def generateResearchGuestCatalog = tasks.register('generateResearchGuestCatalog') {
     inputs.file researchSources
+    inputs.file reviewedTargets
     outputs.file catalogOutput
     doLast {
         def sources = new groovy.json.JsonSlurper().parse(researchSources)
@@ -39,7 +41,17 @@ def generateResearchGuestCatalog = tasks.register('generateResearchGuestCatalog'
             [label: item.label, location: item.location, package: source['package'],
              sha256: source.sha256, size: source.size, version_code: source.version_code,
              version_name: source.version_name, certificate_sha256: source.certificate_sha256,
-             url: source.url]
+             url: source.url, arm64_only: false]
+        }
+        def targets = new groovy.json.JsonSlurper().parse(reviewedTargets)
+        ['wechat', 'douyin'].each { key ->
+            def source = targets.targets.find { it.source_key == key }
+            if (source == null) throw new GradleException('Missing reviewed original target: ' + key)
+            entries.add([label: key == 'wechat' ? '微信（位置待验证）' : '抖音（位置待验证）',
+                location: true, package: source['package'], sha256: source.sha256, size: source.size,
+                version_code: source.version_code, version_name: source.version_name,
+                certificate_sha256: source.certificate_sha256, url: targets.source[key].url,
+                arm64_only: true])
         }
         def target = catalogOutput.get().asFile
         target.parentFile.mkdirs()

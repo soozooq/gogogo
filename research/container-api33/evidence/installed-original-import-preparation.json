@@ -1,0 +1,57 @@
+{
+  "schema": "GOGOGO_INSTALLED_ORIGINAL_IMPORT_PREPARATION_V1",
+  "scope": "BUILD_AND_STATIC_CATALOG_CHECK_NOT_PHONE_OR_TARGET_LOCATION_RUNTIME",
+  "base_commit": "cb1af8344e943814b8571d7de6b18359bd12ca29",
+  "ordinary_catalog": [
+    "org.fossify.math",
+    "com.android.gpstest.osmdroid",
+    "com.tencent.mm",
+    "com.ss.android.ugc.aweme"
+  ],
+  "new_target_versions": {
+    "wechat": "8.0.79 / 3200",
+    "douyin": "40.8.0 / 400801"
+  },
+  "new_targets_primary_native_arm64_only": true,
+  "one_time_import_sources": [
+    "SELECTED_INSTALLED_PUBLIC_BASE_APK",
+    "SYSTEM_DOCUMENT_PICKER_ORIGINAL_APK"
+  ],
+  "no_root_or_computer_required": true,
+  "private_app_or_account_data_read": false,
+  "exact_size_sha256_package_version_and_original_certificate_required": true,
+  "split_apks_or_unpinned_versions_rejected": true,
+  "original_app_not_modified_uninstalled_or_resigned": true,
+  "target_apks_not_embedded_or_distributed": true,
+  "maximum_allowed_catalog_apk_bytes": 536870912,
+  "new_cloud_ui_check": "installedCalculatorControl now clicks the ordinary installed import button, checks original signatures, temp cleanup, original system UID/path/version preservation, and removes only its virtual copy; baseline original is removed later by the existing dedicated cloud driver.",
+  "existing_document_picker_location_ui_regression_kept": true,
+  "actual_new_import_runtime": "PENDING_NEXT_CI",
+  "actual_target_location_business": "NOT_VERIFIED",
+  "build": {
+    "passed": true,
+    "seconds": 13
+  },
+  "static_host_and_consumer_inspection_passed": true,
+  "controlled_python_tests": {
+    "passed": true,
+    "count": 25,
+    "seconds": 0.95
+  },
+  "source_sha256": {
+    "probe-host/build.gradle": "cc00912130068cf7558c04df465ab3f1b97ea8de59806d9a526ea308348622c3",
+    "probe-host/src/main/AndroidManifest.xml": "45c69238759399aa995a8413e6a967e94d717a9e8129a23fcc01536f5ea217ff",
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/GuestImport.java": "ce777203d7d6ec0c6d53361f682ad5a4561db2db60db304e2edf9e8670ef360b",
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeActivity.java": "13a5e7b5d43cf1b2b6ff41760b14f28dc67e3efce5342983e549b8d598f335fc",
+    "probe-host/src/main/res/values/ids.xml": "e52c1ece7818e31634729e9e4813cce24035518a4d793234407c17e091670464",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ExternalGuestInstrumentedTest.java": "fdc0ed6a116ef2950eacae8664785584981608b23da8cddc5d97f7525f7386e4",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/OfficialTargetStartupInstrumentedTest.java": "51b0befe91b84543f4f1127f23ee4ee089ed640688798404339ef6fde917300b",
+    "tools/inspect-apk.py": "42697f2fcdd0972487b114d0cfa6d07d5e71e085289d5c52ce80ad97b7bc52d1",
+    "tools/run-cloud-check.py": "c43fed461ddab0d9c6a6d40f783c0e0c4704b316a0418227fbb70237d9f9edaf",
+    "tools/run-emulator-checks.sh": "8ca4e027525fb461c6e266e629f1d407a2f959d30ae710a70f62996203d5c65d",
+    "tools/run-cuttlefish-arm-boot.py": "687d5198b13e7f32ca70562454f970219b38f624f798827e870a1090a95951f8",
+    "evidence/official-target-apk-readiness.json": "477eeb8da6afea0a2eef19e2670deffd8ee95d176658734048206e553aa7f2c9"
+  },
+  "native_followup": "native-pid-set-and-owned-stage-results.json",
+  "phone_update_distributed": false
+}

@@ -25,22 +25,27 @@ import top.niunaijun.bcore.entity.pm.InstallResult;
 public final class GuestImport {
     // Retained for the existing calculator regression; the ordinary UI uses Entry.
     public static final String PACKAGE = "org.fossify.math";
-    public static final long MAX_BYTES = 10L * 1024 * 1024;
+    public static final long MAX_BYTES = 512L * 1024 * 1024;
     private GuestImport() {}
 
     public static final class Entry {
         public final String label, packageName, sha256, certificateSha256, versionName, url;
         public final long size, versionCode;
-        public final boolean location;
+        public final boolean location, arm64Only;
         private Entry(JSONObject json) throws Exception {
             label = json.getString("label"); packageName = json.getString("package");
             sha256 = json.getString("sha256"); certificateSha256 = json.getString("certificate_sha256");
             versionName = json.getString("version_name"); versionCode = json.getLong("version_code");
             size = json.getLong("size"); location = json.getBoolean("location"); url = json.getString("url");
+            arm64Only = json.optBoolean("arm64_only", false);
             if (!sha256.matches("[0-9a-f]{64}") || !certificateSha256.matches("[0-9a-f]{64}")
                     || size <= 0 || size > MAX_BYTES) throw new IllegalStateException("CATALOG_INVALID");
         }
         @Override public String toString() { return label + " " + versionName; }
+        public boolean supportsDevice() {
+            return !arm64Only || (Build.SUPPORTED_ABIS.length > 0
+                    && "arm64-v8a".equals(Build.SUPPORTED_ABIS[0]));
+        }
     }
 
     public static List<Entry> catalog(Context context) throws Exception {
@@ -64,6 +69,7 @@ public final class GuestImport {
     }
 
     public static File copyAndVerify(Context context, Uri uri, Entry entry) throws Exception {
+        if (!entry.supportsDevice()) throw new IllegalArgumentException("ARM64_GUEST_REQUIRED");
         File directory = new File(context.getFilesDir(), "research-import");
         if (!directory.isDirectory() && !directory.mkdirs()) throw new IllegalStateException("NO_DIRECTORY");
         File temporary = File.createTempFile("guest-", ".apk", directory);
@@ -91,6 +97,21 @@ public final class GuestImport {
         }
     }
 
+    /** Only read the selected package's public original APK; never copy its private app data. */
+    public static File copyInstalled(Context context, Entry entry) throws Exception {
+        if (!entry.supportsDevice()) throw new IllegalArgumentException("ARM64_GUEST_REQUIRED");
+        PackageInfo installed = context.getPackageManager().getPackageInfo(entry.packageName, 0);
+        if (installed.applicationInfo == null || installed.applicationInfo.sourceDir == null
+                || !entry.versionName.equals(installed.versionName)
+                || entry.versionCode != (Build.VERSION.SDK_INT >= 28
+                    ? installed.getLongVersionCode() : installed.versionCode)) {
+            throw new IllegalArgumentException("INSTALLED_VERSION_NOT_PINNED");
+        }
+        String[] splits = installed.applicationInfo.splitSourceDirs;
+        if (splits != null && splits.length > 0) throw new IllegalArgumentException("INSTALLED_SPLITS_UNSUPPORTED");
+        return copyAndVerify(context, Uri.fromFile(new File(installed.applicationInfo.sourceDir)), entry);
+    }
+
     public static void verify(File file, Entry entry) throws Exception {
         if (file.length() != entry.size || !entry.sha256.equals(hashFile(file))) {
             throw new IllegalArgumentException("UNAPPROVED_GUEST");
@@ -115,6 +136,7 @@ public final class GuestImport {
     }
 
     public static void installVerified(File file, Entry entry) throws Exception {
+        if (!entry.supportsDevice()) throw new IllegalArgumentException("ARM64_GUEST_REQUIRED");
         verify(file, entry);
         PackageInfo archive = BlackBoxCore.getPackageManager().getPackageArchiveInfo(file.getAbsolutePath(),
                 Build.VERSION.SDK_INT >= 28 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES);

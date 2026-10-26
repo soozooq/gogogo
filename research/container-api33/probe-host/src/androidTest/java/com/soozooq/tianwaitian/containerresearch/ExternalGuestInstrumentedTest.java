@@ -3,6 +3,7 @@ package com.soozooq.tianwaitian.containerresearch;
 import static org.junit.Assert.*;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
@@ -28,6 +29,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.json.JSONObject;
 import top.niunaijun.bcore.fake.frameworks.BLocationManager;
 import top.niunaijun.bcore.BlackBoxCore;
 
@@ -74,6 +76,45 @@ public final class ExternalGuestInstrumentedTest {
         device.pressHome();
         startInstalledCalculator();
         assertResultIsThree();
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        PackageInfo before = context.getPackageManager().getPackageInfo(GuestImport.PACKAGE, 0);
+        assertNotEquals("The original uses its own system UID", Process.myUid(), before.applicationInfo.uid);
+        assertFalse("Use a fresh virtual calculator", BlackBoxCore.get().isInstalled(GuestImport.PACKAGE, 0));
+        File evidence = new File(context.getFilesDir(), "runtime-evidence");
+        assertTrue(evidence.isDirectory() || evidence.mkdirs());
+        try {
+            assertTrue(context.getSharedPreferences("research-entry", Context.MODE_PRIVATE).edit()
+                    .putString("selected", GuestImport.PACKAGE).commit());
+            context.startActivity(new Intent(context, ProbeActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
+            UiObject2 importButton = device.wait(Until.findObject(By.res(context.getPackageName(),
+                    "import_installed_guest").enabled(true)), 30000);
+            assertNotNull("Ordinary installed-version import button", importButton);
+            importButton.click();
+            assertNotNull("Public installed APK imported through the ordinary UI", device.wait(
+                    Until.findObject(By.res(context.getPackageName(), "open_guest").enabled(true)), 60000));
+            assertTrue(BlackBoxCore.get().isInstalled(GuestImport.PACKAGE, 0));
+            assertOriginalGuestSignatures(true);
+            assertNotNull(device.findObject(By.res(context.getPackageName(), "import_installed_guest").enabled(false)));
+            File[] remaining = new File(context.getFilesDir(), "research-import").listFiles();
+            assertNotNull("Temporary import directory exists", remaining);
+            assertEquals("Verified temporary APK removed after import", 0, remaining.length);
+        } finally {
+            BlackBoxCore.get().uninstallPackageAsUser(GuestImport.PACKAGE, 0);
+        }
+        assertFalse("Only the virtual copy was removed", BlackBoxCore.get().isInstalled(GuestImport.PACKAGE, 0));
+        PackageInfo after = context.getPackageManager().getPackageInfo(GuestImport.PACKAGE, 0);
+        assertEquals(before.applicationInfo.uid, after.applicationInfo.uid);
+        assertEquals(before.applicationInfo.sourceDir, after.applicationInfo.sourceDir);
+        assertEquals(before.getLongVersionCode(), after.getLongVersionCode());
+        assertEquals(before.versionName, after.versionName);
+        JSONObject report = new JSONObject().put("scope", "INSTALLED_PUBLIC_APK_IMPORT_NOT_ACCOUNT_DATA_OR_TARGET_LOCATION")
+                .put("package", GuestImport.PACKAGE).put("ordinary_import_button_used", true)
+                .put("original_uid_path_version_preserved", true).put("original_signatures_verified", true)
+                .put("temporary_apk_removed", true).put("virtual_copy_removed", true).put("passed", true);
+        try (FileOutputStream output = new FileOutputStream(new File(evidence, "installed-import.json"))) {
+            output.write(report.toString(2).getBytes(StandardCharsets.UTF_8));
+        }
     }
 
     private void startInstalledCalculator() throws Exception {
@@ -113,7 +154,7 @@ public final class ExternalGuestInstrumentedTest {
             GuestImport.verify(apk);
             assertTrue(apk.setReadOnly());
             GuestImport.installVerified(apk);
-            assertOriginalGuestSignatures();
+            assertOriginalGuestSignatures(false);
             BLocationManager.disableFakeLocation(0, GuestImport.PACKAGE);
             assertTrue("Launch must be requested", GuestImport.requestLaunch());
             calculateThree();
@@ -124,7 +165,7 @@ public final class ExternalGuestInstrumentedTest {
         } finally { apk.delete(); }
     }
 
-    private void assertOriginalGuestSignatures() throws Exception {
+    private void assertOriginalGuestSignatures(boolean systemInstalled) throws Exception {
         PackageInfo legacy = BlackBoxCore.getBPackageManager().getPackageInfo(GuestImport.PACKAGE,
                 PackageManager.GET_SIGNATURES, 0);
         PackageInfo modern = BlackBoxCore.getBPackageManager().getPackageInfo(GuestImport.PACKAGE,
@@ -141,7 +182,7 @@ public final class ExternalGuestInstrumentedTest {
         assertEquals(expected, certificateSha256(legacy.signatures[0]));
         assertEquals(expected, certificateSha256(signers[0]));
         System.out.println("ORIGINAL_GUEST_SIGNER_SHA256=" + expected
-                + "; legacy_and_modern_metadata=PASS; system_guest_installed=false");
+                + "; legacy_and_modern_metadata=PASS; system_guest_installed=" + systemInstalled);
     }
 
     private static String certificateSha256(Signature signature) throws Exception {

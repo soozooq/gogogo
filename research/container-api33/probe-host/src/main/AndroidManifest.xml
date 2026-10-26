@@ -22,7 +22,13 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" tools:node="replace" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" tools:node="replace" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="replace" />
-    <application android:name=".ProbeApplication" android:label="容器研究（未适配微信）"
+    <queries>
+        <package android:name="org.fossify.math" />
+        <package android:name="com.android.gpstest.osmdroid" />
+        <package android:name="com.tencent.mm" />
+        <package android:name="com.ss.android.ugc.aweme" />
+    </queries>
+    <application android:name=".ProbeApplication" android:label="天外天 · 原版应用预览"
         android:allowBackup="false" android:extractNativeLibs="true"
         android:permission="${applicationId}.INTERNAL"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">

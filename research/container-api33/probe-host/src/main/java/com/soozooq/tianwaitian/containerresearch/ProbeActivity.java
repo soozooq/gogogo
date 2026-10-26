@@ -30,7 +30,7 @@ import top.niunaijun.bcore.fake.frameworks.BLocationManager;
 public final class ProbeActivity extends Activity {
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private TextView status;
-    private Button open, choose;
+    private Button open, choose, installed;
     private EditText latitude, longitude;
     private LinearLayout coordinates;
     private Spinner apps;
@@ -49,7 +49,7 @@ public final class ProbeActivity extends Activity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(dp(20), dp(24), dp(20), dp(24));
         TextView title = new TextView(this);
-        title.setText("天外天 · 容器研究\n已验证 GPSTest 前台定位；微信、抖音尚未验证。");
+        title.setText("天外天 · 无 Root 预览\n原版导入后在此入口登录。微信、抖音位置效果待验证。");
         title.setTextSize(18);
         root.addView(title);
         apps = new Spinner(this); apps.setId(R.id.guest_choice);
@@ -65,7 +65,12 @@ public final class ProbeActivity extends Activity {
             catch (android.content.ActivityNotFoundException error) { status.setText("请使用浏览器打开官方发布页下载对应版本。"); }
         });
         root.addView(download);
-        choose = new Button(this); choose.setId(R.id.import_guest); choose.setText("导入原版 APK（只需一次）");
+        LinearLayout imports = new LinearLayout(this);
+        installed = new Button(this); installed.setId(R.id.import_installed_guest);
+        installed.setText("导入手机已装版本");
+        installed.setOnClickListener(v -> importChosen(selected(), null, true));
+        imports.addView(installed, new LinearLayout.LayoutParams(0, -2, 1));
+        choose = new Button(this); choose.setId(R.id.import_guest); choose.setText("选择原版 APK");
         choose.setOnClickListener(v -> {
             pendingImport = selected();
             Intent pick = new Intent(Intent.ACTION_OPEN_DOCUMENT);
@@ -75,7 +80,8 @@ public final class ProbeActivity extends Activity {
                     "com.android.externalstorage.documents", "primary:Download"));
             startActivityForResult(pick, 1);
         });
-        root.addView(choose);
+        imports.addView(choose, new LinearLayout.LayoutParams(0, -2, 1));
+        root.addView(imports);
         coordinates = new LinearLayout(this); coordinates.setOrientation(LinearLayout.VERTICAL);
         TextView hint = new TextView(this); hint.setText("目标坐标（WGS84）"); coordinates.addView(hint);
         latitude = coordinate(coordinates, R.id.target_latitude, "纬度 −90～90", saved.getString("latitude", "38.125"));
@@ -112,8 +118,11 @@ public final class ProbeActivity extends Activity {
         boolean imported = BlackBoxCore.get().isInstalled(entry.packageName, 0);
         coordinates.setVisibility(entry.location ? View.VISIBLE : View.GONE);
         open.setText(entry.location ? "应用坐标并打开" : "打开计算器");
-        open.setEnabled(imported && !busy); choose.setEnabled(!busy); apps.setEnabled(!busy);
-        status.setText(imported ? "已导入 " + entry + "。可直接打开；修改坐标后再次应用即可。"
+        boolean supported = entry.supportsDevice();
+        open.setEnabled(imported && !busy && supported);
+        choose.setEnabled(!busy && supported && !imported);
+        installed.setEnabled(!busy && supported && !imported); apps.setEnabled(!busy);
+        status.setText(!supported ? "所选原版仅支持原生 ARM64 设备。" : imported ? "已导入 " + entry + "。可直接打开；修改坐标后再次应用即可。"
                 : "先导入 " + entry + " 的官方原版 APK。");
     }
 
@@ -131,6 +140,7 @@ public final class ProbeActivity extends Activity {
 
     private void openSelected() {
         GuestImport.Entry entry = selected();
+        if (!entry.supportsDevice()) { status.setText("所选原版仅支持原生 ARM64 设备。"); return; }
         try {
             double lat = 0, lon = 0;
             if (entry.location) {
@@ -185,14 +195,31 @@ public final class ProbeActivity extends Activity {
         if (request != 1 || result != RESULT_OK || data == null || data.getData() == null) return;
         final GuestImport.Entry entry = pendingImport == null ? selected() : pendingImport;
         pendingImport = null;
-        Uri uri = data.getData(); busy = true; refresh(); status.setText("正在核验原 APK 并导入……");
+        importChosen(entry, data.getData(), false);
+    }
+
+    private void importChosen(GuestImport.Entry entry, Uri uri, boolean fromInstalled) {
+        if (busy || !entry.supportsDevice()) return;
+        busy = true; refresh(); status.setText("正在核验原版并导入，只需一次……");
         io.execute(() -> {
-            boolean installed = false; File file = null;
-            try { file = GuestImport.copyAndVerify(getApplicationContext(), uri, entry); GuestImport.installVerified(file, entry); installed = true; }
-            catch (Exception error) { /* Only bounded, actionable status is shown; no paths or raw logs. */ }
+            boolean ready = false; File file = null;
+            String failure = "导入未完成：请检查指定原版 APK 和可用存储。";
+            try {
+                file = fromInstalled ? GuestImport.copyInstalled(getApplicationContext(), entry)
+                        : GuestImport.copyAndVerify(getApplicationContext(), uri, entry);
+                GuestImport.installVerified(file, entry); ready = true;
+            } catch (PackageManager.NameNotFoundException error) {
+                failure = "手机未安装所选应用，可选择指定版本的原版 APK。";
+            } catch (Exception error) {
+                if ("INSTALLED_VERSION_NOT_PINNED".equals(error.getMessage()))
+                    failure = "手机已装版本与清单不一致，请选择清单对应的原版 APK。";
+                else if ("INSTALLED_SPLITS_UNSUPPORTED".equals(error.getMessage()))
+                    failure = "已装版本采用分包，请选择对应的完整官方 APK。";
+            }
             finally { if (file != null) file.delete(); }
-            final boolean ready = installed;
-            runOnUiThread(() -> { if (!destroyed) { busy = false; refresh(); if (!ready) status.setText("导入失败：请选择 " + entry + " 的官方原版 APK。"); } });
+            final boolean done = ready;
+            final String message = failure;
+            runOnUiThread(() -> { if (!destroyed) { busy = false; refresh(); if (!done) status.setText(message); } });
         });
     }
 

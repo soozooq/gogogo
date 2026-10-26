@@ -1,0 +1,115 @@
+{
+  "schema": "GOGOGO_NATIVE_PID_SET_FAILURE_AND_OWNED_STAGE_RESULT_V1",
+  "scope": "ACTUAL_NATIVE_ANONYMOUS_UI_AND_FAILED_PID_SET_CONTROL_NOT_LOCATION_OR_VIVO",
+  "run_id": 40242481707,
+  "commit": "cf4e28221a712aa7837622e9665d0d8d4d78af83",
+  "job_id": 121318547685,
+  "job_conclusion": "failure",
+  "native_artifact": {
+    "id": 12619930677,
+    "sha256": "86b29a58850386187da538223a0ad44dcd00bfd2baa2838ebdc621cd5218b330",
+    "verified": true
+  },
+  "all_four_archives_api_sha256_and_fixed_commit_sources_verified": true,
+  "native_source_count_verified": 9,
+  "same_run_own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4532220,
+        "sha256": "5ed404c474ef367cf98e21993760a260d9ee482fdb82faf16e332865081f9d0d"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 500414,
+        "sha256": "73039e9c90552b81d22e9ee934df675994ba8fa502559f79b1a923b3e96d2b0d"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 71358,
+        "sha256": "5a53d5b477e2b064f27e946b6d6ae20f5a10107d438a1e734317f4f6825ce058"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "qualified_environment": {
+    "api": 33,
+    "build_id": "16596636",
+    "native_abi": "arm64-v8a",
+    "kernel": "aarch64",
+    "native_bridge": "0",
+    "shell_uid": 2000,
+    "selinux": "Enforcing",
+    "guest_cpu_online": "0-3",
+    "hw_timeout_multiplier": 50,
+    "system_server_pid_before_and_after": 663,
+    "system_process_crash_pids": []
+  },
+  "ordinary_originals": {
+    "wechat": "WELCOME_WITHOUT_LOGIN_PASS",
+    "douyin": "PRIVACY_WITHOUT_ACCEPTANCE_PASS",
+    "douyin_hold_seconds": 304.677,
+    "douyin_main_pid": 7296,
+    "both_originals_removed": true
+  },
+  "container_wechat": {
+    "import_identity_original_signer": true,
+    "anonymous_ui": "WELCOME_WITHOUT_LOGIN",
+    "passed": true,
+    "guest_pid": 6038,
+    "junit_seconds": 466.999,
+    "screenshot_png_available": false
+  },
+  "container_douyin": {
+    "import_identity_original_signer": true,
+    "anonymous_ui_seen": "PRIVACY_WITHOUT_ACCEPTANCE",
+    "passed": false,
+    "junit_seconds": 521.665,
+    "requested_hold_seconds": 300,
+    "observed_hold_ms": 5730,
+    "initial_same_name_pid_set": "9665",
+    "last_same_name_pid_set": "9665 10333",
+    "original_pid_still_in_set": true,
+    "new_pid_role": "UNKNOWN_NOT_PROVEN_HELPER_OR_MAIN",
+    "failure": "STRICT_ALL_PID_SET_EQUALITY",
+    "crash_buffer_matching_fatal_markers": false,
+    "screenshot_png_available_and_viewed": true,
+    "privacy_not_accepted": true
+  },
+  "owned_location": {
+    "requested": true,
+    "executed": false,
+    "passed": false,
+    "reason": "TARGET_CONTAINER_PID_SET_CONTROL_FAILED_BEFORE_OWN_PHASE",
+    "not_evidence_of_owned_location_failure": true
+  },
+  "owned_package_cleanup": {
+    "wechat": {
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true
+    },
+    "douyin": {
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true
+    }
+  },
+  "qemu_process_stopped": true,
+  "whole_probe_seconds_not_startup_time": 3969.035,
+  "candidate_followup": {
+    "main_pid_and_uid_from_core_registered_roles_merged_with_actual_activity_manager": true,
+    "same_name_pid_sets_retained_as_observation": true,
+    "main_pid_loss_or_wrong_uid_still_fails": true,
+    "privacy_ui_rechecked_after_full_hold": true,
+    "owned_phase_after_qualified_vm_and_successful_original_controls_independent_of_target_ui": true,
+    "global_result_still_requires_all_requested_stages": true,
+    "new_runtime": "PENDING_NEXT_CI"
+  },
+  "latest_full_native_anonymous_startup_pass": "native-container-startup-pass-results.json",
+  "terms_accepted": false,
+  "login_attempted": false,
+  "messages_sent": false,
+  "target_location_tested": false,
+  "phone_update_distributed": false
+}
