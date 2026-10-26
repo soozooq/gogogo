@@ -12,7 +12,7 @@
 
 [CI44最新默认](evidence/stale-ui-location-read-results.json)六项case均已实核，自有Guest六路径3.298秒完成A→B／停止／取消；本次stale重试计数为零。三归档、58份case／59份移动UI与同轮自有来源／签名／11份材料及447项／lint均通过。原生121405382190固定774c6e7a／旧补丁258c75a9仍运行，不包含新网络回调候选。
 
-[网络回调候选](evidence/network-callback-transport-preparation.json)在API33仅转接requestNetwork／listenForNetwork的Messenger，交付时检查模拟状态并复制／脱敏TransportInfo。原死亡Binder、请求参数／请求ID与释放、Network句柄／路由保持；复制失败不回退原数据。18／14秒构建和补丁重放已过，三个新增受控公共API回调检查待实际CI，受控无线总数将为12。真实Guest、目标SDK、其他敏感NC字段和持续Telephony路径未由此证明。
+[网络回调候选](evidence/network-callback-transport-preparation.json)在API33仅转接requestNetwork／listenForNetwork的Messenger，交付时检查模拟状态并复制／脱敏TransportInfo。原死亡Binder、请求参数／请求ID与释放、Network句柄／路由保持；复制失败不回退原数据。18／14秒构建和补丁重放已过，[CI45实际三个新增受控公共API回调及原9项，共12项0.145秒通过](evidence/network-callback-transport-results.json)，六项默认及447项／lint也通过，三件同轮来源／签名／材料已核对。新原生121414860784按同锁排队，旧原生44未取消。真实Guest、目标SDK、其他敏感NC字段和持续Telephony路径未由此证明。
 
 下方保留此前各轮的命令和历史结果，不替代顶部当前状态。[CI38匿名启动通过](evidence/native-container-startup-pass-results.json)、[CI40旧PID集合失败](evidence/native-pid-set-and-owned-stage-results.json)、[CI39真实Provider归属失败](evidence/provider-attribution-failure-and-correction.json)均保留，不覆盖为成功。
 

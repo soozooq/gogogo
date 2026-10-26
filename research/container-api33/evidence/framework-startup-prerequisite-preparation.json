@@ -153,9 +153,10 @@
     "active_native_42_unchanged": true,
     "own_import_structured_report_transfer_required": true
   },
-  "latest_actual_default_result": "stale-ui-location-read-results.json",
+  "latest_actual_default_result": "network-callback-transport-results.json",
   "latest_actual_native_result": "native-owned-location-stale-ui-results.json",
   "stale_ui_read_followup": "stale-ui-location-read-preparation.json",
   "network_callback_followup": "network-callback-transport-preparation.json",
-  "active_native_44_commit": "774c6e7a1cda900e2a919401014e076d728e0030"
+  "active_native_44_commit": "774c6e7a1cda900e2a919401014e076d728e0030",
+  "actual_network_callback_result": "network-callback-transport-results.json"
 }

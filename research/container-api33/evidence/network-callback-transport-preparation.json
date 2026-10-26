@@ -66,7 +66,7 @@
   },
   "static_host_inspection_passed": true,
   "full_donor_patch_clean_index_replay_verified": true,
-  "new_actual_callback_runtime": "PENDING_NEXT_CI",
+  "new_actual_callback_runtime": "CI45_X86_64_ALL_12_CONTROLLED_TESTS_PASS_0.145S",
   "active_native_ci44_old_source_unchanged": {
     "run_id": 40271080579,
     "commit": "774c6e7a1cda900e2a919401014e076d728e0030",
@@ -80,5 +80,7 @@
   },
   "phone_update_or_experiment_requested": false,
   "mock_flag_retained": true,
-  "original_target_apks_or_certificates_changed": false
+  "original_target_apks_or_certificates_changed": false,
+  "recorded_source_commit": "ccd6d3e23d48c0432e0ea9324dcfb04d62a0fd25",
+  "subsequent_actual_default_result": "network-callback-transport-results.json"
 }

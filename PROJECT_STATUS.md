@@ -13,7 +13,7 @@
 
 保留其他工作区及未提交内容。不新增分支／PR、删除分支、强推、重置他人工作区或自动合并。研究入口与首页衔接只在本分支候选源码中，没有发布新的手机包或复测任务。
 
-## 最新已核对：普通入口及地图选点
+## 已核对：普通入口及地图选点
 
 [CI43／dfe8f511](research/container-api33/evidence/map-point-prefill-results.json)的Linux／Mac与五项case通过：自有框架0.539秒、已装导入7.623秒、普通入口12.604秒、计算器5.876秒、九项受控无线0.082秒。每case58份源码、移动UI59份、主程序447项／lint及7份主程序关键输入均按固定提交核对；两归档API摘要已验证。本轮原生及APK传递有意跳过，不混用CI42的产物。
 
@@ -44,11 +44,15 @@
 
 16秒构建、宿主静态核验及25项驱动检查通过；CI44同一云端VM的既有六路径已经实际通过，完整原生结果仍在运行。这个读取修正没有新增手机实验或SDK／引擎修改。
 
-另准备[网络回调TransportInfo副本](research/container-api33/evidence/network-callback-transport-preparation.json)：固定API33的`requestNetwork`／`listenForNetwork`回调携带NetworkCapabilities，位置权限允许时可含WifiInfo。候选只转接Messenger，原死亡Binder、请求flag／能力／超时、返回请求及释放路径保留；在交付时检查模拟开关，采用框架TransportInfo／WifiInfo标准脱敏副本，不改变Network句柄、连接或路由、不修改原对象、不编造网络身份。复制失败没有原始敏感数据回退。18／14秒构建、宿主静态及完整补丁重放通过，新增三个受控公共API回调检查已编译，实际回执待下一CI。它不证明真实Guest此路径、SDK采用、其他NC敏感字段或持续Telephony回调已覆盖，也不是用户微信失败的因果判断。
+另准备[网络回调TransportInfo副本](research/container-api33/evidence/network-callback-transport-preparation.json)：固定API33的`requestNetwork`／`listenForNetwork`回调携带NetworkCapabilities，位置权限允许时可含WifiInfo。候选只转接Messenger，原死亡Binder、请求flag／能力／超时、返回请求及释放路径保留；在交付时检查模拟开关，采用框架TransportInfo／WifiInfo标准脱敏副本，不改变Network句柄、连接或路由、不修改原对象、不编造网络身份。复制失败没有原始敏感数据回退。18／14秒构建、宿主静态及完整补丁重放通过，新增三个受控公共API回调检查已编译，[CI45实际12项受控检查0.145秒通过](research/container-api33/evidence/network-callback-transport-results.json)，新增三项均实际执行；完整默认、三档／来源／签名／材料、447项及lint均核对。真实Guest此路径、SDK采用、其他NC敏感字段或持续Telephony仍未由此覆盖，也未认定用户微信失败原因。
 
-1. 跟进CI44固定774c6e7a的原生自有定位；下一候选另外核对12项受控无线／回调、完整默认及原生对照，不能把旧补丁的原生结果冒充新回调证据。按各轮固定提交核对来源、归档摘要、签名、JUnit和清理，保留失败。
+1. 跟进CI44固定774c6e7a／121405382190的原生自有定位；CI45固定ccd6d3e2默认及12项回调已过，新原生121414860784按同锁pending，不取消旧轮。两轮补丁与源码不同，不能把旧原生结果冒充新回调证据。按各轮固定提交核对来源、归档摘要、签名、JUnit和清理，保留失败。
 2. 原生push提交须带齐`[cuttlefish-boot] [cuttlefish-container]`，或显式手动选项。原生共用锁，不取消运行中的前轮；pending替换／跳过不算通过。当前CI42已完成失败，CI43有意仅默认，二者不能混写。
 3. 账号、目标SDK和实际位置业务仍需各自证据；不自动接受条款、登录或发送消息。原生自有六路径通过也不能宣布用户目标完成。
+
+[最新默认CI45](research/container-api33/evidence/network-callback-transport-results.json)六项case均过：框架0.976秒、六路径3.727秒、已装导入8.116秒、普通入口12.417秒、计算器6.402秒及12项受控无线／回调0.145秒。每case58份、移动UI／三件自有各59份来源、三份签名／每包11份材料、主447项／lint及7份关键输入均核对。原生45只排队，不算通过；原生44持续运行且没有被取消。
+
+[手机三步交付说明](docs/original-app-preview-flow.md)已收敛为地图选点、导入一次、应用并打开；预览需自行登录且不迁移私有数据。本页是交付说明草稿，当前没有新发布包，不要求现在重复实验。
 
 ## 已知证据边界与历史
 
