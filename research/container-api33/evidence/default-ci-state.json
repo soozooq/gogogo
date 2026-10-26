@@ -200,8 +200,9 @@
     "owned_location_passed": true,
     "wechat_anonymous_startup_passed": true
   },
-  "next_candidate_preparation": "phone-transaction-name-preparation.json",
+  "next_candidate_preparation": "service-state-read-virtual-startup-preparation.json",
   "next_phone_delivery_preparation": "phone-e081-draft-delivery-preparation.json",
   "phone_update_installed_on_user_device": "UNKNOWN",
-  "release_url": "https://github.com/soozooq/gogogo/releases/tag/preview-2.4.32-container-e0811cf4"
+  "release_url": "https://github.com/soozooq/gogogo/releases/tag/preview-2.4.32-container-e0811cf4",
+  "next_candidate_runtime_status": "BUILD_AND_DRIVER_CHECKS_DONE_ACTUAL_18_AND_NATIVE_CLOSE_OWN_PENDING"
 }

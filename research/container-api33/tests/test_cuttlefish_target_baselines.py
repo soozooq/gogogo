@@ -104,14 +104,28 @@ class OriginalBaselineControlTest(unittest.TestCase):
                      'sha256': hashlib.sha256(apk.read_bytes()).hexdigest()}
             for mode in ['ready', 'wrong_signer', 'wrong_runtime', 'wrong_package',
                          'junit_failed', 'cleanup_failed', 'preexisting', 'wrong_abi',
-                         'system_changed', 'system_fatal', 'post_changed', 'post_fatal']:
+                         'system_changed', 'system_fatal', 'post_changed', 'post_fatal',
+                         'old_closed_only', 'virtual_failed', 'virtual_mode_wrong',
+                         'old_process_still_alive', 'same_main_pid', 'missing_virtual_identity', 'missing_old_identity']:
                 with self.subTest(mode=mode):
                     calls = []
                     observed = {'passed': True, 'runtime': 'cuttlefish-arm64', 'package': entry['package'],
-                                'sha256': entry['sha256'], 'original_signer': True, 'location_enabled': False}
+                                'sha256': entry['sha256'], 'original_signer': True, 'location_enabled': True,
+                                'closed_startup_confirmed': True, 'virtual_startup_observation': {
+                                    'passed': True, 'input_pattern': 2, 'previous_main_absent': True,
+                                    'previous_main_pid': 8001, 'main_pid': 8002, 'main_uid': 10102}}
                     if mode == 'wrong_signer': observed['original_signer'] = False
                     if mode == 'wrong_runtime': observed['runtime'] = 'official-translation'
                     if mode == 'wrong_package': observed['package'] = 'unrelated'
+                    if mode == 'old_closed_only':
+                        observed['location_enabled'] = False
+                        observed.pop('virtual_startup_observation')
+                    if mode == 'virtual_failed': observed['virtual_startup_observation']['passed'] = False
+                    if mode == 'virtual_mode_wrong': observed['virtual_startup_observation']['input_pattern'] = 0
+                    if mode == 'old_process_still_alive': observed['virtual_startup_observation']['previous_main_absent'] = False
+                    if mode == 'same_main_pid': observed['virtual_startup_observation']['main_pid'] = 8001
+                    if mode == 'missing_virtual_identity': observed['virtual_startup_observation'].pop('main_pid')
+                    if mode == 'missing_old_identity': observed['virtual_startup_observation'].pop('previous_main_pid')
 
                     def adb(argv, **kwargs):
                         command = argv[3:]

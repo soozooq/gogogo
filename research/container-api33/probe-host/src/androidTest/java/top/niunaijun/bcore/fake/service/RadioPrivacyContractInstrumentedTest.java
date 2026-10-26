@@ -25,6 +25,9 @@ import android.telephony.CellInfo;
 import android.telephony.TelephonyManager;
 import android.telephony.TelephonyCallback;
 import android.telephony.ServiceState;
+import android.telephony.CellIdentity;
+import android.telephony.CellIdentityGsm;
+import android.telephony.NetworkRegistrationInfo;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -736,5 +739,120 @@ public final class RadioPrivacyContractInstrumentedTest {
         } finally {
             assertEquals(Boolean.TRUE, addExemptions.invoke(null, (Object) new String[] {"L"}));
         }
+    }
+
+    private ServiceState syntheticServiceState() throws Exception {
+        CellIdentity cell = (CellIdentity) CellIdentityGsm.class.getDeclaredConstructor(
+                int.class, int.class, int.class, int.class, String.class, String.class,
+                String.class, String.class, java.util.Collection.class).newInstance(
+                        101, 202, 303, 4, "001", "01", "synthetic-region", "synthetic", new ArrayList<String>());
+        Class<?> builderType = Class.forName("android.telephony.NetworkRegistrationInfo$Builder");
+        Object builder = builderType.getDeclaredConstructor().newInstance();
+        builderType.getMethod("setDomain", int.class).invoke(builder, 2); // DOMAIN_PS
+        builderType.getMethod("setTransportType", int.class).invoke(builder, 1); // WWAN
+        builderType.getMethod("setRegistrationState", int.class).invoke(builder, 1); // HOME
+        builderType.getMethod("setAccessNetworkTechnology", int.class).invoke(builder, TelephonyManager.NETWORK_TYPE_GSM);
+        builderType.getMethod("setAvailableServices", List.class).invoke(builder, Arrays.asList(2));
+        builderType.getMethod("setCellIdentity", CellIdentity.class).invoke(builder, cell);
+        NetworkRegistrationInfo info = (NetworkRegistrationInfo) builderType.getMethod("build").invoke(builder);
+        ServiceState state = new ServiceState(); state.setState(ServiceState.STATE_IN_SERVICE);
+        state.setOperatorName("synthetic-region", "synthetic", "00101");
+        ServiceState.class.getMethod("setCdmaSystemAndNetworkId", int.class, int.class).invoke(state, 321, 654);
+        ServiceState.class.getMethod("addNetworkRegistrationInfo", NetworkRegistrationInfo.class).invoke(state, info);
+        return state;
+    }
+
+    private void assertServiceStateRedacted(ServiceState copy, ServiceState original) throws Exception {
+        assertNotNull(copy); assertNotSame(original, copy); assertEquals(original.getState(), copy.getState());
+        assertNull(copy.getOperatorAlphaLong()); assertNull(copy.getOperatorAlphaShort()); assertNull(copy.getOperatorNumeric());
+        assertEquals(-1, ServiceState.class.getMethod("getCdmaSystemId").invoke(copy));
+        assertEquals(-1, ServiceState.class.getMethod("getCdmaNetworkId").invoke(copy));
+        assertEquals(1, copy.getNetworkRegistrationInfoList().size());
+        assertNull(copy.getNetworkRegistrationInfoList().get(0).getCellIdentity());
+        assertEquals("synthetic-region", original.getOperatorAlphaLong());
+        assertEquals(321, ServiceState.class.getMethod("getCdmaSystemId").invoke(original));
+        assertEquals(654, ServiceState.class.getMethod("getCdmaNetworkId").invoke(original));
+        CellIdentityGsm cell = (CellIdentityGsm) original.getNetworkRegistrationInfoList().get(0).getCellIdentity();
+        assertNotNull(cell); assertEquals(101, cell.getLac()); assertEquals(202, cell.getCid());
+    }
+
+    @Test public void publicServiceStateReplacesOldCacheAndRedactsWithoutMutatingBase() throws Throwable {
+        ServiceState original = syntheticServiceState();
+        Field cache = TelephonyManager.class.getDeclaredField("sITelephony"); cache.setAccessible(true);
+        Field enabled = TelephonyManager.class.getDeclaredField("sServiceHandleCacheEnabled"); enabled.setAccessible(true);
+        Object old = cache.get(null); boolean oldEnabled = enabled.getBoolean(null);
+        AtomicInteger staleCalls = new AtomicInteger(); Binder token = new Binder();
+        AtomicReference<Object[]> incoming = new AtomicReference<>(), outbound = new AtomicReference<>();
+        Object controlled = Proxy.newProxyInstance(telephony.getClassLoader(), new Class<?>[] {telephony}, (proxy, method, args) -> {
+            if (method.getName().equals("asBinder")) return token;
+            assertEquals("getServiceStateForSubscriber", method.getName());
+            outbound.set(args.clone()); baseCalls.incrementAndGet();
+            return original; // Deliberately ignore renounce flags: delivered-copy protection is required.
+        });
+        Object stale = Proxy.newProxyInstance(telephony.getClassLoader(), new Class<?>[] {telephony}, (proxy, method, args) -> {
+            if (method.getName().equals("asBinder")) return token;
+            assertEquals("getServiceStateForSubscriber", method.getName()); staleCalls.incrementAndGet(); return original;
+        });
+        ITelephonyManagerProxy.GetServiceState hook = new ITelephonyManagerProxy.GetServiceState();
+        Object intercepted = Proxy.newProxyInstance(telephony.getClassLoader(), new Class<?>[] {telephony}, (proxy, method, args) -> {
+            if (method.getName().equals("asBinder")) return token;
+            incoming.set(args.clone()); Object result = hook.hook(controlled, method, args);
+            for (int i = 0; i < args.length; i++) assertSame("Caller arguments must remain untouched", incoming.get()[i], args[i]);
+            return result;
+        });
+        try {
+            enabled.setBoolean(null, true); cache.set(null, stale);
+            Context context = InstrumentationRegistry.getInstrumentation().getTargetContext().createAttributionContext("synthetic-service-state");
+            TelephonyManager manager = context.getSystemService(TelephonyManager.class).createForSubscriptionId(7);
+            assertSame(original, manager.getServiceState(TelephonyManager.INCLUDE_LOCATION_DATA_FINE));
+            assertEquals(1, staleCalls.get());
+            ITelephonyManagerProxy.replaceCachedTelephony(intercepted); assertSame(intercepted, cache.get(null));
+            for (boolean virtual : new boolean[] {false, true, false}) {
+                BLocationManager.get().setPattern(user, pkg, virtual ? BLocationManager.OWN_MODE : BLocationManager.CLOSE_MODE);
+                ServiceState value = manager.getServiceState(TelephonyManager.INCLUDE_LOCATION_DATA_FINE);
+                if (virtual) assertServiceStateRedacted(value, original); else assertSame(original, value);
+                assertEquals(7, outbound.get()[0]); assertEquals(virtual, outbound.get()[1]); assertEquals(virtual, outbound.get()[2]);
+                assertEquals(false, incoming.get()[1]); assertEquals(false, incoming.get()[2]);
+                assertEquals(context.getOpPackageName(), outbound.get()[3]); assertEquals("synthetic-service-state", outbound.get()[4]);
+            }
+            assertEquals(1, staleCalls.get()); assertEquals(3, baseCalls.get());
+        } finally { cache.set(null, old); enabled.setBoolean(null, oldEnabled); }
+    }
+
+    public static final class UnredactableServiceState extends ServiceState {
+        public ServiceState createLocationInfoSanitizedCopy(boolean removeCoarseLocation) {
+            throw new IllegalStateException("CONTROLLED_REDACTION_UNAVAILABLE");
+        }
+    }
+
+    @Test public void serviceStatePreservesNullAndDenialAndProtectsUnknownMode() throws Throwable {
+        Method method = method("getServiceStateForSubscriber");
+        Object[] args = {7, false, false, InstrumentationRegistry.getInstrumentation().getTargetContext().getOpPackageName(), "synthetic-feature"};
+        AtomicReference<ServiceState> value = new AtomicReference<>(); AtomicReference<SecurityException> denied = new AtomicReference<>();
+        AtomicReference<Object[]> outbound = new AtomicReference<>();
+        Object controlled = Proxy.newProxyInstance(telephony.getClassLoader(), new Class<?>[] {telephony}, (proxy, called, params) -> {
+            if (called.getName().equals("asBinder")) return new Binder();
+            outbound.set(params.clone()); if (denied.get() != null) throw denied.get(); return value.get();
+        });
+        ITelephonyManagerProxy.GetServiceState hook = new ITelephonyManagerProxy.GetServiceState();
+        assertNull(hook.hook(controlled, method, args));
+        value.set(new UnredactableServiceState()); assertNull("Never forward raw state when sanitization fails", hook.hook(controlled, method, args));
+        SecurityException rejection = new SecurityException("CONTROLLED_PHONE_STATE_PERMISSION_DENIAL"); denied.set(rejection);
+        try { hook.hook(controlled, method, args); fail("Original permission rejection must escape unchanged"); }
+        catch (SecurityException expected) { assertSame(rejection, expected); }
+        denied.set(null); value.set(syntheticServiceState());
+        Field service = Class.forName("top.niunaijun.bcore.fake.frameworks.BlackManager").getDeclaredField("mService"); service.setAccessible(true);
+        Object previous = service.get(BLocationManager.get());
+        Class<?> modes = Class.forName("top.niunaijun.bcore.core.system.location.IBLocationManagerService"); Binder token = new Binder();
+        Object unavailable = Proxy.newProxyInstance(modes.getClassLoader(), new Class<?>[] {modes}, (proxy, called, params) -> {
+            if (called.getName().equals("asBinder")) return token;
+            throw new RemoteException("CONTROLLED_MODE_UNAVAILABLE");
+        });
+        try {
+            service.set(BLocationManager.get(), unavailable);
+            assertServiceStateRedacted((ServiceState) hook.hook(controlled, method, args), value.get());
+            assertEquals(true, outbound.get()[1]); assertEquals(true, outbound.get()[2]);
+        } finally { service.set(BLocationManager.get(), previous); }
+        assertEquals(false, args[1]); assertEquals(false, args[2]);
     }
 }

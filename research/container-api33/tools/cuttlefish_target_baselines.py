@@ -468,10 +468,11 @@ def container_startup(adb, serial, apk, entry, own_apks, out, environment, expec
     host_package = 'com.soozooq.tianwaitian.containerresearch'
     driver_package = host_package + '.test'
     target, package = entry['source_key'], entry['package']
-    result = {'scope': 'CVD_ARM64_ANONYMOUS_CONTAINER_STARTUP_ONLY_NOT_LOCATION_OR_VIVO',
+    result = {'scope': 'CVD_ARM64_ANONYMOUS_CLOSE_AND_VIRTUAL_STARTUP_NOT_LOCATION_BUSINESS_OR_VIVO',
               'target': target, 'passed': False, 'state': 'NOT_RUN',
               'terms_accepted': False, 'login_attempted': False,
-              'messages_sent': False, 'location_enabled': False}
+              'messages_sent': False, 'location_enabled': None, 'virtual_restart_requested': True,
+              'target_location_business_tested': False}
     requested_packages = []
 
     def run(args, timeout=30, check=True):
@@ -511,7 +512,7 @@ def container_startup(adb, serial, apk, entry, own_apks, out, environment, expec
         instrument = run(['shell', 'am', 'instrument', '-w', '-r', '-e', 'target', target,
             '-e', 'api', '33', '-e', 'runtime', 'cuttlefish-arm64', '-e', 'class',
             'com.soozooq.tianwaitian.containerresearch.OfficialTargetStartupInstrumentedTest#pinnedOfficialTargetColdStartup',
-                  driver_package + '/androidx.test.runner.AndroidJUnitRunner'], timeout=1200, check=False)
+                  driver_package + '/androidx.test.runner.AndroidJUnitRunner'], timeout=1500, check=False)
         transcript = instrument.stdout + instrument.stderr
         (out / 'junit.txt').write_bytes(transcript)
         observed = None
@@ -531,17 +532,26 @@ def container_startup(adb, serial, apk, entry, own_apks, out, environment, expec
         result['environment_after_container'] = after
         failure = platform_failure(crash)
         stable = failure is None and after['system_pid'] == identity['system_pid'] and after['boot'] == '1'
+        virtual = observed.get('virtual_startup_observation', {}) if isinstance(observed, dict) else {}
         passed = stable and instrument.returncode == 0 and b'OK (1 test)' in transcript \
             and b'FAILURES!!!' not in transcript and b'INSTRUMENTATION_FAILED' not in transcript \
             and isinstance(observed, dict) and observed.get('passed') is True \
             and observed.get('runtime') == 'cuttlefish-arm64' \
             and observed.get('package') == package and observed.get('sha256') == entry['sha256'] \
             and observed.get('original_signer') is True \
-            and observed.get('location_enabled') is False
+            and observed.get('closed_startup_confirmed') is True \
+            and observed.get('location_enabled') is True \
+            and isinstance(virtual, dict) and virtual.get('passed') is True \
+            and virtual.get('input_pattern') == 2 and virtual.get('previous_main_absent') is True \
+            and type(virtual.get('main_pid')) is int and virtual['main_pid'] > 0 \
+            and type(virtual.get('main_uid')) is int and virtual['main_uid'] >= 10000 \
+            and type(virtual.get('previous_main_pid')) is int and virtual['previous_main_pid'] > 0 \
+            and virtual.get('main_pid') != virtual.get('previous_main_pid')
         state = 'ANONYMOUS_CONTAINER_UI_CONFIRMED' if passed else 'CONTAINER_STARTUP_NOT_CONFIRMED_SEE_EVIDENCE'
         if not stable:
             state = 'ENVIRONMENT_' + (failure or 'SYSTEM_CHANGED_AFTER_INSTRUMENTATION')
-        result.update(passed=passed, state=state, observed=observed)
+        result.update(passed=passed, state=state, observed=observed,
+                      location_enabled=observed.get('location_enabled') if isinstance(observed, dict) else None)
     except Exception as error:
         result['error'] = type(error).__name__ + ': ' + str(error)[:1500]
     finally:

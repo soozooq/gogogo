@@ -27,6 +27,16 @@
 
 [交付CI3](https://github.com/soozooq/gogogo/actions/runs/40360448252)已按固定e081源码成功构建、上传两份APK，交付工作流源码为ecdec310。主程序实际云端SHA为3ddd90ae…，不能借用旧033c0f6b…或本地0224b762…摘要；预览14cdb415…沿用25bfd6e2…证书。公开签名／ZIP配方逐字节恢复并保持415份非签名内容，私钥不上传。旧ff12附件经完整备份及服务器摘要核对后移除，旧失败与证据保留。发布仅提供预览，不宣称用户已安装、已登录或位置业务成功。
 
+## 正在继续：服务状态读取与启用模拟后的启动
+
+[本轮候选准备](research/container-api33/evidence/service-state-read-virtual-startup-preparation.json)补齐Android13的`getServiceStateForSubscriber`及已创建的`TelephonyManager.sITelephony`缓存。旧缓存改走已有电话拦截器；开启模拟或模式无法读取时，请求平台放弃精细／粗略位置，再返回系统标准脱敏副本，清除注册对象中的CellIdentity及框架指定的粗略字段。保留权限拒绝、null、非位置状态及调用参数，原对象不变；脱敏不可用时返回null，没有原始数据回退。没有新增权限、依赖、JNI或mock标志变化。
+
+此处是代码覆盖缺口，不认定它就是用户微信旧失败的原因；也不等于全部无线／国家／IP信息已被处理。已交付给SDK的缓存无法由此收回。替换旧缓存会让这些句柄进入引擎已有的其他电话Hook，匹配原生仍需复核。
+
+候选构建产物／静态与完整补丁重放、25项维护检查通过；新增两项真实公共TelephonyManager／合成ServiceState受控检查预计共18项，尚待同源CI实际执行。新的原生检查保留关闭模式启动与抖音300秒观察，再返回自有预览页，确认旧进程全部停止，开启合成输入后重新启动两款匿名UI，核对新主PID及真实宿主UID。两阶段分开记录，不能拿旧关闭模式报告或绿色JUnit代替；没有接受条款、登录、发送或验证目标位置业务。单次UI等待300秒、定位时效和清理要求保持，外层1500秒只容纳新增启动阶段。
+
+下一候选元数据为主程序2.4.33／2400101、预览0.2-preview／2，尚未交付。已发布2.4.32的源码、附件、标签与校验不改，用户不需要为本轮新跑手机实验。
+
 ## 当前修正：电话回调读取兼容
 
 [修正准备](research/container-api33/evidence/phone-transaction-name-preparation.json)移除私有`TRANSACTION_*`字段依赖，改用运行时生成AIDL的`getDefaultTransactionName`识别六类回调。沿用现有库读取方法，生产代码不改变全局隐藏API策略；有界解析，缺名或重名明确失败，不回退原始敏感数据。交付时检查模拟状态、原始Parcel／调用身份、原注册参数及同Binder注销保持，没有新增权限／依赖／JNI或mock标志变化。

@@ -12,6 +12,8 @@
 
 [反馈简化](evidence/no-extra-experiment-feedback-preparation.json)统一已有「一键复制反馈」。[三步流程](../../docs/original-app-preview-flow.md)为预览说明。固定完整微信8.0.79／抖音40.8.0不改签、不内嵌、不分发，账号私有数据不迁移。
 
+[继续研发候选](evidence/service-state-read-virtual-startup-preparation.json)：补Android13服务状态中的基站身份读取及预加载电话缓存。模拟／未知状态请求平台位置脱敏，并返回标准脱敏副本；保留原对象、权限拒绝及null，无原始回退。构建产物／静态／完整补丁重放与25维护检查通过，实际18项受控回归和新同源原生尚待CI。原生保留关闭模式，并增加返回自有页、停止旧进程、开启合成输入后的重新启动；匿名界面仍不证明SDK位置采用。下一候选2.4.33／预览0.2尚未发布，当前2.4.32附件不改，不新增手机实验。
+
 下方保留此前各轮的命令和历史结果，不替代顶部当前状态。[CI38匿名启动通过](evidence/native-container-startup-pass-results.json)、[CI40旧PID集合失败](evidence/native-pid-set-and-owned-stage-results.json)、[CI39真实Provider归属失败](evidence/provider-attribution-failure-and-correction.json)均保留，不覆盖为成功。
 
 ## 核对下载的 CI 回执（维护用）

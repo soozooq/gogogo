@@ -1,0 +1,108 @@
+{
+  "schema": "GOGOGO_SERVICE_STATE_AND_VIRTUAL_STARTUP_PREPARATION_V1",
+  "scope": "IMPLEMENTED_LOCATION_BEARING_GETTER_AND_PRELOADED_CACHE_FIX_BUILD_ONLY_PENDING_ACTUAL_DEFAULT_AND_NATIVE",
+  "base_research_commit": "e8665719ec6d860efdd2098168f69fc2ad534fd9",
+  "published_phone_source_unchanged": "e0811cf46726e3bae9fcb839312b9efb6b92ce9e",
+  "official_sources": [
+    {
+      "name": "ServiceState.java",
+      "url": "https://android.googlesource.com/platform/frameworks/base/+/e554ee0e1b19758e7023950731581a314a74cb7d/telephony/java/android/telephony/ServiceState.java",
+      "source_commit": "e554ee0e1b19758e7023950731581a314a74cb7d",
+      "bytes": 84623,
+      "sha256": "3aaedc0e52a764780218fc59b396cc188f1e3677675e8ac5dcc2e295136bf1ea"
+    },
+    {
+      "name": "NetworkRegistrationInfo.java",
+      "url": "https://android.googlesource.com/platform/frameworks/base/+/e554ee0e1b19758e7023950731581a314a74cb7d/telephony/java/android/telephony/NetworkRegistrationInfo.java",
+      "source_commit": "e554ee0e1b19758e7023950731581a314a74cb7d",
+      "bytes": 34292,
+      "sha256": "61a3aadbdb539d90c8e9872167c1399c1d7add3555def0797469d6b833acdacd"
+    },
+    {
+      "name": "CellIdentityGsm.java",
+      "url": "https://android.googlesource.com/platform/frameworks/base/+/e554ee0e1b19758e7023950731581a314a74cb7d/telephony/java/android/telephony/CellIdentityGsm.java",
+      "source_commit": "e554ee0e1b19758e7023950731581a314a74cb7d",
+      "bytes": 10758,
+      "sha256": "5e30891f566d4bae1e6fc0b00dea5f3e7a9a54604daf2cd2c5f9bf1cb06681f7"
+    }
+  ],
+  "production_changes": [
+    "Replace preloaded API33 TelephonyManager.sITelephony via existing HiddenApiBypass static-field enumeration, retaining actual Binder delegation.",
+    "Intercept getServiceStateForSubscriber; clone caller arguments, request fine/coarse renunciation only when own or unknown mode, then return framework createLocationInfoSanitizedCopy(true).",
+    "Preserve base permission exceptions and null; redaction failure returns null without raw fallback; original state is not mutated."
+  ],
+  "mode_unknown_uses_direct_service_read_not_getPattern_close_on_error_fallback": true,
+  "source_scope_limits": [
+    "Applies to API33 named standard interface; not full anonymization of every radio field.",
+    "Framework sanitization removes registration CellIdentity, primary coarse operator fields and CDMA IDs; channel/other metadata, SIM/country/IP and prior SDK caches are not proven covered.",
+    "Replacing a preloaded interface also makes the engine existing telephony hooks apply to those old handles.",
+    "No attribution of the user reported WeChat failure to this static gap; target SDK location adoption remains unverified."
+  ],
+  "new_permissions_dependencies_jni_or_mock_flag_changes": false,
+  "build": {
+    "gradle_reported_success": true,
+    "recorded_command_exit": 0,
+    "seconds": 15,
+    "outer_exec_wrapper_reported_nonzero_after_recorded_command_zero": true
+  },
+  "host_static_passed": true,
+  "full_patch_clean_index_replay_passed": true,
+  "controlled_driver_checks": {
+    "passed": true,
+    "test_methods": 25,
+    "seconds": 0.471,
+    "new_rejected_subcases": [
+      "old_closed_only",
+      "virtual_failed",
+      "virtual_mode_wrong",
+      "old_process_still_alive",
+      "same_main_pid",
+      "missing_virtual_identity",
+      "missing_old_identity"
+    ]
+  },
+  "actual_radio_runtime": "NOT_RUN_YET_AWAIT_HARDWARE_CI",
+  "expected_radio_test_count": 18,
+  "new_radio_methods": [
+    "publicServiceStateReplacesOldCacheAndRedactsWithoutMutatingBase",
+    "serviceStatePreservesNullAndDenialAndProtectsUnknownMode"
+  ],
+  "radio_fixture_scope": "SYNTHETIC_CELL_AND_CONTROLLED_BASE_REAL_PUBLIC_TELEPHONY_WRAPPER_NOT_REAL_MODEM",
+  "native_startup_change": {
+    "retains_original_close_mode_ui_and_douyin_300s_hold": true,
+    "adds_both_targets_restart_with_synthetic_own_input": true,
+    "returns_to_own_preview_before_stop": true,
+    "requires_old_registered_and_system_processes_absent_and_different_new_main_pid_real_host_uid": true,
+    "per_ui_wait_seconds_unchanged": 300,
+    "old_main_stop_wait_seconds": 30,
+    "outer_instrumentation_budget_seconds": 1500,
+    "previous_outer_budget_seconds": 1200,
+    "budget_reason": "Additional virtual-input restart stage; existing UI waits, original controls, system qualification, location freshness and cleanup checks retained.",
+    "reports_modes_separately": true,
+    "does_not_accept_terms_login_send_messages_or_claim_sdk_location": true,
+    "requires_new_phase_even_if_junit_green": true
+  },
+  "same_source_default_and_native": "AWAIT_NEW_COMMIT_CI",
+  "next_main_metadata": {
+    "profile": "docs/build-profiles/main-preview-2.4.33.init.gradle",
+    "version_name": "2.4.33-container-preview",
+    "version_code": 2400101
+  },
+  "next_host_metadata": {
+    "version_name": "0.2-preview",
+    "version_code": 2
+  },
+  "published_2_4_32_assets_changed": false,
+  "new_phone_candidate_published": false,
+  "phone_experiments_requested": false,
+  "source_sha256": {
+    "patches/blackbox-api33-build.patch": "cf4dffbb4194276f6cce94f6cb9106ff8cfc79f5111886e8018076f0dca12e15",
+    "probe-host/build.gradle": "d6c805f35fd7572609b22d53388e6bc8d588a7c17834bfa88f62143938a26de2",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/RadioPrivacyContractInstrumentedTest.java": "a0a72d3418548ae9ad690f2e10e049b435c2b9f2649defcf9a0a5f4b3e2b6e80",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/OfficialTargetStartupInstrumentedTest.java": "3cbea33bf7f73122887c3e75ce451cb6e3b420776bf163e0b4b9905388f7f266",
+    "tools/cuttlefish_target_baselines.py": "b91ad5b26450e2be53074dcd163843d652875b92a8247a7dfc596401e20437c7",
+    "tools/run-cloud-check.py": "990df37c378906739f615e827b4701c17fa72a0e4f272d9f491d5cce361e8ca4",
+    "tests/test_cuttlefish_target_baselines.py": "18bfc9180a8080e6656920938326cdc1ad0f6e5919277bccefb77be259fc4b49"
+  },
+  "main_profile_sha256": "c8292de62f56585f962dd7c7eeb5a236c92b1d06827862a65bc624dcd12e3b13"
+}

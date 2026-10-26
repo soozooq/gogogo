@@ -904,17 +904,24 @@ index bad5396..265658f 100644
      }
  
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyManagerProxy.java
-index 33686f0..4ee563d 100644
+index 33686f0..2ff723a 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyManagerProxy.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyManagerProxy.java
-@@ -1,19 +1,22 @@
+@@ -1,20 +1,33 @@
  package top.niunaijun.bcore.fake.service;
  
  import android.content.Context;
++import android.os.Build;
 +import android.os.Bundle;
++import android.os.RemoteException;
++import android.telephony.ServiceState;
++import android.telephony.TelephonyManager;
  import android.util.Log;
  
++import org.lsposed.hiddenapibypass.HiddenApiBypass;
++
  import java.lang.reflect.Method;
++import java.lang.reflect.Field;
 +import java.lang.reflect.InvocationTargetException;
 +import java.util.ArrayList;
 +import java.util.List;
@@ -922,17 +929,93 @@ index 33686f0..4ee563d 100644
  import black.android.os.ServiceManager;
  import black.com.android.internal.telephony.ITelephony;
  import top.niunaijun.bcore.BlackBoxCore;
--import top.niunaijun.bcore.app.BActivityThread;
+ import top.niunaijun.bcore.app.BActivityThread;
 -import top.niunaijun.bcore.entity.location.BCell;
++import top.niunaijun.bcore.core.system.location.IBLocationManagerService;
  import top.niunaijun.bcore.fake.frameworks.BLocationManager;
  import top.niunaijun.bcore.fake.hook.BinderInvocationStub;
  import top.niunaijun.bcore.fake.hook.MethodHook;
  import top.niunaijun.bcore.fake.hook.ProxyMethod;
 +import top.niunaijun.bcore.fake.hook.ProxyMethods;
  import top.niunaijun.bcore.utils.Md5Utils;
++import top.niunaijun.bcore.utils.MethodParameterUtils;
  
  public class ITelephonyManagerProxy extends BinderInvocationStub {
-@@ -108,11 +111,9 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+     public static final String TAG = "ITelephonyManagerProxy";
+@@ -30,9 +43,72 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+ 
+     @Override
+     protected void inject(Object baseInvocation, Object proxyInvocation) {
++        if (Build.VERSION.SDK_INT == 33) replaceCachedTelephony(proxyInvocation);
+         replaceSystemService(Context.TELEPHONY_SERVICE);
+     }
+ 
++    static void replaceCachedTelephony(Object proxyInvocation) {
++        // Existing managers can retain the pre-hook interface. Enumerate through
++        // the already-used library instead of assuming private lookup visibility.
++        for (Object candidate : HiddenApiBypass.getStaticFields(TelephonyManager.class)) {
++            Field field = (Field) candidate;
++            if (!"sITelephony".equals(field.getName())) continue;
++            try {
++                field.setAccessible(true);
++                field.set(null, proxyInvocation);
++                return;
++            } catch (IllegalAccessException error) {
++                throw new IllegalStateException("API33 telephony cache unavailable", error);
++            }
++        }
++        throw new IllegalStateException("API33 telephony cache missing");
++    }
++
++    @ProxyMethod("getServiceStateForSubscriber")
++    public static class GetServiceState extends MethodHook {
++        @Override protected Object hook(Object who, Method method, Object[] args) throws Throwable {
++            if (Build.VERSION.SDK_INT != 33) return invokeBase(who, method, args);
++            boolean protect = true;
++            try {
++                IBLocationManagerService modes = BLocationManager.get().getService();
++                protect = modes == null || modes.getPattern(BActivityThread.getUserId(),
++                        BActivityThread.getAppPackageName()) != BLocationManager.CLOSE_MODE;
++            } catch (RemoteException | RuntimeException unavailable) {
++                // An unavailable mode must not expose the raw radio identity.
++                Log.w(TAG, "Service state mode unavailable: " + unavailable.getClass().getSimpleName());
++            }
++            Object[] outbound = args.clone();
++            MethodParameterUtils.replaceFirstAppPkg(outbound);
++            if (protect) {
++                Class<?>[] types = method.getParameterTypes();
++                if (types.length != 5 || types[0] != int.class || types[1] != boolean.class
++                        || types[2] != boolean.class || types[3] != String.class || types[4] != String.class
++                        || method.getReturnType() != ServiceState.class) {
++                    return null; // Public API allows unavailable service state.
++                }
++                outbound[1] = true; // Ask the platform to renounce fine and coarse location.
++                outbound[2] = true;
++            }
++            // Keep the platform's phone-state permission rejection, including its cause.
++            Object value = invokeBase(who, method, outbound);
++            if (!protect || value == null) return value;
++            try {
++                // Also sanitize the delivered copy: a base that ignores the renounce
++                // flags must not leak CellIdentity or the framework's coarse fields.
++                return HiddenApiBypass.getDeclaredMethod(ServiceState.class,
++                        "createLocationInfoSanitizedCopy", boolean.class).invoke(value, true);
++            } catch (ReflectiveOperationException | RuntimeException unavailable) {
++                Log.w(TAG, "Service state redaction unavailable: " + unavailable.getClass().getSimpleName());
++                return null;
++            }
++        }
++    }
++
++    private static Object invokeBase(Object who, Method method, Object[] args) throws Throwable {
++        try { return method.invoke(who, args); }
++        catch (InvocationTargetException error) { throw error.getCause(); }
++    }
++
+     @Override
+     public boolean isBadEnv() {
+         return false;
+@@ -108,11 +184,9 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
              Log.d(TAG, "getCellLocation");
              if (BLocationManager.isFakeLocationEnable()) {
@@ -947,7 +1030,7 @@ index 33686f0..4ee563d 100644
              }
              return method.invoke(who, args);
          }
-@@ -125,8 +126,8 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+@@ -125,8 +199,8 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
              Log.d(TAG, "GetAllCellInfo");
              if (BLocationManager.isFakeLocationEnable()) {
@@ -958,7 +1041,7 @@ index 33686f0..4ee563d 100644
              }
  
              try {
-@@ -137,6 +138,33 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+@@ -137,6 +211,33 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
          }
      }
  
@@ -992,7 +1075,7 @@ index 33686f0..4ee563d 100644
      @ProxyMethod("getNetworkOperator")
      public static class GetNetworkOperator extends MethodHook {
  
-@@ -167,8 +195,7 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+@@ -167,8 +268,7 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
              Log.d(TAG, "getNeighboringCellInfo");
              if (BLocationManager.isFakeLocationEnable()) {
