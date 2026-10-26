@@ -11,10 +11,10 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 
-SOURCE = 'ff12e8d3cf2dde2884333bd78515727d17c284b3'
+SOURCE = 'e0811cf46726e3bae9fcb839312b9efb6b92ce9e'
 MAIN_CERT = '6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081'
 HOST_CERT = '25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b'
-HOST_SHA = '2308c0bac2400f0da6ea781a098ee2c9cfd245a089c0f2837c53ab89a8f9f3f1'
+HOST_SHA = '14cdb415150c540c465a7db4033c02f71059f5b03be1759deb7a87114f93422f'
 PROFILE_SHA = '00ee9ae07b12d9c7acc42c9b2952982d7ae439aeb9e174ccf0ba7395d3d27ca8'
 
 
@@ -82,7 +82,7 @@ def main():
         raise ValueError('Main checks did not pass')
     output.mkdir(parents=True, exist_ok=False)
     names = {'main': 'Tianwaitian-2.4.32-container-preview-arm64.apk',
-             'host': 'Tianwaitian-Original-Preview-ff12e8d3.apk'}
+             'host': 'Tianwaitian-Original-Preview-e0811cf4.apk'}
     shutil.copyfile(candidates[0], output / names['main'])
     shutil.copyfile(args.host, output / names['host'])
     apks = {'main': inspect(output / names['main'], sdk, 'com.soozooq.gogogo.test',
@@ -95,7 +95,7 @@ def main():
     receipt = {'schema': 'GOGOGO_CI_PHONE_PREVIEW_STAGING_V1', 'source_commit': SOURCE,
         'delivery_run_id': int(args.delivery_run_id), 'apks': apks, 'metadata_profile_sha256': PROFILE_SHA,
         'main_checks': {'junit': counts, 'lint_error_fatal_count': severe},
-        'host_original_ci_run': 40292596352, 'host_ci_non_signature_entries_equal': 415,
+        'host_original_ci_run': 40320078192, 'host_ci_non_signature_entries_equal': 415,
         'private_key_used_or_included': False, 'original_target_apks_included': False,
         'native_gate': 'NOT_CHECKED_BY_THIS_DELIVERY_JOB', 'phone_and_target_business': 'NOT_VERIFIED',
         'published': False}

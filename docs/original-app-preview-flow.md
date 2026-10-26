@@ -2,7 +2,7 @@
 
 本说明随候选安装包交付使用。当前研发状态见[PROJECT_STATUS.md](../PROJECT_STATUS.md)；现阶段只有未发布的安装包草稿，微信发送／实时位置、抖音无线及海外业务仍未完成验收。
 
-面向一部Android13／vivo手机，无Root、无电脑。首页与预览衔接、已装原版导入已经完成云端界面检查；首页发送端和vivo真机仍待实际结果。
+面向一部Android13／vivo手机，无Root、无电脑。预览页接收选点和已装原版导入已经完成云端界面检查；主程序首页发送端和vivo真机仍待实际结果。
 
 ## 三步使用
 
@@ -12,16 +12,19 @@
 
 预览环境需要自行登录，已有账号、聊天记录和其他私有数据不会自动迁入。系统原应用保留；本功能作用于从预览入口打开的应用。
 
-## 后续只记一次实际结果
+## 正常使用后的一次反馈
 
-候选交付后，先在应用实际位置页查看蓝点／附近地点。只需记录“选点地区”“真实地区”或“找不到位置”，以及对应入口。微信发送位置、实时共享和抖音各入口分别判定，避免用一个页面代替另一项结果。
+不需要单独跑实验、遍历所有入口或反复切换VPN。有问题时，只记下正在使用的入口，以及页面显示“选点地区”“真实地区”还是“找不到位置”，一次反馈即可。未使用的入口保留为未验证。
 
-普通模拟、VPN开关、自有检查通过或写入海外坐标，均不能替代目标位置页结果。地图地点、附近内容与IP属地也分别判定。当前不要求重复旧实验或把历史日志重新运行。
+地图地点、附近内容与IP属地分别判定；普通模拟、自有检查通过或写入海外坐标，均不能替代当前目标页面结果。历史实验不要求重做。
 
-## 已有证据范围
+<details>
+<summary>维护者证据，无需手机操作</summary>
 
-- [普通入口与已装导入](../research/container-api33/evidence/map-point-prefill-results.json)：接收端预填／无效输入忽略、原版导入、原应用保留及GPSTest实际界面。
-- [自有六路径回归](../research/container-api33/evidence/stale-ui-location-read-results.json)：云端x86_64中的A→B、停止稳定、取消零回调；原生复核单独记录。
-- [已核对原生六路径](../research/container-api33/evidence/native-owned-private-snapshot-pass-results.json)：CI46独立Guest的A→B／停止／取消完整通过；它是旧补丁的自有证据，新持续电话及目标实际业务单独判定。
+- [普通入口与已装导入](../research/container-api33/evidence/map-point-prefill-results.json)：接收端预填、原版导入、原应用保留及GPSTest实际界面。
+- [当前默认六路径与16项受控回归](../research/container-api33/evidence/phone-transaction-name-results.json)：CI48固定e081源码的自有A→B、停止稳定、取消零回调与私有常量不可读后的公共电话回调。
+- [当前原生完整回执](../research/container-api33/evidence/native-phone-transaction-name-pass-results.json)：同源码微信／抖音匿名UI、自有框架及六路径通过，系统和清理合格；目标SDK、账号和实际位置业务仍未验证。
 
-这些记录用于维护者核对，不是需要手机用户逐项完成的操作清单。
+这些记录供维护者核对，不是用户操作清单。
+
+</details>

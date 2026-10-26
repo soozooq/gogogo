@@ -35,7 +35,7 @@
     "private_field_unavailable_precondition_actually_executed": true,
     "public_framework_controlled_registry_close_own_close_and_same_binder_unregister_passed": true
   },
-  "matching_native_result": "AWAIT_NEW_SOURCE_DEFAULT_AND_NATIVE_CI",
+  "matching_native_result": "CI48_COMPLETED_PASS_FIXED_E081_SOURCE",
   "old_phone_draft": "KEEP_UNPUBLISHED_NATIVE47_FAILED",
   "wechat_douyin_and_phone": "UNVERIFIED",
   "source_sha256": {
@@ -62,5 +62,7 @@
     "pid": 31158,
     "stop_reason": "MAXIMUM_WINDOW",
     "elapsed_seconds": 1801.17
-  }
+  },
+  "subsequent_actual_default_result": "phone-transaction-name-results.json",
+  "subsequent_actual_native_result": "native-phone-transaction-name-pass-results.json"
 }

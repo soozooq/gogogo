@@ -2,15 +2,15 @@
 
 唯一研发分支`research/container-api33-20261023`／Draft #60，日常#59固定2.4.31／2400099。当前以根[PROJECT_STATUS.md](../../PROJECT_STATUS.md)为准，不给单手机用户新增实验。
 
-[CI47原生失败](evidence/native-phone-callback-field-failure-results.json)：微信容器电话注册读取私有TRANSACTION字段失败并反复崩溃，不能发布旧ff12手机候选。四档／固定源码／9原生输入与三件自有来源／签名／材料已核对。两个普通原包、容器抖音匿名UI、自有框架16.280秒及六路径51.538秒通过，system_server稳定、VM／包／staging清理通过；整轮仍失败。微信黑屏截图已实际查看，其他成功不替代微信启动。
+[CI48原生完整通过](evidence/native-phone-transaction-name-pass-results.json)，固定e0811cf4／d6b29e92：两普通原包、两容器匿名UI、自有框架15.550秒及六路径48.947秒全部通过。微信已到匿名登录页，旧私有字段崩溃未观察到；抖音主PID9561／宿主UID10102保持300,838ms。四档API／固定源码／9原生输入及三件自有来源／签名／材料均核对，system_server659稳定，VM／包／staging清理通过。目标截图未生成，不声称看过。
 
-[修正准备](evidence/phone-transaction-name-preparation.json)改用运行时AIDL回调名称识别，不依赖私有常量字段，沿用现有库且不修改生产全局策略。构建／静态／完整补丁重放／25驱动检查通过；新增“常量确实不可读”的公共框架回归，16项自有软件API33检查实际3.298秒通过，常量不可读的前置断言确已执行；首次0方法初始化失败保留，未改镜像或平台超时。新源码默认／原生尚待核对。mock／权限／原始调用身份及无敏感回退约束保留。
+[CI48默认](evidence/phone-transaction-name-results.json)实际六项、16项受控回调0.218秒、六路径3.659秒、主447项／lint及三档核对通过；“私有常量确实不可读”的前置断言和公共框架流程已执行。原生匿名／自有成功仍不是微信发送／实时、抖音无线／海外或vivo验收；未接受条款、登录或发送。
 
-[CI47默认](evidence/persistent-phone-callback-results.json)六项／15受控无线、447项／lint及三档核对通过。[CI46原生](evidence/native-owned-private-snapshot-pass-results.json)完整通过使用旧416补丁，两者均不能替代新修正。微信／抖音／海外和vivo位置业务仍未验收，目标定位关闭，未接受条款／登录／发送。
+[修正](evidence/phone-transaction-name-preparation.json)使用运行时AIDL回调名称替代私有常量字段，不改变生产全局策略，保留mock／原始调用身份／无敏感回退。软件16项3.298秒通过，首轮0方法初始化失败保留，未改镜像或平台超时。[旧CI47失败](evidence/native-phone-callback-field-failure-results.json)及[旧CI46通过](evidence/native-owned-private-snapshot-pass-results.json)分别保留，均不替新源码背书。
 
-[交付CI2](evidence/phone-ci-draft-delivery-results.json)已将两份ff12自有APK上传同一个草稿并核对归档／服务器摘要、签名和版本，主033c0f6b…／预览2308c0ba…。由于匹配原生47失败，旧草稿继续禁止发布，不要求手机安装／实验。标准仓库CI与公开签名／ZIP配方已解决工作区上传401，私钥不离开本地；不是新修正包。
+[新手机交付准备](evidence/phone-e081-draft-delivery-preparation.json)复用同一个Release草稿，改为e081源码。旧ff12两附件核对备份后移除，新宿主14cdb415…已核对同一私签、415份非签名内容和公开配方逐字节恢复；主包及两附件待新仓库CI构建／上传，仍未发布，不要求手机实验。私钥不离开本地，只交付两份自有APK；旧交付CI2回执仅作历史。
 
-[反馈简化](evidence/no-extra-experiment-feedback-preparation.json)已进入主候选，统一已有「一键复制反馈」。[三步手机流程](../../docs/original-app-preview-flow.md)为预览说明。固定完整微信8.0.79／抖音40.8.0不改签、不内嵌、不分发，账号私有数据不迁移。
+[反馈简化](evidence/no-extra-experiment-feedback-preparation.json)统一已有「一键复制反馈」。[三步流程](../../docs/original-app-preview-flow.md)为预览说明。固定完整微信8.0.79／抖音40.8.0不改签、不内嵌、不分发，账号私有数据不迁移。
 
 下方保留此前各轮的命令和历史结果，不替代顶部当前状态。[CI38匿名启动通过](evidence/native-container-startup-pass-results.json)、[CI40旧PID集合失败](evidence/native-pid-set-and-owned-stage-results.json)、[CI39真实Provider归属失败](evidence/provider-attribution-failure-and-correction.json)均保留，不覆盖为成功。
 
