@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.ParcelFileDescriptor;
@@ -110,6 +111,27 @@ public final class ThirdPartyLocationInstrumentedTest {
             openOrdinaryHost(context);
             assertEquals("-33.86", fresh(By.res(context.getPackageName(), "target_latitude"), UiObject2::getText, "Latitude"));
             assertEquals("151.20", fresh(By.res(context.getPackageName(), "target_longitude"), UiObject2::getText, "Longitude"));
+            assertEquals(BLocationManager.OWN_MODE, BLocationManager.get().getPattern(0, GUEST));
+            clickFresh(By.res(context.getPackageName(), "copy_preview_feedback"), "Copy compact feedback");
+            clickFresh(By.text("位置页：选点地区"), "Report only the already-observed location page");
+            assertNotNull("Compact feedback copied", device.wait(Until.findObject(
+                    By.text("短反馈已复制，可直接粘贴发送。无需再跑实验。")), 10000));
+            ClipboardManager clipboard = context.getSystemService(ClipboardManager.class);
+            assertNotNull(clipboard); assertTrue(clipboard.hasPrimaryClip());
+            String feedback = clipboard.getPrimaryClip().getItemAt(0).coerceToText(context).toString();
+            assertTrue(feedback.startsWith("GOGOGO_PREVIEW_FEEDBACK_V1\n"));
+            assertTrue(feedback.contains("selected_app=" + GUEST));
+            assertTrue(feedback.contains("user_visual_result=SELECTED_REGION"));
+            assertTrue(feedback.contains("sdk_location_adoption=UNKNOWN"));
+            assertTrue(feedback.contains("real_consumer_coordinates=NOT_READ"));
+            assertTrue(feedback.length() < 1800);
+            assertFalse(feedback.contains("-33.86")); assertFalse(feedback.contains("151.20"));
+            assertEquals("Copying must not stop or restart the Guest", firstPid, shell("pidof " + GUEST));
+            assertEquals("Copying must not change the virtual input mode", BLocationManager.OWN_MODE,
+                    BLocationManager.get().getPattern(0, GUEST));
+            stages.put(new JSONObject().put("stage", "COMPACT_FEEDBACK_READ_ONLY")
+                    .put("characters", feedback.length()).put("guest_pid_preserved", true)
+                    .put("mock_mode_preserved", true).put("coordinates_not_recorded", true));
             clickFresh(By.res(context.getPackageName(), "stop_guest"), "Stop button");
             long deadline = SystemClock.elapsedRealtime() + 10000;
             while (SystemClock.elapsedRealtime() < deadline && !shell("pidof " + GUEST).isEmpty()) SystemClock.sleep(100);

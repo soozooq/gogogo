@@ -1,6 +1,6 @@
 {
   "schema": "GOGOGO_SERVICE_STATE_AND_VIRTUAL_STARTUP_PREPARATION_V1",
-  "scope": "IMPLEMENTED_LOCATION_BEARING_GETTER_AND_PRELOADED_CACHE_FIX_BUILD_ONLY_PENDING_ACTUAL_DEFAULT_AND_NATIVE",
+  "scope": "IMPLEMENTED_DEFAULT18_ACTUALLY_PASSED_MATCHING_NATIVE_PENDING",
   "base_research_commit": "e8665719ec6d860efdd2098168f69fc2ad534fd9",
   "published_phone_source_unchanged": "e0811cf46726e3bae9fcb839312b9efb6b92ce9e",
   "official_sources": [
@@ -61,7 +61,14 @@
       "missing_old_identity"
     ]
   },
-  "actual_radio_runtime": "NOT_RUN_YET_AWAIT_HARDWARE_CI",
+  "actual_radio_runtime": {
+    "run_id": 40420346275,
+    "commit": "1441f2fa8b0c0b268c4fc49054275d0da5120909",
+    "tests": 18,
+    "seconds": 0.225,
+    "passed": true,
+    "result": "service-state-read-results.json"
+  },
   "expected_radio_test_count": 18,
   "new_radio_methods": [
     "publicServiceStateReplacesOldCacheAndRedactsWithoutMutatingBase",
@@ -82,7 +89,7 @@
     "does_not_accept_terms_login_send_messages_or_claim_sdk_location": true,
     "requires_new_phase_even_if_junit_green": true
   },
-  "same_source_default_and_native": "AWAIT_NEW_COMMIT_CI",
+  "same_source_default_and_native": "DEFAULT_VERIFIED_NATIVE_IN_PROGRESS",
   "next_main_metadata": {
     "profile": "docs/build-profiles/main-preview-2.4.33.init.gradle",
     "version_name": "2.4.33-container-preview",

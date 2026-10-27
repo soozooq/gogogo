@@ -1,52 +1,52 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
-  "scope": "VERIFIED_DEFAULT_CI47_WITH_MATCHING_NATIVE_IN_PROGRESS_NOT_TARGET_LOCATION",
-  "run_id": 40320078192,
-  "commit": "e0811cf46726e3bae9fcb839312b9efb6b92ce9e",
-  "tree": "d51528573d19cf0d44b57131617fe3dbc26d2757",
-  "conclusion": "success",
-  "status": "completed",
+  "scope": "VERIFIED_DEFAULT_CI49_SERVICE_STATE_NATIVE_IN_PROGRESS_NEW_FEEDBACK_UI_PENDING",
+  "run_id": 40420346275,
+  "commit": "1441f2fa8b0c0b268c4fc49054275d0da5120909",
+  "tree": "649b2438edfbbdfaf11957e5546ecdf16fc1aa58",
+  "conclusion": null,
+  "status": "in_progress",
   "default_checks_conclusion": "success",
   "jobs": [
     {
-      "id": 121562470978,
+      "id": 121912928808,
       "name": "Build, inspect and ordinary entry (Linux)",
       "status": "completed",
       "conclusion": "success"
     },
     {
-      "id": 121562471250,
+      "id": 121912929153,
       "name": "Build and inspect (ARM Mac)",
       "status": "completed",
       "conclusion": "success"
     },
     {
-      "id": 121562473782,
+      "id": 121912931049,
       "name": "Anonymous startup (official Android 12L translation)",
       "status": "completed",
       "conclusion": "skipped"
     },
     {
-      "id": 121565397826,
+      "id": 121915882210,
       "name": "Inspect ARM Linux host and optional Cuttlefish boot",
-      "status": "completed",
-      "conclusion": "success"
+      "status": "in_progress",
+      "conclusion": null
     }
   ],
   "artifacts": {
     "own": {
-      "id": 12649455073,
-      "sha256": "3e5c4f371442d42d330001d18cdf354fca55c634b42bc8cab6b8986ad464bdd7",
+      "id": 12697548800,
+      "sha256": "6eb5b544b856fd31e4e1e7aa08eef783fb2d7a71a09aa49b2d8cdb5dd2cebc91",
       "verified": true
     },
     "mac": {
-      "id": 12648372806,
-      "sha256": "0a5a2991cb605783b17819cb79d49aba54ae18e85891aab44f4ed18d3fabffcf",
+      "id": 12696848024,
+      "sha256": "fb8b180320bbc3d7b86752b38bc9b3a1bcd1c51752d99d274de9f55b42217fec",
       "verified": true
     },
     "linux": {
-      "id": 12648589233,
-      "sha256": "fa37a4803324ee032f63e90c2899dbe0d5a1b8c4e62a5667c19d4b9689913b66",
+      "id": 12696628813,
+      "sha256": "520dcb53c825df7e7fc25fa15bd899c14ef00ffc37dbadc655bc9d0955bac030",
       "verified": true
     }
   },
@@ -98,10 +98,10 @@
         "input_events_sent": false,
         "root_package": "com.soozooq.tianwaitian.locationconsumer",
         "visible_text": [
-          "Read-only moving fixture 108"
+          "Read-only moving fixture 115"
         ],
         "stage": "OWN_UI_VISIBLE",
-        "elapsed_ms": 48
+        "elapsed_ms": 516
       },
       "cleanup": {
         "com.soozooq.tianwaitian.locationconsumer": true,
@@ -127,26 +127,26 @@
     "apks": {
       "host": {
         "name": "probeHost-debug.apk",
-        "size": 4538620,
-        "sha256": "942f4939d75b2804a05aeb2fb5e8edadd0a9f8d9b506bdc586fe51f11d0dc294"
+        "size": 4539420,
+        "sha256": "28bd7479a744b74ea61c3c3a539d74d62f55dd91d0ab2fc5ebfd428f7b8bcc59"
       },
       "driver": {
         "name": "probeHost-debug-androidTest.apk",
-        "size": 517218,
-        "sha256": "22a8fb1765dd509f8467ef14f98326cd40f27e9afd159ef7d6bec910ca7ccd25"
+        "size": 522522,
+        "sha256": "26ae165c7525ede4f60e803f56d91d9969667a0d0d15de6465965eeebc065c12"
       },
       "consumer": {
         "name": "locationConsumer-debug.apk",
         "size": 74158,
-        "sha256": "71bb6693f1b0062956c2e5b4fc657bb29680f93fdcd96d59c8ee824184f1ee0a"
+        "sha256": "c064124f70225d2874860edaf6b92925b1a1e5898ee4dd5e5034703c729b645c"
       }
     },
     "notice_materials_per_apk": 11,
     "signatures_verified_and_same": true
   },
-  "framework_startup_result": "phone-transaction-name-results.json",
-  "radio_result": "phone-transaction-name-results.json",
-  "controlled_radio_proxy": "16_ACTUAL_CONTROLLED_FRAMEWORK_CHECKS_0.218_SECONDS_NOT_REAL_MODEM",
+  "framework_startup_result": "service-state-read-results.json",
+  "radio_result": "service-state-read-results.json",
+  "controlled_radio_proxy": "18_ACTUAL_CONTROLLED_FRAMEWORK_CHECKS_0.225_SECONDS_NOT_REAL_MODEM",
   "phone_update_distributed": true,
   "wechat_send_and_live_location": "NOT_VERIFIED",
   "douyin_wireless_and_overseas": "NOT_VERIFIED",
@@ -162,21 +162,20 @@
     "wechat_anonymous_startup_passed": true
   },
   "native_job_this_run": {
-    "run_id": 40320078192,
-    "commit": "e0811cf46726e3bae9fcb839312b9efb6b92ce9e",
-    "job_id": 121565397826,
-    "result": "native-phone-transaction-name-pass-results.json",
-    "conclusion": "success",
-    "passed": true,
-    "owned_location_passed": true,
-    "wechat_anonymous_startup_passed": true
+    "run_id": 40420346275,
+    "job_id": 121915882210,
+    "status_at_curation": "in_progress",
+    "passed": null,
+    "new_close_and_own_restart_evidence_required": true
   },
-  "active_native_runs": [],
+  "active_native_runs": [
+    40420346275
+  ],
   "pending_native_run": null,
   "latest_passed_default_run": {
-    "run_id": 40320078192,
-    "commit": "e0811cf46726e3bae9fcb839312b9efb6b92ce9e",
-    "result": "phone-transaction-name-results.json"
+    "run_id": 40420346275,
+    "commit": "1441f2fa8b0c0b268c4fc49054275d0da5120909",
+    "result": "service-state-read-results.json"
   },
   "feedback_wording_preparation": "no-extra-experiment-feedback-preparation.json",
   "historical_results": [
@@ -204,5 +203,6 @@
   "next_phone_delivery_preparation": "phone-e081-draft-delivery-preparation.json",
   "phone_update_installed_on_user_device": "UNKNOWN",
   "release_url": "https://github.com/soozooq/gogogo/releases/tag/preview-2.4.32-container-e0811cf4",
-  "next_candidate_runtime_status": "BUILD_AND_DRIVER_CHECKS_DONE_ACTUAL_18_AND_NATIVE_CLOSE_OWN_PENDING"
+  "next_candidate_runtime_status": "CI49_DEFAULT18_PASS_NATIVE_CLOSE_OWN_IN_PROGRESS_SUBSEQUENT_FEEDBACK_UI_AWAITS_MATCHING_CI",
+  "preview_feedback_preparation": "preview-compact-feedback-preparation.json"
 }

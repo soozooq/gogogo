@@ -2,11 +2,18 @@ package com.soozooq.tianwaitian.containerresearch;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
 import android.provider.DocumentsContract;
 import android.text.InputType;
 import android.view.View;
@@ -25,20 +32,26 @@ import java.util.concurrent.Executors;
 import top.niunaijun.bcore.BlackBoxCore;
 import top.niunaijun.bcore.entity.location.BLocation;
 import top.niunaijun.bcore.fake.frameworks.BLocationManager;
+import top.niunaijun.bcore.fake.frameworks.BActivityManager;
+import top.niunaijun.bcore.core.system.location.IBLocationManagerService;
+import top.niunaijun.bcore.entity.am.RunningAppProcessInfo;
 
 /** Single ordinary flow: select pinned app, import once, set coordinates and open. */
 public final class ProbeActivity extends Activity {
     public static final String PREFILL_ACTION = "com.soozooq.tianwaitian.containerresearch.action.PREFILL_TARGET_V1";
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private TextView status;
-    private Button open, choose, installed;
+    private Button open, choose, installed, feedback;
     private EditText latitude, longitude;
     private LinearLayout coordinates;
     private Spinner apps;
     private List<GuestImport.Entry> entries;
     private SharedPreferences saved;
     private GuestImport.Entry pendingImport;
-    private boolean destroyed, busy, waitingPermission;
+    private volatile boolean destroyed;
+    private boolean busy, waitingPermission, feedbackPending;
+    private int feedbackGeneration;
+    private final Handler feedbackHandler = new Handler(Looper.getMainLooper());
 
     private static final class IncomingTarget {
         final String packageName;
@@ -123,12 +136,16 @@ public final class ProbeActivity extends Activity {
                 incoming == null ? saved.getString("longitude", "-121.875") : Double.toString(incoming.longitude));
         root.addView(coordinates);
         open = new Button(this); open.setId(R.id.open_guest); open.setOnClickListener(v -> openSelected()); root.addView(open);
-        Button stop = new Button(this); stop.setId(R.id.stop_guest); stop.setText("停止容器内应用和模拟");
+        Button stop = new Button(this); stop.setId(R.id.stop_guest); stop.setText("停止预览");
         stop.setOnClickListener(v -> {
             try { stopActive(); status.setText("已请求停止；可修改坐标后重新打开。"); }
             catch (RuntimeException error) { status.setText("停止请求失败，请稍后重试。"); }
         });
-        root.addView(stop);
+        LinearLayout actions = new LinearLayout(this);
+        actions.addView(stop, new LinearLayout.LayoutParams(0, -2, 1));
+        feedback = new Button(this); feedback.setId(R.id.copy_preview_feedback); feedback.setText("一键复制反馈");
+        feedback.setOnClickListener(v -> chooseFeedbackResult());
+        actions.addView(feedback, new LinearLayout.LayoutParams(0, -2, 1)); root.addView(actions);
         status = new TextView(this); status.setId(R.id.import_status); root.addView(status);
         apps.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
@@ -157,6 +174,7 @@ public final class ProbeActivity extends Activity {
         open.setEnabled(imported && !busy && supported);
         choose.setEnabled(!busy && supported && !imported);
         installed.setEnabled(!busy && supported && !imported); apps.setEnabled(!busy);
+        feedback.setEnabled(!busy && !feedbackPending);
         status.setText(!supported ? "所选原版仅支持原生 ARM64 设备。" : imported ? "已导入 " + entry
                 + (entry.location ? "。确认坐标后应用并打开；以后可直接修改坐标。" : "。可直接打开。")
                 : "先导入 " + entry + " 的官方原版 APK。");
@@ -218,6 +236,106 @@ public final class ProbeActivity extends Activity {
         saved.edit().remove("active").apply();
     }
 
+    private void chooseFeedbackResult() {
+        if (destroyed || busy || feedbackPending) return;
+        GuestImport.Entry entry = selected();
+        boolean wechat = "com.tencent.mm".equals(entry.packageName);
+        String[] choices = wechat ? new String[] {"发送位置：选点地区", "发送位置：真实地区", "发送位置：找不到位置",
+                "实时共享：选点地区", "实时共享：真实地区", "实时共享：找不到位置", "还没查看位置页"}
+                : new String[] {"位置页：选点地区", "位置页：真实地区", "位置页：找不到位置", "还没查看位置页"};
+        new AlertDialog.Builder(this).setTitle("复制反馈：只选当前看到的结果")
+                .setItems(choices, (dialog, index) -> {
+                    String scene = wechat ? (index < 3 ? "WECHAT_SEND" : index < 6 ? "WECHAT_LIVE" : "UNSPECIFIED")
+                            : "LOCATION_PAGE_NOT_IP_PROFILE";
+                    String[] results = {"SELECTED_REGION", "REAL_REGION", "NO_LOCATION"};
+                    String result = index == choices.length - 1 ? "NOT_VIEWED" : results[index % 3];
+                    collectFeedback(entry, scene, result);
+                }).setNegativeButton("取消", null).show();
+    }
+
+    private boolean feedbackInputValid(GuestImport.Entry entry) {
+        if (!entry.location) return false;
+        try {
+            double lat = Double.parseDouble(latitude.getText().toString().trim());
+            double lon = Double.parseDouble(longitude.getText().toString().trim());
+            return Double.isFinite(lat) && Double.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
+        } catch (NumberFormatException invalid) { return false; }
+    }
+
+    private static String feedbackField(String value) {
+        if (value == null) return "UNKNOWN";
+        String clean = value.replace('\n', ' ').replace('\r', ' ');
+        return clean.length() > 80 ? clean.substring(0, 80) : clean;
+    }
+
+    private void collectFeedback(GuestImport.Entry entry, String scene, String result) {
+        if (destroyed) return;
+        long started = SystemClock.elapsedRealtime();
+        String ownVersion = feedbackField(BuildConfig.VERSION_NAME) + "/" + BuildConfig.VERSION_CODE;
+        final String base = "GOGOGO_PREVIEW_FEEDBACK_V1\n"
+                + "scope=OWN_PREVIEW_COPY_TIME_SEQUENTIAL_SNAPSHOT_NOT_SDK_OR_EXTERNAL_UI_PROOF\n"
+                + "host_build_version=" + ownVersion + "\nandroid_api=" + Build.VERSION.SDK_INT
+                + "\nselected_app=" + feedbackField(entry.packageName)
+                + "\nexpected_original=" + feedbackField(entry.versionName) + "/" + entry.versionCode
+                + "\ndevice_abi_supported=" + (entry.supportsDevice() ? "YES" : "NO")
+                + "\nprecise_permission=" + (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                        == PackageManager.PERMISSION_GRANTED ? "GRANTED" : "DENIED")
+                + "\ntarget_input=" + (entry.location ? feedbackInputValid(entry) ? "VALID_NOT_RECORDED" : "INVALID" : "NOT_APPLICABLE")
+                + "\nuser_entry=" + scene + "\nuser_visual_result=" + result
+                + "\nobservation_source=USER_REPORTED_NOT_TIME_CORRELATED_WITH_SNAPSHOT\n"
+                + "external_app_actually_opened=NOT_AUTO_VERIFIED\nsdk_location_adoption=UNKNOWN\n"
+                + "real_consumer_coordinates=NOT_READ\nno_active_fix_or_mock_start_stop=true\n"
+                + "no_ip_ssid_cell_ids_keys_phone_identifiers=true\nstarted_elapsed_ms=" + started + "\n";
+        feedbackPending = true; feedback.setEnabled(false); status.setText("正在整理短反馈……");
+        final int generation = ++feedbackGeneration;
+        final long deadline = SystemClock.elapsedRealtime() + 1500;
+        // A slow/dead Core cannot make copying wait indefinitely. Late results
+        // cannot replace the user's clipboard after the fallback or a new request.
+        feedbackHandler.postDelayed(() -> publishFeedback(generation, base
+                + "core_snapshot=UNKNOWN_READ_TIMEOUT\n"), 1500);
+        io.execute(() -> {
+            if (destroyed || SystemClock.elapsedRealtime() > deadline) return;
+            StringBuilder core = new StringBuilder();
+            try { core.append("virtual_import_present=").append(BlackBoxCore.get().isInstalled(entry.packageName, 0) ? "YES" : "NO").append('\n'); }
+            catch (RuntimeException unavailable) { core.append("virtual_import_present=UNKNOWN\n"); }
+            if (destroyed || SystemClock.elapsedRealtime() > deadline) return;
+            try {
+                IBLocationManagerService modes = BLocationManager.get().getService();
+                if (modes == null) core.append("virtual_mode=UNKNOWN\n");
+                else {
+                    int pattern = modes.getPattern(0, entry.packageName);
+                    core.append("virtual_mode=").append(pattern == BLocationManager.OWN_MODE ? "OWN" :
+                            pattern == BLocationManager.CLOSE_MODE ? "CLOSE" : "OTHER").append('\n');
+                }
+            } catch (Exception unavailable) { core.append("virtual_mode=UNKNOWN\n"); }
+            if (destroyed || SystemClock.elapsedRealtime() > deadline) return;
+            try {
+                RunningAppProcessInfo snapshot = BActivityManager.get().getRunningAppProcesses(entry.packageName, 0);
+                if (snapshot == null) core.append("registered_main_seen_at_capture=UNKNOWN\n");
+                else {
+                    boolean seen = false;
+                    for (android.app.ActivityManager.RunningAppProcessInfo process : snapshot.mAppProcessInfoList) {
+                        if (entry.packageName.equals(process.processName) && process.uid == getApplicationInfo().uid) seen = true;
+                    }
+                    core.append("registered_main_seen_at_capture=").append(seen ? "YES" : "NO").append('\n');
+                }
+            } catch (RuntimeException unavailable) { core.append("registered_main_seen_at_capture=UNKNOWN\n"); }
+            final String report = base + core + "finished_elapsed_ms=" + SystemClock.elapsedRealtime() + "\n";
+            runOnUiThread(() -> publishFeedback(generation, report));
+        });
+    }
+
+    private void publishFeedback(int generation, String report) {
+        if (destroyed || !feedbackPending || generation != feedbackGeneration) return;
+        feedbackPending = false; feedback.setEnabled(!busy);
+        try {
+            ClipboardManager clipboard = getSystemService(ClipboardManager.class);
+            if (clipboard == null) throw new IllegalStateException("CLIPBOARD_UNAVAILABLE");
+            clipboard.setPrimaryClip(ClipData.newPlainText("天外天预览反馈", report));
+            status.setText("短反馈已复制，可直接粘贴发送。无需再跑实验。");
+        } catch (RuntimeException unavailable) { status.setText("复制未完成，请稍后重试。"); }
+    }
+
     @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] results) {
         super.onRequestPermissionsResult(request, permissions, results);
         if (request != 2 || !waitingPermission) return;
@@ -259,5 +377,8 @@ public final class ProbeActivity extends Activity {
         });
     }
 
-    @Override protected void onDestroy() { destroyed = true; io.shutdownNow(); super.onDestroy(); }
+    @Override protected void onDestroy() {
+        destroyed = true; feedbackPending = false; feedbackGeneration++;
+        feedbackHandler.removeCallbacksAndMessages(null); io.shutdownNow(); super.onDestroy();
+    }
 }
