@@ -19,7 +19,7 @@
 
 [修正准备](research/container-api33/evidence/original-main-identity-preparation.json)仅改云端Python对照脚本：以PackageManager用户0真实UID、唯一AMS登记主进程及内核PID／UID交叉核对，pidof列表仅作辅助记录。增加同名辅助进程或列表重排不等于主进程更换；真正主进程变化（即使旧PID还在列表）、UID错误、登记缺失／歧义或内核身份缺失仍失败。保持完整300秒、目标及system_server崩溃检查、普通shell／Enforcing、环境和清理要求；只保存有上限的身份头信息，不复制完整AMS转储或账号资料。
 
-27项本地驱动检查0.666秒通过，包含两项身份解析检查及辅助进程、列表重排、主进程替换、UID／内核缺失等集成场景；新的同源云端验证尚未运行，不能用本地检查把CI53失败改成成功。手机Java、AIDL、manifest、839947fa引擎和2.4.35／0.4版本不变，继续同一个未公开候选，不要求手机重测。旧Mac等待任务因原生失败已按条件停止，没有POST重试；后续验证修正后的源码，不重跑旧53。
+27项本地驱动检查0.666秒通过，包含两项身份解析检查及辅助进程、列表重排、主进程替换、UID／内核缺失等集成场景。修正已提交66a293fa，[CI54](https://github.com/soozooq/gogogo/actions/runs/40547400219)固定该源码运行；[默认结果已独立验真](research/container-api33/evidence/original-main-identity-default-results.json)：云端27项驱动0.644秒，Mac实际构建及Linux6定位4.203秒／19无线0.138秒／七case＋变化UI／447主检查与lint均通过。三档API摘要、58／59来源、三同签名及11材料核对；真实Guest3017、宿主2950，消费者准备／接收PID均3017，六路径3.264秒／最老313.919毫秒、取消零回调，普通反馈仍1322字符。原生54作业122345264006已启动、结果待取，不能以默认结果把CI53失败改成成功。[415非签名内容逐项相同](research/container-api33/evidence/original-main-identity-candidate-content-results.json)，并核对手机源码／profile与66258d1d无差异；Phone CI6仍保留真实构建来源66258d1d，资格对照为66a293fa，不虚构新手机构建。手机Java、AIDL、manifest、839947fa引擎和2.4.35／0.4版本不变，继续同一个未公开候选，不要求手机重测。旧Mac等待任务因原生失败已按条件停止，没有POST重试；后续验证修正后的源码，不重跑旧53。
 
 ## 候选功能：自动记录消费者调用与交付摘要（仍未公开）
 

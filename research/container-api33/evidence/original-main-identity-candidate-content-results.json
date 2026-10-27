@@ -1,0 +1,39 @@
+{
+  "schema": "GOGOGO_CI54_OWN_MAC_AND_CANDIDATE_CONTENT_COMPARISON_V1",
+  "commit": "66a293fa2b36cc04e7c2e7986ce5588f8d0a134f",
+  "run_id": 40547400219,
+  "own_mac_api_digests_sources_signatures_materials_verified": true,
+  "own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4547692,
+        "sha256": "a248e1a43e9feab5766ab86f8d7f309e257b77c7d7f9c2091ccf5e5acbe7c341"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 530330,
+        "sha256": "9a97f72849ee3553c6d03c0964851f611879fb0a394e9e0a1d5d991ef8277cfa"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 74158,
+        "sha256": "ad57d5bac2f30188601d79062c5a34ec15b5406a7424eb0092ed5d08d3ee18f2"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "non_signature_entries": 415,
+  "previous_ci53_host_payload_same": true,
+  "different_entries": [],
+  "new_default_or_native_pass_claimed": false,
+  "non_signature_definition": "All ZIP entries except exact META-INF/MANIFEST.MF and root signature .SF/.RSA/.DSA/.EC; Kotlin/services metadata included",
+  "scope": "ACTUAL_API_ARCHIVES_SOURCES_SIGNATURES_MATERIALS_AND_ALL_NON_SIGNATURE_CONTENT_NOT_NATIVE_OR_TARGET_SDK_PASS",
+  "android_app_and_profile_paths_unchanged_from": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+  "candidate_apk_runtime_commit": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+  "qualification_driver_commit": "66a293fa2b36cc04e7c2e7986ce5588f8d0a134f",
+  "candidate_versions_unchanged": true,
+  "published": false
+}

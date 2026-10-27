@@ -1,17 +1,19 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
-  "scope": "NEW_ORIGINAL_MAIN_IDENTITY_DRIVER_CANDIDATE_NOT_YET_NATIVE_VERIFIED",
-  "status": "not_started",
+  "scope": "NEW_ORIGINAL_MAIN_IDENTITY_DEFAULT_VERIFIED_NATIVE_PENDING",
+  "status": "in_progress",
   "conclusion": null,
-  "commit": null,
-  "run_id": null,
+  "commit": "66a293fa2b36cc04e7c2e7986ce5588f8d0a134f",
+  "run_id": 40547400219,
   "base_commit": "0797ef192c53eb0f6ed575efc4a64d134b122e65",
   "preparation": "original-main-identity-preparation.json",
-  "default_checks_conclusion": "PENDING_NEW_QUALIFICATION",
+  "default_checks_conclusion": "SUCCESS_VERIFIED_LINUX_AND_ARM_MAC_BUILD",
   "native": {
     "passed": false,
-    "status": "not_started",
-    "result": "PENDING_NOT_PASS"
+    "job_id": 122345264006,
+    "status": "in_progress",
+    "result": "PENDING_NOT_PASS",
+    "source": "66a293fa2b36cc04e7c2e7986ce5588f8d0a134f"
   },
   "current_published_2_4_34": {
     "source": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
@@ -62,7 +64,11 @@
       }
     },
     "published": false,
-    "mac_and_native_gates_pending": true
+    "qualification_driver_source": "66a293fa2b36cc04e7c2e7986ce5588f8d0a134f",
+    "new_driver_native_gate_pending": true,
+    "host_all_415_non_signature_entries_match_ci54": true,
+    "mac_gate_passed": true,
+    "native_gate_passed": false
   },
   "previous_native_failure": {
     "run_id": 40523604093,
@@ -78,5 +84,7 @@
   },
   "android_app_runtime_unchanged": true,
   "new_runtime_published": false,
-  "target_sdk_and_vivo": "NOT_VERIFIED"
+  "target_sdk_and_vivo": "NOT_VERIFIED",
+  "default_result": "original-main-identity-default-results.json",
+  "candidate_content_result": "original-main-identity-candidate-content-results.json"
 }
