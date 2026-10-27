@@ -1,8 +1,16 @@
 diff --git a/BCore/src/main/aidl/top/niunaijun/bcore/core/system/location/IBLocationManagerService.aidl b/BCore/src/main/aidl/top/niunaijun/bcore/core/system/location/IBLocationManagerService.aidl
-index 677e791..2aa8381 100644
+index 677e791..dc65701 100644
 --- a/BCore/src/main/aidl/top/niunaijun/bcore/core/system/location/IBLocationManagerService.aidl
 +++ b/BCore/src/main/aidl/top/niunaijun/bcore/core/system/location/IBLocationManagerService.aidl
-@@ -40,5 +40,8 @@ interface IBLocationManagerService {
+@@ -3,6 +3,7 @@ package top.niunaijun.bcore.core.system.location;
+ 
+ import top.niunaijun.bcore.entity.location.BLocation;
+ import top.niunaijun.bcore.entity.location.BCell;
++import android.os.Bundle;
+ 
+ import java.util.List;
+ 
+@@ -40,5 +41,14 @@ interface IBLocationManagerService {
  
      void requestLocationUpdates(in IBinder listener, String packageName, int userId);
  
@@ -12,6 +20,12 @@ index 677e791..2aa8381 100644
      void removeUpdates(in IBinder listener);
 -}
 \ No newline at end of file
++
++    // Separate consumer reads from host configuration/status reads. Append new
++    // transactions so the previous method ordinals do not change.
++    BLocation getLocationForConsumer(int userId, String pkg, String provider, boolean current);
++
++    Bundle getConsumerDeliverySummary(int userId, String pkg);
 +}
 diff --git a/BCore/src/main/aidl/top/niunaijun/bcore/entity/location/BLocationConfig.aidl b/BCore/src/main/aidl/top/niunaijun/bcore/entity/location/BLocationConfig.aidl
 index c8ffd80..742995f 100644
@@ -96,10 +110,16 @@ index f2bdc83..7ff2ad1 100644
                  shadow.setComponent(new ComponentName(BlackBoxCore.getHostPkg(), ProxyManifest.TransparentProxyActivity(vPID)));
              } else {
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/location/BLocationManagerService.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/location/BLocationManagerService.java
-index 06e20a6..9f5e27e 100644
+index 06e20a6..f60a381 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/core/system/location/BLocationManagerService.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/core/system/location/BLocationManagerService.java
-@@ -4,6 +4,9 @@ import android.os.IBinder;
+@@ -1,9 +1,15 @@
+ package top.niunaijun.bcore.core.system.location;
+ 
+ import android.os.IBinder;
++import android.os.Binder;
++import android.os.Bundle;
++import android.location.Location;
  import android.os.IInterface;
  import android.os.Parcel;
  import android.os.RemoteException;
@@ -109,7 +129,7 @@ index 06e20a6..9f5e27e 100644
  import android.util.AtomicFile;
  import android.util.SparseArray;
  
-@@ -14,8 +17,8 @@ import java.io.InputStream;
+@@ -14,8 +20,8 @@ import java.io.InputStream;
  import java.util.HashMap;
  import java.util.List;
  import java.util.Map;
@@ -120,7 +140,7 @@ index 06e20a6..9f5e27e 100644
  
  import black.android.location.ILocationListener;
  import top.niunaijun.bcore.BlackBoxCore;
-@@ -28,6 +31,7 @@ import top.niunaijun.bcore.fake.frameworks.BLocationManager;
+@@ -28,6 +34,7 @@ import top.niunaijun.bcore.fake.frameworks.BLocationManager;
  import top.niunaijun.bcore.utils.CloseUtils;
  import top.niunaijun.bcore.utils.FileUtils;
  import top.niunaijun.bcore.utils.Slog;
@@ -128,7 +148,7 @@ index 06e20a6..9f5e27e 100644
  
  /**
   * Fake location
-@@ -43,8 +47,8 @@ public class BLocationManagerService extends IBLocationManagerService.Stub imple
+@@ -43,8 +50,9 @@ public class BLocationManagerService extends IBLocationManagerService.Stub imple
      private static final BLocationManagerService sService = new BLocationManagerService();
      private final SparseArray<HashMap<String, BLocationConfig>> mLocationConfigs = new SparseArray<>();
      private final BLocationConfig mGlobalConfig = new BLocationConfig();
@@ -136,10 +156,11 @@ index 06e20a6..9f5e27e 100644
 -    private final Executor mThreadPool = Executors.newCachedThreadPool();
 +    private final Map<IBinder, Subscription> mLocationListeners = new HashMap<>();
 +    private final Handler mLocationHandler = new Handler(Looper.getMainLooper());
++    private final ConsumerLocationStats mConsumerStats = new ConsumerLocationStats();
  
      public static BLocationManagerService get() {
          return sService;
-@@ -81,6 +85,15 @@ public class BLocationManagerService extends IBLocationManagerService.Stub imple
+@@ -81,6 +89,15 @@ public class BLocationManagerService extends IBLocationManagerService.Stub imple
              getOrCreateConfig(userId, pkg).pattern = pattern;
              save();
          }
@@ -155,7 +176,27 @@ index 06e20a6..9f5e27e 100644
      }
  
      @Override
-@@ -212,63 +225,107 @@ public class BLocationManagerService extends IBLocationManagerService.Stub imple
+@@ -195,6 +212,19 @@ public class BLocationManagerService extends IBLocationManagerService.Stub imple
+         }
+     }
+ 
++    @Override
++    public BLocation getLocationForConsumer(int userId, String pkg, String provider, boolean current) {
++        BLocation value = getLocation(userId, pkg);
++        mConsumerStats.prepared(userId, pkg, provider, current, value != null, Binder.getCallingPid());
++        return value;
++    }
++
++    @Override
++    public Bundle getConsumerDeliverySummary(int userId, String pkg) {
++        // Copying feedback observes counters only; it never reads or requests a fix.
++        return mConsumerStats.snapshot(userId, pkg);
++    }
++
+     @Override
+     public void setGlobalLocation(BLocation location) {
+         synchronized (mGlobalConfig) {
+@@ -212,63 +242,112 @@ public class BLocationManagerService extends IBLocationManagerService.Stub imple
  
      @Override
      public void requestLocationUpdates(IBinder listener, String packageName, int userId) throws RemoteException {
@@ -198,6 +239,7 @@ index 06e20a6..9f5e27e 100644
 -        mLocationListeners.put(listener, record);
 -        addTask(listener);
 +            if (!mLocationHandler.post(record)) removeSubscription(record);
++            else mConsumerStats.registered(userId, packageName, provider, record.receiverPid);
 +        }
      }
  
@@ -239,6 +281,7 @@ index 06e20a6..9f5e27e 100644
 +        final String provider;
 +        final long intervalMillis;
 +        final long deadline;
++        final int receiverPid;
 +        int remaining;
 +
 +        Subscription(IBinder listener, String packageName, int userId, String provider,
@@ -253,6 +296,7 @@ index 06e20a6..9f5e27e 100644
 +            this.deadline = durationMillis >= Long.MAX_VALUE - now
 +                    ? Long.MAX_VALUE : now + durationMillis;
 +            this.remaining = maxUpdates;
++            this.receiverPid = Binder.getCallingPid();
 +        }
  
 -                BLocation location = getLocation(locationRecord.userId, locationRecord.packageName);
@@ -277,22 +321,15 @@ index 06e20a6..9f5e27e 100644
 +            BLocation location = getLocation(userId, packageName);
 +            if (location != null) {
 +                try {
-+                    LocationCallbackCompat.deliverListener(listener,
-+                            location.convert2SystemLocation(provider, packageName));
++                    Location sample = location.convert2SystemLocation(provider, packageName);
++                    LocationCallbackCompat.deliverListener(listener, sample);
++                    mConsumerStats.sent(userId, packageName, provider, receiverPid, sample);
 +                    remaining--;
 +                } catch (Exception e) {
++                    mConsumerStats.failed(userId, packageName);
 +                    android.util.Log.w(TAG, "Location listener failed; releasing subscription", e);
 +                    removeSubscription(this);
 +                    return;
-+                }
-+            }
-+            synchronized (mLocationListeners) {
-+                if (mLocationListeners.get(listener) != this) return;
-+                long left = deadline - SystemClock.elapsedRealtime();
-+                if (remaining <= 0 || left <= 0) {
-+                    removeSubscription(this);
-+                } else if (!mLocationHandler.postDelayed(this, Math.min(intervalMillis, left))) {
-+                    removeSubscription(this);
                  }
 -
 -                lastLocation = location;
@@ -300,11 +337,20 @@ index 06e20a6..9f5e27e 100644
 -                BlackBoxCore.get().getHandler().post(() -> ILocationListener.onLocationChanged.call(iInterface, location.convert2SystemLocation()));
              }
 -        });
++            synchronized (mLocationListeners) {
++                if (mLocationListeners.get(listener) != this) return;
++                long left = deadline - SystemClock.elapsedRealtime();
++                if (remaining <= 0 || left <= 0) {
++                    removeSubscription(this);
++                } else if (!mLocationHandler.postDelayed(this, Math.min(intervalMillis, left))) {
++                    removeSubscription(this);
++                }
++            }
 +        }
      }
  
      public void save() {
-@@ -347,8 +404,6 @@ public class BLocationManagerService extends IBLocationManagerService.Stub imple
+@@ -347,8 +426,6 @@ public class BLocationManagerService extends IBLocationManagerService.Stub imple
      @Override
      public void systemReady() {
          loadConfig();
@@ -314,6 +360,97 @@ index 06e20a6..9f5e27e 100644
 +        // Subscriptions belong to live Binder clients; never resurrect old worker loops.
      }
  }
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/location/ConsumerLocationStats.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/location/ConsumerLocationStats.java
+new file mode 100644
+index 0000000..1441f83
+--- /dev/null
++++ b/BCore/src/main/java/top/niunaijun/bcore/core/system/location/ConsumerLocationStats.java
+@@ -0,0 +1,85 @@
++package top.niunaijun.bcore.core.system.location;
++
++import android.location.Location;
++import android.os.Bundle;
++import android.os.SystemClock;
++
++import java.util.LinkedHashMap;
++import java.util.Map;
++
++/** Bounded, volatile counters for virtual delivery only. No location objects are retained. */
++final class ConsumerLocationStats {
++    static final String SCOPE = "CORE_MEMORY_VIRTUAL_PREPARATION_AND_BINDER_SEND_NOT_SDK_ADOPTION";
++    private static final int LIMIT = 16;
++    private final Map<String, Bundle> records = new LinkedHashMap<>();
++
++    private static String key(int user, String pkg) {
++        return pkg == null || pkg.length() > 255 ? null : user + ":" + pkg;
++    }
++
++    private static String provider(String value) {
++        return "gps".equals(value) ? "gps" : "network".equals(value) ? "network" : "other";
++    }
++
++    private Bundle record(int user, String pkg) {
++        String key = key(user, pkg);
++        if (key == null) return null;
++        Bundle value = records.get(key);
++        if (value == null) {
++            if (records.size() == LIMIT) records.remove(records.keySet().iterator().next());
++            value = new Bundle();
++            value.putLong("first_event_elapsed_ms", SystemClock.elapsedRealtime());
++            records.put(key, value);
++        }
++        return value;
++    }
++
++    private static void increment(Bundle value, String name) {
++        long previous = value.getLong(name);
++        value.putLong(name, previous == Long.MAX_VALUE ? previous : previous + 1);
++        value.putLong("last_event_elapsed_ms", SystemClock.elapsedRealtime());
++    }
++
++    synchronized void prepared(int user, String pkg, String provider, boolean current,
++                               boolean present, int callerPid) {
++        Bundle value = record(user, pkg);
++        if (value == null) return;
++        increment(value, present ? (current ? "current_" : "cache_") + provider(provider) + "_prepared"
++                : "missing_sample_count");
++        value.putInt("last_preparation_caller_pid", callerPid);
++    }
++
++    synchronized void registered(int user, String pkg, String provider, int receiverPid) {
++        Bundle value = record(user, pkg);
++        if (value == null) return;
++        increment(value, "stream_" + provider(provider) + "_registered");
++        value.putInt("last_stream_receiver_pid", receiverPid);
++    }
++
++    synchronized void sent(int user, String pkg, String provider, int receiverPid, Location sample) {
++        Bundle value = record(user, pkg);
++        if (value == null) return;
++        increment(value, "stream_" + provider(provider) + "_transaction_returned");
++        value.putInt("last_stream_receiver_pid", receiverPid);
++        value.putBoolean("last_stream_mock", sample.isFromMockProvider());
++        value.putBoolean("last_stream_synthetic", sample.getExtras() != null
++                && sample.getExtras().getBoolean("tianwaitian.synthetic"));
++    }
++
++    synchronized void failed(int user, String pkg) {
++        Bundle value = record(user, pkg);
++        if (value != null) increment(value, "stream_failure_count");
++    }
++
++    synchronized Bundle snapshot(int user, String pkg) {
++        String key = key(user, pkg);
++        Bundle value = key == null ? null : records.get(key);
++        Bundle copy = value == null ? new Bundle() : new Bundle(value);
++        copy.putString("scope", SCOPE);
++        copy.putBoolean("present", value != null);
++        copy.putLong("last_event_age_ms", value == null ? -1
++                : Math.max(0, SystemClock.elapsedRealtime() - value.getLong("last_event_elapsed_ms")));
++        copy.putInt("maximum_profiles", LIMIT);
++        return copy;
++    }
++}
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/pm/PackageManagerCompat.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/pm/PackageManagerCompat.java
 index dc071ad..6056308 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/core/system/pm/PackageManagerCompat.java
@@ -519,7 +656,7 @@ index 3a16522..53b16db 100644
          extraBundle.putInt("satellitesvalue", satelliteCount);
          location.setExtras(extraBundle);
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/frameworks/BLocationManager.java b/BCore/src/main/java/top/niunaijun/bcore/fake/frameworks/BLocationManager.java
-index 5053133..fd009ac 100644
+index 5053133..be82cff 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/fake/frameworks/BLocationManager.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/fake/frameworks/BLocationManager.java
 @@ -29,7 +29,17 @@ public class BLocationManager extends BlackManager<IBLocationManagerService> {
@@ -541,7 +678,23 @@ index 5053133..fd009ac 100644
      }
  
      public static void disableFakeLocation(int userId,String pkg) {
-@@ -112,4 +122,10 @@ public class BLocationManager extends BlackManager<IBLocationManagerService> {
+@@ -97,6 +107,15 @@ public class BLocationManager extends BlackManager<IBLocationManagerService> {
+         return null;
+     }
+ 
++    public BLocation getLocationForConsumer(int userId, String pkg, String provider, boolean current) {
++        try {
++            IBLocationManagerService service = getService();
++            return service == null ? null : service.getLocationForConsumer(userId, pkg, provider, current);
++        } catch (RemoteException unavailable) {
++            return null; // Keep the existing protected null result; never query physical location.
++        }
++    }
++
+     public void requestLocationUpdates(IBinder listener) {
+         try {
+             getService().requestLocationUpdates(listener, BActivityThread.getAppPackageName(), BActivityThread.getUserId());
+@@ -112,4 +131,10 @@ public class BLocationManager extends BlackManager<IBLocationManagerService> {
              e.printStackTrace();
          }
      }
@@ -751,7 +904,7 @@ index 0ff8a3c..3696087 100644
  
      @Override
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
-index bad5396..2921893 100644
+index bad5396..6fbcbc9 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
 @@ -1,9 +1,10 @@
@@ -864,11 +1017,11 @@ index bad5396..2921893 100644
 +        }
 +    }
 +
-+    private static Location virtualLocation(Object[] args) {
-+        BLocation location = BLocationManager.get().getLocation(BActivityThread.getUserId(),
-+                BActivityThread.getAppPackageName());
++    private static Location virtualLocation(Object[] args, boolean current) {
 +        String provider = args.length > 0 && args[0] instanceof String
 +                ? (String) args[0] : LocationManager.GPS_PROVIDER;
++        BLocation location = BLocationManager.get().getLocationForConsumer(BActivityThread.getUserId(),
++                BActivityThread.getAppPackageName(), provider, current);
 +        return location == null ? null : location.convert2SystemLocation(provider,
 +                BActivityThread.getAppPackageName());
 +    }
@@ -881,7 +1034,7 @@ index bad5396..2921893 100644
              Log.d(TAG, "GetLastLocation");
              if (BLocationManager.isFakeLocationEnable()) {
 -                return BLocationManager.get().getLocation(BActivityThread.getUserId(), BActivityThread.getAppPackageName()).convert2SystemLocation();
-+                return virtualLocation(args);
++                return virtualLocation(args, false);
              }
              return method.invoke(who, args);
          }
@@ -890,7 +1043,7 @@ index bad5396..2921893 100644
              Log.d(TAG, "GetLastKnownLocation");
              if (BLocationManager.isFakeLocationEnable()) {
 -                return BLocationManager.get().getLocation(BActivityThread.getUserId(), BActivityThread.getAppPackageName()).convert2SystemLocation();
-+                return virtualLocation(args);
++                return virtualLocation(args, false);
              }
              return method.invoke(who, args);
          }
@@ -901,7 +1054,7 @@ index bad5396..2921893 100644
 -                return BLocationManager.get().getLocation(BActivityThread.getUserId(), BActivityThread.getAppPackageName()).convert2SystemLocation();
 +                IInterface callback = LocationCallbackCompat.findInterface(args,
 +                        "android.location.ILocationCallback");
-+                return LocationCallbackCompat.requestCurrent(callback, () -> virtualLocation(args),
++                return LocationCallbackCompat.requestCurrent(callback, () -> virtualLocation(args, true),
 +                        BlackBoxCore.get().getHandler());
              }
              return method.invoke(who, args);

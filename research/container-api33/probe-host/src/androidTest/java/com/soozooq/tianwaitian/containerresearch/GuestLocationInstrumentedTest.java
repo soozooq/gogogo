@@ -171,6 +171,21 @@ public final class GuestLocationInstrumentedTest {
             summary.put("nonce", nonce);
             summary.put("stages", stages);
             summary.put("report_source", "OWN_GUEST_ATOMIC_PRIVATE_FILE");
+            android.os.Bundle delivery = BLocationManager.get().getService().getConsumerDeliverySummary(0, GUEST);
+            assertTrue(delivery.getBoolean("present"));
+            assertEquals("CORE_MEMORY_VIRTUAL_PREPARATION_AND_BINDER_SEND_NOT_SDK_ADOPTION", delivery.getString("scope"));
+            assertEquals(guestPid, delivery.getInt("last_preparation_caller_pid"));
+            assertEquals(guestPid, delivery.getInt("last_stream_receiver_pid"));
+            assertTrue(delivery.getBoolean("last_stream_mock"));
+            assertTrue(delivery.getBoolean("last_stream_synthetic"));
+            for (String provider : new String[] {"gps", "network"}) {
+                assertTrue(delivery.getLong("cache_" + provider + "_prepared") >= 2);
+                assertTrue(delivery.getLong("current_" + provider + "_prepared") >= 2);
+                assertTrue(delivery.getLong("stream_" + provider + "_transaction_returned") >= 2);
+            }
+            JSONObject deliveryJson = new JSONObject();
+            for (String key : delivery.keySet()) deliveryJson.put(key, delivery.get(key));
+            summary.put("consumer_delivery", deliveryJson);
             summary.put("passed", true);
             write(new File(evidence, "result.json"), summary.toString(2));
         } finally {

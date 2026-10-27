@@ -268,6 +268,29 @@ public final class ProbeActivity extends Activity {
         return clean.length() > 80 ? clean.substring(0, 80) : clean;
     }
 
+    private static String consumerFeedback(Bundle value) {
+        if (value == null || !"CORE_MEMORY_VIRTUAL_PREPARATION_AND_BINDER_SEND_NOT_SDK_ADOPTION"
+                .equals(value.getString("scope"))) return "consumer_delivery=UNKNOWN_READ_RESULT\n";
+        if (!value.getBoolean("present")) return "consumer_delivery=NO_RECORD_IN_CURRENT_CORE_MEMORY\n";
+        StringBuilder text = new StringBuilder("consumer_delivery=RECORDED_NOT_SDK_ADOPTION\n");
+        for (String path : new String[] {"cache", "current", "stream_registered", "stream_returned"}) {
+            String prefix = path.startsWith("stream") ? "stream" : path;
+            String suffix = path.equals("stream_registered") ? "registered"
+                    : path.equals("stream_returned") ? "transaction_returned" : "prepared";
+            text.append("consumer_").append(path).append("_gps_network=")
+                    .append(value.getLong(prefix + "_gps_" + suffix)).append('/')
+                    .append(value.getLong(prefix + "_network_" + suffix)).append('\n');
+        }
+        text.append("consumer_missing_stream_errors=").append(value.getLong("missing_sample_count"))
+                .append('/').append(value.getLong("stream_failure_count")).append('\n')
+                .append("consumer_last_event_age_ms=").append(value.getLong("last_event_age_ms")).append('\n')
+                .append("consumer_stream_mock_synthetic=")
+                .append(value.containsKey("last_stream_mock") ? value.getBoolean("last_stream_mock")
+                        + "/" + value.getBoolean("last_stream_synthetic") : "NO_STREAM_SAMPLE").append('\n')
+                .append("consumer_history=VOLATILE_BOUNDED_CORE_MEMORY_NOT_CURRENT_APP_SESSION\n");
+        return text.toString();
+    }
+
     private void collectFeedback(GuestImport.Entry entry, String scene, String result) {
         if (destroyed) return;
         long started = SystemClock.elapsedRealtime();
@@ -296,7 +319,7 @@ public final class ProbeActivity extends Activity {
         // A slow/dead Core cannot make copying wait indefinitely. Late results
         // cannot replace the user's clipboard after the fallback or a new request.
         feedbackHandler.postDelayed(() -> publishFeedback(generation, base
-                + "core_snapshot=UNKNOWN_READ_TIMEOUT\n"), 1500);
+                + "core_snapshot=UNKNOWN_READ_TIMEOUT\nconsumer_delivery=UNKNOWN_READ_TIMEOUT\n"), 1500);
         io.execute(() -> {
             if (destroyed || SystemClock.elapsedRealtime() > deadline) return;
             StringBuilder core = new StringBuilder();
@@ -305,13 +328,16 @@ public final class ProbeActivity extends Activity {
             if (destroyed || SystemClock.elapsedRealtime() > deadline) return;
             try {
                 IBLocationManagerService modes = BLocationManager.get().getService();
-                if (modes == null) core.append("virtual_mode=UNKNOWN\n");
+                if (modes == null) core.append("virtual_mode=UNKNOWN\nconsumer_delivery=UNKNOWN_READ_FAILED\n");
                 else {
                     int pattern = modes.getPattern(0, entry.packageName);
                     core.append("virtual_mode=").append(pattern == BLocationManager.OWN_MODE ? "OWN" :
                             pattern == BLocationManager.CLOSE_MODE ? "CLOSE" : "OTHER").append('\n');
+                    if (destroyed || SystemClock.elapsedRealtime() > deadline) return;
+                    try { core.append(consumerFeedback(modes.getConsumerDeliverySummary(0, entry.packageName))); }
+                    catch (Exception unavailable) { core.append("consumer_delivery=UNKNOWN_READ_FAILED\n"); }
                 }
-            } catch (Exception unavailable) { core.append("virtual_mode=UNKNOWN\n"); }
+            } catch (Exception unavailable) { core.append("virtual_mode=UNKNOWN\nconsumer_delivery=UNKNOWN_READ_FAILED\n"); }
             if (destroyed || SystemClock.elapsedRealtime() > deadline) return;
             try {
                 RunningAppProcessInfo snapshot = BActivityManager.get().getRunningAppProcesses(entry.packageName, 0);

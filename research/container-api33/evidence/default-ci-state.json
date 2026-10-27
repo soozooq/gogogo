@@ -1,187 +1,17 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
-  "scope": "ACTUAL_CI52_DEFAULT_AND_MATCHED_NATIVE_COMPATIBILITY_PRESENTATION_VERIFIED_NOT_TARGET_LOCATION",
-  "run_id": 40466246255,
-  "commit": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
-  "tree": "5dfd739a87b0dab4a0bba0e477afd1b280d9fe28",
-  "status": "completed",
-  "conclusion": "success",
-  "default_checks_conclusion": "success",
-  "jobs": [
-    {
-      "id": 122062231154,
-      "name": "Build, inspect and ordinary entry (Linux)",
-      "status": "completed",
-      "conclusion": "success"
-    },
-    {
-      "id": 122062230998,
-      "name": "Build and inspect (ARM Mac)",
-      "status": "completed",
-      "conclusion": "success"
-    },
-    {
-      "id": 122062232501,
-      "name": "Anonymous startup (official Android 12L translation)",
-      "status": "completed",
-      "conclusion": "skipped"
-    },
-    {
-      "id": 122064299151,
-      "name": "Inspect ARM Linux host and optional Cuttlefish boot",
-      "status": "completed",
-      "conclusion": "success"
-    }
-  ],
-  "artifacts": {
-    "own": {
-      "id": 12717020802,
-      "sha256": "c97e3904f013804ad25b4e0c7529101845ca03ba06831569564ddefbcaec308f",
-      "verified": true
-    },
-    "mac": {
-      "id": 12716469259,
-      "sha256": "998de6ccd3a9b98297529f3a44b5327840115193d32ba8b8900947c08db097f6",
-      "verified": true
-    },
-    "linux": {
-      "id": 12716687821,
-      "sha256": "7e173c1288fc1c509f586f53ced0a6807488bbac4f32af457f9f2b98425b4557",
-      "verified": true
-    },
-    "native": {
-      "id": 12720825481,
-      "sha256": "63a3fc1f7e51f69d0dc53b77ccb495a8d22af9537f58b03f3658c7d0d94f1247",
-      "verified": true
-    }
-  },
-  "default_case_results": {
-    "x86_64-startup-framework": {
-      "source_count_verified": 58,
-      "passed": true
-    },
-    "x86_64-radio-privacy": {
-      "source_count_verified": 58,
-      "passed": true
-    },
-    "x86_64-owned-location": {
-      "source_count_verified": 58,
-      "passed": true
-    },
-    "x86_64-ordinary-entry": {
-      "source_count_verified": 58,
-      "passed": true
-    },
-    "x86_64-location-contract": {
-      "source_count_verified": 58,
-      "passed": true
-    },
-    "x86_64-installed-import": {
-      "source_count_verified": 58,
-      "passed": true
-    },
-    "x86_64-calculator": {
-      "source_count_verified": 58,
-      "passed": true
-    },
-    "read-only-ui-capture": {
-      "source_count_verified": 59,
-      "passed": true,
-      "scope": "SELF_OWNED_MOVING_UI_ONLY_NOT_TARGET_STARTUP_OR_LOCATION",
-      "old_cli": {
-        "returncode": 0,
-        "idle_error_observed": true
-      },
-      "observed": {
-        "scope": "SELF_OWNED_UI_CAPTURE_ONLY_NOT_TARGET_STARTUP",
-        "target": "owned-fixture",
-        "package": "com.soozooq.tianwaitian.locationconsumer",
-        "api": 33,
-        "capture_method": "UI_AUTOMATION_WITHOUT_IDLE_WAIT",
-        "own_driver_targeting": true,
-        "plain_application": true,
-        "passed": true,
-        "terms_accepted": false,
-        "login_attempted": false,
-        "messages_sent": false,
-        "input_events_sent": false,
-        "root_package": "com.soozooq.tianwaitian.locationconsumer",
-        "visible_text": [
-          "Read-only moving fixture 119"
-        ],
-        "stage": "OWN_UI_VISIBLE",
-        "elapsed_ms": 541
-      },
-      "cleanup": {
-        "com.soozooq.tianwaitian.locationconsumer": true,
-        "com.soozooq.tianwaitian.containerresearch.test": true,
-        "com.soozooq.tianwaitian.containerresearch": true
-      },
-      "host_engine_process_absent": true
-    }
-  },
-  "feedback_main": {
-    "junit": {
-      "tests": 447,
-      "failures": 0,
-      "errors": 0,
-      "skipped": 0
-    },
-    "lint_error_fatal_count": 0,
-    "passed": true
-  },
-  "feedback_main_key_sources_verified": 7,
-  "own_transport": {
-    "source_count_verified": 59,
-    "apks": {
-      "host": {
-        "name": "probeHost-debug.apk",
-        "size": 4544008,
-        "sha256": "9b6b87ffd2d9e41cad4d79b0d8e9e72f5600fbadd429c64545685a04af39dc7a"
-      },
-      "driver": {
-        "name": "probeHost-debug-androidTest.apk",
-        "size": 528090,
-        "sha256": "9ed21080074bfefbb2613b1d818b6ee197a4be221daeea0a5acadded8d9cb105"
-      },
-      "consumer": {
-        "name": "locationConsumer-debug.apk",
-        "size": 74158,
-        "sha256": "9c680b80fff18e5075b3bd953f2a5d87cf0d0dc675b42931d0fd473c2505dc70"
-      }
-    },
-    "notice_materials_per_apk": 11,
-    "signatures_verified_and_same": true
-  },
+  "scope": "NEW_PASSIVE_CONSUMER_DELIVERY_CANDIDATE_RUNTIME_NOT_YET_VERIFIED",
+  "status": "not_started",
+  "conclusion": null,
+  "commit": null,
+  "base_commit": "48d94be04aef0188d856c73e35a82c564b833054",
+  "run_id": null,
+  "preparation": "consumer-delivery-preparation.json",
+  "default_checks_conclusion": "PENDING_NOT_PASS",
   "native": {
-    "status": "completed",
-    "passed": true,
-    "result": "native-wechat-compatibility-presentation-pass-results.json",
-    "controlled_presentation_class_six_tests_required": true,
-    "controlled_presentation_class_six_tests_passed": true,
-    "actual_target_sdk_adoption": "NOT_VERIFIED"
-  },
-  "latest_default_result": "wechat-compatibility-presentation-default-results.json",
-  "new_runtime_published": true,
-  "prior_full_default_native_pass": {
-    "run_id": 40458413268,
-    "commit": "1e6a10ffd4fdb42aeb679d5e1d1fbd2a47707d92",
-    "default_result": "unreadable-mode-default-results.json",
-    "native_result": "native-unreadable-mode-pass-results.json",
-    "does_not_include_wechat_compatibility_presentation": true
-  },
-  "local_vm_started_for_new_presentation_candidate": false,
-  "target_location_sdk_accounts_vivo_and_wireless_overseas": "NOT_VERIFIED",
-  "latest_full_native_result": "native-wechat-compatibility-presentation-pass-results.json",
-  "previous_published_2_4_33": {
-    "source": "414384487b22a576aa1c6a29fca1df6a167ebd47",
-    "run_id": 40424038227,
-    "release": "preview-2.4.33-container-41438448",
-    "result": "phone-41438448-published-delivery-results.json",
-    "does_not_include_unreadable_mode_fix": true,
-    "user_phone_version": "UNKNOWN",
-    "target_business_location": "NOT_VERIFIED",
-    "does_not_include_wechat_compatibility_presentation": true
+    "status": "not_started",
+    "passed": false,
+    "result": "PENDING_NOT_PASS"
   },
   "current_published_2_4_34": {
     "source": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
@@ -194,5 +24,13 @@
     "includes_wechat_compatibility_presentation": true,
     "user_phone_version": "UNKNOWN",
     "target_business_location": "NOT_VERIFIED"
-  }
+  },
+  "prior_full_default_native_pass": {
+    "run_id": 40466246255,
+    "commit": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
+    "default_result": "wechat-compatibility-presentation-default-results.json",
+    "native_result": "native-wechat-compatibility-presentation-pass-results.json"
+  },
+  "new_runtime_published": false,
+  "target_sdk_and_vivo": "NOT_VERIFIED"
 }

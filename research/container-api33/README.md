@@ -2,6 +2,8 @@
 
 唯一研发分支`research/container-api33-20261023`／Draft #60，日常#59固定2.4.31／2400099。先读根[PROJECT_STATUS.md](../../PROJECT_STATUS.md)，从分支HEAD继续，不给手机用户新增实验。
 
+最新研发为[自动消费者调用与交付摘要](evidence/consumer-delivery-preparation.json)：在现有一键反馈中读取最多16个用户／包的Core内存计数，区分缓存／current样本准备、持续注册／Binder发送返回、缺样本／错误与事件年龄；不记录坐标，不新增手机步骤，不声称SDK接受，也不把它当本次会话。宿主候选0.4／4、main profile2.4.35／2400103；本地编译／静态／干净重放／25驱动已过，新的默认与同源原生运行仍待结果。公开2.4.34保持原样，不借用其CI52证明新源码。
+
 当前2.4.34预览转向微信自身SDK采用：[固定原包组件](evidence/wechat-bundled-sdk-mock-filter-results.json)离线解码后确认四处mock读取，其中两处在常规检查后对API≥18的模拟样本提前退出，且包装层加载的代理类存在于该组件。本版只在微信虚拟会话使用不带框架mock标记的兼容位置，缓存／单次／持续一致；仍声明合成来源、零卫星，通用／未知客户端继续标记。[CI52默认](evidence/wechat-compatibility-presentation-default-results.json)固定a26／d820，6定位／19受控无线／七case与447主检查、归档及来源／签名／材料均过；[同源ARM64原生](evidence/native-wechat-compatibility-presentation-pass-results.json)四档摘要／9原生输入及59自有来源、两目标匿名双模式新主PID、框架／真实Guest六路径和新增6方法受控契约6.086秒全部通过，system_server650稳定及清理完成。它不是物理GPS、实际微信进程或SDK采用；[2.4.34已公开](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.34-container-a26d14a5)，运行时a26／交付d606／Phone CI5；主SHAdde0b903…、预览0.3／3／1f271efa…沿原签名。实际两档交付归档、415非签名内容、profile、版本／签名与公开下载均已核对，见[发布回执](evidence/phone-a26d14a5-published-delivery-results.json)。已装2.4.33主程序只需更新预览APK，旧2.4.33保持原样。旧[CI51匹配原生通过](evidence/native-unreadable-mode-pass-results.json)只属于1e6a10ff，不借给新策略。
 
 2.4.34也修正了状态读取失败被误判为关闭、继而允许真实系统查询的缺口。[CI51默认](evidence/unreadable-mode-default-results.json)固定1e6a10ff／da217：5项定位3.921秒、19项受控无线0.231秒、七case与主447项／lint均独立核对通过，定位契约已接入默认CI。只有明确成功读到CLOSE才放行；本地两次测试前Provider超时／空Bundle失败保留，其匹配原生51已独立通过，见[准备记录](evidence/unreadable-mode-preparation.json)。不增手机实验，不修改已发布2.4.33，不把旧CI50当作新候选验证。

@@ -10,6 +10,7 @@ import android.location.LocationRequest;
 import android.os.Build;
 import android.os.CancellationSignal;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.RemoteException;
 import android.os.Handler;
 import android.os.Looper;
@@ -131,6 +132,7 @@ public final class LocationContractInstrumentedTest {
         AppConfig fixture = new AppConfig(); fixture.packageName = target; fixture.processName = target;
         fixture.userId = user;
         List<LocationListener> requested = new ArrayList<>();
+        Bundle before = BLocationManager.get().getService().getConsumerDeliverySummary(user, target);
         try {
             BLocationManager.get().setLocation(user, target, new BLocation(38.0, -121.0));
             BLocationManager.get().setPattern(user, target, BLocationManager.OWN_MODE);
@@ -152,6 +154,34 @@ public final class LocationContractInstrumentedTest {
                 assertEquals(2, stream.count.get());
             }
             assertEquals("The compatibility presentation never queries physical location", 0, physicalDelegations.get());
+            long deadline = SystemClock.elapsedRealtime() + 30_000;
+            Bundle observed;
+            do {
+                observed = BLocationManager.get().getService().getConsumerDeliverySummary(user, target);
+                if (observed.getLong("stream_network_transaction_returned")
+                        - before.getLong("stream_network_transaction_returned") >= 2) break;
+                SystemClock.sleep(25); // Callback receipt can precede sender-side bookkeeping.
+            } while (SystemClock.elapsedRealtime() < deadline);
+            assertTrue(observed.getBoolean("present"));
+            assertEquals("CORE_MEMORY_VIRTUAL_PREPARATION_AND_BINDER_SEND_NOT_SDK_ADOPTION", observed.getString("scope"));
+            for (String provider : new String[] {"gps", "network"}) {
+                assertEquals(1, observed.getLong("cache_" + provider + "_prepared") - before.getLong("cache_" + provider + "_prepared"));
+                assertEquals(1, observed.getLong("current_" + provider + "_prepared") - before.getLong("current_" + provider + "_prepared"));
+                assertEquals(1, observed.getLong("stream_" + provider + "_registered") - before.getLong("stream_" + provider + "_registered"));
+                assertEquals(2, observed.getLong("stream_" + provider + "_transaction_returned") - before.getLong("stream_" + provider + "_transaction_returned"));
+            }
+            assertFalse(observed.getBoolean("last_stream_mock"));
+            assertTrue(observed.getBoolean("last_stream_synthetic"));
+            assertEquals(android.os.Process.myPid(), observed.getInt("last_preparation_caller_pid"));
+            assertEquals(android.os.Process.myPid(), observed.getInt("last_stream_receiver_pid"));
+            long cacheReads = observed.getLong("cache_gps_prepared");
+            observed.putLong("cache_gps_prepared", Long.MAX_VALUE); // Snapshot cannot mutate Core counters.
+            BLocationManager.get().getLocation(user, target); // Host configuration reads are not consumer reads.
+            Bundle unchanged = BLocationManager.get().getService().getConsumerDeliverySummary(user, target);
+            assertEquals(cacheReads, unchanged.getLong("cache_gps_prepared"));
+            for (String key : unchanged.keySet()) {
+                assertFalse("No coordinate fields in delivery summary", key.contains("latitude") || key.contains("longitude"));
+            }
         } finally {
             for (LocationListener listener : requested) manager.removeUpdates(listener);
             synchronized (lock) { config.set(thread, previous); }
@@ -175,7 +205,7 @@ public final class LocationContractInstrumentedTest {
                         if (failure.get() != null) throw failure.get();
                         return 99; // A future/unknown mode is not explicit CLOSE either.
                     }
-                    if ("getLocation".equals(method.getName())) return null;
+                    if ("getLocation".equals(method.getName()) || "getLocationForConsumer".equals(method.getName())) return null;
                     throw new AssertionError("Unexpected controlled mode-service call: " + method.getName());
                 });
         try {
