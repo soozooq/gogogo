@@ -72,18 +72,21 @@ def owned_contracts(adb, serial, own_apks, manifest, out, environment, expected_
             raise RuntimeError('Actual host ARM64 ABI was not selected')
         staging_requested = True
         run(['push', '-Z', str(own_apks / CONSUMER_FILE), staging], timeout=120)
-        cases = [('framework', 'StartupFrameworkInstrumentedTest#ownGuestResolvesLegacyHttpAndCreatesPendingIntents',
-                  'guest_sha256', 'startup-framework-evidence'),
-                 ('location', 'GuestLocationInstrumentedTest#publicLocationApisInUninstalledGuestFollowTargetAndStop',
-                  'consumer_sha256', 'guest-location-evidence')]
-        for name, method, argument, folder in cases:
+        prefix = 'com.soozooq.tianwaitian.containerresearch.'
+        cases = [('framework', prefix + 'StartupFrameworkInstrumentedTest#ownGuestResolvesLegacyHttpAndCreatesPendingIntents',
+                  'guest_sha256', 'startup-framework-evidence', 1),
+                 ('location', prefix + 'GuestLocationInstrumentedTest#publicLocationApisInUninstalledGuestFollowTargetAndStop',
+                  'consumer_sha256', 'guest-location-evidence', 1),
+                 ('presentation-contract', 'top.niunaijun.bcore.fake.service.LocationContractInstrumentedTest',
+                  None, None, 6)]
+        for name, method, argument, folder, expected_tests in cases:
             identity()
             case_out = out / name
             case_out.mkdir()
-            command = ['shell', 'am', 'instrument', '-w', '-r', '-e', argument,
-                manifest['apks']['consumer']['sha256'], '-e', 'class',
-                'com.soozooq.tianwaitian.containerresearch.' + method,
-                driver + '/androidx.test.runner.AndroidJUnitRunner']
+            command = ['shell', 'am', 'instrument', '-w', '-r']
+            if argument:
+                command += ['-e', argument, manifest['apks']['consumer']['sha256']]
+            command += ['-e', 'class', method, driver + '/androidx.test.runner.AndroidJUnitRunner']
             try:
                 completed = run(command, timeout=1200, check=False)
             except subprocess.TimeoutExpired as error:
@@ -93,13 +96,19 @@ def owned_contracts(adb, serial, own_apks, manifest, out, environment, expected_
             transcript = completed.stdout + completed.stderr
             (case_out / 'junit.txt').write_bytes(transcript)
             observed = None
-            for filename in ['result.json', 'stages.json', 'window.xml', 'screen.png', 'last-guest-report.json']:
+            for filename in (['result.json', 'stages.json', 'window.xml', 'screen.png', 'last-guest-report.json'] if folder else []):
                 path = 'files/' + folder + '/' + filename
                 if run(['shell', 'run-as', host, 'test', '-f', path], check=False).returncode == 0:
                     data = run(['exec-out', 'run-as', host, 'cat', path]).stdout
                     (case_out / filename).write_bytes(data)
                     if filename == 'result.json': observed = json.loads(data)
-            case_passed = completed.returncode == 0 and b'OK (1 test)' in transcript \
+            junit = f'OK ({expected_tests} test' + ('s)' if expected_tests != 1 else ')')
+            if name == 'presentation-contract':
+                observed = {'scope': 'CONTROLLED_PUBLIC_API33_PACKAGE_FIXTURE_NOT_REAL_WECHAT_OR_SDK',
+                            'passed': junit.encode() in transcript,
+                            'expected_test_methods': expected_tests,
+                            'evidence_source': 'EXACT_SOURCE_CONTRACT_CLASS_JUNIT_TRANSCRIPT'}
+            case_passed = completed.returncode == 0 and junit.encode() in transcript \
                 and b'FAILURES!!!' not in transcript and b'INSTRUMENTATION_FAILED' not in transcript \
                 and isinstance(observed, dict) and observed.get('passed') is True
             if case_passed and name == 'location':
@@ -126,7 +135,7 @@ def owned_contracts(adb, serial, own_apks, manifest, out, environment, expected_
             result['cases'][name] = case
         result['consumer_system_installed'] = bool(run(['shell', 'pm', 'path', consumer], check=False).stdout.strip())
         result['passed'] = all(c['passed'] for c in result['cases'].values()) \
-            and len(result['cases']) == 2 and not result['consumer_system_installed']
+            and len(result['cases']) == 3 and not result['consumer_system_installed']
     except Exception as error:
         result['error'] = type(error).__name__ + ': ' + str(error)[:1000]
     finally:

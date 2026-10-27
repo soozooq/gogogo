@@ -29,7 +29,8 @@ class NativeOwnContractControlTest(unittest.TestCase):
             root = Path(directory)
             for mode in ['ready', 'wrong_hash', 'same_pid', 'missing_stage', 'old_report_source', 'false_framework',
                          'junit_failed', 'wrong_api', 'changed_system', 'preexisting_package',
-                         'preexisting_staging', 'cleanup_failed', 'staging_cleanup_timeout', 'diagnostic_unavailable']:
+                         'preexisting_staging', 'cleanup_failed', 'staging_cleanup_timeout', 'diagnostic_unavailable',
+                         'presentation_wrong_count', 'presentation_failed']:
                 with self.subTest(mode=mode):
                     out = root / mode
                     out.mkdir()
@@ -67,8 +68,11 @@ class NativeOwnContractControlTest(unittest.TestCase):
                             data = b'primaryCpuAbi=arm64-v8a'
                         elif command[:3] == ['shell', 'am', 'instrument']:
                             state['instrumented'] = True
-                            state['case'] = 'location' if 'GuestLocationInstrumentedTest#' in ' '.join(command) else 'framework'
-                            data = b'FAILURES!!!' if mode == 'junit_failed' else b'OK (1 test)'
+                            state['case'] = 'presentation-contract' if 'top.niunaijun.bcore.fake.service.LocationContractInstrumentedTest' in command else \
+                                'location' if 'GuestLocationInstrumentedTest#' in ' '.join(command) else 'framework'
+                            count = 5 if mode == 'presentation_wrong_count' else 6
+                            data = b'FAILURES!!!' if mode == 'junit_failed' or mode == 'presentation_failed' and state['case'] == 'presentation-contract' \
+                                else f'OK ({count} tests)'.encode() if state['case'] == 'presentation-contract' else b'OK (1 test)'
                         elif command[:2] == ['exec-out', 'run-as']:
                             if command[-1].endswith('result.json'):
                                 if state['case'] == 'framework':

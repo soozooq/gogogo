@@ -2,6 +2,8 @@
 
 唯一研发分支`research/container-api33-20261023`／Draft #60，日常#59固定2.4.31／2400099。先读根[PROJECT_STATUS.md](../../PROJECT_STATUS.md)，从分支HEAD继续，不给手机用户新增实验。
 
+最新候选转向微信自身SDK采用：[固定原包组件](evidence/wechat-bundled-sdk-mock-filter-results.json)离线解码后确认四处mock读取，其中两处在常规检查后对API≥18的模拟样本提前退出，且包装层加载的代理类存在于该组件。新候选只在微信虚拟会话使用不带框架mock标记的兼容位置，缓存／单次／持续一致；仍声明合成来源、零卫星，通用／未知客户端继续标记。它不是物理GPS或已通过微信业务；[0.3／2.4.34准备记录](evidence/wechat-compatibility-presentation-preparation.json)只有编译／静态／驱动通过，固定源码运行待核对，公开2.4.33保持原样。
+
 未发布的新研发候选修正状态读取失败被误判成关闭、继而允许真实系统查询的缺口。[CI51默认](evidence/unreadable-mode-default-results.json)固定1e6a10ff／da217：5项定位3.921秒、19项受控无线0.231秒、七case与主447项／lint均独立核对通过，定位契约已接入默认CI。只有明确成功读到CLOSE才放行；本地两次测试前Provider超时／空Bundle失败保留，ARM64同源仍待结果，见[准备记录](evidence/unreadable-mode-preparation.json)。不增手机实验，不修改已发布2.4.33，不把旧CI50当作新候选验证。
 
 [2.4.33预览已发布](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.33-container-41438448)：固定运行时41438448／cf4引擎，交付bd8b3e42／Phone CI4。主程序2400101／实际云端SHA9242b55a…，预览0.2／2／513f8f98…；两份公开下载均HTTP200，版本／证书／对齐、API与服务器摘要、415份原CI非签名内容和公开签名配方均独立核对，私钥不上传。见[实际发布回执](evidence/phone-41438448-published-delivery-results.json)。旧2.4.32的tag及附件保留，发布不表示用户已安装。

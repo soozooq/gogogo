@@ -96,7 +96,7 @@ index f2bdc83..7ff2ad1 100644
                  shadow.setComponent(new ComponentName(BlackBoxCore.getHostPkg(), ProxyManifest.TransparentProxyActivity(vPID)));
              } else {
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/location/BLocationManagerService.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/location/BLocationManagerService.java
-index 06e20a6..53ea4b1 100644
+index 06e20a6..9f5e27e 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/core/system/location/BLocationManagerService.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/core/system/location/BLocationManagerService.java
 @@ -4,6 +4,9 @@ import android.os.IBinder;
@@ -278,7 +278,7 @@ index 06e20a6..53ea4b1 100644
 +            if (location != null) {
 +                try {
 +                    LocationCallbackCompat.deliverListener(listener,
-+                            location.convert2SystemLocation(provider));
++                            location.convert2SystemLocation(provider, packageName));
 +                    remaining--;
 +                } catch (Exception e) {
 +                    android.util.Log.w(TAG, "Location listener failed; releasing subscription", e);
@@ -449,7 +449,7 @@ index dc071ad..6056308 100644
  
      public static Resources getResources(Context context, ApplicationInfo appInfo) {
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java b/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java
-index 3a16522..bf7f078 100644
+index 3a16522..53b16db 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java
 @@ -5,6 +5,8 @@ import android.location.LocationManager;
@@ -472,7 +472,7 @@ index 3a16522..bf7f078 100644
      }
  
      public boolean isEmpty() {
-@@ -79,16 +81,28 @@ public class BLocation implements Parcelable {
+@@ -79,16 +81,43 @@ public class BLocation implements Parcelable {
      }
  
      public Location convert2SystemLocation() {
@@ -481,6 +481,18 @@ index 3a16522..bf7f078 100644
 +    }
 +
 +    public Location convert2SystemLocation(String provider) {
++        return convert2SystemLocation(provider, null);
++    }
++
++    /** Presentation for the pinned original imported by this preview host. */
++    public static boolean exposesMockFlagForPackage(String packageName) {
++        // The bundled WeChat 8.0.79 SDK has unconditional mock early-return
++        // branches. This profile is limited to its virtual session; the source
++        // remains synthetic and is declared in extras and the preview report.
++        return !"com.tencent.mm".equals(packageName);
++    }
++
++    public Location convert2SystemLocation(String provider, String packageName) {
 +        Location location = new Location(provider);
          location.setLatitude(mLatitude);
          location.setLongitude(mLongitude);
@@ -489,14 +501,17 @@ index 3a16522..bf7f078 100644
          location.setAccuracy(40f);
          location.setTime(System.currentTimeMillis());
 +        location.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
-+        // Synthetic coordinates stay explicitly marked. Do not conceal their origin.
++        // Generic clients keep the framework mock marker. The pinned WeChat
++        // preview uses a compatibility presentation, not physical GNSS data.
 +        try {
 +            Location.class.getMethod(Build.VERSION.SDK_INT >= 31 ? "setMock"
-+                    : "setIsFromMockProvider", boolean.class).invoke(location, true);
++                    : "setIsFromMockProvider", boolean.class).invoke(location,
++                    exposesMockFlagForPackage(packageName));
 +        } catch (ReflectiveOperationException e) {
-+            throw new IllegalStateException("Cannot mark synthetic location", e);
++            throw new IllegalStateException("Cannot set virtual location presentation", e);
 +        }
          Bundle extraBundle = new Bundle();
++        extraBundle.putBoolean("tianwaitian.synthetic", true);
          // GPS satellite number
 -        int satelliteCount = 10;
 +        int satelliteCount = 0; // Synthetic coordinates do not imply observed GNSS satellites.
@@ -736,7 +751,7 @@ index 0ff8a3c..3696087 100644
  
      @Override
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
-index bad5396..265658f 100644
+index bad5396..2921893 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
 @@ -1,9 +1,10 @@
@@ -779,7 +794,7 @@ index bad5396..265658f 100644
                  Object transport = MethodParameterUtils.getFirstParam(args, black.android.location.LocationManager.GnssStatusListenerTransport.REF.getClazz());
  
                  if (transport != null) {
-@@ -95,26 +106,71 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+@@ -95,26 +106,72 @@ public class ILocationManagerProxy extends BinderInvocationStub {
          }
      }
  
@@ -854,13 +869,14 @@ index bad5396..265658f 100644
 +                BActivityThread.getAppPackageName());
 +        String provider = args.length > 0 && args[0] instanceof String
 +                ? (String) args[0] : LocationManager.GPS_PROVIDER;
-+        return location == null ? null : location.convert2SystemLocation(provider);
++        return location == null ? null : location.convert2SystemLocation(provider,
++                BActivityThread.getAppPackageName());
 +    }
 +
      @ProxyMethod("getLastLocation")
      public static class GetLastLocation extends MethodHook {
  
-@@ -122,7 +178,7 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+@@ -122,7 +179,7 @@ public class ILocationManagerProxy extends BinderInvocationStub {
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
              Log.d(TAG, "GetLastLocation");
              if (BLocationManager.isFakeLocationEnable()) {
@@ -869,7 +885,7 @@ index bad5396..265658f 100644
              }
              return method.invoke(who, args);
          }
-@@ -135,7 +191,7 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+@@ -135,7 +192,7 @@ public class ILocationManagerProxy extends BinderInvocationStub {
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
              Log.d(TAG, "GetLastKnownLocation");
              if (BLocationManager.isFakeLocationEnable()) {
@@ -878,7 +894,7 @@ index bad5396..265658f 100644
              }
              return method.invoke(who, args);
          }
-@@ -148,7 +204,10 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+@@ -148,7 +205,10 @@ public class ILocationManagerProxy extends BinderInvocationStub {
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
              Log.d(TAG, "GetCurrentLocation");
              if (BLocationManager.isFakeLocationEnable()) {
@@ -890,7 +906,7 @@ index bad5396..265658f 100644
              }
              return method.invoke(who, args);
          }
-@@ -180,7 +239,7 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+@@ -180,7 +240,7 @@ public class ILocationManagerProxy extends BinderInvocationStub {
              if (args[0] instanceof IInterface) {
                  IInterface listener = (IInterface) args[0];
                  BLocationManager.get().removeUpdates(listener.asBinder());
@@ -899,7 +915,7 @@ index bad5396..265658f 100644
              }
              return method.invoke(who, args);
          }
-@@ -232,7 +291,9 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+@@ -232,7 +292,9 @@ public class ILocationManagerProxy extends BinderInvocationStub {
  
          @Override
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
@@ -910,7 +926,7 @@ index bad5396..265658f 100644
          }
      }
  
-@@ -242,7 +303,10 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+@@ -242,7 +304,10 @@ public class ILocationManagerProxy extends BinderInvocationStub {
          @Override
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
              String provider = (String) args[0];

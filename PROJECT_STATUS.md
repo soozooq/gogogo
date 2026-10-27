@@ -13,7 +13,15 @@
 
 不新增分支／PR、不自动合并、不删除／强推／重置其他工作区。两个PR保持Draft。手机用户不需要重跑旧实验或切换VPN。
 
-## 当前研发：状态不可读时禁止真实定位回退（尚未交付）
+## 当前研发：微信定位SDK兼容呈现（候选未交付）
+
+用户确认继续以「微信自身SDK会不会采用」为重点。已从固定微信8.0.79原包的`assets/TencentLocationComp_sapp/1`离线解码出537,976字节DEX，原包及DEX头长度／SHA1／Adler32完整核对；外层加载器请求的TencentLocationManagerProxy确实存在于该组件。421类／2510方法扫描发现四处isFromMockProvider，独立apkanalyzer确认：其中b.a(Location)与g.a(Location)在常规前置检查后，对API≥18的mock样本提前退出。另两处有配置条件。见[原包组件与过滤分支证据](research/container-api33/evidence/wechat-bundled-sdk-mock-filter-results.json)。这证明始终暴露mock=true与这些分支冲突，不证明用户手机当前运行了哪条分支或失败因果。
+
+新候选改变此前「所有合成返回均保留系统mock标记」的策略：只对预览中固定原版微信的虚拟会话使用兼容呈现，GPS／NETWORK缓存、单次及持续回调统一返回不带框架mock标记的位置；仍在extras及短反馈明确标注合成来源，卫星数保持零。普通／未知／其他客户端继续保留mock标记。坐标仍由选点合成，没有变成真实GNSS；系统原微信、系统模拟Provider和原APK均未修改。兼容对象只绕开这些已确认的标记检查，其他SDK／网络／账号／服务端决策仍未知。
+
+候选预览宿主0.3／3，主程序交付profile预留2.4.34／2400102；[准备记录](research/container-api33/evidence/wechat-compatibility-presentation-preparation.json)记载24秒编译、13秒最终编译、静态核对、完整补丁重放及25项驱动检查通过。新增公共框架＋受控微信包上下文的六路径、两个mock别名、合成extras、零卫星和恢复默认检查，原通用mock断言保留；原生同源作业另加该6方法受控契约，不能当真实微信或SDK采用。固定源码默认／原生运行结果仍待取得，不能借用CI51。没有新增手机实验页、权限、依赖或JNI，不要求手机重测。公开2.4.33不包含新兼容策略，附件和tag保持原样。
+
+## 上一轮：状态不可读时禁止真实定位回退（源码1e6a10ff）
 
 继续审查发现，Guest定位／无线Hook共用的判断函数调用兼容getter；该getter在RemoteException时返回关闭模式，使请求可能转向真实系统。新候选直接读取控制服务，仅在明确、成功读到关闭模式时放行；服务缺失、读取异常及未知模式继续走原虚拟保护路径。「保护路径」不表示服务一定在运行。公开2.4.33仍固定414源码，不包含这次修正，附件和标签保持原样。
 

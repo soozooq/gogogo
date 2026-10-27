@@ -1,5 +1,7 @@
 # 可复用基础审计
 
+最新[微信SDK兼容呈现候选](evidence/wechat-compatibility-presentation-preparation.json)基于[原包附带组件的实际过滤分支](evidence/wechat-bundled-sdk-mock-filter-results.json)：421类／2510方法、四处mock读取由独立工具确认，两条处理路径会提前退出。此候选明确改变早期统一保留mock的策略，仅对固定原版微信的虚拟会话返回框架mock=false，同时保留合成来源extras／反馈及零卫星，通用客户端仍标记。缓存／current／持续采用相同规则，原APK及SDK未打补丁；不代表真实GNSS或实际SDK已采用。编译／静态／25驱动检查通过，6方法受控契约及同源运行尚待结果，不能借用下面CI51／50；受控微信包上下文不是实际微信进程。没有新增手机实验页或操作。
+
 当前未发布研发候选见[CI51模式读取故障默认结果](evidence/unreadable-mode-default-results.json)：共享判断函数绕过getPattern的错误关闭回退，仅明确成功读到CLOSE时允许真实系统查询。状态缺失、异常、未知继续保护；true不是模拟正在运行的证明。固定1e6a10ff／da217补丁的5项定位、19项无线、七case／变化UI、主447项／lint及三档来源／签名／材料均独立核对；新增公共LocationManager／TelephonyManager与合成无线后端故障检查实际通过，定位契约已接入默认CI。不覆盖真实Binder死亡、已交付SDK缓存或此前物理订阅；ARM64同源作业仍待结果。本地两次Provider初始化超时后空Bundle崩溃、0JUnit及正常VM结束均保留，未改平台预算。以下2.4.33／CI50仍是独立旧运行时，不包含此修正，不得借用其结果。
 
 当前入口为根[PROJECT_STATUS.md](../../PROJECT_STATUS.md)。固定41438448／cf4的[CI50默认](evidence/preview-compact-feedback-results.json)与[同源原生](evidence/native-preview-feedback-virtual-startup-pass-results.json)实际完整通过，Phone CI4交付并核验后，[2.4.33两份自有APK已公开](evidence/phone-41438448-published-delivery-results.json)。主9242b55a…／预览513f8f98…、固定tag源码、归档与服务器摘要、签名／版本／对齐、59份来源／三同签名／11材料、415非签名内容与公开下载均核对；私钥不进入Git、CI或附件。旧2.4.32独立API复核保持原样。

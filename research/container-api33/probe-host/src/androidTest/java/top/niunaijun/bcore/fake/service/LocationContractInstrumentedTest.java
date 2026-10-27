@@ -37,6 +37,7 @@ import org.junit.runner.RunWith;
 
 import top.niunaijun.bcore.app.BActivityThread;
 import top.niunaijun.bcore.entity.location.BLocation;
+import top.niunaijun.bcore.entity.AppConfig;
 import top.niunaijun.bcore.fake.frameworks.BLocationManager;
 
 /** Controlled contract tests, not third-party adoption or guest hook-installation evidence.
@@ -97,14 +98,67 @@ public final class LocationContractInstrumentedTest {
     }
 
     private static void sample(Location value, String provider) {
+        sample(value, provider, true);
+    }
+
+    private static void sample(Location value, String provider, boolean expectedMock) {
         assertNotNull(value);
         assertEquals(provider, value.getProvider());
         assertEquals(38.0, value.getLatitude(), 0.000001);
         assertEquals(-121.0, value.getLongitude(), 0.000001);
-        assertTrue("Synthetic sample must remain marked", value.isMock());
+        assertEquals("Framework flag follows the declared virtual presentation", expectedMock, value.isMock());
+        assertEquals("Pinned SDK reads the legacy alias", expectedMock, value.isFromMockProvider());
+        assertNotNull(value.getExtras());
+        assertTrue("Origin remains explicitly synthetic", value.getExtras().getBoolean("tianwaitian.synthetic"));
+        assertEquals(0, value.getExtras().getInt("satellites"));
         assertTrue(value.hasAccuracy());
         long age = SystemClock.elapsedRealtimeNanos() - value.getElapsedRealtimeNanos();
         assertTrue("Valid monotonic sample age: " + age, age >= 0 && age < 30_000_000_000L);
+    }
+
+    /** Controlled package context, never a running WeChat process or SDK claim. */
+    @Test public void wechatPresentationKeepsSyntheticOriginAcrossLastCurrentAndStreams() throws Exception {
+        final String target = "com.tencent.mm";
+        assertFalse(BLocation.exposesMockFlagForPackage(target));
+        assertTrue(BLocation.exposesMockFlagForPackage(null));
+        assertTrue(BLocation.exposesMockFlagForPackage("com.ss.android.ugc.aweme"));
+        Field config = BActivityThread.class.getDeclaredField("mAppConfig"); config.setAccessible(true);
+        Field configLock = BActivityThread.class.getDeclaredField("mConfigLock"); configLock.setAccessible(true);
+        Object thread = BActivityThread.currentActivityThread(), lock = configLock.get(null);
+        AppConfig previous; synchronized (lock) { previous = (AppConfig) config.get(thread); }
+        int priorMode = BLocationManager.get().getPattern(user, target);
+        BLocation priorLocation = BLocationManager.get().getLocation(user, target);
+        AppConfig fixture = new AppConfig(); fixture.packageName = target; fixture.processName = target;
+        fixture.userId = user;
+        List<LocationListener> requested = new ArrayList<>();
+        try {
+            BLocationManager.get().setLocation(user, target, new BLocation(38.0, -121.0));
+            BLocationManager.get().setPattern(user, target, BLocationManager.OWN_MODE);
+            synchronized (lock) { config.set(thread, fixture); }
+            for (String provider : new String[] {"gps", "network"}) {
+                sample(manager.getLastKnownLocation(provider), provider, false);
+                CountDownLatch currentDone = new CountDownLatch(1);
+                AtomicReference<Location> current = new AtomicReference<>();
+                manager.getCurrentLocation(provider, null, executor, value -> {
+                    current.set(value); currentDone.countDown();
+                });
+                assertTrue(currentDone.await(30, TimeUnit.SECONDS));
+                sample(current.get(), provider, false);
+                Samples stream = new Samples(2); requested.add(stream);
+                manager.requestLocationUpdates(provider, new LocationRequest.Builder(150).setMaxUpdates(2).build(), executor, stream);
+                assertTrue(stream.done.await(30, TimeUnit.SECONDS));
+                sample(stream.first.get(), provider, false); sample(stream.last.get(), provider, false);
+                manager.removeUpdates(stream);
+                assertEquals(2, stream.count.get());
+            }
+            assertEquals("The compatibility presentation never queries physical location", 0, physicalDelegations.get());
+        } finally {
+            for (LocationListener listener : requested) manager.removeUpdates(listener);
+            synchronized (lock) { config.set(thread, previous); }
+            BLocationManager.get().setLocation(user, target, priorLocation);
+            BLocationManager.get().setPattern(user, target, priorMode);
+        }
+        sample(manager.getLastKnownLocation("gps"), "gps");
     }
 
     @Test public void unreadableModeDoesNotDelegateLastOrCurrentAndClosedModeRecovers() throws Exception {

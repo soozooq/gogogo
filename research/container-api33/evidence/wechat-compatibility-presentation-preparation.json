@@ -1,0 +1,99 @@
+{
+  "schema": "GOGOGO_WECHAT_COMPATIBILITY_PRESENTATION_PREPARATION_V1",
+  "scope": "IMPLEMENTED_COMPILED_STATIC_VALIDATED_FIXED_SOURCE_RUNTIME_PENDING_NOT_WECHAT_BUSINESS_SUCCESS",
+  "base_research_commit": "98b0057bd49169f44ac063a781188d978973a4f3",
+  "prior_runtime_commit": "1e6a10ffd4fdb42aeb679d5e1d1fbd2a47707d92",
+  "prior_native_run_id": 40458413268,
+  "published_runtime_414_unchanged": true,
+  "static_basis": "wechat-bundled-sdk-mock-filter-results.json",
+  "production_profile": {
+    "eligible_virtual_package": "com.tencent.mm",
+    "ordinary_catalog_pins_original_wechat_version": "8.0.79 / 3200",
+    "ordinary_catalog_requires_original_size_sha256_and_certificate": true,
+    "last_current_and_stream_use_same_package_presentation": true,
+    "wechat_framework_isMock_and_isFromMockProvider": false,
+    "other_or_unknown_package_framework_mock": true,
+    "explicit_origin_extra": "tianwaitian.synthetic=true",
+    "synthetic_backend_in_preview_feedback": true,
+    "gps_satellites_still_zero": true,
+    "global_system_mock_provider_or_other_system_apps_changed": false,
+    "source_is_real_gnss": false,
+    "third_party_original_apk_or_sdk_patched": false
+  },
+  "candidate_metadata": {
+    "host_version_name": "0.3-preview",
+    "host_version_code": 3,
+    "main_profile_version_name": "2.4.34-container-preview",
+    "main_profile_version_code": 2400102,
+    "profile_path": "docs/build-profiles/main-preview-2.4.34.init.gradle",
+    "profile_sha256": "cd1e4bc4adbd90ca30ec92c0341ddc1ba0f9fc19b9dbd9cb0586fbfe893a5947",
+    "new_phone_apk_published": false
+  },
+  "controlled_location_contract": {
+    "expected_test_methods": 6,
+    "new_method": "wechatPresentationKeepsSyntheticOriginAcrossLastCurrentAndStreams",
+    "scope": "PUBLIC_API33_FRAMEWORK_WITH_CONTROLLED_PACKAGE_CONFIG_AND_REAL_LOCATION_SERVICE_BINDER_NOT_REAL_WECHAT_OR_SDK",
+    "checks": [
+      "GPS and NETWORK last/current/stream samples use the WeChat compatibility presentation.",
+      "Both framework mock aliases false, explicit synthetic extra true, satellites zero, selected coordinate and freshness intact.",
+      "Generic/null/other package remains marked; generic path rechecked after fixture context restoration.",
+      "No physical base delegation, maxUpdates and listener removal retained."
+    ],
+    "test_fixture_context_restored_in_finally": true,
+    "existing_generic_marked_contract_assertions_retained": true
+  },
+  "native_validation_change": {
+    "same_run_adds_existing_controlled_location_contract_class": true,
+    "expected_methods": 6,
+    "separately_labeled_controlled_package_fixture_not_target_sdk": true,
+    "own_real_guest_four_stage_marked_contract_unchanged": true,
+    "junit_count_mismatch_or_failure_prevents_pass": true,
+    "system_identity_freshness_security_and_cleanup_limits_retained": true
+  },
+  "local_builds": [
+    {
+      "passed": true,
+      "recorded_exit": 0,
+      "seconds": 24
+    },
+    {
+      "passed": true,
+      "recorded_exit": 0,
+      "seconds": 13,
+      "reason": "Add exact legacy mock getter assertion used by pinned SDK"
+    }
+  ],
+  "host_static_validation_passed": true,
+  "full_clean_index_patch_replay_passed": true,
+  "python_driver_tests": {
+    "passed": true,
+    "methods": 25,
+    "seconds": 0.459,
+    "new_negative_subcases": [
+      "presentation_wrong_count",
+      "presentation_failed"
+    ]
+  },
+  "local_software_vm_started": false,
+  "fixed_commit_default_runtime": "PENDING_NOT_PASS",
+  "fixed_commit_native_runtime": "PENDING_NOT_PASS",
+  "new_permissions_dependencies_or_jni": false,
+  "new_phone_experiment_pages_or_steps": false,
+  "source_sha256": {
+    "patches/blackbox-api33-build.patch": "d820ef13dacc5567eea8aa86af9a3a25b6e3d43da9d9a24f52626dc8ee9ac7af",
+    "probe-host/build.gradle": "2799a2dec778e1dcb413604e4aa50923edba9dae11eae187e12b7b2d08b20345",
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeActivity.java": "bb53751dc4592ed5d4d8c06d65e7c49797155024ff9ed76e36837093c8fd0fb7",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java": "b1539ba9b25c9b8e62acfd919ce455fdd8217c48be99d4d90828840a7dd73357",
+    "tools/run-cloud-check.py": "a519992ab1912fb70fc395e554d30b03df3b0d58ec902120ee2fa48794f610c5",
+    "tools/cuttlefish_owned_location.py": "d660c53147ebf53c041f072a87d981f697cc121123aaca738c118061a524e35f",
+    "tests/test_cuttlefish_owned_location.py": "5741d54373f3d318cfd5cbb7699e1e07d36f3a363468375dafbbc2db5a21dc8c"
+  },
+  "engine_patch_sha256": "d820ef13dacc5567eea8aa86af9a3a25b6e3d43da9d9a24f52626dc8ee9ac7af",
+  "user_phone_and_target_sdk_adoption": "NOT_VERIFIED",
+  "limits": [
+    "Compatibility presentation changes the flag of synthetic locations inside the WeChat virtual session. It does not create physical GPS data.",
+    "Static filtering code is verified in the bundled module; active phone component, route and other filtering decisions are unknown.",
+    "Pending candidate cannot borrow CI51 or CI50 runtime success.",
+    "The new controlled package fixture is not a running WeChat process or real SDK adoption test."
+  ]
+}

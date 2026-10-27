@@ -91,7 +91,7 @@ public final class ProbeActivity extends Activity {
         root.setOrientation(LinearLayout.VERTICAL);
         root.setPadding(dp(20), dp(24), dp(20), dp(24));
         TextView title = new TextView(this);
-        title.setText("天外天 · 无 Root 预览\n原版导入后在此入口登录。微信、抖音位置效果待验证。");
+        title.setText("天外天 · 无 Root 预览\n使用选点合成位置。原版导入后在此入口登录，实际位置效果待确认。");
         title.setTextSize(18);
         root.addView(title);
         apps = new Spinner(this); apps.setId(R.id.guest_choice);
@@ -277,6 +277,10 @@ public final class ProbeActivity extends Activity {
                 + "host_build_version=" + ownVersion + "\nandroid_api=" + Build.VERSION.SDK_INT
                 + "\nselected_app=" + feedbackField(entry.packageName)
                 + "\nexpected_original=" + feedbackField(entry.versionName) + "/" + entry.versionCode
+                + "\nvirtual_location_source=SYNTHETIC_NOT_PHYSICAL_GNSS"
+                + "\nconfigured_virtual_presentation=" + (BLocation.exposesMockFlagForPackage(entry.packageName)
+                        ? "DEFAULT_FRAMEWORK_MOCK_MARKED" : "WECHAT_COMPATIBILITY_NO_FRAMEWORK_MOCK_MARKER")
+                + "\npresentation_scope=SELECTED_PROFILE_NOT_SDK_ADOPTION_PROOF"
                 + "\ndevice_abi_supported=" + (entry.supportsDevice() ? "YES" : "NO")
                 + "\nprecise_permission=" + (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                         == PackageManager.PERMISSION_GRANTED ? "GRANTED" : "DENIED")

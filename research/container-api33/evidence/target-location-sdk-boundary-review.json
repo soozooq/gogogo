@@ -313,5 +313,15 @@
       "The WeChat wrapper uses reflection and mentions native initialization; low direct-call counts cannot establish absence of Android location queries or mock detection.",
       "Only the application own authorized runtime flow can establish its active delegate, configuration and actual adoption."
     ]
+  },
+  "bundled_component_followup": {
+    "result": "wechat-bundled-sdk-mock-filter-results.json",
+    "scope": "ADDITIONAL_OFFLINE_DECODE_OF_ACTUAL_BUNDLED_MODULE_NOT_RUNTIME_ADOPTION",
+    "corrects_prior_inspection_boundary": "Prior 233-method scan covered only top-level selected SDK DEX namespaces, not the separately bundled component.",
+    "component_dex_sha256": "1d795a12500f3e68bf9ab0e840aca214715e8d9df55b9168424ca1c3478382d9",
+    "four_mock_readers_confirmed": true,
+    "two_early_return_branches_confirmed": true,
+    "actual_phone_active_component_and_failure_cause": "UNKNOWN",
+    "compatibility_candidate": "wechat-compatibility-presentation-preparation.json"
   }
 }
