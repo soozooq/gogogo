@@ -1,6 +1,6 @@
 {
   "schema": "GOGOGO_WECHAT_COMPATIBILITY_PRESENTATION_PREPARATION_V1",
-  "scope": "IMPLEMENTED_COMPILED_STATIC_VALIDATED_FIXED_SOURCE_RUNTIME_PENDING_NOT_WECHAT_BUSINESS_SUCCESS",
+  "scope": "IMPLEMENTED_FIXED_CI52_DEFAULT_VERIFIED_MATCHED_NATIVE_PENDING_NOT_WECHAT_BUSINESS_SUCCESS",
   "base_research_commit": "98b0057bd49169f44ac063a781188d978973a4f3",
   "prior_runtime_commit": "1e6a10ffd4fdb42aeb679d5e1d1fbd2a47707d92",
   "prior_native_run_id": 40458413268,
@@ -75,8 +75,19 @@
     ]
   },
   "local_software_vm_started": false,
-  "fixed_commit_default_runtime": "PENDING_NOT_PASS",
-  "fixed_commit_native_runtime": "PENDING_NOT_PASS",
+  "fixed_commit_default_runtime": {
+    "commit": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
+    "run_id": 40466246255,
+    "passed": true,
+    "result": "wechat-compatibility-presentation-default-results.json"
+  },
+  "fixed_commit_native_runtime": {
+    "commit": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
+    "run_id": 40466246255,
+    "job_id": 122064299151,
+    "status": "in_progress",
+    "result": "PENDING_NOT_PASS"
+  },
   "new_permissions_dependencies_or_jni": false,
   "new_phone_experiment_pages_or_steps": false,
   "source_sha256": {

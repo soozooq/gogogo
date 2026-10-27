@@ -1,0 +1,161 @@
+{
+  "schema": "GOGOGO_WECHAT_COMPATIBILITY_PRESENTATION_ACTUAL_DEFAULT_RESULTS_V1",
+  "scope": "ACTUAL_CONTROLLED_PUBLIC_FRAMEWORK_PACKAGE_FIXTURE_AND_GENERIC_REAL_GUEST_NOT_WECHAT_SDK_OR_PHONE_ADOPTION",
+  "run_id": 40466246255,
+  "commit": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
+  "engine_patch_sha256": "d820ef13dacc5567eea8aa86af9a3a25b6e3d43da9d9a24f52626dc8ee9ac7af",
+  "default_checks_conclusion": "success",
+  "artifacts": {
+    "own": {
+      "id": 12717020802,
+      "sha256": "c97e3904f013804ad25b4e0c7529101845ca03ba06831569564ddefbcaec308f",
+      "verified": true
+    },
+    "mac": {
+      "id": 12716469259,
+      "sha256": "998de6ccd3a9b98297529f3a44b5327840115193d32ba8b8900947c08db097f6",
+      "verified": true
+    },
+    "linux": {
+      "id": 12716687821,
+      "sha256": "7e173c1288fc1c509f586f53ced0a6807488bbac4f32af457f9f2b98425b4557",
+      "verified": true
+    }
+  },
+  "case_junit": {
+    "x86_64-startup-framework": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 0.503,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-location-contract": {
+      "passed": true,
+      "junit_tests": 6,
+      "junit_seconds": 4.214,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-owned-location": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 3.282,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-ordinary-entry": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 12.989,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-installed-import": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 8.608,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-calculator": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 5.593,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-radio-privacy": {
+      "passed": true,
+      "junit_tests": 19,
+      "junit_seconds": 0.148,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    }
+  },
+  "all_three_api_digests_fixed_sources_signatures_and_materials_verified": true,
+  "compatibility_test_actually_passed": {
+    "method": "wechatPresentationKeepsSyntheticOriginAcrossLastCurrentAndStreams",
+    "context": "CONTROLLED_BACTIVITYTHREAD_PACKAGE_FIXTURE_NOT_REAL_WECHAT",
+    "both_providers": [
+      "gps",
+      "network"
+    ],
+    "paths": [
+      "last",
+      "current",
+      "stream"
+    ],
+    "wechat_both_framework_mock_aliases": false,
+    "origin_extra_synthetic": true,
+    "satellites": 0,
+    "physical_base_delegations": 0,
+    "timestamps_and_selected_coordinates_checked": true,
+    "fixture_context_restored_and_generic_mock_marked_rechecked": true
+  },
+  "generic_real_guest": {
+    "passed": true,
+    "host_pid": 2986,
+    "guest_pid": 3052,
+    "report_source": "OWN_GUEST_ATOMIC_PRIVATE_FILE",
+    "stages": [
+      "TARGET_A",
+      "TARGET_B",
+      "UNREGISTERED_STABLE",
+      "CURRENT_CANCELLED"
+    ],
+    "all_six_paths_still_mock_marked": true,
+    "gnss_satellites_and_first_fix": 0,
+    "cancelled_callbacks": 0
+  },
+  "own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4544008,
+        "sha256": "9b6b87ffd2d9e41cad4d79b0d8e9e72f5600fbadd429c64545685a04af39dc7a"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 528090,
+        "sha256": "9ed21080074bfefbb2613b1d818b6ee197a4be221daeea0a5acadded8d9cb105"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 74158,
+        "sha256": "9c680b80fff18e5075b3bd953f2a5d87cf0d0dc675b42931d0fd473c2505dc70"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "moving_ui_source_count_verified": 59,
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "native_same_source": {
+    "job_id": 122064299151,
+    "status": "in_progress",
+    "result": "PENDING_NOT_PASS",
+    "new_six_method_controlled_presentation_case_required": true
+  },
+  "current_public_2_4_33_has_this_feature": false,
+  "new_phone_apk_published": false,
+  "target_wechat_send_live_douyin_wireless_overseas_and_vivo": "NOT_VERIFIED",
+  "scope_limits": [
+    "The new six-method controlled package fixture is not a running WeChat process or actual SDK execution.",
+    "The coordinates remain synthetic; framework flag compatibility is not physical GNSS.",
+    "Actual active SDK delegate, other quality/network/account decisions and business UI adoption remain unknown.",
+    "CI51 and earlier full native passes belong to other runtime sources and cannot prove this presentation candidate."
+  ],
+  "verifier_sha256": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
+  "inputs_manifest_sha256": "a37deb5ae24fd4310096415702c0e57f4753279dc017f979c58386bc08c0213b"
+}

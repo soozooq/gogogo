@@ -1,33 +1,33 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
-  "scope": "ACTUAL_CI51_DEFAULT_PASS_MATCHED_NATIVE_PENDING_PUBLISHED_2_4_33_REMAINS_CI50",
-  "run_id": 40458413268,
-  "commit": "1e6a10ffd4fdb42aeb679d5e1d1fbd2a47707d92",
-  "tree": "28d2c39dd81f75f622ccb02c8320ffcaa29a376e",
+  "scope": "ACTUAL_CI52_DEFAULT_COMPATIBILITY_PRESENTATION_PASS_MATCHED_NATIVE_PENDING_NOT_TARGET_LOCATION",
+  "run_id": 40466246255,
+  "commit": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
+  "tree": "5dfd739a87b0dab4a0bba0e477afd1b280d9fe28",
   "status": "in_progress",
   "conclusion": null,
   "default_checks_conclusion": "success",
   "jobs": [
     {
-      "id": 122037040108,
+      "id": 122062231154,
       "name": "Build, inspect and ordinary entry (Linux)",
       "status": "completed",
       "conclusion": "success"
     },
     {
-      "id": 122037040410,
+      "id": 122062230998,
       "name": "Build and inspect (ARM Mac)",
       "status": "completed",
       "conclusion": "success"
     },
     {
-      "id": 122037041273,
+      "id": 122062232501,
       "name": "Anonymous startup (official Android 12L translation)",
       "status": "completed",
       "conclusion": "skipped"
     },
     {
-      "id": 122039122708,
+      "id": 122064299151,
       "name": "Inspect ARM Linux host and optional Cuttlefish boot",
       "status": "in_progress",
       "conclusion": null
@@ -35,18 +35,18 @@
   ],
   "artifacts": {
     "own": {
-      "id": 12713721569,
-      "sha256": "f08fa5fddaadae851030fca3d430fdbde7f28a30f28c330c46f428b6a944aabd",
+      "id": 12717020802,
+      "sha256": "c97e3904f013804ad25b4e0c7529101845ca03ba06831569564ddefbcaec308f",
       "verified": true
     },
     "mac": {
-      "id": 12713716469,
-      "sha256": "c1d90a2dfa98049d859e7f22e62a12978ad0606741db32b34c019feff8ec8036",
+      "id": 12716469259,
+      "sha256": "998de6ccd3a9b98297529f3a44b5327840115193d32ba8b8900947c08db097f6",
       "verified": true
     },
     "linux": {
-      "id": 12714060207,
-      "sha256": "8dbef00ae1cf8001abb36a464ce7dcf60bf16016c97ec1841c5e57cac1c30711",
+      "id": 12716687821,
+      "sha256": "7e173c1288fc1c509f586f53ced0a6807488bbac4f32af457f9f2b98425b4557",
       "verified": true
     }
   },
@@ -102,10 +102,10 @@
         "input_events_sent": false,
         "root_package": "com.soozooq.tianwaitian.locationconsumer",
         "visible_text": [
-          "Read-only moving fixture 113"
+          "Read-only moving fixture 119"
         ],
         "stage": "OWN_UI_VISIBLE",
-        "elapsed_ms": 526
+        "elapsed_ms": 541
       },
       "cleanup": {
         "com.soozooq.tianwaitian.locationconsumer": true,
@@ -131,18 +131,18 @@
     "apks": {
       "host": {
         "name": "probeHost-debug.apk",
-        "size": 4543712,
-        "sha256": "840f5e6a58a87ace50bd9e8a0dbf317e2734f4f2492abfaaea0a8efea8538233"
+        "size": 4544008,
+        "sha256": "9b6b87ffd2d9e41cad4d79b0d8e9e72f5600fbadd429c64545685a04af39dc7a"
       },
       "driver": {
         "name": "probeHost-debug-androidTest.apk",
-        "size": 526266,
-        "sha256": "bf2b565f502efa277f5a599460b17cd6aa54fe2cd6573e52e7cf7e4b5a3af8a0"
+        "size": 528090,
+        "sha256": "9ed21080074bfefbb2613b1d818b6ee197a4be221daeea0a5acadded8d9cb105"
       },
       "consumer": {
         "name": "locationConsumer-debug.apk",
         "size": 74158,
-        "sha256": "5a76d48585eb046b0874127397861ed50bdb47a62eb7c2d209f00f841cda5796"
+        "sha256": "9c680b80fff18e5075b3bd953f2a5d87cf0d0dc675b42931d0fd473c2505dc70"
       }
     },
     "notice_materials_per_apk": 11,
@@ -150,11 +150,11 @@
   },
   "native": {
     "status": "in_progress",
-    "conclusion": null,
     "passed": false,
-    "result": "PENDING_NOT_PASS"
+    "result": "PENDING_NOT_PASS",
+    "controlled_presentation_class_six_tests_required": true
   },
-  "latest_default_result": "unreadable-mode-default-results.json",
+  "latest_default_result": "wechat-compatibility-presentation-default-results.json",
   "new_runtime_published": false,
   "current_published_2_4_33": {
     "source": "414384487b22a576aa1c6a29fca1df6a167ebd47",
@@ -163,38 +163,16 @@
     "result": "phone-41438448-published-delivery-results.json",
     "does_not_include_unreadable_mode_fix": true,
     "user_phone_version": "UNKNOWN",
-    "target_business_location": "NOT_VERIFIED"
+    "target_business_location": "NOT_VERIFIED",
+    "does_not_include_wechat_compatibility_presentation": true
   },
   "prior_full_default_native_pass": {
-    "run_id": 40424038227,
-    "commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
-    "default_result": "preview-compact-feedback-results.json",
-    "native_result": "native-preview-feedback-virtual-startup-pass-results.json"
+    "run_id": 40458413268,
+    "commit": "1e6a10ffd4fdb42aeb679d5e1d1fbd2a47707d92",
+    "default_result": "unreadable-mode-default-results.json",
+    "native_result": "native-unreadable-mode-pass-results.json",
+    "does_not_include_wechat_compatibility_presentation": true
   },
-  "local_pre_junit_failures_preserved": {
-    "scope": "OWNED_API33_SOFTWARE_EMULATOR_PRE_JUNIT_FAILURE_NOT_CODE_ASSERTION_OR_TARGET_LOCATION",
-    "attempts": [
-      {
-        "label": "unreadable-mode-radio-01",
-        "case_result_sha256": "0b9da4793c5e20b4d3913f4feba44e27df765cf977a8fbadd61a047c87749c9f",
-        "instrumentation_sha256": "bf018add2bb1b8446e4890aee8d975da6067244e60bfcc7661e0d48b752a537b",
-        "passed": false,
-        "tests_executed": 0
-      },
-      {
-        "label": "unreadable-mode-radio-02",
-        "case_result_sha256": "0b9da4793c5e20b4d3913f4feba44e27df765cf977a8fbadd61a047c87749c9f",
-        "instrumentation_sha256": "bf018add2bb1b8446e4890aee8d975da6067244e60bfcc7661e0d48b752a537b",
-        "passed": false,
-        "tests_executed": 0
-      }
-    ],
-    "diagnosis": "Own server provider processes exceeded Android provider publishing deadline; null reply crashes BundleCompat.getBinder during Application.onCreate. No new contract methods executed.",
-    "new_location_mode_predicate_in_crash_stack": false,
-    "relaxed_platform_timeouts_or_security": false,
-    "further_local_retries": false,
-    "fixed_commit_ci51": "PENDING_NOT_PASS"
-  },
-  "local_vm_stopped": true,
+  "local_vm_started_for_new_presentation_candidate": false,
   "target_location_sdk_accounts_vivo_and_wireless_overseas": "NOT_VERIFIED"
 }

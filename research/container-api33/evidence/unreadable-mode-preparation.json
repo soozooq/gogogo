@@ -1,6 +1,6 @@
 {
   "schema": "GOGOGO_UNREADABLE_MODE_PROTECTED_DELEGATION_PREPARATION_V1",
-  "scope": "IMPLEMENTED_FIXED_CI51_DEFAULT_5_LOCATION_19_RADIO_PASSED_NATIVE_PENDING_NOT_PHONE_OR_TARGET_LOCATION",
+  "scope": "IMPLEMENTED_FIXED_CI51_DEFAULT_AND_MATCHED_NATIVE_ACTUALLY_PASSED_NOT_NEW_COMPATIBILITY_PROFILE",
   "base_research_commit": "ddda6d619562f6969937333d392de492efb921cd",
   "last_published_runtime_commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
   "published_2_4_33_unchanged_and_does_not_include_this_fix": true,
@@ -59,12 +59,12 @@
       "result": "unreadable-mode-default-results.json"
     },
     "fixed_commit_native_arm64": {
+      "commit": "1e6a10ffd4fdb42aeb679d5e1d1fbd2a47707d92",
       "run_id": 40458413268,
       "job_id": 122039122708,
-      "commit": "1e6a10ffd4fdb42aeb679d5e1d1fbd2a47707d92",
-      "status": "in_progress",
-      "conclusion": null,
-      "result": "PENDING_NOT_PASS"
+      "status": "completed",
+      "conclusion": "success",
+      "result": "native-unreadable-mode-pass-results.json"
     },
     "local_radio_first_attempt": {
       "passed": false,

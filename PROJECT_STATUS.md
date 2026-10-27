@@ -19,7 +19,9 @@
 
 新候选改变此前「所有合成返回均保留系统mock标记」的策略：只对预览中固定原版微信的虚拟会话使用兼容呈现，GPS／NETWORK缓存、单次及持续回调统一返回不带框架mock标记的位置；仍在extras及短反馈明确标注合成来源，卫星数保持零。普通／未知／其他客户端继续保留mock标记。坐标仍由选点合成，没有变成真实GNSS；系统原微信、系统模拟Provider和原APK均未修改。兼容对象只绕开这些已确认的标记检查，其他SDK／网络／账号／服务端决策仍未知。
 
-候选预览宿主0.3／3，主程序交付profile预留2.4.34／2400102；[准备记录](research/container-api33/evidence/wechat-compatibility-presentation-preparation.json)记载24秒编译、13秒最终编译、静态核对、完整补丁重放及25项驱动检查通过。新增公共框架＋受控微信包上下文的六路径、两个mock别名、合成extras、零卫星和恢复默认检查，原通用mock断言保留；原生同源作业另加该6方法受控契约，不能当真实微信或SDK采用。固定源码默认／原生运行结果仍待取得，不能借用CI51。没有新增手机实验页、权限、依赖或JNI，不要求手机重测。公开2.4.33不包含新兼容策略，附件和tag保持原样。
+候选预览宿主0.3／3，主程序交付profile预留2.4.34／2400102。[CI52默认已独立验真通过](research/container-api33/evidence/wechat-compatibility-presentation-default-results.json)，固定a26d14a5／d820补丁：6方法定位4.214秒、19受控无线0.148秒，七case／变化UI、主447项／lint、三档API摘要和58／59来源／同签名／11材料核对。公共框架＋受控微信包上下文的六路径、两个mock别名、合成extras、零卫星和恢复默认检查均过；原通用mock断言保留，自有真实Guest四阶段六路径3.282秒继续标记。普通入口12.989秒、已装导入8.608秒、计算器5.593秒。它不是实际微信进程或SDK采用结果。
+
+同源ARM64作业122064299151仍在进行，另要求该6方法受控契约通过，不能借用CI51。[准备记录](research/container-api33/evidence/wechat-compatibility-presentation-preparation.json)保留24秒／13秒编译、静态核对、完整补丁重放及25项驱动结果。稳定私签宿主与CI52全部415非签名内容相同，公开签名配方可逐字节恢复；新2.4.34交付仍只准备草稿，公开须另核对同源原生结果。没有新增手机实验页、权限、依赖或JNI，不要求手机重测。公开2.4.33不包含新兼容策略，附件和tag保持原样。
 
 ## 上一轮：状态不可读时禁止真实定位回退（源码1e6a10ff）
 
@@ -27,7 +29,7 @@
 
 [CI51默认实际通过](research/container-api33/evidence/unreadable-mode-default-results.json)：固定1e6a10ff／da217a39补丁，5项公共定位契约3.921秒、19项受控无线0.231秒；七项case、变化UI、主447项／lint及三档API摘要、58／59来源、三同签名／11材料均核对。故障覆盖RemoteException、IllegalStateException和未知99：不向受控真实后端委托GPS／NETWORK缓存、current或基站／扫描；Wi-Fi／NetworkInfo副本继续脱敏，明确CLOSE后正常恢复。自有六路径4.214秒、四阶段及mock保持，普通入口15.045秒、已装导入7.520秒、计算器6.016秒。它是受控框架／自有回归，不是目标SDK采用。
 
-本地软件模拟器两次均在测试前因自有Provider发布超时、随后空Bundle读取而崩溃，0个JUnit方法执行；失败及摘要保留，VM已正常结束，未改系统超时、安全或ART。硬件CI51独立通过不能抹去该记录。新源码的ARM64作业122039122708仍在进行，未完成项不能借用CI50；[准备记录](research/container-api33/evidence/unreadable-mode-preparation.json)保留当前状态与边界。没有新增手机实验页、权限、JNI、依赖、原包或mock标志变化；不归因用户旧微信失败，不声称能收回既有SDK缓存或此前已注册的物理定位回调。
+本地软件模拟器两次均在测试前因自有Provider发布超时、随后空Bundle读取而崩溃，0个JUnit方法执行；失败及摘要保留，VM已正常结束，未改系统超时、安全或ART。硬件CI51独立通过不能抹去该记录。[CI51匹配原生也已核对通过](research/container-api33/evidence/native-unreadable-mode-pass-results.json)：四档API／9原生输入／59自有来源匹配旧1e6a10ff，微信5893→6527、抖音10268→12380，两关闭／停止／OWN2新主PID及真实UID匿名启动、自有框架14.480秒／六路径47.696秒通过，system_server657稳定，VM与包清理完成，样本最老1974.449毫秒；整轮4412.724秒不是启动耗时。微信PNG存在但未查看，抖音无PNG。它没有新兼容策略，不能证明a26候选或目标SDK采用；该轮没有mock标志变化，不归因用户旧失败，不证明能收回既有SDK缓存或此前物理回调。
 
 ## 当前公开交付：2.4.33
 
