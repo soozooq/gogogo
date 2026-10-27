@@ -2,7 +2,7 @@
 
 当前实测以根PROJECT_STATUS.md为准：CI48固定e081／d6b29e92默认与原生完整通过，四档／9原生输入／三件来源签名材料核对；微信匿名登录页、抖音匿名UI及自有框架／六路径通过，旧私有字段崩溃未观察到。目标SDK、账号／位置业务和vivo仍未验收。旧CI47失败与旧ff12交付保留；同一Release的e081预览已在CI3、摘要／签名／版本／对齐及公开下载核验后发布为prerelease，不能把发布写成真机业务验收。下列早期记录按当时范围保留。
 
-新增候选见[服务状态／启用模式准备](evidence/service-state-read-virtual-startup-preparation.json)：getServiceStateForSubscriber与预加载sITelephony缓存此前未覆盖。候选按系统标准清除基站身份及指定粗略字段，模式不可读时仍保护，权限拒绝保留；[CI49默认实际通过](evidence/service-state-read-results.json)，18项受控／六项case及447主检查，匹配原生尚在运行，不归因用户旧失败。后续[预览短反馈](evidence/preview-compact-feedback-preparation.json)只读复制时状态与用户已有观察，不包含坐标、SDK采纳或外部UI证明；编译／静态通过，实际剪贴板待下一同源CI。标准副本不等于全部无线标识匿名化，原SDK缓存与SIM／国家／IP仍有边界；已发布2.4.32不改。
+新增候选见[服务状态／启用模式准备](evidence/service-state-read-virtual-startup-preparation.json)。[CI50默认](evidence/preview-compact-feedback-results.json)18项受控、六项case及447主检查通过；实际剪贴板780字符、无坐标、同Guest PID与模式、停止清理完成。用户已有观察与复制时自有快照分开，不证明外部UI或SDK采用。匹配原生50排队，49保留运行。标准脱敏不等于全无线／SIM／国家／IP覆盖，不归因旧失败。[交付草稿准备](evidence/phone-41438448-draft-delivery-preparation.json)核对稳定签名／415内容／公开配方，云端主包和匹配原生待回执；工作流只写新草稿不能发布，已发布2.4.32不改。
 
 本轮结论：API 33 云端中，原版计算器与官方 GPSTest 均实际运行；后者在正常精确定位授权后，其可见坐标跟随两次目标。现代定位、GNSS 回调和原签名信息已修正，自有消费者用于相关接口回归。腾讯／字节 SDK、微信／抖音、完整组件及权限隔离仍未完成。接手从根目录 [PROJECT_STATUS.md](../../PROJECT_STATUS.md) 开始。
 

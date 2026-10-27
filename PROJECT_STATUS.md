@@ -27,17 +27,17 @@
 
 [交付CI3](https://github.com/soozooq/gogogo/actions/runs/40360448252)已按固定e081源码成功构建、上传两份APK，交付工作流源码为ecdec310。主程序实际云端SHA为3ddd90ae…，不能借用旧033c0f6b…或本地0224b762…摘要；预览14cdb415…沿用25bfd6e2…证书。公开签名／ZIP配方逐字节恢复并保持415份非签名内容，私钥不上传。旧ff12附件经完整备份及服务器摘要核对后移除，旧失败与证据保留。发布仅提供预览，不宣称用户已安装、已登录或位置业务成功。
 
-## 正在继续：服务状态读取与启用模拟后的启动
+## 正在继续：服务状态、启用模拟后的启动与短反馈
 
-[本轮候选准备](research/container-api33/evidence/service-state-read-virtual-startup-preparation.json)补齐Android13的`getServiceStateForSubscriber`及已创建的`TelephonyManager.sITelephony`缓存。旧缓存改走已有电话拦截器；开启模拟或模式无法读取时，请求平台放弃精细／粗略位置，再返回系统标准脱敏副本，清除注册对象中的CellIdentity及框架指定的粗略字段。保留权限拒绝、null、非位置状态及调用参数，原对象不变；脱敏不可用时返回null，没有原始数据回退。没有新增权限、依赖、JNI或mock标志变化。
+[最新CI50默认实际通过](research/container-api33/evidence/preview-compact-feedback-results.json)，固定41438448／cf4dffbb补丁。18项受控电话／无线0.257秒、六项case、主447项／lint通过；三档API摘要、每case58份来源、自有59份／三同签名／每包11份材料均核对。六路径3.800秒、框架0.949秒、普通入口15.548秒、已装导入8.552秒、计算器6.700秒。普通入口实际复制780字符，无坐标，Guest主PID及模拟模式保持，再完成原停止清理。[此前CI49](research/container-api33/evidence/service-state-read-results.json)18项0.225秒的结果保留，各自绑定源码。
 
-此处是代码覆盖缺口，不认定它就是用户微信旧失败的原因；也不等于全部无线／国家／IP信息已被处理。已交付给SDK的缓存无法由此收回。替换旧缓存会让这些句柄进入引擎已有的其他电话Hook，匹配原生仍需复核。
+[服务状态修正](research/container-api33/evidence/service-state-read-virtual-startup-preparation.json)补齐Android13的getServiceStateForSubscriber和预加载sITelephony缓存。模拟开启／模式不可读时请求平台放弃精细／粗略位置，再返回标准脱敏副本，去除注册CellIdentity及框架指定粗略字段；保留权限拒绝、null、原对象与非位置状态，脱敏失败无原始回退，无新增权限／依赖／JNI或mock标志变化。旧句柄也进入既有电话Hook；不是全部无线／SIM／国家／IP匿名化，SDK旧缓存不能收回，不归因用户微信旧失败。
 
-[CI49默认实际通过](research/container-api33/evidence/service-state-read-results.json)：固定1441f2fa源码的18项受控电话／无线0.225秒通过，含两项真实公共TelephonyManager／合成ServiceState新检查。六项case、447项主测试／lint、三档API摘要、每case58份来源、自有传递59份／三同签名／11材料均核对；六路径3.573秒、框架0.893秒、普通入口13.326秒、已装导入8.034秒、计算器6.493秒。匹配原生121915882210仍在运行，不能算通过。构建／静态、补丁重放与25项维护检查也已完成。新的原生检查保留关闭模式启动与抖音300秒观察，再返回自有预览页，确认旧进程全部停止，开启合成输入后重新启动两款匿名UI，核对新主PID及真实宿主UID。两阶段分开记录，不能拿旧关闭模式报告或绿色JUnit代替；没有接受条款、登录、发送或验证目标位置业务。单次UI等待300秒、定位时效和清理要求保持，外层1500秒只容纳新增启动阶段。
+同源原生CI50／121928002415排队，前轮CI49／121915882210继续运行。保留关闭模式与抖音300秒观察，再返回自有页，确认旧进程停止，开启合成输入重启两款匿名UI，核对不同的新主PID和真实宿主UID。两模式分开记证据，绿色JUnit和旧关闭模式不能替代；单次UI300秒、定位时效及清理要求保持，外层1500秒只容纳新增阶段。没有接受条款、登录、发送或检查目标位置业务。
 
-[预览页短反馈](research/container-api33/evidence/preview-compact-feedback-preparation.json)已实现并通过16秒构建与静态核验：一次选择刚才看到的入口／结果后复制，不读真实坐标、不重新定位、不启停模拟或Guest。1.5秒Core读取上限，超时明确未知，旧回调不覆盖剪贴板；用户观察与复制时状态分别标注。普通GPSTest回归新增实际剪贴板、无坐标、主PID及模式保持断言，尚待下一同源CI，不能借用CI49结果。
+[短反馈](research/container-api33/evidence/preview-compact-feedback-preparation.json)实际操作已通过：一键选择已有入口／结果后复制，不读坐标、不重新定位、不启停模拟／Guest；Core读取1.5秒上限，超时明确未知，晚回调不覆盖剪贴板，用户观察与复制时状态分别标注。这是GPSTest回归，不是微信／抖音页面验收。
 
-下一候选元数据为主程序2.4.33／2400101、预览0.2-preview／2，尚未交付。已发布2.4.32的源码、附件、标签与校验不改，用户不需要为本轮新跑手机实验。
+[2.4.33交付草稿准备](research/container-api33/evidence/phone-41438448-draft-delivery-preparation.json)：主程序2400101本地47秒构建、447项／lint及签名／对齐通过；预览0.2／2取同轮CI50宿主，沿用25bfd6e2证书，新SHA513f8f98…与415份非签名内容核对，公开配方逐字节恢复，私钥不上传。交付固定41438448，只向新空草稿写两份APK，不能发布；实际云端主包摘要尚未知。匹配原生与交付回执完成后再公开更新，不借用本地主包摘要。已发布2.4.32的源码、附件和标签保持，不要求增加手机实验。
 
 ## 当前修正：电话回调读取兼容
 

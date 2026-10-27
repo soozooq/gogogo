@@ -1,0 +1,99 @@
+{
+  "schema": "GOGOGO_PHONE_41438448_DRAFT_DELIVERY_PREPARATION_V1",
+  "scope": "LOCAL_SIGNED_SAME_RUN_HOST_AND_MAIN_PREFLIGHT_DELIVERY_DRAFT_ONLY_NATIVE_PENDING",
+  "runtime_source_commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
+  "default_result": "preview-compact-feedback-results.json",
+  "main_profile": "docs/build-profiles/main-preview-2.4.33.init.gradle",
+  "main_profile_sha256": "c8292de62f56585f962dd7c7eeb5a236c92b1d06827862a65bc624dcd12e3b13",
+  "main_version_name": "2.4.33-container-preview",
+  "main_version_code": 2400101,
+  "local_main_preflight": {
+    "scope": "LOCAL_FIXED_SOURCE_MAIN_PREVIEW_PREFLIGHT_NOT_CLOUD_DELIVERY_OR_TARGET_PHONE",
+    "commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
+    "recorded_exit": 0,
+    "build_seconds": 47,
+    "main_checks": {
+      "junit": {
+        "tests": 447,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "lint_error_fatal_count": 0
+    },
+    "apk": {
+      "file": "Go_2.4.33-container-preview_arm64-v8a_debug.apk",
+      "size": 40408202,
+      "sha256": "a7f3bca29714c776e1c8c9fea85e11526b81de2e30c5385e8dd91db72ab68426",
+      "package": "com.soozooq.gogogo.test",
+      "version_name": "2.4.33-container-preview",
+      "version_code": 2400101,
+      "certificate_sha256": "6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081",
+      "signature_alignment_verified": true
+    },
+    "actual_cloud_delivery_main_hash": "NOT_KNOWN_YET_DO_NOT_REUSE_LOCAL_HASH",
+    "published_release_unchanged": true
+  },
+  "cloud_main_apk_sha256": "NOT_KNOWN_YET_DO_NOT_REUSE_LOCAL_HASH",
+  "same_run_host": {
+    "scope": "LOCAL_SIGNED_SAME_RUN_OWN_HOST_NOT_PUBLISHED_OR_NATIVE_VALIDATED",
+    "source_commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
+    "source_run": 40424038227,
+    "source_artifact": 12699157568,
+    "apk": {
+      "package": "com.soozooq.tianwaitian.containerresearch",
+      "version_name": "0.2-preview",
+      "version_code": 2,
+      "bytes": 4585987,
+      "sha256": "513f8f98c73149043f553a6353e1d9af9eeabbcf0a48652c1763c27d73a19312",
+      "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+      "signature_and_alignment_verified": true,
+      "debuggable": true
+    },
+    "all_ci_non_signature_entries_equal": 415,
+    "private_key_uploaded": false,
+    "native_status": "PENDING",
+    "published": false
+  },
+  "public_signature_recipe": {
+    "path": "ci/phone-preview/host-signature-41438448.json",
+    "sha256": "54059ce05a645706a55f6b110365bae48377fb9170bb94ff815088f7ce76b0a3",
+    "exact_byte_roundtrip": true,
+    "non_signature_entries_equal": 415,
+    "private_key_included": false
+  },
+  "draft": {
+    "id": 424904119,
+    "tag": "preview-2.4.33-container-41438448",
+    "target_commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
+    "draft": true,
+    "prerelease": true,
+    "assets_at_preparation": [],
+    "published": false
+  },
+  "delivery_workflow": "FIXED_SOURCE_STAGE_ONLY_NEW_EMPTY_DRAFT_CANNOT_PUBLISH",
+  "matching_native_gate": {
+    "run_id": 40424038227,
+    "job_id": 121928002415,
+    "status_at_curation": "pending",
+    "passed": null,
+    "required_new_both_closed_and_own_phases": true
+  },
+  "publication_requires_matching_native_and_delivery_receipts": true,
+  "published_2_4_32_assets_or_tag_changed": false,
+  "new_phone_experiments_requested": false,
+  "new_candidate_published": false,
+  "target_business_and_vivo": "NOT_VERIFIED",
+  "local_staging_preflight": {
+    "passed": true,
+    "flat_file_count": 6,
+    "two_apks_only": true,
+    "profile_copied": true,
+    "source_checkout_clean_and_detached": true,
+    "new_branch_created": false,
+    "yaml_and_draft_only_guards_checked": true,
+    "all_59_runtime_sources_unchanged": true,
+    "local_main_sha256_not_cloud_delivery_hash": "a7f3bca29714c776e1c8c9fea85e11526b81de2e30c5385e8dd91db72ab68426",
+    "host_sha256": "513f8f98c73149043f553a6353e1d9af9eeabbcf0a48652c1763c27d73a19312"
+  }
+}

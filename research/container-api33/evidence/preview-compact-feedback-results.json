@@ -1,0 +1,247 @@
+{
+  "schema": "GOGOGO_PREVIEW_COMPACT_FEEDBACK_ACTUAL_DEFAULT_RESULTS_V1",
+  "scope": "ACTUAL_DEFAULT_CLIPBOARD_AND_CONTROLLED_LOCATION_REGRESSIONS_NOT_NATIVE_TARGET_SDK_OR_VIVO",
+  "run_id": 40424038227,
+  "commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
+  "tree": "6104a75ed1d7c9f8d15b16541cf0a95ecc3c0911",
+  "default_checks_conclusion": "success",
+  "artifacts": {
+    "own": {
+      "id": 12699157568,
+      "sha256": "8aab325521537501a4215f5c72133cb52f3c0a20ddb8aa3deaa38374348524e9",
+      "verified": true
+    },
+    "mac": {
+      "id": 12698184029,
+      "sha256": "1a7a05abc247b3b7abd21d983957c2241f7a0c08d3b79d3bff581df068e6bb09",
+      "verified": true
+    },
+    "linux": {
+      "id": 12699580420,
+      "sha256": "86ecea3b602d61dcb7961521ddaa70ebead1762e3063de1540197ed9bfc454ff",
+      "verified": true
+    }
+  },
+  "all_three_api_digests_fixed_commit_sources_and_own_apks_verified": true,
+  "source_inputs_per_case_verified": 58,
+  "moving_ui_inputs_verified": 59,
+  "feedback_main_key_inputs_verified": 7,
+  "case_junit": {
+    "x86_64-startup-framework": {
+      "seconds": 0.949,
+      "junit_summary": "OK (1 test)",
+      "passed": true,
+      "cleanup_passed": true
+    },
+    "x86_64-radio-privacy": {
+      "seconds": 0.257,
+      "junit_summary": "OK (18 tests)",
+      "passed": true,
+      "cleanup_passed": true
+    },
+    "x86_64-owned-location": {
+      "seconds": 3.8,
+      "junit_summary": "OK (1 test)",
+      "passed": true,
+      "cleanup_passed": true
+    },
+    "x86_64-ordinary-entry": {
+      "seconds": 15.548,
+      "junit_summary": "OK (1 test)",
+      "passed": true,
+      "cleanup_passed": true
+    },
+    "x86_64-installed-import": {
+      "seconds": 8.552,
+      "junit_summary": "OK (1 test)",
+      "passed": true,
+      "cleanup_passed": true
+    },
+    "x86_64-calculator": {
+      "seconds": 6.7,
+      "junit_summary": "OK (1 test)",
+      "passed": true,
+      "cleanup_passed": true
+    }
+  },
+  "actual_clipboard": {
+    "stage": "COMPACT_FEEDBACK_READ_ONLY",
+    "characters": 780,
+    "guest_pid_preserved": true,
+    "mock_mode_preserved": true,
+    "coordinates_not_recorded": true
+  },
+  "clipboard_scope": "ACTUAL_FOREGROUND_OWN_CLIPBOARD_ALREADY_OBSERVED_GPSTEST_PAGE_NOT_TARGET_UI_PROOF",
+  "ordinary_entry": {
+    "scope": "ORDINARY_IMPORT_COORDINATE_LAUNCH_STOP_OFFICIAL_GPSTEST_NOT_WECHAT",
+    "package": "com.android.gpstest.osmdroid",
+    "apk_sha256": "897b91fe6a1ea0c3a7f6e2b041d5ace0d582941f67cf454fb7778f031d89ce41",
+    "permission_actions": [
+      {
+        "system_package": "com.android.permissioncontroller",
+        "action": "ALLOW_WHILE_IN_USE",
+        "elapsed_ms": 72231
+      },
+      {
+        "system_package": "com.android.permissioncontroller",
+        "action": "ALLOW_WHILE_IN_USE",
+        "elapsed_ms": 72462
+      }
+    ],
+    "wgs84_prefill_received_without_autostart": true,
+    "invalid_prefill_ignored": true,
+    "stages": [
+      {
+        "stage": "ORDINARY_ENTRY_TARGET_A",
+        "visible_text": [
+          "Status",
+          "Lat:",
+          "Long:",
+          "Alt:",
+          "Alt (MSL):",
+          "Speed:",
+          "S. Acc:",
+          "PDOP:",
+          "38.1250000°",
+          "-121.8750000°",
+          "0.0 m/s",
+          "Time:",
+          "TTFF:",
+          "E H Acc:",
+          "# Sats:",
+          "Bearing:",
+          "B. Acc:",
+          "H/V DOP:",
+          "12:11:38.670 AM",
+          "40.0 m",
+          "0/0/0",
+          "0.0°",
+          "ID",
+          "GNSS",
+          "CF",
+          "C/N0",
+          "Flags",
+          "Elev",
+          "Azim",
+          "Satellite-based Augmentation System (SBAS) satellites not available",
+          "ERROR",
+          "/",
+          "m",
+          "AVG 0 FIXES",
+          "/",
+          "m",
+          "Horizontal Error",
+          "Error",
+          "Fix #",
+          "Vertical Error",
+          "Error",
+          "Fix #"
+        ]
+      },
+      {
+        "stage": "ORDINARY_ENTRY_TARGET_B",
+        "visible_text": [
+          "Status",
+          "Lat:",
+          "Long:",
+          "Alt:",
+          "Alt (MSL):",
+          "Speed:",
+          "S. Acc:",
+          "PDOP:",
+          "-33.8600000°",
+          "151.2000000°",
+          "0.0 m/s",
+          "Time:",
+          "TTFF:",
+          "E H Acc:",
+          "# Sats:",
+          "Bearing:",
+          "B. Acc:",
+          "H/V DOP:",
+          "12:11:40.672 AM",
+          "40.0 m",
+          "0/0/0",
+          "0.0°",
+          "ID",
+          "GNSS",
+          "CF",
+          "C/N0",
+          "Flags",
+          "Elev",
+          "Azim",
+          "Satellite-based Augmentation System (SBAS) satellites not available",
+          "ERROR",
+          "/",
+          "m",
+          "AVG 0 FIXES",
+          "/",
+          "m",
+          "Horizontal Error",
+          "Error",
+          "Fix #",
+          "Vertical Error",
+          "Error",
+          "Fix #"
+        ]
+      },
+      {
+        "stage": "COMPACT_FEEDBACK_READ_ONLY",
+        "characters": 780,
+        "guest_pid_preserved": true,
+        "mock_mode_preserved": true,
+        "coordinates_not_recorded": true
+      }
+    ],
+    "same_guest_pid": "3214",
+    "stop_process_absent": true,
+    "stop_virtual_mode": "CLOSE_MODE",
+    "passed": true
+  },
+  "own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4543656,
+        "sha256": "df1fac06de41e0abaf72eeff241f6c6937e6718681c9fa8c52bb4d8d0d9cd2f0"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 523474,
+        "sha256": "ca20e149e6b752dbfb3e514f24c2cd94b891e7e1bbd4f0eddd1495da058cd83d"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 74158,
+        "sha256": "db3ce6330eaeb365fdc221a92aa7b079d41be76bb9d36284972c22c733b3745d"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "matching_native": {
+    "run_id": 40424038227,
+    "job_id": 121928002415,
+    "status_at_curation": "pending",
+    "passed": null,
+    "required_new_both_closed_and_own_phases": true
+  },
+  "previous_native49_kept_running": true,
+  "published_2_4_32_unchanged": true,
+  "new_candidate_publicly_distributed": false,
+  "phone_experiments_requested": false,
+  "wechat_send_live_douyin_wireless_overseas_vivo": "NOT_VERIFIED",
+  "verifier_sha256": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
+  "inputs_manifest_sha256": "04e8747a9d85d1a31b6f19aea9652f97ff548edb42bbfe0d9c7c832c5f27b52e"
+}

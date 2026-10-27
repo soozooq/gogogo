@@ -11,11 +11,11 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 
-SOURCE = 'e0811cf46726e3bae9fcb839312b9efb6b92ce9e'
+SOURCE = '414384487b22a576aa1c6a29fca1df6a167ebd47'
 MAIN_CERT = '6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081'
 HOST_CERT = '25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b'
-HOST_SHA = '14cdb415150c540c465a7db4033c02f71059f5b03be1759deb7a87114f93422f'
-PROFILE_SHA = '00ee9ae07b12d9c7acc42c9b2952982d7ae439aeb9e174ccf0ba7395d3d27ca8'
+HOST_SHA = '513f8f98c73149043f553a6353e1d9af9eeabbcf0a48652c1763c27d73a19312'
+PROFILE_SHA = 'c8292de62f56585f962dd7c7eeb5a236c92b1d06827862a65bc624dcd12e3b13'
 
 
 def digest(path):
@@ -62,10 +62,10 @@ def main():
     revision = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
     if revision != SOURCE or subprocess.check_output(['git', '-C', str(source), 'status', '--porcelain'], text=True).strip():
         raise ValueError('Main build must use the clean fixed source checkout')
-    profile = source / 'docs/build-profiles/main-preview-version.init.gradle'
+    profile = source / 'docs/build-profiles/main-preview-2.4.33.init.gradle'
     if digest(profile) != PROFILE_SHA:
         raise ValueError('Main metadata profile differs')
-    candidates = list((source / 'app/build/outputs/apk/debug').glob('*2.4.32-container-preview*arm64-v8a*debug.apk'))
+    candidates = list((source / 'app/build/outputs/apk/debug').glob('*2.4.33-container-preview*arm64-v8a*debug.apk'))
     if len(candidates) != 1 or digest(Path(args.host)) != HOST_SHA:
         raise ValueError('Unexpected main output or restored host')
     host_entries = non_signature_entries(Path(args.host))
@@ -81,33 +81,33 @@ def main():
     if counts != {'tests': 447, 'failures': 0, 'errors': 0, 'skipped': 0} or severe:
         raise ValueError('Main checks did not pass')
     output.mkdir(parents=True, exist_ok=False)
-    names = {'main': 'Tianwaitian-2.4.32-container-preview-arm64.apk',
-             'host': 'Tianwaitian-Original-Preview-e0811cf4.apk'}
+    names = {'main': 'Tianwaitian-2.4.33-container-preview-arm64.apk',
+             'host': 'Tianwaitian-Original-Preview-41438448.apk'}
     shutil.copyfile(candidates[0], output / names['main'])
     shutil.copyfile(args.host, output / names['host'])
     apks = {'main': inspect(output / names['main'], sdk, 'com.soozooq.gogogo.test',
-                           '2.4.32-container-preview', 2400100, MAIN_CERT),
+                           '2.4.33-container-preview', 2400101, MAIN_CERT),
             'host': inspect(output / names['host'], sdk, 'com.soozooq.tianwaitian.containerresearch',
-                           '0.1-research', 1, HOST_CERT)}
+                           '0.2-preview', 2, HOST_CERT)}
     for role in apks:
         apks[role]['file'] = names[role]
     # Cloud fixture signing can change the main APK hash; record the actual bytes built here.
     receipt = {'schema': 'GOGOGO_CI_PHONE_PREVIEW_STAGING_V1', 'source_commit': SOURCE,
         'delivery_run_id': int(args.delivery_run_id), 'apks': apks, 'metadata_profile_sha256': PROFILE_SHA,
         'main_checks': {'junit': counts, 'lint_error_fatal_count': severe},
-        'host_original_ci_run': 40320078192, 'host_ci_non_signature_entries_equal': 415,
+        'host_original_ci_run': 40424038227, 'host_ci_non_signature_entries_equal': 415,
         'private_key_used_or_included': False, 'original_target_apks_included': False,
         'native_gate': 'NOT_CHECKED_BY_THIS_DELIVERY_JOB', 'phone_and_target_business': 'NOT_VERIFIED',
         'published': False}
     (output / 'candidate-manifest.json').write_text(json.dumps(receipt, indent=2) + '\n')
     (output / 'SHA256SUMS').write_text(''.join(apks[k]['sha256'] + '  ' + names[k] + '\n' for k in ['main', 'host']))
     (output / 'PHONE-README.txt').write_text(
-        '天外天 2.4.32 · 原版应用预览候选\n\n'
+        '天外天 2.4.33 · 原版应用预览候选\n\n'
         '本打包任务只准备交付草稿，不判断原生、vivo或目标定位业务成功。\n'
         '微信发送／实时共享、抖音无线及海外定位尚未验收。\n\n'
         '候选发布后的流程：安装两份APK → 地图选点 → 首次导入原版并授权精确定位 → 确认并打开。\n'
         '当前支持微信8.0.79／3200、抖音40.8.0／400801完整原版；需自行登录，原应用保留。\n'
-        '需要反馈时一键复制反馈，无需逐项实验。主页使用免腾讯Key的MapLibre／OpenFreeMap；联网地图待实机结果。\n\n'
+        '预览页点击“一键复制反馈”，只选择已经看到的入口／结果即可，无需逐项实验。主页使用免腾讯Key的MapLibre／OpenFreeMap；联网地图待实机结果。\n\n'
         '源码：https://github.com/soozooq/gogogo/tree/' + SOURCE + '\n'
         '许可、对应来源与可替换库材料随预览APK保留于assets/research-notices。\n')
     shutil.copyfile(profile, output / profile.name)
