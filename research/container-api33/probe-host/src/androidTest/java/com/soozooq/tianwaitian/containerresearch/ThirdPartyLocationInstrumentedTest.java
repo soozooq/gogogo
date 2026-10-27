@@ -125,6 +125,7 @@ public final class ThirdPartyLocationInstrumentedTest {
             assertTrue(feedback.contains("sdk_location_adoption=UNKNOWN"));
             assertTrue(feedback.contains("real_consumer_coordinates=NOT_READ"));
             assertTrue(feedback.contains("consumer_delivery=RECORDED_NOT_SDK_ADOPTION"));
+            assertTrue(feedback.contains("consumer_passive_cache_current_registered_returned="));
             assertTrue(feedback.contains("consumer_history=VOLATILE_BOUNDED_CORE_MEMORY_NOT_CURRENT_APP_SESSION"));
             assertTrue(feedback.length() < 1800);
             assertFalse(feedback.contains("-33.86")); assertFalse(feedback.contains("151.20"));

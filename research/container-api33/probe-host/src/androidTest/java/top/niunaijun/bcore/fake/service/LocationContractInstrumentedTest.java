@@ -43,7 +43,7 @@ import top.niunaijun.bcore.fake.frameworks.BLocationManager;
 
 /** Controlled contract tests, not third-party adoption or guest hook-installation evidence.
  * Public API33 LocationManager creates its real framework callback/listener transports.
- * A test proxy routes only four methods through the exact patched hook entry points.
+ * A test proxy routes location delivery and provider queries through the exact patched hooks.
  * Continuous samples cross the engine's actual location-service Binder connection.
  */
 @RunWith(AndroidJUnit4.class)
@@ -81,6 +81,10 @@ public final class LocationContractInstrumentedTest {
                             return new ILocationManagerProxy.RegisterLocationListener().hook(controlledBase, method, args);
                         case "unregisterLocationListener":
                             return new ILocationManagerProxy.UnregisterLocationListener().hook(controlledBase, method, args);
+                        case "getAllProviders":
+                            return new ILocationManagerProxy.GetAllProviders().hook(controlledBase, method, args);
+                        case "isProviderEnabledForUser":
+                            return new ILocationManagerProxy.isProviderEnabledForUser().hook(controlledBase, method, args);
                         default:
                             throw new AssertionError("Unexpected real-service call: " + method.getName());
                     }
@@ -137,19 +141,20 @@ public final class LocationContractInstrumentedTest {
             BLocationManager.get().setLocation(user, target, new BLocation(38.0, -121.0));
             BLocationManager.get().setPattern(user, target, BLocationManager.OWN_MODE);
             synchronized (lock) { config.set(thread, fixture); }
-            for (String provider : new String[] {"gps", "network"}) {
-                sample(manager.getLastKnownLocation(provider), provider, false);
+            for (String provider : new String[] {"gps", "network", "passive"}) {
+                String source = "passive".equals(provider) ? "gps" : provider;
+                sample(manager.getLastKnownLocation(provider), source, false);
                 CountDownLatch currentDone = new CountDownLatch(1);
                 AtomicReference<Location> current = new AtomicReference<>();
                 manager.getCurrentLocation(provider, null, executor, value -> {
                     current.set(value); currentDone.countDown();
                 });
                 assertTrue(currentDone.await(30, TimeUnit.SECONDS));
-                sample(current.get(), provider, false);
+                sample(current.get(), source, false);
                 Samples stream = new Samples(2); requested.add(stream);
                 manager.requestLocationUpdates(provider, new LocationRequest.Builder(150).setMaxUpdates(2).build(), executor, stream);
                 assertTrue(stream.done.await(30, TimeUnit.SECONDS));
-                sample(stream.first.get(), provider, false); sample(stream.last.get(), provider, false);
+                sample(stream.first.get(), source, false); sample(stream.last.get(), source, false);
                 manager.removeUpdates(stream);
                 assertEquals(2, stream.count.get());
             }
@@ -158,13 +163,13 @@ public final class LocationContractInstrumentedTest {
             Bundle observed;
             do {
                 observed = BLocationManager.get().getService().getConsumerDeliverySummary(user, target);
-                if (observed.getLong("stream_network_transaction_returned")
-                        - before.getLong("stream_network_transaction_returned") >= 2) break;
+                if (observed.getLong("stream_passive_transaction_returned")
+                        - before.getLong("stream_passive_transaction_returned") >= 2) break;
                 SystemClock.sleep(25); // Callback receipt can precede sender-side bookkeeping.
             } while (SystemClock.elapsedRealtime() < deadline);
             assertTrue(observed.getBoolean("present"));
             assertEquals("CORE_MEMORY_VIRTUAL_PREPARATION_AND_BINDER_SEND_NOT_SDK_ADOPTION", observed.getString("scope"));
-            for (String provider : new String[] {"gps", "network"}) {
+            for (String provider : new String[] {"gps", "network", "passive"}) {
                 assertEquals(1, observed.getLong("cache_" + provider + "_prepared") - before.getLong("cache_" + provider + "_prepared"));
                 assertEquals(1, observed.getLong("current_" + provider + "_prepared") - before.getLong("current_" + provider + "_prepared"));
                 assertEquals(1, observed.getLong("stream_" + provider + "_registered") - before.getLong("stream_" + provider + "_registered"));
@@ -189,6 +194,44 @@ public final class LocationContractInstrumentedTest {
             BLocationManager.get().setPattern(user, target, priorMode);
         }
         sample(manager.getLastKnownLocation("gps"), "gps");
+    }
+
+    @Test public void passiveRequestsForwardSyntheticGpsOriginAndKeepSeparateCounters() throws Exception {
+        assertTrue("Passive request channel is available", manager.getAllProviders().contains("passive"));
+        assertTrue(manager.isProviderEnabled("passive"));
+        assertFalse(manager.isProviderEnabled("unknown-provider"));
+        Bundle before = BLocationManager.get().getService().getConsumerDeliverySummary(user, pkg);
+        sample(manager.getLastKnownLocation("passive"), "gps");
+        CountDownLatch done = new CountDownLatch(1);
+        AtomicReference<Location> current = new AtomicReference<>();
+        manager.getCurrentLocation("passive", null, executor, value -> {
+            current.set(value); done.countDown();
+        });
+        assertTrue(done.await(30, TimeUnit.SECONDS));
+        sample(current.get(), "gps");
+        Samples stream = new Samples(2); listeners.add(stream);
+        manager.requestLocationUpdates("passive", new LocationRequest.Builder(150).setMaxUpdates(2).build(), executor, stream);
+        assertTrue(stream.done.await(30, TimeUnit.SECONDS));
+        sample(stream.first.get(), "gps"); sample(stream.last.get(), "gps");
+        manager.removeUpdates(stream);
+        assertEquals(2, stream.count.get());
+        long deadline = SystemClock.elapsedRealtime() + 30_000;
+        Bundle observed;
+        do {
+            observed = BLocationManager.get().getService().getConsumerDeliverySummary(user, pkg);
+            if (observed.getLong("stream_passive_transaction_returned")
+                    - before.getLong("stream_passive_transaction_returned") >= 2) break;
+            SystemClock.sleep(25);
+        } while (SystemClock.elapsedRealtime() < deadline);
+        assertEquals(1, observed.getLong("cache_passive_prepared") - before.getLong("cache_passive_prepared"));
+        assertEquals(1, observed.getLong("current_passive_prepared") - before.getLong("current_passive_prepared"));
+        assertEquals(1, observed.getLong("stream_passive_registered") - before.getLong("stream_passive_registered"));
+        assertEquals(2, observed.getLong("stream_passive_transaction_returned") - before.getLong("stream_passive_transaction_returned"));
+        assertEquals("Requested channel and source provider remain distinct", 0,
+                observed.getLong("cache_gps_prepared") - before.getLong("cache_gps_prepared"));
+        assertTrue(observed.getBoolean("last_stream_mock"));
+        assertTrue(observed.getBoolean("last_stream_synthetic"));
+        assertEquals("No physical provider is queried for passive forwarding", 0, physicalDelegations.get());
     }
 
     @Test public void unreadableModeDoesNotDelegateLastOrCurrentAndClosedModeRecovers() throws Exception {

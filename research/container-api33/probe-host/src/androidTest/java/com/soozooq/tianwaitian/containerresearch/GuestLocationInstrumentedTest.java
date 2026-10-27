@@ -130,6 +130,7 @@ public final class GuestLocationInstrumentedTest {
             tap("start");
             JSONObject first = await(report -> allSamples(report, 38.0, -121.0)
                     && report.optInt("gps_count") >= 2 && report.optInt("network_count") >= 2
+                    && report.optInt("passive_count") >= 2
                     && report.optInt("gnss_started") == 1 && report.optInt("gnss_status_count") >= 1);
             assertEquals("Virtual GNSS never invents satellite observations", 0, first.getInt("gnss_satellite_count"));
             assertEquals("No claimed physical first fix", 0, first.getInt("gnss_first_fix_count"));
@@ -152,6 +153,7 @@ public final class GuestLocationInstrumentedTest {
                     && !report.optBoolean("listening", true));
             assertEquals(stopped.getInt("gps_count"), stable.getInt("gps_count"));
             assertEquals(stopped.getInt("network_count"), stable.getInt("network_count"));
+            assertEquals(stopped.getInt("passive_count"), stable.getInt("passive_count"));
             assertEquals(stopped.getInt("gnss_status_count"), stable.getInt("gnss_status_count"));
             saveStage("UNREGISTERED_STABLE", stable);
             tap("cancel");
@@ -178,7 +180,7 @@ public final class GuestLocationInstrumentedTest {
             assertEquals(guestPid, delivery.getInt("last_stream_receiver_pid"));
             assertTrue(delivery.getBoolean("last_stream_mock"));
             assertTrue(delivery.getBoolean("last_stream_synthetic"));
-            for (String provider : new String[] {"gps", "network"}) {
+            for (String provider : new String[] {"gps", "network", "passive"}) {
                 assertTrue(delivery.getLong("cache_" + provider + "_prepared") >= 2);
                 assertTrue(delivery.getLong("current_" + provider + "_prepared") >= 2);
                 assertTrue(delivery.getLong("stream_" + provider + "_transaction_returned") >= 2);
@@ -252,10 +254,11 @@ public final class GuestLocationInstrumentedTest {
 
     private static boolean allSamples(JSONObject report, double lat, double lon) throws Exception {
         for (String key : new String[] {"last_gps", "last_network", "current_gps", "current_network",
-                "stream_gps", "stream_network"}) {
+                "stream_gps", "stream_network", "last_passive", "current_passive", "stream_passive"}) {
             JSONObject sample = report.optJSONObject(key);
             String provider = key.endsWith("network") ? "network" : "gps";
             if (sample == null || !sample.optBoolean("present") || !sample.optBoolean("mock")
+                    || !sample.optBoolean("synthetic")
                     || sample.optInt("extra_satellites", -1) != 0
                     || !provider.equals(sample.optString("provider"))
                     || !sample.has("lat") || !sample.has("lon")

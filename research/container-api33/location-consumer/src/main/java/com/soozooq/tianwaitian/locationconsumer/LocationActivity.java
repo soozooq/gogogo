@@ -39,10 +39,11 @@ public final class LocationActivity extends Activity {
     private LocationManager locations;
     private TextView status;
     private boolean listening;
-    private int gpsCount, networkCount, batches, cancelledCallbacks, cancelAttempts, reads;
+    private int gpsCount, networkCount, passiveCount, batches, cancelledCallbacks, cancelAttempts, reads;
     private int gnssStarted, gnssStatuses, gnssFirstFixes;
     private final LocationListener gps = new Samples("gps");
     private final LocationListener network = new Samples("network");
+    private final LocationListener passive = new Samples("passive");
     private final GnssStatus.Callback gnss = new GnssStatus.Callback() {
         @Override public void onStarted() { put("gnss_started", ++gnssStarted); }
         @Override public void onFirstFix(int millis) { put("gnss_first_fix_count", ++gnssFirstFixes); }
@@ -66,6 +67,7 @@ public final class LocationActivity extends Activity {
                 LocationRequest request = new LocationRequest.Builder(300).build();
                 locations.requestLocationUpdates("gps", request, getMainExecutor(), gps);
                 locations.requestLocationUpdates("network", request, getMainExecutor(), network);
+                locations.requestLocationUpdates("passive", request, getMainExecutor(), passive);
                 if (!locations.registerGnssStatusCallback(getMainExecutor(), gnss)) {
                     throw new IllegalStateException("GNSS status registration rejected");
                 }
@@ -103,6 +105,7 @@ public final class LocationActivity extends Activity {
         put("listening", false);
         put("gps_count", 0);
         put("network_count", 0);
+        put("passive_count", 0);
         put("batch_count", 0);
         put("cancelled_callbacks", 0);
         put("read_sequence", 0);
@@ -125,10 +128,13 @@ public final class LocationActivity extends Activity {
             put("read_sequence", ++reads);
             put("last_gps", snapshot(locations.getLastKnownLocation("gps")));
             put("last_network", snapshot(locations.getLastKnownLocation("network")));
+            put("last_passive", snapshot(locations.getLastKnownLocation("passive")));
             locations.getCurrentLocation("gps", null, getMainExecutor(),
                     value -> put("current_gps", snapshot(value)));
             locations.getCurrentLocation("network", null, getMainExecutor(),
                     value -> put("current_network", snapshot(value)));
+            locations.getCurrentLocation("passive", null, getMainExecutor(),
+                    value -> put("current_passive", snapshot(value)));
         } catch (RuntimeException e) { failure(e); }
     }
 
@@ -141,6 +147,8 @@ public final class LocationActivity extends Activity {
                 sample.put("lat", value.getLatitude());
                 sample.put("lon", value.getLongitude());
                 sample.put("mock", value.isMock());
+                sample.put("synthetic", value.getExtras() != null
+                        && value.getExtras().getBoolean("tianwaitian.synthetic"));
                 sample.put("extra_satellites", value.getExtras() == null ? 0
                         : value.getExtras().getInt("satellites", 0));
                 sample.put("elapsed_ns", value.getElapsedRealtimeNanos());
@@ -158,7 +166,8 @@ public final class LocationActivity extends Activity {
         @Override public void onLocationChanged(Location value) {
             put("stream_" + provider, snapshot(value));
             if ("gps".equals(provider)) put("gps_count", ++gpsCount);
-            else put("network_count", ++networkCount);
+            else if ("network".equals(provider)) put("network_count", ++networkCount);
+            else put("passive_count", ++passiveCount);
         }
         @Override public void onLocationChanged(java.util.List<Location> values) {
             put("batch_count", ++batches);
@@ -170,6 +179,7 @@ public final class LocationActivity extends Activity {
         try {
             locations.removeUpdates(gps);
             locations.removeUpdates(network);
+            locations.removeUpdates(passive);
             locations.unregisterGnssStatusCallback(gnss);
             listening = false;
             put("listening", false);

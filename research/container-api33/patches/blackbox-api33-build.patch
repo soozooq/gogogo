@@ -362,10 +362,10 @@ index 06e20a6..f60a381 100644
  }
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/location/ConsumerLocationStats.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/location/ConsumerLocationStats.java
 new file mode 100644
-index 0000000..1441f83
+index 0000000..70dd316
 --- /dev/null
 +++ b/BCore/src/main/java/top/niunaijun/bcore/core/system/location/ConsumerLocationStats.java
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,86 @@
 +package top.niunaijun.bcore.core.system.location;
 +
 +import android.location.Location;
@@ -386,7 +386,8 @@ index 0000000..1441f83
 +    }
 +
 +    private static String provider(String value) {
-+        return "gps".equals(value) ? "gps" : "network".equals(value) ? "network" : "other";
++        return "gps".equals(value) ? "gps" : "network".equals(value) ? "network"
++                : "passive".equals(value) ? "passive" : "other";
 +    }
 +
 +    private Bundle record(int user, String pkg) {
@@ -586,7 +587,7 @@ index dc071ad..6056308 100644
  
      public static Resources getResources(Context context, ApplicationInfo appInfo) {
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java b/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java
-index 3a16522..53b16db 100644
+index 3a16522..e787454 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java
 @@ -5,6 +5,8 @@ import android.location.LocationManager;
@@ -609,7 +610,7 @@ index 3a16522..53b16db 100644
      }
  
      public boolean isEmpty() {
-@@ -79,16 +81,43 @@ public class BLocation implements Parcelable {
+@@ -79,16 +81,47 @@ public class BLocation implements Parcelable {
      }
  
      public Location convert2SystemLocation() {
@@ -630,7 +631,11 @@ index 3a16522..53b16db 100644
 +    }
 +
 +    public Location convert2SystemLocation(String provider, String packageName) {
-+        Location location = new Location(provider);
++        // A passive subscription forwards a source sample; "passive" is the
++        // request channel, not the sample's origin provider. This preview has
++        // a configured synthetic GPS source and never requests physical GNSS.
++        Location location = new Location(LocationManager.PASSIVE_PROVIDER.equals(provider)
++                ? LocationManager.GPS_PROVIDER : provider);
          location.setLatitude(mLatitude);
          location.setLongitude(mLongitude);
          location.setSpeed(mSpeed);
@@ -904,7 +909,7 @@ index 0ff8a3c..3696087 100644
  
      @Override
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
-index bad5396..6fbcbc9 100644
+index bad5396..6fa9c21 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
 @@ -1,9 +1,10 @@
@@ -1068,18 +1073,19 @@ index bad5396..6fbcbc9 100644
              }
              return method.invoke(who, args);
          }
-@@ -232,7 +292,9 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+@@ -232,7 +292,10 @@ public class ILocationManagerProxy extends BinderInvocationStub {
  
          @Override
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
 -            return Arrays.asList(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER);
 +            return BLocationManager.isFakeLocationEnable()
-+                    ? Arrays.asList(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER)
++                    ? Arrays.asList(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER,
++                            LocationManager.PASSIVE_PROVIDER)
 +                    : method.invoke(who, args);
          }
      }
  
-@@ -242,7 +304,10 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+@@ -242,7 +305,11 @@ public class ILocationManagerProxy extends BinderInvocationStub {
          @Override
          protected Object hook(Object who, Method method, Object[] args) throws Throwable {
              String provider = (String) args[0];
@@ -1087,6 +1093,7 @@ index bad5396..6fbcbc9 100644
 +            return BLocationManager.isFakeLocationEnable()
 +                    ? Objects.equals(provider, LocationManager.GPS_PROVIDER)
 +                        || Objects.equals(provider, LocationManager.NETWORK_PROVIDER)
++                        || Objects.equals(provider, LocationManager.PASSIVE_PROVIDER)
 +                    : method.invoke(who, args);
          }
      }

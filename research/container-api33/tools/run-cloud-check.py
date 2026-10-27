@@ -254,7 +254,7 @@ for relative in (() if contract_case else
 (evidence / 'cloud-activities.txt').write_text(shell('dumpsys activity activities', check=False))
 (evidence / 'cloud-guest-system-path.txt').write_text(shell('pm path ' + guest_package, check=False))
 cleanup_ok = remove_control_guest()
-expected_result = 'OK (6 tests)' if args.location_contract else 'OK (19 tests)' if args.radio_contract else 'OK (1 test)'
+expected_result = 'OK (7 tests)' if args.location_contract else 'OK (19 tests)' if args.radio_contract else 'OK (1 test)'
 passed = result.returncode == 0 and expected_result in text and not re.search(
     r'FAILURES!!!|INSTRUMENTATION_FAILED|shortMsg=|Process crashed', text)
 system_guest_after_cleanup = bool(shell('pm path ' + guest_package, check=False))

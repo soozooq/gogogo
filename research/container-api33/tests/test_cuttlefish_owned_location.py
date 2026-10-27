@@ -70,7 +70,7 @@ class NativeOwnContractControlTest(unittest.TestCase):
                             state['instrumented'] = True
                             state['case'] = 'presentation-contract' if 'top.niunaijun.bcore.fake.service.LocationContractInstrumentedTest' in command else \
                                 'location' if 'GuestLocationInstrumentedTest#' in ' '.join(command) else 'framework'
-                            count = 5 if mode == 'presentation_wrong_count' else 6
+                            count = 6 if mode == 'presentation_wrong_count' else 7
                             data = b'FAILURES!!!' if mode == 'junit_failed' or mode == 'presentation_failed' and state['case'] == 'presentation-contract' \
                                 else f'OK ({count} tests)'.encode() if state['case'] == 'presentation-contract' else b'OK (1 test)'
                         elif command[:2] == ['exec-out', 'run-as']:

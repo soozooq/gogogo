@@ -1,0 +1,168 @@
+{
+  "schema": "GOGOGO_VIRTUAL_PASSIVE_PROVIDER_PREPARATION_V1",
+  "scope": "COMPILED_PASSIVE_REQUEST_SOURCE_SEMANTICS_FIX_NOT_NEW_CLOUD_OR_PHONE_PASS",
+  "base_research_commit": "2905a184a11b6b09a23359c22c521178bf0ab6a1",
+  "static_sdk_evidence": "wechat-sdk-passive-provider-routing-results.json",
+  "engine_patch_sha256": "420b83998686b0f25cf323bfd47bd5391245d9f323736e41473d4a3216b9f408",
+  "versions_retained": {
+    "main": "2.4.35 / 2400103",
+    "host": "0.4-preview / 4"
+  },
+  "change": [
+    "Passive virtual requests forward the configured synthetic GPS sample instead of labelling the sample passive.",
+    "Passive is enumerated and enabled in virtual mode; explicit CLOSE delegation remains.",
+    "Consumer counters distinguish the passive request channel from the GPS source and add one line to existing feedback.",
+    "Existing real own Guest automatically requests nine paths: GPS/NETWORK/PASSIVE cache,current,stream. No extra screen or manual steps."
+  ],
+  "origin_policy": {
+    "generic_mock_marked": true,
+    "wechat_framework_mock_compatibility": true,
+    "synthetic_extra_retained": true,
+    "gnss_satellites_and_first_fix": 0,
+    "physical_gnss_requested": false
+  },
+  "new_location_contract_method": "passiveRequestsForwardSyntheticGpsOriginAndKeepSeparateCounters",
+  "compiled_location_contract_methods": 7,
+  "controlled_wechat_context_extended_to_passive": true,
+  "actual_passive_runtime_execution": "PENDING_NEW_SOURCE_CLOUD_NOT_PASS",
+  "nine_paths_real_guest_runtime": "PENDING_NEW_SOURCE_CLOUD_NOT_PASS",
+  "local_builds": {
+    "initial_build_failed": true,
+    "initial_failure": "Controlled test referenced hook class getAllProviders instead of GetAllProviders; corrected before successful build.",
+    "initial_failed_seconds": 28,
+    "successful_after_class_correction_seconds": 19,
+    "successful_final_nine_path_build_seconds": 17
+  },
+  "local_driver_tests": {
+    "methods": 27,
+    "seconds": 0.767,
+    "passed": true
+  },
+  "host_and_consumer_static_inspection_passed": true,
+  "full_clean_index_patch_replay_passed": true,
+  "local_host_artifact": {
+    "scope": "COMPILED_RESEARCH_HOST_NOT_WECHAT_COMPATIBILITY",
+    "package": "com.soozooq.tianwaitian.containerresearch",
+    "sha256": "500b8d8022b45e3fd7c1d64159d839b9458b35080256527bde8d52d2122a357b",
+    "size": 4638727,
+    "native_abis": [
+      "arm64-v8a",
+      "x86_64"
+    ],
+    "uses_permissions": [
+      "android.permission.ACCESS_COARSE_LOCATION",
+      "android.permission.ACCESS_FINE_LOCATION",
+      "android.permission.ACCESS_NETWORK_STATE",
+      "android.permission.ACCESS_WIFI_STATE",
+      "android.permission.CHANGE_WIFI_STATE",
+      "android.permission.FOREGROUND_SERVICE",
+      "android.permission.INTERNET",
+      "android.permission.REORDER_TASKS",
+      "com.soozooq.tianwaitian.containerresearch.INTERNAL"
+    ],
+    "default_component_permission": "com.soozooq.tianwaitian.containerresearch.INTERNAL",
+    "resource_mirror_defined": true,
+    "embedded_guest_apks": [],
+    "embedded_guest_class_definitions": [],
+    "signature_verified": true,
+    "pinned_guest_catalog": [
+      {
+        "label": "Fossify 计算器",
+        "location": false,
+        "package": "org.fossify.math",
+        "sha256": "7c5443c22d6d62c67dfe80df33ea9161ff0fa440f92590bcb45d7008b57613ed",
+        "size": 7047681,
+        "version_code": 10,
+        "version_name": "1.4.0",
+        "certificate_sha256": "affdb124d3f4720c2f98dbca9eacba0514fba4306e20a2786c861c3c0d6ff292",
+        "url": "https://github.com/FossifyOrg/Calculator/releases/download/1.4.0/calculator-10-foss-release.apk",
+        "arm64_only": false
+      },
+      {
+        "label": "GPSTest 定位",
+        "location": true,
+        "package": "com.android.gpstest.osmdroid",
+        "sha256": "897b91fe6a1ea0c3a7f6e2b041d5ace0d582941f67cf454fb7778f031d89ce41",
+        "size": 3457918,
+        "version_code": 24100,
+        "version_name": "3.10.6",
+        "certificate_sha256": "67e04383a96a83476426adcbdd95c4c75d78028a5c4ada75c00334b1c7a5d706",
+        "url": "https://github.com/barbeau/gpstest/releases/download/v3.10.6/osmdroidRelease-v3.10.6.apk",
+        "arm64_only": false
+      },
+      {
+        "label": "微信（位置待验证）",
+        "location": true,
+        "package": "com.tencent.mm",
+        "sha256": "f2a725bc04302ad218a563533ae79356e66b64aa711b275bc919a8d432f7e15d",
+        "size": 285284760,
+        "version_code": 3200,
+        "version_name": "8.0.79",
+        "certificate_sha256": "0fe4ff85c215918396dadc7cd8ce6963339af33d37751a56e54c7206b63a3c7c",
+        "url": "https://dldir1v6.qq.com/weixin/android/weixin8079android3200_0x28004f30_arm64_1.apk",
+        "arm64_only": true
+      },
+      {
+        "label": "抖音（位置待验证）",
+        "location": true,
+        "package": "com.ss.android.ugc.aweme",
+        "sha256": "9fc10c40b81b8244e515f9588d381f43e6ed870e6d9bebf14754a5e309ba380a",
+        "size": 360503779,
+        "version_code": 400801,
+        "version_name": "40.8.0",
+        "certificate_sha256": "5182ae3b1b85337bb182cf24882449f84447ded18e296a747a9f6a0a2622512e",
+        "url": "https://lf9-apk.ugapk.cn/package/apk/aweme/5072_400801/aweme_43633312a_v5072_400801_c3f2_1792553229.apk?v=1792553237",
+        "arm64_only": true
+      }
+    ],
+    "certificate_sha256": "81b7350f2e056029168a8a3ad6d29f1c6c0a7132a2f6db9296c5a26bd135e728"
+  },
+  "local_consumer_artifact": {
+    "scope": "OWNED_CONSUMER_STATIC_INPUT_NOT_LOCATION_SUCCESS",
+    "package": "com.soozooq.tianwaitian.locationconsumer",
+    "sha256": "7410b27a12e5ec76da7e050c18ae5a6544c45511af3570532e1e37799d8a9949",
+    "size": 99606,
+    "uses_permissions": [
+      "android.permission.ACCESS_COARSE_LOCATION",
+      "android.permission.ACCESS_FINE_LOCATION"
+    ],
+    "only_own_class_definitions": true,
+    "engine_host_or_reflection_references": false,
+    "expected_target_coordinates_embedded_by_design": false,
+    "native_libraries_or_embedded_apks": false,
+    "public_android_location_methods_present": true,
+    "certificate_sha256": "81b7350f2e056029168a8a3ad6d29f1c6c0a7132a2f6db9296c5a26bd135e728"
+  },
+  "new_permissions_dependencies_jni_aidl_or_phone_steps": false,
+  "feedback_character_limit": 1800,
+  "copy_timeout_ms": 1500,
+  "previous_driver_validation": {
+    "commit": "66a293fa2b36cc04e7c2e7986ce5588f8d0a134f",
+    "run_id": 40547400219,
+    "native_job_id": 122345264006,
+    "native_status_at_preparation": "in_progress",
+    "covers_this_passive_fix": false
+  },
+  "old_draft": {
+    "release_id": 425599161,
+    "runtime_commit": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+    "published": false,
+    "contains_this_passive_fix": false,
+    "held_not_new_delivery": true
+  },
+  "earlier_existing_draft_publication_preparation": "OBSOLETE_BLOCKED_NEW_RUNTIME_REQUIRES_NEW_MATCHED_QUALIFICATION",
+  "published_2_4_34_unchanged": true,
+  "actual_wechat_send_live_douyin_wireless_overseas_vivo": "NOT_VERIFIED",
+  "source_sha256": {
+    "research/container-api33/location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/LocationActivity.java": "1194655b4ee1296057a6de42dd6a48fff8b5ef9f3697af726979cc0382c52cf8",
+    "research/container-api33/patches/blackbox-api33-build.patch": "420b83998686b0f25cf323bfd47bd5391245d9f323736e41473d4a3216b9f408",
+    "research/container-api33/probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/GuestLocationInstrumentedTest.java": "01a2cb1b7602b75cc5ea0bf810b2d38fcc4e100d2ff5e75b8ad2f774231293d6",
+    "research/container-api33/probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ThirdPartyLocationInstrumentedTest.java": "2bcf2be262001c7ad69d875b9a70a33a1b911c7350dcbb54fdaa6f88d0434b29",
+    "research/container-api33/probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java": "85889ce03d4340e36416798f57ba4e6f5aca598a2ab1e192c0a23d63612cc762",
+    "research/container-api33/probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeActivity.java": "a418848c121837124ed9114f04129d7c1a50b8094b6aa53db603f4a4d1d450e9",
+    "research/container-api33/tests/test_cuttlefish_owned_location.py": "b1e6bd9e50ed3929e0318d68707d3f8b9abeb6b915b46a4b3f5ad50c4923bd91",
+    "research/container-api33/tools/cuttlefish_owned_location.py": "545ca30dc806022f668bc922abf8f8ef1846f0635c7bec382e09968fabc883ee",
+    "research/container-api33/tools/run-cloud-check.py": "9472c48edc851d98d8b78a3e80bbbaa9f23f961a23e87b0d744c0dece40ceb1e",
+    "research/container-api33/evidence/wechat-sdk-passive-provider-routing-results.json": "5d976a67e4f33253191547b2f50a866615d020bd88106b85c3f58afc5596e0b7"
+  }
+}

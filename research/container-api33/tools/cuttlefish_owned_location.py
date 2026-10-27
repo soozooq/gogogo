@@ -78,7 +78,7 @@ def owned_contracts(adb, serial, own_apks, manifest, out, environment, expected_
                  ('location', prefix + 'GuestLocationInstrumentedTest#publicLocationApisInUninstalledGuestFollowTargetAndStop',
                   'consumer_sha256', 'guest-location-evidence', 1),
                  ('presentation-contract', 'top.niunaijun.bcore.fake.service.LocationContractInstrumentedTest',
-                  None, None, 6)]
+                  None, None, 7)]
         for name, method, argument, folder, expected_tests in cases:
             identity()
             case_out = out / name

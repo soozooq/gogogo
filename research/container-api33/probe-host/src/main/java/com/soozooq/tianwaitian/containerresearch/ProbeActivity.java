@@ -281,6 +281,11 @@ public final class ProbeActivity extends Activity {
                     .append(value.getLong(prefix + "_gps_" + suffix)).append('/')
                     .append(value.getLong(prefix + "_network_" + suffix)).append('\n');
         }
+        text.append("consumer_passive_cache_current_registered_returned=")
+                .append(value.getLong("cache_passive_prepared")).append('/')
+                .append(value.getLong("current_passive_prepared")).append('/')
+                .append(value.getLong("stream_passive_registered")).append('/')
+                .append(value.getLong("stream_passive_transaction_returned")).append('\n');
         text.append("consumer_missing_stream_errors=").append(value.getLong("missing_sample_count"))
                 .append('/').append(value.getLong("stream_failure_count")).append('\n')
                 .append("consumer_last_event_age_ms=").append(value.getLong("last_event_age_ms")).append('\n')
