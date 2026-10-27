@@ -1,6 +1,6 @@
 {
   "schema": "GOGOGO_PREVIEW_COMPACT_FEEDBACK_ACTUAL_DEFAULT_RESULTS_V1",
-  "scope": "ACTUAL_DEFAULT_CLIPBOARD_AND_CONTROLLED_LOCATION_REGRESSIONS_NOT_NATIVE_TARGET_SDK_OR_VIVO",
+  "scope": "ACTUAL_DEFAULT_CLIPBOARD_AND_MATCHED_NATIVE_IN_SEPARATE_RECEIPT_NOT_TARGET_LOCATION_OR_VIVO",
   "run_id": 40424038227,
   "commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
   "tree": "6104a75ed1d7c9f8d15b16541cf0a95ecc3c0911",
@@ -232,10 +232,14 @@
   },
   "matching_native": {
     "run_id": 40424038227,
+    "commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
     "job_id": 121928002415,
-    "status_at_curation": "pending",
-    "passed": null,
-    "required_new_both_closed_and_own_phases": true
+    "result": "native-preview-feedback-virtual-startup-pass-results.json",
+    "status": "completed",
+    "conclusion": "success",
+    "passed": true,
+    "owned_location_passed": true,
+    "both_targets_closed_and_own_startups_passed": true
   },
   "previous_native49_kept_running": true,
   "published_2_4_32_unchanged": true,

@@ -74,10 +74,14 @@
   "delivery_workflow": "FIXED_SOURCE_STAGE_ONLY_NEW_EMPTY_DRAFT_CANNOT_PUBLISH",
   "matching_native_gate": {
     "run_id": 40424038227,
+    "commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
     "job_id": 121928002415,
-    "status_at_curation": "pending",
-    "passed": null,
-    "required_new_both_closed_and_own_phases": true
+    "result": "native-preview-feedback-virtual-startup-pass-results.json",
+    "status": "completed",
+    "conclusion": "success",
+    "passed": true,
+    "owned_location_passed": true,
+    "both_targets_closed_and_own_startups_passed": true
   },
   "publication_requires_matching_native_and_delivery_receipts": true,
   "published_2_4_32_assets_or_tag_changed": false,
@@ -98,5 +102,16 @@
   },
   "actual_delivery_result": "phone-41438448-verified-draft-delivery-results.json",
   "actual_delivery_run_id": 40425812277,
-  "draft_assets_now_verified": 2
+  "draft_assets_now_verified": 2,
+  "publication_gate_verified_before_release": {
+    "scope": "ALL_MATCHED_DEFAULT_NATIVE_AND_DELIVERY_GATES_VERIFIED_NOT_TARGET_BUSINESS",
+    "runtime_commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
+    "default_and_native_run_id": 40424038227,
+    "delivery_run_id": 40425812277,
+    "release_id": 424904119,
+    "draft_still_unpublished": true,
+    "exact_two_assets_verified": true,
+    "source_and_base_host_match": true,
+    "gate_passed": true
+  }
 }

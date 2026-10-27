@@ -1,6 +1,6 @@
 {
   "schema": "GOGOGO_PREVIEW_COMPACT_FEEDBACK_PREPARATION_V1",
-  "scope": "OWN_PREVIEW_CLIPBOARD_ACTUALLY_PASSED_DEFAULT50_NATIVE_PENDING",
+  "scope": "OWN_PREVIEW_CLIPBOARD_ACTUALLY_PASSED_DEFAULT50_SAME_SOURCE_NATIVE_STARTUP_AND_OWN_LOCATION_PASSED",
   "base_commit": "1441f2fa8b0c0b268c4fc49054275d0da5120909",
   "host_version_name": "0.2-preview",
   "host_version_code": 2,
@@ -65,5 +65,16 @@
     "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeActivity.java": "381630d699c51d299311928216b369bdc519a8a7d0af51e8c88b384f8d6575fb",
     "probe-host/src/main/res/values/ids.xml": "1672020131f39c10ecc351b87500a60cf025b57ddfd52312e85339d1503addba",
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ThirdPartyLocationInstrumentedTest.java": "566bcc1615b9cca93b71a73c6f41ed82cf4872ed05bf063333963d54abcc2b57"
+  },
+  "matching_native": {
+    "run_id": 40424038227,
+    "commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
+    "job_id": 121928002415,
+    "result": "native-preview-feedback-virtual-startup-pass-results.json",
+    "status": "completed",
+    "conclusion": "success",
+    "passed": true,
+    "owned_location_passed": true,
+    "both_targets_closed_and_own_startups_passed": true
   }
 }
