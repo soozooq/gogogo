@@ -13,15 +13,26 @@
 
 不新增分支／PR、不自动合并、不删除／强推／重置其他工作区。两个PR保持Draft。手机用户不需要重跑旧实验或切换VPN。
 
-## 当前研发：微信定位SDK兼容呈现（候选未交付）
+## 当前研发：微信定位SDK兼容呈现（2.4.34预览已发布）
 
 用户确认继续以「微信自身SDK会不会采用」为重点。已从固定微信8.0.79原包的`assets/TencentLocationComp_sapp/1`离线解码出537,976字节DEX，原包及DEX头长度／SHA1／Adler32完整核对；外层加载器请求的TencentLocationManagerProxy确实存在于该组件。421类／2510方法扫描发现四处isFromMockProvider，独立apkanalyzer确认：其中b.a(Location)与g.a(Location)在常规前置检查后，对API≥18的mock样本提前退出。另两处有配置条件。见[原包组件与过滤分支证据](research/container-api33/evidence/wechat-bundled-sdk-mock-filter-results.json)。这证明始终暴露mock=true与这些分支冲突，不证明用户手机当前运行了哪条分支或失败因果。
 
-新候选改变此前「所有合成返回均保留系统mock标记」的策略：只对预览中固定原版微信的虚拟会话使用兼容呈现，GPS／NETWORK缓存、单次及持续回调统一返回不带框架mock标记的位置；仍在extras及短反馈明确标注合成来源，卫星数保持零。普通／未知／其他客户端继续保留mock标记。坐标仍由选点合成，没有变成真实GNSS；系统原微信、系统模拟Provider和原APK均未修改。兼容对象只绕开这些已确认的标记检查，其他SDK／网络／账号／服务端决策仍未知。
+2.4.34改变此前「所有合成返回均保留系统mock标记」的策略：只对预览中固定原版微信的虚拟会话使用兼容呈现，GPS／NETWORK缓存、单次及持续回调统一返回不带框架mock标记的位置；仍在extras及短反馈明确标注合成来源，卫星数保持零。普通／未知／其他客户端继续保留mock标记。坐标仍由选点合成，没有变成真实GNSS；系统原微信、系统模拟Provider和原APK均未修改。兼容对象只绕开这些已确认的标记检查，其他SDK／网络／账号／服务端决策仍未知。
 
-候选预览宿主0.3／3，主程序交付profile预留2.4.34／2400102。[CI52默认已独立验真通过](research/container-api33/evidence/wechat-compatibility-presentation-default-results.json)，固定a26d14a5／d820补丁：6方法定位4.214秒、19受控无线0.148秒，七case／变化UI、主447项／lint、三档API摘要和58／59来源／同签名／11材料核对。公共框架＋受控微信包上下文的六路径、两个mock别名、合成extras、零卫星和恢复默认检查均过；原通用mock断言保留，自有真实Guest四阶段六路径3.282秒继续标记。普通入口12.989秒、已装导入8.608秒、计算器5.593秒。它不是实际微信进程或SDK采用结果。
+已交付预览宿主0.3／3、主程序2.4.34／2400102。[CI52默认已独立验真通过](research/container-api33/evidence/wechat-compatibility-presentation-default-results.json)，固定a26d14a5／d820补丁：6方法定位4.214秒、19受控无线0.148秒，七case／变化UI、主447项／lint、三档API摘要和58／59来源／同签名／11材料核对。公共框架＋受控微信包上下文的六路径、两个mock别名、合成extras、零卫星和恢复默认检查均过；原通用mock断言保留，自有真实Guest四阶段六路径3.282秒继续标记。普通入口12.989秒、已装导入8.608秒、计算器5.593秒。它不是实际微信进程或SDK采用结果。
 
-同源ARM64作业122064299151仍在进行，另要求该6方法受控契约通过，不能借用CI51。[准备记录](research/container-api33/evidence/wechat-compatibility-presentation-preparation.json)保留24秒／13秒编译、静态核对、完整补丁重放及25项驱动结果。稳定私签宿主与CI52全部415非签名内容相同，公开签名配方可逐字节恢复；新2.4.34交付仍只准备草稿，公开须另核对同源原生结果。没有新增手机实验页、权限、依赖或JNI，不要求手机重测。公开2.4.33不包含新兼容策略，附件和tag保持原样。
+[同源ARM64 CI52已完整验真通过](research/container-api33/evidence/native-wechat-compatibility-presentation-pass-results.json)：四档API摘要／9原生输入／59自有来源及签名材料匹配a26d14a5，新增受控契约6方法6.086秒，逐个成功方法与固定源码核对。真实自有Guest六路径46.627秒、框架15.604秒，通用mock保留，最老样本1223.857毫秒，取消零回调。微信关闭6315→OWN模式新6861、抖音10969→13068，真实UID与匿名页、旧主进程消失、system_server650稳定及VM／包／staging清理均通过；300秒抖音观察仍仅关闭模式。两目标无PNG，不声称看过截图；整轮4676.744秒不是启动耗时。受控微信包上下文不是真实SDK采用。[准备记录](research/container-api33/evidence/wechat-compatibility-presentation-preparation.json)保留24秒／13秒编译、静态核对、完整补丁重放及25项驱动结果。稳定私签宿主与CI52全部415非签名内容相同，公开签名配方可逐字节恢复；交付源码d606261b的[Phone CI5](https://github.com/soozooq/gogogo/actions/runs/40491596045)实际两档归档、安装包、签名、版本与附件摘要均独立核对后，已公开2.4.34；打包作业仍只写草稿，公开是后续单独执行。没有新增手机实验页、权限、依赖或JNI，不要求手机重测。公开2.4.33不包含新兼容策略，附件和tag保持原样。
+
+## 当前公开交付：2.4.34
+
+[2.4.34微信兼容预览已发布](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.34-container-a26d14a5)，2026-10-27T10:56:29Z，prerelease。运行时**a26d14a5b9e2b7dcfe1dc98874f07440be4b9113**／引擎d820ef13，交付源码d606261b／Phone CI5。实际tag指向运行时源码，两份公开下载均HTTP200且完整字节／摘要相同。
+
+- [主程序APK](https://github.com/soozooq/gogogo/releases/download/preview-2.4.34-container-a26d14a5/Tianwaitian-2.4.34-container-preview-arm64.apk)：2.4.34-container-preview／2400102，40,408,202字节，SHAdde0b903…，沿用6eec4ddd…证书。
+- [原版预览APK](https://github.com/soozooq/gogogo/releases/download/preview-2.4.34-container-a26d14a5/Tianwaitian-Original-Preview-a26d14a5.apk)：0.3-preview／3，4,585,987字节，SHA1f271efa…，沿用25bfd6e2…证书。
+
+见[实际发布与下载回执](research/container-api33/evidence/phone-a26d14a5-published-delivery-results.json)。主447项／lint、固定profile、扁平六文件、同源原生52、59自有来源／同签名及每包11材料、415非签名内容、公开签名配方、两附件服务器摘要和真实tag均核对。草稿manifest的published=false保留为历史打包快照；不是当前发布状态。旧2.4.33／2.4.32的正文、tag和附件均独立复核未变。
+
+已有2.4.33主程序时只更新原版预览APK即可；首次或仍在2.4.31时安装两份。正常使用中有问题时一键复制已有观察，不要求重做实验。用户手机是否已安装、微信SDK是否采用、发送／实时及抖音无线／海外仍未知。
 
 ## 上一轮：状态不可读时禁止真实定位回退（源码1e6a10ff）
 
@@ -31,7 +42,7 @@
 
 本地软件模拟器两次均在测试前因自有Provider发布超时、随后空Bundle读取而崩溃，0个JUnit方法执行；失败及摘要保留，VM已正常结束，未改系统超时、安全或ART。硬件CI51独立通过不能抹去该记录。[CI51匹配原生也已核对通过](research/container-api33/evidence/native-unreadable-mode-pass-results.json)：四档API／9原生输入／59自有来源匹配旧1e6a10ff，微信5893→6527、抖音10268→12380，两关闭／停止／OWN2新主PID及真实UID匿名启动、自有框架14.480秒／六路径47.696秒通过，system_server657稳定，VM与包清理完成，样本最老1974.449毫秒；整轮4412.724秒不是启动耗时。微信PNG存在但未查看，抖音无PNG。它没有新兼容策略，不能证明a26候选或目标SDK采用；该轮没有mock标志变化，不归因用户旧失败，不证明能收回既有SDK缓存或此前物理回调。
 
-## 当前公开交付：2.4.33
+## 保留旧交付：2.4.33
 
 [2.4.33手机预览已发布](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.33-container-41438448)，2026-10-27T04:23:30Z，prerelease。固定运行时**414384487b22a576aa1c6a29fca1df6a167ebd47**／引擎cf4dffbb，交付源码bd8b3e42／[Phone CI4](https://github.com/soozooq/gogogo/actions/runs/40425812277)。实际tag指向运行时源码，两份公开下载均已核对HTTP200。
 

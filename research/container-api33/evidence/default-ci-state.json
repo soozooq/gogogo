@@ -1,11 +1,11 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
-  "scope": "ACTUAL_CI52_DEFAULT_COMPATIBILITY_PRESENTATION_PASS_MATCHED_NATIVE_PENDING_NOT_TARGET_LOCATION",
+  "scope": "ACTUAL_CI52_DEFAULT_AND_MATCHED_NATIVE_COMPATIBILITY_PRESENTATION_VERIFIED_NOT_TARGET_LOCATION",
   "run_id": 40466246255,
   "commit": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
   "tree": "5dfd739a87b0dab4a0bba0e477afd1b280d9fe28",
-  "status": "in_progress",
-  "conclusion": null,
+  "status": "completed",
+  "conclusion": "success",
   "default_checks_conclusion": "success",
   "jobs": [
     {
@@ -29,8 +29,8 @@
     {
       "id": 122064299151,
       "name": "Inspect ARM Linux host and optional Cuttlefish boot",
-      "status": "in_progress",
-      "conclusion": null
+      "status": "completed",
+      "conclusion": "success"
     }
   ],
   "artifacts": {
@@ -47,6 +47,11 @@
     "linux": {
       "id": 12716687821,
       "sha256": "7e173c1288fc1c509f586f53ced0a6807488bbac4f32af457f9f2b98425b4557",
+      "verified": true
+    },
+    "native": {
+      "id": 12720825481,
+      "sha256": "63a3fc1f7e51f69d0dc53b77ccb495a8d22af9537f58b03f3658c7d0d94f1247",
       "verified": true
     }
   },
@@ -149,14 +154,26 @@
     "signatures_verified_and_same": true
   },
   "native": {
-    "status": "in_progress",
-    "passed": false,
-    "result": "PENDING_NOT_PASS",
-    "controlled_presentation_class_six_tests_required": true
+    "status": "completed",
+    "passed": true,
+    "result": "native-wechat-compatibility-presentation-pass-results.json",
+    "controlled_presentation_class_six_tests_required": true,
+    "controlled_presentation_class_six_tests_passed": true,
+    "actual_target_sdk_adoption": "NOT_VERIFIED"
   },
   "latest_default_result": "wechat-compatibility-presentation-default-results.json",
-  "new_runtime_published": false,
-  "current_published_2_4_33": {
+  "new_runtime_published": true,
+  "prior_full_default_native_pass": {
+    "run_id": 40458413268,
+    "commit": "1e6a10ffd4fdb42aeb679d5e1d1fbd2a47707d92",
+    "default_result": "unreadable-mode-default-results.json",
+    "native_result": "native-unreadable-mode-pass-results.json",
+    "does_not_include_wechat_compatibility_presentation": true
+  },
+  "local_vm_started_for_new_presentation_candidate": false,
+  "target_location_sdk_accounts_vivo_and_wireless_overseas": "NOT_VERIFIED",
+  "latest_full_native_result": "native-wechat-compatibility-presentation-pass-results.json",
+  "previous_published_2_4_33": {
     "source": "414384487b22a576aa1c6a29fca1df6a167ebd47",
     "run_id": 40424038227,
     "release": "preview-2.4.33-container-41438448",
@@ -166,13 +183,16 @@
     "target_business_location": "NOT_VERIFIED",
     "does_not_include_wechat_compatibility_presentation": true
   },
-  "prior_full_default_native_pass": {
-    "run_id": 40458413268,
-    "commit": "1e6a10ffd4fdb42aeb679d5e1d1fbd2a47707d92",
-    "default_result": "unreadable-mode-default-results.json",
-    "native_result": "native-unreadable-mode-pass-results.json",
-    "does_not_include_wechat_compatibility_presentation": true
-  },
-  "local_vm_started_for_new_presentation_candidate": false,
-  "target_location_sdk_accounts_vivo_and_wireless_overseas": "NOT_VERIFIED"
+  "current_published_2_4_34": {
+    "source": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
+    "run_id": 40466246255,
+    "delivery_commit": "d606261bf05d315698eb3392a9afa60eaf935303",
+    "delivery_run_id": 40491596045,
+    "release": "preview-2.4.34-container-a26d14a5",
+    "result": "phone-a26d14a5-published-delivery-results.json",
+    "includes_unreadable_mode_fix": true,
+    "includes_wechat_compatibility_presentation": true,
+    "user_phone_version": "UNKNOWN",
+    "target_business_location": "NOT_VERIFIED"
+  }
 }

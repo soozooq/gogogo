@@ -1,10 +1,10 @@
 # 原版应用预览的手机流程
 
-本说明随候选安装包交付使用。当前研发状态见[PROJECT_STATUS.md](../PROJECT_STATUS.md)；[2.4.33预览版已发布](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.33-container-41438448)，微信发送／实时位置、抖音无线及海外业务仍未完成真机验收。
+本说明随候选安装包交付使用。当前研发状态见[PROJECT_STATUS.md](../PROJECT_STATUS.md)；[2.4.34微信兼容预览版已发布](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.34-container-a26d14a5)，微信发送／实时位置、抖音无线及海外业务仍未完成真机验收。
 
 面向一部Android13／vivo手机，无Root、无电脑。预览页接收选点和已装原版导入已经完成云端界面检查；主程序首页发送端和vivo真机仍待实际结果。
 
-先安装[主程序APK](https://github.com/soozooq/gogogo/releases/download/preview-2.4.33-container-41438448/Tianwaitian-2.4.33-container-preview-arm64.apk)和[原版预览APK](https://github.com/soozooq/gogogo/releases/download/preview-2.4.33-container-41438448/Tianwaitian-Original-Preview-41438448.apk)，不需要电脑。
+先安装[主程序APK](https://github.com/soozooq/gogogo/releases/download/preview-2.4.34-container-a26d14a5/Tianwaitian-2.4.34-container-preview-arm64.apk)和[原版预览APK](https://github.com/soozooq/gogogo/releases/download/preview-2.4.34-container-a26d14a5/Tianwaitian-Original-Preview-a26d14a5.apk)，不需要电脑。已有2.4.33主程序时只更新原版预览APK；首次使用或仍为2.4.31时安装两份。
 
 ## 三步使用
 
@@ -24,8 +24,9 @@
 <summary>维护者证据，无需手机操作</summary>
 
 - [普通入口与已装导入](../research/container-api33/evidence/map-point-prefill-results.json)：接收端预填、原版导入、原应用保留及GPSTest实际界面。
-- [当前默认六路径与18项受控回归](../research/container-api33/evidence/preview-compact-feedback-results.json)：CI50固定414源码，实际短反馈780字符、同主PID／模式、A→B／停止与取消检查。
-- [当前原生完整回执](../research/container-api33/evidence/native-preview-feedback-virtual-startup-pass-results.json)：同源码两款关闭模式与模式2匿名启动、自有框架及六路径通过，系统及清理合格；目标SDK、账号和实际位置业务仍未验证。
+- [当前默认定位／19项受控无线回归](../research/container-api33/evidence/wechat-compatibility-presentation-default-results.json)：CI52固定a26源码，六方法含受控微信包上下文，通用Guest六路径与四阶段保留。
+- [当前原生完整回执](../research/container-api33/evidence/native-wechat-compatibility-presentation-pass-results.json)：同源ARM64两款匿名双模式新主PID、自有框架／六路径和新增6方法受控契约通过；目标SDK、账号和实际位置业务仍未验证。
+- [实际安装包发布回执](../research/container-api33/evidence/phone-a26d14a5-published-delivery-results.json)：Phone CI5、版本／签名、公开下载和旧版本未变已核对。
 
 这些记录供维护者核对，不是用户操作清单。
 

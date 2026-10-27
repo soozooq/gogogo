@@ -143,12 +143,13 @@
   },
   "native_same_source": {
     "job_id": 122064299151,
-    "status": "in_progress",
-    "result": "PENDING_NOT_PASS",
-    "new_six_method_controlled_presentation_case_required": true
+    "status": "completed",
+    "result": "native-wechat-compatibility-presentation-pass-results.json",
+    "new_six_method_controlled_presentation_case_required": true,
+    "passed": true
   },
   "current_public_2_4_33_has_this_feature": false,
-  "new_phone_apk_published": false,
+  "new_phone_apk_published": true,
   "target_wechat_send_live_douyin_wireless_overseas_and_vivo": "NOT_VERIFIED",
   "scope_limits": [
     "The new six-method controlled package fixture is not a running WeChat process or actual SDK execution.",
@@ -157,5 +158,6 @@
     "CI51 and earlier full native passes belong to other runtime sources and cannot prove this presentation candidate."
   ],
   "verifier_sha256": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
-  "inputs_manifest_sha256": "a37deb5ae24fd4310096415702c0e57f4753279dc017f979c58386bc08c0213b"
+  "inputs_manifest_sha256": "a37deb5ae24fd4310096415702c0e57f4753279dc017f979c58386bc08c0213b",
+  "phone_delivery_followup": "phone-a26d14a5-published-delivery-results.json"
 }

@@ -1,6 +1,6 @@
 {
   "schema": "GOGOGO_WECHAT_COMPATIBILITY_PRESENTATION_PREPARATION_V1",
-  "scope": "IMPLEMENTED_FIXED_CI52_DEFAULT_VERIFIED_MATCHED_NATIVE_PENDING_NOT_WECHAT_BUSINESS_SUCCESS",
+  "scope": "IMPLEMENTED_FIXED_CI52_DEFAULT_AND_MATCHED_NATIVE_VERIFIED_NOT_WECHAT_BUSINESS_SUCCESS",
   "base_research_commit": "98b0057bd49169f44ac063a781188d978973a4f3",
   "prior_runtime_commit": "1e6a10ffd4fdb42aeb679d5e1d1fbd2a47707d92",
   "prior_native_run_id": 40458413268,
@@ -27,7 +27,7 @@
     "main_profile_version_code": 2400102,
     "profile_path": "docs/build-profiles/main-preview-2.4.34.init.gradle",
     "profile_sha256": "cd1e4bc4adbd90ca30ec92c0341ddc1ba0f9fc19b9dbd9cb0586fbfe893a5947",
-    "new_phone_apk_published": false
+    "new_phone_apk_published": true
   },
   "controlled_location_contract": {
     "expected_test_methods": 6,
@@ -85,8 +85,9 @@
     "commit": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
     "run_id": 40466246255,
     "job_id": 122064299151,
-    "status": "in_progress",
-    "result": "PENDING_NOT_PASS"
+    "status": "completed",
+    "result": "native-wechat-compatibility-presentation-pass-results.json",
+    "passed": true
   },
   "new_permissions_dependencies_or_jni": false,
   "new_phone_experiment_pages_or_steps": false,
@@ -104,7 +105,8 @@
   "limits": [
     "Compatibility presentation changes the flag of synthetic locations inside the WeChat virtual session. It does not create physical GPS data.",
     "Static filtering code is verified in the bundled module; active phone component, route and other filtering decisions are unknown.",
-    "Pending candidate cannot borrow CI51 or CI50 runtime success.",
+    "CI52 default and native results are bound to a26d14a5; CI51 and CI50 cannot substitute for changed runtime sources.",
     "The new controlled package fixture is not a running WeChat process or real SDK adoption test."
-  ]
+  ],
+  "publication_followup": "phone-a26d14a5-published-delivery-results.json"
 }

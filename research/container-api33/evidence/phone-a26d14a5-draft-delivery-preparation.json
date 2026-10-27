@@ -49,5 +49,7 @@
   "old_public_releases_untouched": true,
   "original_target_apk_and_embedded_component_distributed": false,
   "phone_tests_added": false,
-  "target_business_and_vivo": "NOT_VERIFIED"
+  "target_business_and_vivo": "NOT_VERIFIED",
+  "followup_current_publication": "phone-a26d14a5-published-delivery-results.json",
+  "preparation_draft_fields_are_historical_snapshot": true
 }
