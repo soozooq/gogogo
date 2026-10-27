@@ -1,0 +1,60 @@
+{
+  "schema": "GOGOGO_66258D1D_PHONE_DRAFT_DELIVERY_PREPARATION_V1",
+  "scope": "VERIFIED_LINUX_COUNTERS_AND_PRIVATE_SIGNING_DRAFT_ONLY_MAC_AND_NATIVE_PENDING_NOT_PHONE_SUCCESS",
+  "source_commit": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+  "source_run": 40523604093,
+  "source_owned_artifact_id": 12741609554,
+  "source_owned_archive_sha256": "7f01d573c1bfadfb68ad7d1d6cc0d1e2b68b6bc7d1ff7981a1a08448f81a753a",
+  "host": {
+    "package": "com.soozooq.tianwaitian.containerresearch",
+    "version_name": "0.4-preview",
+    "version_code": 4,
+    "bytes": 4590083,
+    "sha256": "a85bf3535c3ada5e561eac0b68a0fbf938ea6b700bacc5b92a89fcb0ec9140c5",
+    "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+    "signature_and_alignment_verified": true,
+    "debuggable": true
+  },
+  "host_base_sha256": "e96a50a9147ef414338ffdbdc5434d48ccafdf63c6836c3565c74287b15f47f1",
+  "host_ci_non_signature_entries_equal": 415,
+  "public_recipe": {
+    "file": "ci/phone-preview/host-signature-66258d1d.json",
+    "target_sha256": "a85bf3535c3ada5e561eac0b68a0fbf938ea6b700bacc5b92a89fcb0ec9140c5",
+    "non_signature_payload_bytes_copied": 4471500,
+    "operations": 831,
+    "restored_byte_for_byte_verified": true,
+    "private_key_included": false
+  },
+  "main_profile": {
+    "path": "docs/build-profiles/main-preview-2.4.35.init.gradle",
+    "sha256": "67f15d335ae34ac7245dec166806773eaf83f772df0ae2b5fe7c7a9851c41ed4",
+    "version_name": "2.4.35-container-preview",
+    "version_code": 2400103,
+    "actual_apk_sha256": "UNKNOWN_UNTIL_PHONE_DELIVERY_JOB"
+  },
+  "draft": {
+    "id": 425599161,
+    "tag": "preview-2.4.35-container-66258d1d",
+    "target_commitish": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+    "draft": true,
+    "assets_at_preparation": [],
+    "published": false
+  },
+  "same_source_linux_result": "consumer-delivery-linux-results.json",
+  "same_source_arm_mac": {
+    "id": 122257025243,
+    "status": "completed",
+    "result": "NO_RUNNER_EXECUTION_NOT_PASS",
+    "conclusion": "cancelled",
+    "failure_record": "ci53-mac-runner-capacity-results.json"
+  },
+  "same_source_native_job": {
+    "id": 122261508507,
+    "status": "in_progress",
+    "result": "PENDING_NOT_PASS"
+  },
+  "public_release_guard": "Verify remaining same-source Mac/native results and actual delivery APK bytes/signatures/checks/draft/source/assets before publishing.",
+  "old_public_releases_untouched": true,
+  "original_target_apk_or_keys_distributed": false,
+  "new_phone_experiment": false
+}

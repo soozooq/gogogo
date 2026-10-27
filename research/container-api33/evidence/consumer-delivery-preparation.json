@@ -1,6 +1,6 @@
 {
   "schema": "GOGOGO_PASSIVE_CONSUMER_DELIVERY_PREPARATION_V1",
-  "scope": "IMPLEMENTED_BOUNDED_VOLATILE_VIRTUAL_CONSUMER_COUNTERS_RUNTIME_PENDING_NOT_TARGET_SDK_ADOPTION",
+  "scope": "IMPLEMENTED_FIXED_CI53_LINUX_VERIFIED_MAC_AND_MATCHED_NATIVE_PENDING_NOT_SDK_ADOPTION",
   "base_research_commit": "48d94be04aef0188d856c73e35a82c564b833054",
   "prior_published_runtime": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
   "prior_public_release": "preview-2.4.34-container-a26d14a5",
@@ -91,7 +91,8 @@
     "enhanced_ordinary_feedback": [
       "Existing normal clipboard flow contains passive counters and volatile-history scope without exceeding the unchanged 1800-character limit."
     ],
-    "runtime_passed": false
+    "runtime_passed": true,
+    "runtime_scope": "ACTUAL_X86_64_ONLY_NOT_MATCHED_ARM64_OR_REAL_WECHAT"
   },
   "source_sha256": {
     "patches/blackbox-api33-build.patch": "839947fae2ffcb1379ff328b9a6c757f8253114a12ec4a20854670c53aed14e8",
@@ -103,8 +104,38 @@
     "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ThirdPartyLocationInstrumentedTest.java": "f9d53687bbbf1da71ebb6b34c41af3efcbb55303d6fb7f1598305279645e1ef8"
   },
   "engine_patch_sha256": "839947fae2ffcb1379ff328b9a6c757f8253114a12ec4a20854670c53aed14e8",
-  "fixed_commit_default_runtime": "PENDING_NOT_PASS",
-  "fixed_commit_native_runtime": "PENDING_NOT_PASS",
+  "fixed_commit_default_runtime": {
+    "commit": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+    "run_id": 40523604093,
+    "status": "in_progress",
+    "result": "consumer-delivery-linux-results.json",
+    "linux_passed": true,
+    "all_default_jobs_passed": false
+  },
+  "fixed_commit_native_runtime": {
+    "commit": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+    "run_id": 40523604093,
+    "job_id": 122261508507,
+    "status": "in_progress",
+    "result": "PENDING_NOT_PASS"
+  },
   "phone_and_actual_sdk_acceptance": "NOT_VERIFIED",
-  "new_permissions_dependencies_jni_or_phone_experiments": false
+  "new_permissions_dependencies_jni_or_phone_experiments": false,
+  "same_run_own_transport_verified": {
+    "artifact": {
+      "id": 12741609554,
+      "sha256": "7f01d573c1bfadfb68ad7d1d6cc0d1e2b68b6bc7d1ff7981a1a08448f81a753a",
+      "verified": true
+    },
+    "source_count": 59,
+    "same_certificate": true,
+    "notice_materials_per_apk": 11
+  },
+  "arm_mac_build": {
+    "job_id": 122257025243,
+    "status": "completed",
+    "result": "NO_RUNNER_EXECUTION_NOT_PASS",
+    "conclusion": "cancelled",
+    "failure_record": "ci53-mac-runner-capacity-results.json"
+  }
 }

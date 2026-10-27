@@ -19,7 +19,7 @@
 
 缓存／current计数只表示样本已准备，持续发送返回可能只是单向Binder已排队，都不证明SDK采用。真实Binder调用／接收PID用于受控检查，不复制到手机反馈；不保留坐标、Location对象、IP、SSID、基站ID、Key或SDK栈。沿用1.5秒复制上限及旧回调防护、1800字符运行约束，未知和超时明确标注；不新增页面、操作、权限、依赖或JNI，也不改变2.4.34的微信／通用mock呈现规则。
 
-[准备记录](research/container-api33/evidence/consumer-delivery-preparation.json)：宿主候选0.4／4，主profile预留2.4.35／2400103。28秒与16秒编译、宿主静态核对、完整补丁干净重放及25项驱动检查通过；新增AIDL仅追加，旧事务顺序保持。现有6方法受控定位契约增加计数差分、快照不可改Core、配置读取不计数、标记与真实PID检查，真实独立Guest和普通复制流程也增加实际摘要断言。新的默认／同源原生运行尚待结果，不能借用CI52通过。没有启动本地软件VM或要求手机实验；公开2.4.34及旧版附件保持原样。
+[准备记录](research/container-api33/evidence/consumer-delivery-preparation.json)：宿主候选0.4／4，主profile预留2.4.35／2400103。28秒与16秒编译、宿主静态核对、完整补丁干净重放及25项驱动检查通过；新增AIDL仅追加，旧事务顺序保持。[CI53 Linux实际已验真通过](research/container-api33/evidence/consumer-delivery-linux-results.json)，固定66258d1d／839947fa：6方法定位4.265秒、19受控无线0.234秒、七case／变化UI与447主检查／lint均过；两档API摘要、58／59来源、三同签名及每包11材料核对。真实独立消费者PID3031与准备／接收PID对应，宿主2965不同；GPS／NETWORK各缓存2、current2、发送返回3，通用mock与合成来源保留，六路径4.283秒。受控微信上下文的计数差分、快照隔离和配置不计数也通过；原普通复制实际1322字符，保留1800上限／Guest主PID／模式，未记录坐标。普通入口14.779秒、已装导入7.948秒、计算器6.041秒。[ARM Mac构建122257025243因GitHub hosted runner容量不足取消](research/container-api33/evidence/ci53-mac-runner-capacity-results.json)，runner=0、0步骤，未运行编译，不能算通过或代码失败。仅重跑该作业的API返回403：整轮仍在进行；需等当前同源ARM64作业122261508507结束再重试。没有取消或重复当前原生，不借CI52替代新结果。没有启动本地软件VM或要求手机实验；公开2.4.34及旧版附件保持原样。 [2.4.35交付准备](research/container-api33/evidence/phone-66258d1d-draft-delivery-preparation.json)仅为未公开草稿425599161；宿主稳定私签SHAa85bf353…／0.4-code4，与实际CI53的415非签名内容相同，公开配方逐字节恢复通过，私钥不传入CI。剩余同源结果及实际手机交付均须独立核对后才可公开。
 
 ## 已发布基础：微信定位SDK兼容呈现（2.4.34）
 
@@ -87,5 +87,7 @@ Android13补齐getServiceStateForSubscriber和预加载TelephonyManager.sITeleph
 - [CI48完整通过](research/container-api33/evidence/native-phone-transaction-name-pass-results.json)固定e081／d6，属于旧2.4.32；[CI47失败](research/container-api33/evidence/native-phone-callback-field-failure-results.json)的私有TRANSACTION字段读取异常及旧包备份保留。运行时AIDL名称修正没有改变全局隐藏API策略或mock标志。
 - [CI44／45时效失败](research/container-api33/evidence/native-owned-location-freshness-results.json)、[CI42旧UI节点读取失败](research/container-api33/evidence/native-owned-location-stale-ui-results.json)、[CI40主PID集合问题](research/container-api33/evidence/native-pid-set-and-owned-stage-results.json)和[Provider归属拒绝](research/container-api33/evidence/provider-attribution-failure-and-correction.json)保留，不用旧成功覆盖新失败，不放宽时效／清理要求。
 - [SDK只读核对](research/container-api33/evidence/target-location-sdk-boundary-review.json)指出微信私有sapp不同于公开腾讯SDK；抖音含AMap／BDLocation及模拟方法标识，不证明运行设置或拒绝因果。精确方法表补查：微信classes16四个sapp公开入口共52项声明没有公开SDK中的同名mock开关；抖音classes48有隐私／mock声明。后续对选定SDK命名空间的DEX指令扫描与独立apkanalyzer核对，确认抖音所含com.loc代码有两处isFromMockProvider调用；微信请求包装层反射调用Method.invoke，构造层引用库加载／原生初始化。因此不能由少量直接调用推定微信不读某定位接口，也不能由识别mock的代码推定抖音实际拒绝；活跃实现／设置／业务采用仍未知。均未执行SDK、读取Key／账号值或变更同意／mock状态。用户10月23日VPN开／关快照与微信失败仍保留，10月13日历史不重跑，真实地址截图未上传公共仓库。
+
+[抖音内部样本路径补查](research/container-api33/evidence/douyin-internal-sample-branch-review.json)确认com.loc中一条路径除mock外还检查extras整数及部分质量字段，helper为true时在后续样本打包前返回。这尚未被证明是页面定位结果路径，活跃设置和失败因果未知；未据此改变抖音呈现策略，也未编造卫星或运动值。
 
 继续沿唯一研发分支HEAD。新增运行变化必须绑定固定源码核对；原生push带齐[cuttlefish-boot]和[cuttlefish-container]，共用锁不取消前轮，排队／跳过不算通过。证据工具为tools/verify-ci-receipts.py；构建用仓库外CONTAINER_RESEARCH_WORKDIR及tools/run-build.sh，保留代理／CA／TLS。新结果用新输出，不覆盖旧证据。许可与来源见[THIRD_PARTY_NOTICES.md](research/container-api33/THIRD_PARTY_NOTICES.md)，已知边界见[AUDIT.md](research/container-api33/AUDIT.md)。

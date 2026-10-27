@@ -1,0 +1,43 @@
+{
+  "schema": "GOGOGO_CI53_MAC_HOSTED_RUNNER_CAPACITY_FAILURE_V1",
+  "scope": "NO_RUNNER_OR_BUILD_EXECUTION_NOT_A_SOURCE_COMPILATION_FAILURE_OR_PASS",
+  "run_id": 40523604093,
+  "commit": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+  "job_id": 122257025243,
+  "conclusion": "cancelled",
+  "runner_id": 0,
+  "steps_executed": 0,
+  "started_at_api_field_not_build_start": "2026-10-27T14:41:53Z",
+  "completed_at": "2026-10-27T14:57:01Z",
+  "annotations": [
+    {
+      "level": "failure",
+      "message": "The job was not acquired by Runner of type hosted even after multiple attempts"
+    },
+    {
+      "level": "notice",
+      "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+    },
+    {
+      "level": "notice",
+      "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+    },
+    {
+      "level": "notice",
+      "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+    }
+  ],
+  "single_job_retry_attempted": true,
+  "retry_response": {
+    "status": 403,
+    "message": "The workflow run containing this job is already running"
+  },
+  "retry_scope": "Only the cancelled Mac job after the active native run finishes; do not cancel or duplicate the native job.",
+  "linux_checks_still_passed": true,
+  "matched_native_still_in_progress": {
+    "job_id": 122261508507,
+    "passed": false
+  },
+  "arm_mac_result": "NO_EXECUTION_NOT_PASS",
+  "new_phone_release_published": false
+}

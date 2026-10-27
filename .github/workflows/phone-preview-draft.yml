@@ -27,8 +27,8 @@ jobs:
       contents: write
     env:
       GH_REPO: soozooq/gogogo
-      SOURCE_COMMIT: a26d14a5b9e2b7dcfe1dc98874f07440be4b9113
-      PREVIEW_TAG: preview-2.4.34-container-a26d14a5
+      SOURCE_COMMIT: 66258d1d9559789bd1247117d1eb780e24e58ad2
+      PREVIEW_TAG: preview-2.4.35-container-66258d1d
     steps:
       - uses: actions/checkout@v5
         with:
@@ -36,7 +36,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v5
         with:
-          ref: a26d14a5b9e2b7dcfe1dc98874f07440be4b9113
+          ref: 66258d1d9559789bd1247117d1eb780e24e58ad2
           path: source
           persist-credentials: false
       - uses: actions/setup-java@v4
@@ -72,30 +72,30 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          bash ./gradlew --no-daemon --init-script docs/build-profiles/main-preview-2.4.34.init.gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --console=plain
-      - name: Receive only the pinned CI52 self-owned set
+          bash ./gradlew --no-daemon --init-script docs/build-profiles/main-preview-2.4.35.init.gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --console=plain
+      - name: Receive only the pinned CI53 self-owned set
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          gh api repos/soozooq/gogogo/actions/artifacts/12717020802 > package-work/artifact-api.json
+          gh api repos/soozooq/gogogo/actions/artifacts/12741609554 > package-work/artifact-api.json
           python3 - <<'PY'
           import json
           from pathlib import Path
           value = json.loads(Path('package-work/artifact-api.json').read_text())
-          assert value['id'] == 12717020802 and not value['expired']
-          assert value['workflow_run']['id'] == 40466246255
-          assert value['workflow_run']['head_sha'] == 'a26d14a5b9e2b7dcfe1dc98874f07440be4b9113'
-          assert value['digest'] == 'sha256:c97e3904f013804ad25b4e0c7529101845ca03ba06831569564ddefbcaec308f'
+          assert value['id'] == 12741609554 and not value['expired']
+          assert value['workflow_run']['id'] == 40523604093
+          assert value['workflow_run']['head_sha'] == '66258d1d9559789bd1247117d1eb780e24e58ad2'
+          assert value['digest'] == 'sha256:7f01d573c1bfadfb68ad7d1d6cc0d1e2b68b6bc7d1ff7981a1a08448f81a753a'
           PY
-          gh api repos/soozooq/gogogo/actions/artifacts/12717020802/zip > package-work/owned.zip
+          gh api repos/soozooq/gogogo/actions/artifacts/12741609554/zip > package-work/owned.zip
           python3 - <<'PY'
           import json
           from pathlib import Path
-          inputs = {'run_id': 40466246255, 'commit': 'a26d14a5b9e2b7dcfe1dc98874f07440be4b9113',
-                    'artifacts': {'own': {'id': 12717020802, 'path': str(Path('package-work/owned.zip').resolve()),
-                    'sha256': 'c97e3904f013804ad25b4e0c7529101845ca03ba06831569564ddefbcaec308f'}}}
+          inputs = {'run_id': 40523604093, 'commit': '66258d1d9559789bd1247117d1eb780e24e58ad2',
+                    'artifacts': {'own': {'id': 12741609554, 'path': str(Path('package-work/owned.zip').resolve()),
+                    'sha256': '7f01d573c1bfadfb68ad7d1d6cc0d1e2b68b6bc7d1ff7981a1a08448f81a753a'}}}
           Path('package-work/verification-inputs.json').write_text(json.dumps(inputs))
           PY
           python3 source/research/container-api33/tools/verify-ci-receipts.py --repo source --sdk "$ANDROID_HOME" --inputs package-work/verification-inputs.json --output package-work/verified-owned.json
@@ -106,7 +106,7 @@ jobs:
               Path('package-work/base-host.apk').write_bytes(archive.read('probeHost-debug.apk'))
           PY
       - name: Restore the exact privately signed host using public APK metadata
-        run: python3 delivery/ci/restore_preview_signature.py --base package-work/base-host.apk --recipe delivery/ci/phone-preview/host-signature-a26d14a5.json --output package-work/signed-host.apk
+        run: python3 delivery/ci/restore_preview_signature.py --base package-work/base-host.apk --recipe delivery/ci/phone-preview/host-signature-66258d1d.json --output package-work/signed-host.apk
       - name: Stage only the two verified phone APKs
         shell: bash
         run: |
@@ -115,7 +115,7 @@ jobs:
       - name: Save one flat phone download and its receipt
         uses: actions/upload-artifact@v4
         with:
-          name: tianwaitian-phone-preview-2.4.34-a26d14a5
+          name: tianwaitian-phone-preview-2.4.35-66258d1d
           path: package-work/staged/*
           if-no-files-found: error
           retention-days: 14
@@ -131,18 +131,18 @@ jobs:
           from pathlib import Path
           value = json.loads(Path('package-work/draft-before.json').read_text())
           assert value['isDraft'] is True
-          assert value['targetCommitish'] == 'a26d14a5b9e2b7dcfe1dc98874f07440be4b9113'
+          assert value['targetCommitish'] == '66258d1d9559789bd1247117d1eb780e24e58ad2'
           assert value['assets'] == [], 'Existing draft assets are preserved; inspect before retrying'
           PY
-          gh release upload "$PREVIEW_TAG" --repo "$GH_REPO" package-work/staged/Tianwaitian-2.4.34-container-preview-arm64.apk package-work/staged/Tianwaitian-Original-Preview-a26d14a5.apk
+          gh release upload "$PREVIEW_TAG" --repo "$GH_REPO" package-work/staged/Tianwaitian-2.4.35-container-preview-arm64.apk package-work/staged/Tianwaitian-Original-Preview-66258d1d.apk
           gh release view "$PREVIEW_TAG" --repo "$GH_REPO" --json isDraft,targetCommitish,assets > package-work/draft-after.json
           python3 - <<'PY'
           import json
           from pathlib import Path
           value = json.loads(Path('package-work/draft-after.json').read_text())
           assert value['isDraft'] is True, 'This job never publishes'
-          assert value['targetCommitish'] == 'a26d14a5b9e2b7dcfe1dc98874f07440be4b9113'
-          assert {a['name'] for a in value['assets']} == {'Tianwaitian-2.4.34-container-preview-arm64.apk', 'Tianwaitian-Original-Preview-a26d14a5.apk'}
+          assert value['targetCommitish'] == '66258d1d9559789bd1247117d1eb780e24e58ad2'
+          assert {a['name'] for a in value['assets']} == {'Tianwaitian-2.4.35-container-preview-arm64.apk', 'Tianwaitian-Original-Preview-66258d1d.apk'}
           PY
       - name: Preserve staging diagnostics
         if: always()
