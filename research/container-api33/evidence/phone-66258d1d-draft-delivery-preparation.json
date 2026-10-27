@@ -50,13 +50,15 @@
   },
   "same_source_native_job": {
     "id": 122261508507,
-    "status": "in_progress",
-    "result": "PENDING_NOT_PASS"
+    "status": "completed",
+    "result": "native-original-pidof-set-failure-results.json",
+    "conclusion": "failure"
   },
   "public_release_guard": "Verify remaining same-source Mac/native results and actual delivery APK bytes/signatures/checks/draft/source/assets before publishing.",
   "old_public_releases_untouched": true,
   "original_target_apk_or_keys_distributed": false,
   "new_phone_experiment": false,
   "actual_delivery_followup": "phone-66258d1d-verified-draft-delivery-results.json",
-  "preparation_draft_fields_are_historical_snapshot": true
+  "preparation_draft_fields_are_historical_snapshot": true,
+  "qualification_followup": "original-main-identity-preparation.json"
 }

@@ -69,6 +69,38 @@ def target_failure(crash, package):
     return None
 
 
+def original_package_uid(text, package):
+    """Exact package-manager UID in user0, never a substring package match."""
+    found = re.findall(r'^package:' + re.escape(package) + r' uid:([1-9][0-9]*)\s*$', text, re.M)
+    if len(found) != 1 or not 10000 <= int(found[0]) < 99000:
+        raise ValueError('One ordinary user0 package UID is required')
+    return int(found[0])
+
+
+def registered_original_main(text, package, uid):
+    """Only AMS's registered main role, not the set of same-name fork children."""
+    if type(uid) is not int or not 10000 <= uid < 99000:
+        raise ValueError('One ordinary user0 package UID is required')
+    records = re.findall(r'^\s*\*APP\* UID ([0-9]+) ProcessRecord\{[0-9a-fA-F]+ '
+                         r'([1-9][0-9]*):([^/\s{}]+)/([^\s{}]+)\}\s*$', text, re.M)
+    candidates = []
+    for actual_uid, pid, name, label in records:
+        if name == package and int(actual_uid) == uid:
+            if label != 'u0a' + str(uid - 10000):
+                raise ValueError('AMS UID label differs from the package UID')
+            candidates.append(int(pid))
+    unique = set(candidates)
+    if len(unique) != 1:
+        raise ValueError('One AMS-registered original main process is required')
+    return unique.pop()
+
+
+def require_original_kernel_identity(text, pid, uid):
+    rows = [line.split() for line in text.splitlines() if line.strip()]
+    if len(rows) != 2 or rows[0] != ['PID', 'UID'] or rows[1] != [str(pid), str(uid)]:
+        raise ValueError('Registered original main PID/UID is not confirmed by the kernel')
+
+
 def original_input(work, entry, url, environment):
     names = {'wechat': 'weixin-8.0.79-arm64.apk', 'douyin': 'douyin-40.8.0.apk'}
     directory = work / 'targets'
@@ -267,6 +299,35 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
             result.update(passed=False, platform_failure=failure, state='ENVIRONMENT_' + failure)
         return crash
 
+    def original_main_snapshot(uid, phase):
+        snapshot = {'phase': phase, 'expected_uid': uid,
+                    'identity_scope': 'AMS_REGISTERED_MAIN_AND_KERNEL_PID_UID_NOT_PIDOF_SET'}
+        try:
+            candidates = shell(['pidof', package], check=False)
+            snapshot['pidof_candidates'] = sorted({int(v) for v in candidates.split()})[:32] \
+                if re.fullmatch(r'[1-9][0-9]*(?:\s+[1-9][0-9]*)*', candidates) else []
+            dump = shell(['dumpsys', 'activity', 'processes'])
+            if len(dump) > 2 * 1024 * 1024:
+                raise ValueError('AMS process dump exceeds the bounded control input')
+            snapshot['ams_record_headers'] = [line.strip()[:512] for line in dump.splitlines()
+                if '*APP* UID' in line and package in line][:16]
+            pid = registered_original_main(dump, package, uid)
+            kernel = shell(['ps', '-p', str(pid), '-o', 'PID,UID'])
+            require_original_kernel_identity(kernel, pid, uid)
+            snapshot.update(pid=pid, uid=uid, confirmed=True)
+        except (RuntimeError, ValueError, subprocess.TimeoutExpired) as error:
+            snapshot.update(confirmed=False, error=type(error).__name__ + ': ' + str(error)[:300])
+        count = result.get('original_main_identity_check_count', 0) + 1
+        result['original_main_identity_check_count'] = count
+        result['last_original_main_identity'] = snapshot
+        # Keep bounded identity evidence; do not copy the full AMS dump or app data.
+        if count <= 256:
+            with (out / 'main-process-snapshots.jsonl').open('a') as stream:
+                stream.write(json.dumps(snapshot) + '\n')
+        else:
+            result['original_main_identity_history_truncated'] = True
+        return snapshot
+
     def capture():
         path = '/data/local/tmp/gogogo-original-window.xml'
         run(['shell', 'rm', '-f', path])
@@ -351,30 +412,55 @@ def installed_baseline(adb, serial, apk, entry, out, environment, expected_prope
                 result.update(state=stage, passed=True)
                 if post_ui_hold_seconds:
                     hold = result['post_ui_observation'] = {'requested_seconds': post_ui_hold_seconds,
-                        'first_ui_stage': stage, 'initial_target_pid': target_pid, 'passed': False}
+                        'first_ui_stage': stage, 'initial_target_pid': None, 'passed': False,
+                        'observed_seconds': 0,
+                        'identity_scope': 'AMS_REGISTERED_MAIN_AND_KERNEL_PID_UID_NOT_PIDOF_SET'}
+                    try:
+                        uid_text = shell(['cmd', 'package', 'list', 'packages', '-U', '--user', '0', package])
+                        uid = original_package_uid(uid_text, package)
+                    except (RuntimeError, ValueError, subprocess.TimeoutExpired) as error:
+                        result.update(passed=False, state='ORIGINAL_POST_UI_PACKAGE_UID_NOT_CONFIRMED',
+                                      package_uid_error=type(error).__name__ + ': ' + str(error)[:300])
+                        return result
+                    initial_main = original_main_snapshot(uid, 'AT_UI')
+                    hold['initial_main_identity'] = initial_main
+                    if not initial_main['confirmed']:
+                        result.update(passed=False, state='ORIGINAL_POST_UI_MAIN_IDENTITY_NOT_CONFIRMED')
+                        return result
+                    target_pid = str(initial_main['pid'])
+                    hold.update(initial_target_pid=target_pid, initial_target_uid=uid)
                     started = time.monotonic()
                     deadline = started + post_ui_hold_seconds
                     while time.monotonic() < deadline:
                         crash = read_crash()
                         check_system_process('DURING_POST_UI_OBSERVATION')
                         fatal = target_failure(crash, package)
-                        current = shell(['pidof', package], check=False)
+                        main = original_main_snapshot(uid, 'DURING_POST_UI_OBSERVATION')
+                        current = str(main['pid']) if main['confirmed'] else None
                         hold['last_target_pid'] = current
+                        hold['last_target_uid'] = main.get('uid')
                         if result.get('platform_failure'):
                             break
                         if fatal or current != target_pid:
-                            result.update(passed=False, state='ORIGINAL_POST_UI_' + (fatal or 'TARGET_PROCESS_CHANGED'))
+                            reason = fatal or ('TARGET_PROCESS_CHANGED' if main['confirmed']
+                                               else 'MAIN_IDENTITY_NOT_CONFIRMED')
+                            result.update(passed=False, state='ORIGINAL_POST_UI_' + reason)
                             break
                         time.sleep(min(2, max(0, deadline - time.monotonic())))
                     else:
                         crash = read_crash()
                         check_system_process('AFTER_POST_UI_OBSERVATION')
                         fatal = target_failure(crash, package)
-                        current = shell(['pidof', package], check=False)
+                        main = original_main_snapshot(uid, 'AFTER_POST_UI_OBSERVATION')
+                        current = str(main['pid']) if main['confirmed'] else None
                         hold['last_target_pid'] = current
-                        hold['passed'] = not result.get('platform_failure') and fatal is None and current == target_pid
+                        hold['last_target_uid'] = main.get('uid')
+                        hold['passed'] = not result.get('platform_failure') and fatal is None \
+                            and current == target_pid and main.get('uid') == uid
                         if not hold['passed'] and not result.get('platform_failure'):
-                            result.update(passed=False, state='ORIGINAL_POST_UI_' + (fatal or 'TARGET_PROCESS_CHANGED'))
+                            reason = fatal or ('TARGET_PROCESS_CHANGED' if main['confirmed']
+                                               else 'MAIN_IDENTITY_NOT_CONFIRMED')
+                            result.update(passed=False, state='ORIGINAL_POST_UI_' + reason)
                     hold['observed_seconds'] = round(time.monotonic() - started, 3)
             elif not result.get('platform_failure'):
                 result['state'] = 'STARTUP_UI_NOT_CONFIRMED_READ_ONLY_CAPTURE'

@@ -78,5 +78,11 @@
   "private_key_uploaded": false,
   "original_target_apks_distributed": false,
   "phone_installed": "UNKNOWN",
-  "wechat_send_live_douyin_wireless_overseas_vivo": "NOT_VERIFIED"
+  "wechat_send_live_douyin_wireless_overseas_vivo": "NOT_VERIFIED",
+  "native_followup": {
+    "job_id": 122261508507,
+    "conclusion": "failure",
+    "result": "native-original-pidof-set-failure-results.json",
+    "old_pending_field_is_delivery_time_snapshot": true
+  }
 }

@@ -204,6 +204,31 @@ class OriginalBaselineControlTest(unittest.TestCase):
         self.assertEqual('TARGET_NATIVE_FATAL', baselines.target_failure(native, package))
         self.assertIsNone(baselines.target_failure(native, 'com.tencent.mm'))
 
+    def test_registered_original_main_requires_exact_package_uid_and_unique_ams_role(self):
+        package = 'com.ss.android.ugc.aweme'
+        record = '  *APP* UID 10123 ProcessRecord{abc123 7690:' + package + '/u0a123}\n'
+        other = '  *APP* UID 10123 ProcessRecord{abc456 8696:' + package + ':push/u0a123}\n'
+        self.assertEqual(10123, baselines.original_package_uid('package:' + package + ' uid:10123\n', package))
+        self.assertEqual(7690, baselines.registered_original_main(record + other, package, 10123))
+        for text in ['', 'package:' + package + '.other uid:10123',
+                     'package:' + package + ' uid:1000',
+                     'package:' + package + ' uid:10123\npackage:' + package + ' uid:10124']:
+            with self.subTest(package_uid=text), self.assertRaises(ValueError):
+                baselines.original_package_uid(text, package)
+        for text in ['', other, record.replace('UID 10123', 'UID 10124'),
+                     record.replace('/u0a123', '/u0a124'),
+                     record.replace(package, package + '.other'),
+                     record + record.replace('7690:', '8696:')]:
+            with self.subTest(ams=text), self.assertRaises(ValueError):
+                baselines.registered_original_main(text, package, 10123)
+
+    def test_original_main_requires_live_kernel_pid_and_real_uid(self):
+        baselines.require_original_kernel_identity('  PID   UID\n 7690 10123\n', 7690, 10123)
+        for text in ['', 'PID UID\n', 'PID UID\n8696 10123', 'PID UID\n7690 10124',
+                     'PID UID\n7690 10123\n8696 10123', 'PID USER\n7690 10123']:
+            with self.subTest(kernel=text), self.assertRaises(ValueError):
+                baselines.require_original_kernel_identity(text, 7690, 10123)
+
     def test_preservation_ui_scope_cleanup_and_environment(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
@@ -222,10 +247,14 @@ class OriginalBaselineControlTest(unittest.TestCase):
                          'system_changed', 'system_fatal', 'post_ui_changed',
                          'nonidle_ready', 'nonidle_cleanup_failed', 'nonidle_preexisting',
                          'nonidle_hold_ready', 'nonidle_hold_target_fatal',
-                         'nonidle_hold_system_fatal', 'nonidle_hold_process_changed']:
+                         'nonidle_hold_system_fatal', 'nonidle_hold_process_changed',
+                         'nonidle_hold_helper_added', 'nonidle_hold_reordered',
+                         'nonidle_hold_main_changed_old_still_present', 'nonidle_hold_uid_missing',
+                         'nonidle_hold_ams_missing', 'nonidle_hold_ams_ambiguous',
+                         'nonidle_hold_ams_uid_changed', 'nonidle_hold_kernel_uid_changed']:
                 with self.subTest(mode=mode):
                     calls = []
-                    markers = {'ui': False, 'crash_reads': 0, 'pid_reads': 0}
+                    markers = {'ui': False, 'crash_reads': 0, 'pid_reads': 0, 'ams_reads': 0}
                     ticks = itertools.count()
 
                     def read_ui(*args):
@@ -259,7 +288,31 @@ class OriginalBaselineControlTest(unittest.TestCase):
                             output = b'package:/preexisting.apk' if existing else b''
                         elif command == ['shell', 'pidof', entry['package']]:
                             markers['pid_reads'] += 1
-                            output = b'9501' if mode == 'nonidle_hold_process_changed' and markers['pid_reads'] > 1 else b'9500'
+                            after_initial = markers['ams_reads'] > 0
+                            if mode == 'nonidle_hold_process_changed' and after_initial:
+                                output = b'9501'
+                            elif mode in ['nonidle_hold_helper_added', 'nonidle_hold_main_changed_old_still_present'] and after_initial:
+                                output = b'9500 9501'
+                            elif mode == 'nonidle_hold_reordered':
+                                output = b'9501 9500' if after_initial else b'9500 9501'
+                            else:
+                                output = b'9500'
+                        elif command == ['shell', 'cmd', 'package', 'list', 'packages', '-U', '--user', '0', entry['package']]:
+                            output = b'' if mode == 'nonidle_hold_uid_missing' else b'package:com.tencent.mm uid:10123\n'
+                        elif command == ['shell', 'dumpsys', 'activity', 'processes']:
+                            markers['ams_reads'] += 1
+                            later = markers['ams_reads'] > 1
+                            main_pid = 9501 if mode == 'nonidle_hold_reordered' or later and mode in [
+                                'nonidle_hold_process_changed', 'nonidle_hold_main_changed_old_still_present'] else 9500
+                            ams_uid = 10124 if later and mode == 'nonidle_hold_ams_uid_changed' else 10123
+                            row = f'  *APP* UID {ams_uid} ProcessRecord{{abc123 {main_pid}:com.tencent.mm/u0a{ams_uid - 10000}}}\n'
+                            if later and mode == 'nonidle_hold_ams_missing': row = ''
+                            if later and mode == 'nonidle_hold_ams_ambiguous':
+                                row += '  *APP* UID 10123 ProcessRecord{abc456 9501:com.tencent.mm/u0a123}\n'
+                            output = ('All known processes:\n' + row).encode()
+                        elif command[:3] == ['shell', 'ps', '-p']:
+                            uid = 10124 if markers['ams_reads'] > 1 and mode == 'nonidle_hold_kernel_uid_changed' else 10123
+                            output = f'  PID UID\n{command[3]} {uid}\n'.encode()
                         elif command[:3] == ['shell', 'mktemp', '-d']:
                             output = b'/data/local/tmp/gogogo-original-wechat-fixture123'
                         elif command[:2] == ['shell', 'sha256sum']:
@@ -304,10 +357,17 @@ class OriginalBaselineControlTest(unittest.TestCase):
                             apk, entry, root / mode, environment, properties,
                             ui_apks=root if mode.startswith('nonidle_') else None,
                             post_ui_hold_seconds=4 if mode.startswith('nonidle_hold_') else 0)
-                    self.assertEqual(mode in ['welcome', 'nonidle_ready', 'nonidle_hold_ready'], result['passed'])
+                    successful = mode in ['welcome', 'nonidle_ready', 'nonidle_hold_ready',
+                                          'nonidle_hold_helper_added', 'nonidle_hold_reordered']
+                    self.assertEqual(successful, result['passed'])
                     if mode.startswith('nonidle_hold_'):
-                        self.assertEqual(mode == 'nonidle_hold_ready', result['post_ui_observation']['passed'])
-                        if mode != 'nonidle_hold_ready':
+                        self.assertEqual(successful, result['post_ui_observation']['passed'])
+                        if successful:
+                            self.assertGreaterEqual(result['post_ui_observation']['observed_seconds'], 4)
+                            self.assertEqual(result['post_ui_observation']['initial_target_pid'],
+                                             result['post_ui_observation']['last_target_pid'])
+                            self.assertEqual(10123, result['post_ui_observation']['last_target_uid'])
+                        else:
                             self.assertTrue(result['state'].startswith('ORIGINAL_POST_UI_') or result['state'].startswith('ENVIRONMENT_'))
                     if mode.startswith('nonidle_'):
                         if mode == 'nonidle_preexisting':

@@ -116,8 +116,9 @@
     "commit": "66258d1d9559789bd1247117d1eb780e24e58ad2",
     "run_id": 40523604093,
     "job_id": 122261508507,
-    "status": "in_progress",
-    "result": "PENDING_NOT_PASS"
+    "status": "completed",
+    "result": "native-original-pidof-set-failure-results.json",
+    "conclusion": "failure"
   },
   "phone_and_actual_sdk_acceptance": "NOT_VERIFIED",
   "new_permissions_dependencies_jni_or_phone_experiments": false,
@@ -144,5 +145,6 @@
     "delivery_commit": "da2d9135845e6825c5eb40e012bfbfac65ca3656",
     "verified": true,
     "published": false
-  }
+  },
+  "qualification_followup": "original-main-identity-preparation.json"
 }
