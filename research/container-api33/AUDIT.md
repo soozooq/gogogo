@@ -1,6 +1,6 @@
 # 可复用基础审计
 
-当前由[根入口](../../PROJECT_STATUS.md)继续：新引擎16440679仅允许当前ProcessRecord执行退出清理，避免迟到旧回调删除替代登记／复用proc文件；主动停止同步清理。受控host fixture与目标清理前有界进程快照已补，20秒编译／干净补丁重放／27驱动／12交付检查通过，新同源运行待验，见[准备](evidence/retired-process-owner-preparation.json)。[56原生微信OWN重开失败](evidence/native-passive-wechat-restart-failure-results.json)仍失败，抖音匿名双模式、自有框架／7方法／九路径通过分别记录，不等于SDK采纳。56 Mac无runner未编译，不重试。[Phone7两APK已独立核对但Release POST失败](evidence/phone-99940ea2-build-and-release-api-failure-results.json)，HTTP原因未捕获，发布跳过、无新draft。旧99940交付策略已关闭，preflight跳过打包；仅完整新同源资格后才有qualified下载，旧56冻结curator不得用于新source。公开2.4.34和旧6625草稿保留，无新手机实验。以下是历史快照。
+当前由[根入口](../../PROJECT_STATUS.md)继续，运行固定c805／16440679，退出回调仅清理同一当前记录。[57默认实际验真](evidence/retired-process-owner-linux-results.json)：新增host退出归属fixture、7定位／19无线／真实九路径3.621秒、1380字符反馈、447主检查／lint和Mac实际构建通过，三档归档／58及59来源／三同签名及材料匹配；原生122512447262运行中，不能称微信重开已修好。[新同源交付准备](evidence/phone-c8052d31-delivery-preparation.json)宿主4d1f0725…／4,594,179字节，415内容／公开配方恢复已核对；14边界检查过，冻结57实际归档与新清理前主身份／退出fixture门槛。controller提交后触发新Phone任务，完整同源后才qualified下载／发布，运行前不称交付。56失败、Phone7接口原因未知及Phone8实际暂停保留，旧public34与6625draft不覆盖，无新手机实验。以下历史快照。
 
 [55实际失败](evidence/passive-fixture-attribution-failure-results.json)已独立核对API归档／58与59来源／签名材料：7定位方法6成功1归属断言失败，Wechat受控三通道通过；普通host新增测试未绑定虚拟包，九路径／无线／普通反馈／原生未执行。[修正fixture身份](evidence/passive-fixture-identity-preparation.json)建立明确generic包及实际Binder PID断言，保留全部计数／来源断言及7方法、finally恢复状态；生产420b8399与手机版本不变，最终15秒构建通过，新同源待验。旧草稿不发，不要求手机实验。
 

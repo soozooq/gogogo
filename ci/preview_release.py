@@ -168,6 +168,26 @@ def latest_jobs(value):
     return latest
 
 
+def verify_container_main_hold(hold, restart, package):
+    require(hold['passed'] is True and hold['requested_seconds'] == 300
+            and hold['observed_ms'] >= 300000
+            and hold['identity_basis'] == 'CORE_REGISTERED_MAIN_PROCESS_AND_ACTUAL_ACTIVITY_MANAGER_PID_UID',
+            'Container main-role observation did not pass')
+    main, uid = hold['main_pid'], hold['main_uid']
+    require(type(main) is int and main > 0 and type(uid) is int and uid >= 10000
+            and main == restart['previous_main_pid'] and uid == restart['main_uid'],
+            'Held main differs from the closed-mode process used for restart')
+    for field in ['initial_registered_processes', 'last_registered_processes']:
+        records = hold[field]
+        require(isinstance(records, list) and 0 < len(records) <= 32,
+                'Missing or unbounded main-role snapshot')
+        roles = [v for v in records if v['process_name'] == package]
+        require(len(roles) == 1 and roles[0]['pid'] == main and roles[0]['uid'] == uid,
+                'Actual registered main changed, is ambiguous, or has another UID')
+    # pidof sets may gain/lose same-name auxiliary processes during the hold.
+    # The actual AMS/Core main role and UID, not complete set equality, are required.
+
+
 def mac_capacity_retry_allowed(workflow, jobs, config, annotations):
     mac = jobs.get(config['mac_job_name'])
     required = [next((v for v in jobs.values() if v['id'] == pin), None)
@@ -276,8 +296,8 @@ def publish(args, config, config_path):
             and proof['feedback_main'] == {'junit': COUNTS, 'lint_error_fatal_count': 0, 'passed': True}
             and len(proof['default_cases']) == 8 and all(v['passed'] for v in proof['default_cases'].values()),
             'Default qualification did not pass')
-    subprocess.run([sys.executable, 'ci/qualify_native_preview.py', '--round', '56',
-                    '--job', str(config['qualification_job_ids']['native']), '--proof', str(work / 'verified.json'),
+    subprocess.run([sys.executable, 'ci/qualify_native_preview.py', '--config', str(config_path),
+                    '--proof', str(work / 'verified.json'),
                     '--raw', str(work / 'native'), '--output', str(work / 'native-qualified.json')], check=True)
     for name, count in [('x86_64-location-contract', 7), ('x86_64-radio-privacy', 19)]:
         text = (work / 'linux' / name / 'cloud-instrumentation.txt').read_text()
@@ -378,7 +398,7 @@ def publish(args, config, config_path):
                'previous_failed_results_preserved': True, 'private_key_used': False,
                'target_sdk_or_vivo_business_verified': False, 'published': False}
     save(work / 'qualified-before-publication.json', receipt)
-    notes = Path(config['notes_path']).read_text() + '\n发版前实际核对：同源CI56的Mac构建、Linux7定位／19无线／447主检查及ARM64原包对照／7方法／独立Guest九路径通过；原包300秒主身份、系统稳定、清理、两包签名／415内容与服务器字节均已核对。云端通过不等于微信／抖音定位业务或vivo通过。\n'
+    notes = Path(config['notes_path']).read_text() + '\n发版前实际核对：同源CI' + str(config['qualification_round']) + '的Mac构建、Linux7定位／19无线／447主检查及ARM64原包对照／7方法／独立Guest九路径通过；原包300秒主身份、系统稳定、清理、两包签名／415内容与服务器字节均已核对。云端通过不等于微信／抖音定位业务或vivo通过。\n'
     (work / 'published-notes.txt').write_text(notes)
     live_policy_matches(config_path, config)
     subprocess.run(['gh', 'release', 'edit', config['tag'], '--repo', REPO, '--title', config['title'],

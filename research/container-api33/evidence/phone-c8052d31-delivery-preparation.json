@@ -1,0 +1,94 @@
+{
+  "schema": "GOGOGO_CI57_MATCHED_PREVIEW_DELIVERY_PREPARATION_V1",
+  "scope": "ACTUAL_LINUX_MAC_AND_SIGNED_HOST_VERIFIED_NATIVE_AND_NEW_PHONE_BUILD_PENDING",
+  "runtime_commit": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+  "qualification_run_id": 40595256036,
+  "qualification_job_ids": {
+    "linux": 122509447972,
+    "mac": 122509448125,
+    "native": 122512447262
+  },
+  "engine_patch_sha256": "1644067914092e72d27cddaf652173ecb9e05cef83efb509953d1424ebb7776e",
+  "actual_default_result": "retired-process-owner-linux-results.json",
+  "actual_three_archives": {
+    "own": {
+      "id": 12775788117,
+      "sha256": "64da4721716e2d6c41e6fe5d6d56f57555d529b5b098280eadfa0d7534692bef",
+      "verified": true
+    },
+    "linux": {
+      "id": 12777325224,
+      "sha256": "51c63df80f37491ea68819da43eafc859fce8b6df58536a3a3c8821dcec0324d",
+      "verified": true
+    },
+    "mac": {
+      "id": 12776161879,
+      "sha256": "6c906651cbe6ef767df7506e97cc9035e6c3162244d6f8f007cf71325b483c1b",
+      "verified": true
+    }
+  },
+  "mac_build_scope": "BUILD_ONLY_NOT_ANDROID_RUNTIME",
+  "native": "IN_PROGRESS_NOT_PASS",
+  "native_failure56_retained": true,
+  "host_apk": {
+    "package": "com.soozooq.tianwaitian.containerresearch",
+    "version_name": "0.4-preview",
+    "version_code": 4,
+    "bytes": 4594179,
+    "sha256": "4d1f072585c69e446bfb72f5cefa57ee6a221f557f5a44ed1e903576b1470b95",
+    "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+    "signature_and_alignment_verified": true,
+    "debuggable": true
+  },
+  "host_all_415_non_signature_entries_equal": true,
+  "public_recipe": {
+    "path": "ci/phone-preview/host-signature-c8052d31.json",
+    "sha256": "ec6370c2a23dc45bb3485cb6a784152ff222872d13c2ab67ab5feee0de9fb1bb",
+    "operations": 831,
+    "copied_compressed_payload_bytes": 4471760,
+    "exact_roundtrip": true,
+    "private_key_included": false
+  },
+  "private_key_uploaded_to_git_or_ci": false,
+  "main_apk_sha256": "UNKNOWN_UNTIL_ACTUAL_NEW_PHONE_BUILD_NOT_OLD_PHONE7",
+  "versions": {
+    "main": "2.4.35 / 2400103",
+    "host": "0.4 / 4"
+  },
+  "new_tag": "preview-2.4.35-container-c8052d31",
+  "new_phone_build": "NOT_STARTED_AT_PREPARATION",
+  "new_draft": "NOT_CREATED_AT_PREPARATION",
+  "publisher": "PREPARED_NOT_EXECUTED_AT_PREPARATION",
+  "all_four_actual_archives_and_native_required": true,
+  "new_native_requires_controlled_retired_record_fixture_and_target_before_cleanup_live_main_snapshot": true,
+  "main_role_hold_qualification": "AMS_CORE_PID_UID_FOR_FULL300S_NOT_COMPLETE_PIDOF_SET_EQUALITY",
+  "actual_ci56_stable_douyin_auxiliary_pid_disappearance_accepted_by_role_helper": true,
+  "wrong_main_even_when_old_pid_still_listed_rejected_by_test": true,
+  "different_source_or_run_rejected_before_raw_read": true,
+  "local_boundary_and_signature_tests": 14,
+  "old_phone8_policy_hold": {
+    "run_id": 40595256100,
+    "job_id": 122509448141,
+    "conclusion": "success",
+    "staging": "SKIPPED",
+    "publication": "SKIPPED",
+    "not_an_apk_build_success": true
+  },
+  "draft_api_failure_http_reason7": "UNKNOWN_NOT_CAPTURED_BY_OLD_HELPER",
+  "next_api_failure_preserves_bounded_details": true,
+  "only_draft_attachment_step_nonblocking": true,
+  "fully_qualified_artifact_created_only_after_all_gates": true,
+  "live_policy_change_or_runtime_source_advance_stops_delivery": true,
+  "new_phone_experiment_or_permission": false,
+  "target_sdk_wechat_send_live_douyin_wireless_overseas_vivo": "NOT_VERIFIED",
+  "source_sha256": {
+    ".github/workflows/phone-preview-draft.yml": "ba97e87efc23375ba710a279fa42251e356f86b1e6b7a2b104ef4bc0f235a4af",
+    "ci/preview_release.py": "cf1b7c89c122f7f32388b8c12c63a6c1c271d3499cad2f488986c606d00cb4a5",
+    "ci/qualify_native_preview.py": "d89dc7b355258a9c75e6af383c2c3c96dab7203d8c5181003aa3ad36ed80cc45",
+    "ci/stage_rootless_phone_preview.py": "34a3b33a13354f71882c0d3f69611c2ab66b3d16a3acad440b964e0e033926dc",
+    "ci/test_preview_release.py": "94d91f83b818a1798398c46e5b2c47b1de2ad1481385ab3b3ca3d5ea6f4fedf7",
+    "ci/release-qualifications/2.4.35.json": "560194fccced531a9839c7fac8d2c770741ad571ec2bb93bcdbec595ac10f317",
+    "ci/release-qualifications/2.4.35-notes.md": "6e3b2a23f03d3991a72a9a8428a7fc74ea18d8d8a21e968492eafae08a9707b0",
+    "ci/phone-preview/host-signature-c8052d31.json": "ec6370c2a23dc45bb3485cb6a784152ff222872d13c2ab67ab5feee0de9fb1bb"
+  }
+}

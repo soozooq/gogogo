@@ -53,8 +53,8 @@ jobs:
       contents: write
     env:
       GH_REPO: soozooq/gogogo
-      SOURCE_COMMIT: 99940ea20ef4e7bee27a65fe759a810bf0942672
-      PREVIEW_TAG: preview-2.4.35-container-99940ea2
+      SOURCE_COMMIT: c8052d318bed3cf9c0e37ddc864abea4cc74c816
+      PREVIEW_TAG: preview-2.4.35-container-c8052d31
     steps:
       - uses: actions/checkout@v5
         with:
@@ -63,7 +63,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v5
         with:
-          ref: 99940ea20ef4e7bee27a65fe759a810bf0942672
+          ref: c8052d318bed3cf9c0e37ddc864abea4cc74c816
           path: source
           persist-credentials: false
       - uses: actions/setup-java@v4
@@ -102,29 +102,29 @@ jobs:
         run: |
           set -euo pipefail
           bash ./gradlew --no-daemon --init-script docs/build-profiles/main-preview-2.4.35.init.gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --console=plain
-      - name: Receive only the pinned CI56 self-owned set
+      - name: Receive only the pinned CI57 self-owned set
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          gh api repos/soozooq/gogogo/actions/artifacts/12757735984 > package-work/artifact-api.json
+          gh api repos/soozooq/gogogo/actions/artifacts/12775788117 > package-work/artifact-api.json
           python3 - <<'PY'
           import json
           from pathlib import Path
           value = json.loads(Path('package-work/artifact-api.json').read_text())
-          assert value['id'] == 12757735984 and not value['expired']
-          assert value['workflow_run']['id'] == 40555343592
-          assert value['workflow_run']['head_sha'] == '99940ea20ef4e7bee27a65fe759a810bf0942672'
-          assert value['digest'] == 'sha256:a1fbfa61b7a0d6c4c017effca410e51d0288c33918e1b7c22efcc09502b57f4c'
+          assert value['id'] == 12775788117 and not value['expired']
+          assert value['workflow_run']['id'] == 40595256036
+          assert value['workflow_run']['head_sha'] == 'c8052d318bed3cf9c0e37ddc864abea4cc74c816'
+          assert value['digest'] == 'sha256:64da4721716e2d6c41e6fe5d6d56f57555d529b5b098280eadfa0d7534692bef'
           PY
-          gh api repos/soozooq/gogogo/actions/artifacts/12757735984/zip > package-work/owned.zip
+          gh api repos/soozooq/gogogo/actions/artifacts/12775788117/zip > package-work/owned.zip
           python3 - <<'PY'
           import json
           from pathlib import Path
-          inputs = {'run_id': 40555343592, 'commit': '99940ea20ef4e7bee27a65fe759a810bf0942672',
-                    'artifacts': {'own': {'id': 12757735984, 'path': str(Path('package-work/owned.zip').resolve()),
-                    'sha256': 'a1fbfa61b7a0d6c4c017effca410e51d0288c33918e1b7c22efcc09502b57f4c'}}}
+          inputs = {'run_id': 40595256036, 'commit': 'c8052d318bed3cf9c0e37ddc864abea4cc74c816',
+                    'artifacts': {'own': {'id': 12775788117, 'path': str(Path('package-work/owned.zip').resolve()),
+                    'sha256': '64da4721716e2d6c41e6fe5d6d56f57555d529b5b098280eadfa0d7534692bef'}}}
           Path('package-work/verification-inputs.json').write_text(json.dumps(inputs))
           PY
           python3 source/research/container-api33/tools/verify-ci-receipts.py --repo source --sdk "$ANDROID_HOME" --inputs package-work/verification-inputs.json --output package-work/verified-owned.json
@@ -135,7 +135,7 @@ jobs:
               Path('package-work/base-host.apk').write_bytes(archive.read('probeHost-debug.apk'))
           PY
       - name: Restore the exact privately signed host using public APK metadata
-        run: python3 delivery/ci/restore_preview_signature.py --base package-work/base-host.apk --recipe delivery/ci/phone-preview/host-signature-99940ea2.json --output package-work/signed-host.apk
+        run: python3 delivery/ci/restore_preview_signature.py --base package-work/base-host.apk --recipe delivery/ci/phone-preview/host-signature-c8052d31.json --output package-work/signed-host.apk
       - name: Stage only the two verified phone APKs
         shell: bash
         run: |
@@ -144,7 +144,7 @@ jobs:
       - name: Save one flat phone download and its receipt
         uses: actions/upload-artifact@v4
         with:
-          name: tianwaitian-phone-preview-2.4.35-99940ea2
+          name: tianwaitian-phone-preview-2.4.35-c8052d31
           path: package-work/staged/*
           if-no-files-found: error
           retention-days: 14
@@ -222,7 +222,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: qualified-phone-preview-2.4.35-99940ea2-${{ github.run_id }}
+          name: qualified-phone-preview-2.4.35-c8052d31-${{ github.run_id }}
           path: ${{ runner.temp }}/matched-preview-publication/qualified-phone/*
           if-no-files-found: ignore
           retention-days: 14

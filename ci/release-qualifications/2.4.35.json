@@ -1,39 +1,43 @@
 {
   "schema": "GOGOGO_MATCHED_PREVIEW_DELIVERY_POLICY_V1",
-  "publish_enabled": false,
+  "publish_enabled": true,
   "repository": "soozooq/gogogo",
   "branch": "research/container-api33-20261023",
-  "runtime_commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",
-  "qualification_run_id": 40555343592,
+  "runtime_commit": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+  "qualification_run_id": 40595256036,
+  "qualification_round": 57,
   "qualification_job_ids": {
-    "linux": 122369802855,
-    "native": 122374016460
+    "linux": 122509447972,
+    "native": 122512447262
   },
-  "mac_initial_job_id": 122369802713,
+  "mac_initial_job_id": 122509448125,
   "mac_job_name": "Build and inspect (ARM Mac)",
   "qualification_artifacts": {
     "own": {
-      "name": "ci-owned-container-apks-99940ea20ef4e7bee27a65fe759a810bf0942672",
-      "id": 12757735984,
-      "bytes": 4855560,
-      "sha256": "a1fbfa61b7a0d6c4c017effca410e51d0288c33918e1b7c22efcc09502b57f4c"
+      "name": "ci-owned-container-apks-c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+      "id": 12775788117,
+      "bytes": 4857725,
+      "sha256": "64da4721716e2d6c41e6fe5d6d56f57555d529b5b098280eadfa0d7534692bef"
     },
     "linux": {
-      "name": "container-research-linux-evidence-56",
-      "id": 12757666580,
-      "bytes": 440801,
-      "sha256": "dc4aaa6f8a71a7b2b01dcf0dcefba3edcf7c3a97431136661220d1b43c1d49c0"
+      "name": "container-research-linux-evidence-57",
+      "id": 12777325224,
+      "bytes": 440903,
+      "sha256": "51c63df80f37491ea68819da43eafc859fce8b6df58536a3a3c8821dcec0324d"
     },
     "mac": {
-      "name": "container-research-arm-mac-build-evidence-56"
+      "name": "container-research-arm-mac-build-evidence-57",
+      "id": 12776161879,
+      "bytes": 1956,
+      "sha256": "6c906651cbe6ef767df7506e97cc9035e6c3162244d6f8f007cf71325b483c1b"
     },
     "native": {
-      "name": "cuttlefish-arm-host-56"
+      "name": "cuttlefish-arm-host-57"
     }
   },
-  "tag": "preview-2.4.35-container-99940ea2",
-  "title": "天外天2.4.35 · 被动定位兼容预览",
-  "delivery_artifact_name": "tianwaitian-phone-preview-2.4.35-99940ea2",
+  "tag": "preview-2.4.35-container-c8052d31",
+  "title": "天外天2.4.35 · 重开与被动定位兼容预览",
+  "delivery_artifact_name": "tianwaitian-phone-preview-2.4.35-c8052d31",
   "notes_path": "ci/release-qualifications/2.4.35-notes.md",
   "live_config_path": "ci/release-qualifications/2.4.35.json",
   "wait_seconds": 9000,
@@ -49,13 +53,14 @@
       "certificate_sha256": "6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081"
     },
     "host": {
-      "file": "Tianwaitian-Original-Preview-99940ea2.apk",
+      "file": "Tianwaitian-Original-Preview-c8052d31.apk",
       "package": "com.soozooq.tianwaitian.containerresearch",
       "version_name": "0.4-preview",
       "version_code": 4,
       "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
-      "sha256": "28556e78c87bbec41154c6920cfc7ddf3e4d745d24233e251194d4a0bfca1e10",
-      "bytes": 4590083
+      "sha256": "4d1f072585c69e446bfb72f5cefa57ee6a221f557f5a44ed1e903576b1470b95",
+      "bytes": 4594179
     }
-  }
+  },
+  "requires_retired_process_fixture": true
 }

@@ -13,11 +13,15 @@
 
 不新增分支／PR、不自动合并、不删除／强推／重置其他工作区。两个PR保持Draft。手机用户不需要重跑旧实验或切换VPN。
 
-## 当前研发：修正进程退出回调归属，旧2.4.35自动发布已暂停
+## 当前研发：进程退出归属已修正，57默认通过与同源自动交付准备
 
-[最新准备与本地检查](research/container-api33/evidence/retired-process-owner-preparation.json)：从本分支HEAD继续。引擎16440679修正一个已由源码确认的竞态：旧进程迟到的onProcessDie原先会按进程名删除替代进程登记，并清理已复用的proc目录与通知。现在仅完全相同的当前ProcessRecord有权退出清理；主动停止在仍拥有登记时清理资源，迟到回调只移除自身旧列表项。它是可复现的源码缺陷，**不能据此断言是56微信失败的已证实原因**。
+[最新准备与本地检查](research/container-api33/evidence/retired-process-owner-preparation.json)：运行源码固定c8052d318bed3cf9c0e37ddc864abea4cc74c816，从本分支HEAD继续。引擎16440679修正一个已由源码确认的竞态：旧进程迟到的onProcessDie原先会按进程名删除替代进程登记，并清理已复用的proc目录与通知。现在仅完全相同的当前ProcessRecord有权退出清理；主动停止在仍拥有登记时清理资源，迟到回调只移除自身旧列表项。它是可复现的源码缺陷，**不能据此断言是56微信失败的已证实原因**。
 
-现有云端框架case增加同名替代登记／proc文件canary与旧登记已消失的检查，明确为host单例受控fixture；原真实Guest框架／定位检查保留。目标匿名对照在stop／uninstall前补充最多16项同UID真实AMS进程、Core登记与辅助pidof快照，后置有界日志增加BProcessManager／ActivityStack标签，避免只剩清理后现场。20秒Android编译、完整补丁干净上游索引重放、27项云端驱动与12项发布／配方检查通过；**新源码的Linux、ARM64、Mac仍待实际运行**。主2.4.35／2400103、宿主0.4／4保持，不新增手机页面、权限或实验。
+现有云端框架case增加同名替代登记／proc文件canary与旧登记已消失的检查，明确为host单例受控fixture；原真实Guest框架／定位检查保留。目标匿名对照在stop／uninstall前补充最多16项同UID真实AMS进程、Core登记与辅助pidof快照，后置有界日志增加BProcessManager／ActivityStack标签，避免只剩清理后现场。20秒Android编译、完整补丁干净上游索引重放、27项云端驱动与12项发布／配方检查通过；[57实际默认结果已独立验真](research/container-api33/evidence/retired-process-owner-linux-results.json)：Linux7定位4.563秒／19无线0.241秒／七case＋变化UI／447主检查与lint通过；新增退出归属fixture实际通过，真实Guest3020／宿主2954的九路径3.621秒、最老326.568毫秒及三通道计数通过，普通反馈1380字符。Mac122509448125实际构建成功，三档API摘要／58与59来源／三同签名及11材料均匹配c805。它只覆盖Mac构建及受控fixture，不是实际微信采用。**同源ARM64122512447262正在运行，尚无新原生通过**。主2.4.35／2400103、宿主0.4／4保持，不新增手机页面、权限或实验。
+
+[新的同源交付准备](research/container-api33/evidence/phone-c8052d31-delivery-preparation.json)绑定57的实际own／Linux／Mac归档ID与摘要及当前原生作业；宿主已私签并核对全部415非签名内容、版本／证书／对齐，4,594,179字节、SHA4d1f0725…，公开配方831操作复制4,471,760字节并逐字节恢复，私钥不进Git或CI。当前冻结策略只为新c805候选启用，旧99940失败候选与6625草稿不复用。新Phone任务尚待本次controller提交后触发，不能称已构建／发布新包。主实际摘要必须由新打包回执记录，不能借Phone7的46e92a5d。
+
+交付会独立有界等待57原生，重新核对四档证据、7方法／九路径、完整300秒主身份／内核／系统清理、退出归属fixture与两个目标清理前活主进程快照，再核对本轮两APK／签名／415内容／profile／447lint／最新源码。只有完整通过才创建qualified-phone下载目录；Release接口若仍失败，保留实际失败与合格下载，不能写成已公开。原生失败、超时、策略关闭／改变或运行源码推进均停止发布。仅早期草稿附件步骤可继续；其他门槛强制。14项本地发布／配方边界已过，含主角色稳定时同名辅助PID消失的真实56记录、主更换／UID错／快照缺失拒绝及旧源码在读现场前拒绝。此前Phone8实际只通过暂停策略作业，打包／发布跳过。公开版仍2.4.34，手机无需新实验。
 
 ## 最近完成结果：56原生微信重开失败，Phone7已打包但未发布
 
@@ -27,7 +31,7 @@
 
 [Phone7实际字节与接口失败](research/container-api33/evidence/phone-99940ea2-build-and-release-api-failure-results.json)：交付源码37a15f6b／run40564477274，已实际完成主447检查／lint、固定profile、扁平六文件、版本／签名／对齐及宿主415非签名内容核对。主40,408,206字节、SHA46e92a5d…；宿主4,590,083字节、SHA28556e78…，证书沿用。创建release草稿的POST失败，原helper没有保留HTTP响应，**原因未知**；发布作业跳过，无新99940草稿或tag，不能称已经交付／发布。
 
-[冻结交付策略](ci/release-qualifications/2.4.35.json)现为publish_enabled=false，新增preflight在构建前暂停旧候选的打包与发布。脚本现保留有界API失败详情；仅草稿附件步骤可继续，同源四档证据／7方法／九路径／300秒主身份／系统清理／本轮APK／签名／415内容／最新源码等门槛全部仍强制。只有完整核对后才创建qualified-phone下载目录；这是后续交付韧性修正，尚未实际执行或取得Release权限。旧策略和严格curator仍绑定失败56，**不得用来给新源码发版**；下一候选需重新冻结实际CI与签名包。旧6625草稿425599161及public2.4.34保持原样。所有旧准备中的“等待／运行中”字段是当时快照，以本入口最新实际结果为准。
+旧99940交付策略已被暂停，新增preflight在构建前暂停旧候选的打包与发布；Phone8实际验证了关闭。当前[冻结交付策略](ci/release-qualifications/2.4.35.json)已重建为57／c805，见上文。脚本现保留有界API失败详情；仅草稿附件步骤可继续，同源四档证据／7方法／九路径／300秒主身份／系统清理／本轮APK／签名／415内容／最新源码等门槛全部仍强制。只有完整核对后才创建qualified-phone下载目录；这是后续交付韧性修正，尚未实际执行或取得Release权限。旧56冻结输入不得借给新源码；curator现读取已冻结策略并在读现场前拒绝错源码／轮次，57还强制检查退出归属fixture与清理前主进程快照。旧6625草稿425599161及public2.4.34保持原样。所有旧准备中的“等待／运行中”字段是当时快照，以本入口最新实际结果为准。
 
 [55失败](research/container-api33/evidence/passive-fixture-attribution-failure-results.json)保留；99940仅修其generic fixture身份后56 Linux／原生7方法均实际通过，不追认55。上一轮[54原生通过](research/container-api33/evidence/native-original-main-identity-pass-results.json)仅覆盖66a293fa／839947fa及6方法／六路径，不能借给新引擎。微信发送／实时、抖音无线／海外定位与vivo仍未验收，手机用户无需重跑旧实验。
 

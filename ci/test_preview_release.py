@@ -13,6 +13,45 @@ spec.loader.exec_module(release)
 
 
 class PublicationBoundaryTest(unittest.TestCase):
+    def test_native_qualifier_rejects_other_source_before_reading_raw_runtime(self):
+        import subprocess
+        import sys
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = {'qualification_round': 57, 'qualification_run_id': 57,
+                      'qualification_job_ids': {'native': 123}, 'runtime_commit': 'a' * 40}
+            (root / 'policy.json').write_text(json.dumps(config))
+            (root / 'proof.json').write_text(json.dumps({'integrity_verified': True,
+                'commit': 'b' * 40, 'run_id': 57}))
+            output = root / 'output.json'
+            actual = subprocess.run([sys.executable, str(Path(__file__).with_name('qualify_native_preview.py')),
+                '--config', str(root / 'policy.json'), '--proof', str(root / 'proof.json'),
+                '--raw', str(root / 'does-not-exist'), '--output', str(output)], capture_output=True, text=True)
+            self.assertNotEqual(0, actual.returncode)
+            self.assertIn('Native proof source/run differs from frozen policy', actual.stderr)
+            self.assertNotIn('FileNotFoundError', actual.stderr)
+            self.assertFalse(output.exists())
+
+    def test_container_hold_accepts_auxiliary_pid_changes_but_rejects_main_replacement(self):
+        hold = {'passed': True, 'requested_seconds': 300, 'observed_ms': 300635,
+                'identity_basis': 'CORE_REGISTERED_MAIN_PROCESS_AND_ACTUAL_ACTIVITY_MANAGER_PID_UID',
+                'main_pid': 9841, 'main_uid': 10102,
+                'initial_target_pid': '9841 10504', 'last_target_pid': '9841',
+                'initial_registered_processes': [{'pid': 9841, 'uid': 10102, 'process_name': 'target'}],
+                'last_registered_processes': [{'pid': 9841, 'uid': 10102, 'process_name': 'target'}]}
+        restart = {'previous_main_pid': 9841, 'main_uid': 10102}
+        release.verify_container_main_hold(hold, restart, 'target')
+        for label, change in [
+                ('main_changed_even_when_old_pid_still_listed', lambda h: h['last_registered_processes'][0].update(pid=10504)),
+                ('uid_changed', lambda h: h['last_registered_processes'][0].update(uid=10103)),
+                ('missing_main', lambda h: h.update(last_registered_processes=[])),
+                ('ambiguous_main', lambda h: h['last_registered_processes'].append(dict(h['last_registered_processes'][0]))),
+                ('short_hold', lambda h: h.update(observed_ms=299999)),
+                ('wrong_main_role_basis', lambda h: h.update(identity_basis='PIDOF_SET_ONLY'))]:
+            h = copy.deepcopy(hold); change(h)
+            with self.subTest(label=label), self.assertRaises(ValueError):
+                release.verify_container_main_hold(h, restart, 'target')
+
     def test_api_failure_preserves_bounded_server_reason_and_original_error_type(self):
         import subprocess
         error = subprocess.CalledProcessError(1, ['gh', 'api'],
