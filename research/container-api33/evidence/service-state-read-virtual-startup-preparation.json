@@ -1,6 +1,6 @@
 {
   "schema": "GOGOGO_SERVICE_STATE_AND_VIRTUAL_STARTUP_PREPARATION_V1",
-  "scope": "IMPLEMENTED_DEFAULT18_ACTUALLY_PASSED_MATCHING_NATIVE_PENDING",
+  "scope": "IMPLEMENTED_DEFAULT18_AND_MATCHED_NATIVE_CLOSE_OWN_ACTUALLY_PASSED_AT_1441",
   "base_research_commit": "e8665719ec6d860efdd2098168f69fc2ad534fd9",
   "published_phone_source_unchanged": "e0811cf46726e3bae9fcb839312b9efb6b92ce9e",
   "official_sources": [
@@ -89,7 +89,12 @@
     "does_not_accept_terms_login_send_messages_or_claim_sdk_location": true,
     "requires_new_phase_even_if_junit_green": true
   },
-  "same_source_default_and_native": "DEFAULT_VERIFIED_NATIVE_IN_PROGRESS",
+  "same_source_default_and_native": {
+    "run_id": 40420346275,
+    "commit": "1441f2fa8b0c0b268c4fc49054275d0da5120909",
+    "passed": true,
+    "result": "native-service-state-virtual-startup-pass-results.json"
+  },
   "next_main_metadata": {
     "profile": "docs/build-profiles/main-preview-2.4.33.init.gradle",
     "version_name": "2.4.33-container-preview",

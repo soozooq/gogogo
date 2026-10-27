@@ -1,0 +1,265 @@
+{
+  "schema": "GOGOGO_NATIVE_SERVICE_STATE_TWO_MODE_PASS_RESULTS_V1",
+  "scope": "ACTUAL_NATIVE_ARM64_CLOSED_AND_SYNTHETIC_OWN_ANONYMOUS_UI_PLUS_OWN_FRAMEWORK_SIX_PATHS_NOT_TARGET_LOCATION_OR_VIVO",
+  "round": 49,
+  "run_id": 40420346275,
+  "commit": "1441f2fa8b0c0b268c4fc49054275d0da5120909",
+  "job_id": 121915882210,
+  "conclusion": "success",
+  "engine_patch_sha256": "cf4dffbb4194276f6cce94f6cb9106ff8cfc79f5111886e8018076f0dca12e15",
+  "artifacts": {
+    "own": {
+      "id": 12697548800,
+      "sha256": "6eb5b544b856fd31e4e1e7aa08eef783fb2d7a71a09aa49b2d8cdb5dd2cebc91",
+      "verified": true
+    },
+    "mac": {
+      "id": 12696848024,
+      "sha256": "fb8b180320bbc3d7b86752b38bc9b3a1bcd1c51752d99d274de9f55b42217fec",
+      "verified": true
+    },
+    "linux": {
+      "id": 12696628813,
+      "sha256": "520dcb53c825df7e7fc25fa15bd899c14ef00ffc37dbadc655bc9d0955bac030",
+      "verified": true
+    },
+    "native": {
+      "id": 12700658958,
+      "sha256": "5c38f51f68318500fa29986ed8526363ccd72c005b1a654d6d5e26b33ba6e99f",
+      "verified": true
+    }
+  },
+  "all_four_api_digests_fixed_sources_and_own_apks_verified": true,
+  "native_source_count_verified": 9,
+  "same_run_own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4539420,
+        "sha256": "28bd7479a744b74ea61c3c3a539d74d62f55dd91d0ab2fc5ebfd428f7b8bcc59"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 522522,
+        "sha256": "26ae165c7525ede4f60e803f56d91d9969667a0d0d15de6465965eeebc065c12"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 74158,
+        "sha256": "c064124f70225d2874860edaf6b92925b1a1e5898ee4dd5e5034703c729b645c"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "qualified_environment": {
+    "properties": {
+      "ro.build.version.sdk": "33",
+      "ro.build.version.incremental": "16596636",
+      "ro.build.fingerprint": "generic/aosp_cf_arm64_phone/vsoc_arm64:13/TP1A.220624.019/16596636:userdebug/test-keys",
+      "ro.product.name": "aosp_cf_arm64_phone",
+      "ro.hardware": "cutf_cvm",
+      "ro.product.cpu.abi": "arm64-v8a",
+      "ro.product.cpu.abilist": "arm64-v8a,armeabi-v7a,armeabi",
+      "ro.dalvik.vm.native.bridge": "0",
+      "ro.hw_timeout_multiplier": "50",
+      "sys.boot_completed": "1"
+    },
+    "kernel_arch": "aarch64",
+    "shell_uid": "2000",
+    "selinux": "Enforcing",
+    "guest_cpu_online": "0-3",
+    "system_server_crash_pids": []
+  },
+  "system_server_pid_before_and_after": "643",
+  "targets": {
+    "wechat": {
+      "passed": true,
+      "junit_seconds": 676.672,
+      "closed_startup": {
+        "passed": true,
+        "stage": "WELCOME_WITHOUT_LOGIN",
+        "guest_pid": "5604",
+        "input_pattern": 0
+      },
+      "virtual_startup": {
+        "passed": true,
+        "synthetic_input_only": true,
+        "target_location_business_tested": false,
+        "previous_main_pid": 5604,
+        "returned_to_host_before_stop": true,
+        "previous_main_absent": true,
+        "input_pattern": 2,
+        "stage": "WELCOME_WITHOUT_LOGIN",
+        "main_pid": 6195,
+        "main_uid": 10097,
+        "visible_text": [
+          "Log In",
+          "Sign Up",
+          "语言"
+        ]
+      },
+      "both_modes_anonymous_ui_confirmed": true,
+      "previous_main_actually_absent_before_restart": true,
+      "new_main_has_distinct_pid_and_real_host_uid": true,
+      "location_business_tested": false,
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "captured_crash_log_bytes": 0,
+      "png_available": false,
+      "png_reviewed": false,
+      "owned_package_cleanup": {
+        "com.soozooq.tianwaitian.containerresearch.test": true,
+        "com.soozooq.tianwaitian.containerresearch": true
+      }
+    },
+    "douyin": {
+      "passed": true,
+      "junit_seconds": 1017.518,
+      "closed_startup": {
+        "passed": true,
+        "stage": "PRIVACY_WITHOUT_ACCEPTANCE",
+        "guest_pid": "9952",
+        "input_pattern": 0
+      },
+      "virtual_startup": {
+        "passed": true,
+        "synthetic_input_only": true,
+        "target_location_business_tested": false,
+        "previous_main_pid": 9952,
+        "returned_to_host_before_stop": true,
+        "previous_main_absent": true,
+        "input_pattern": 2,
+        "stage": "PRIVACY_WITHOUT_ACCEPTANCE",
+        "main_pid": 12149,
+        "main_uid": 10102,
+        "visible_text": [
+          "个人信息保护指引",
+          "欢迎使用抖音！我们将通过《用户服务协议》与《基础服务数据处理规则》帮助你了解我们为你提供的基础服务，及保障该服务正常运行所必需的信息。\n根据《常见类型移动互联网应用程序必要个人信息范围规定》，抖音为短视频类App，基本功能为“不超过一定时长的视频搜索、播放”。我们在该基本功能基础上结合用户日常使用情况，提供“基础服务”，点击下方“同意”按钮仅代表你同意使用本产品的基础服务，并同意我们基于提供该等服务收集、处理必要的个人信息及数据。\n为了向你提供更丰富优质的服务，我们在基础服务之外为你提供购买商品和服务等扩展服务。针对扩展服务所需的个人信息收集及处理，我们会在你使用具体服务时获取你的相应同意；如果你拒绝提供，你可能无法使用相应的扩展服务，但不影响你使用我们的基础服务。我们通过《隐私政策》帮助你全面了解我们的服务及收集、处理个人信息的详细情况。",
+          "不同意",
+          "同意"
+        ]
+      },
+      "both_modes_anonymous_ui_confirmed": true,
+      "previous_main_actually_absent_before_restart": true,
+      "new_main_has_distinct_pid_and_real_host_uid": true,
+      "location_business_tested": false,
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "captured_crash_log_bytes": 0,
+      "png_available": false,
+      "png_reviewed": false,
+      "owned_package_cleanup": {
+        "com.soozooq.tianwaitian.containerresearch.test": true,
+        "com.soozooq.tianwaitian.containerresearch": true
+      },
+      "closed_mode_only_300s_hold": {
+        "requested_seconds": 300,
+        "observed_ms": 301493,
+        "initial_target_pid": "9952",
+        "last_target_pid": "9952",
+        "identity_basis": "CORE_REGISTERED_MAIN_PROCESS_AND_ACTUAL_ACTIVITY_MANAGER_PID_UID",
+        "main_pid": 9952,
+        "main_uid": 10102,
+        "initial_registered_processes": [
+          {
+            "pid": 9952,
+            "uid": 10102,
+            "process_name": "com.ss.android.ugc.aweme"
+          }
+        ],
+        "last_registered_processes": [
+          {
+            "pid": 9952,
+            "uid": 10102,
+            "process_name": "com.ss.android.ugc.aweme"
+          }
+        ],
+        "same_name_pid_set_changed": false,
+        "passed": true
+      },
+      "ordinary_original_300s_hold": {
+        "requested_seconds": 300,
+        "first_ui_stage": "PRIVACY_WITHOUT_ACCEPTANCE",
+        "initial_target_pid": "7592",
+        "passed": true,
+        "last_target_pid": "7592",
+        "observed_seconds": 303.291
+      }
+    }
+  },
+  "owned_framework": {
+    "passed": true,
+    "junit_seconds": 16.175,
+    "observed": {
+      "scope": "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION",
+      "passed": true,
+      "pending_intents_sent": false,
+      "location_requested": false,
+      "startup_contract_run_id": "54bbdaf0-dbde-49c8-8312-ce4346f128b8",
+      "framework_http_legacy_class_resolved": true,
+      "expected_real_host_uid": 10104,
+      "process_api_uid": 10001,
+      "binder_self_uid": 10104,
+      "binder_self_pid": 12950,
+      "process_api_pid": 12950,
+      "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
+      "binder_self_uid_matches_real_host": true,
+      "activity_attribution_uid": 10104,
+      "application_attribution_uid": 10104,
+      "activity_attribution_uid_matches_real_host": true,
+      "application_attribution_uid_matches_real_host": true,
+      "activity_attribution_package": "com.soozooq.tianwaitian.containerresearch",
+      "pending_activity_created": true,
+      "pending_service_created": true,
+      "provider_call_nonce_matches": true,
+      "provider_pid": 12980,
+      "provider_caller_pid": 12950,
+      "provider_process_separate": true,
+      "provider_process_api_uid": 10001,
+      "provider_caller_binder_uid": 10104,
+      "provider_query_nonce_matches": true,
+      "provider_query_pid": 12980
+    },
+    "captured_crash_log_bytes": 0
+  },
+  "owned_location": {
+    "passed": true,
+    "junit_seconds": 50.933,
+    "host_pid": 13099,
+    "guest_pid": 13175,
+    "report_source": "OWN_GUEST_ATOMIC_PRIVATE_FILE",
+    "stage_names": [
+      "TARGET_A",
+      "TARGET_B",
+      "UNREGISTERED_STABLE",
+      "CURRENT_CANCELLED"
+    ],
+    "all_six_paths_preserve_mock": true,
+    "maximum_sample_age_at_record_ms": 2011.97984,
+    "gnss_satellites_and_first_fix": 0,
+    "cancelled_callbacks": 0,
+    "own_staging_removed": true,
+    "package_cleanup": {
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true
+    }
+  },
+  "qemu_process_stopped": true,
+  "whole_observed_seconds_not_app_startup_time": 4661.025,
+  "network_scope": "Dedicated local IPv4/broadcast on TAP; no DHCP/NAT or Internet proof",
+  "terms_login_messages_target_location_tested": false,
+  "real_modem_sdk_location_account_and_vivo": "NOT_VERIFIED",
+  "scope_limits": [
+    "New synthetic mode only proves anonymous startup, not target SDK location adoption.",
+    "The Douyin 300s hold is in closed mode; no 300s own-mode hold is claimed.",
+    "Owned Guest shares real host UID; functional positives do not prove permission denial or isolation.",
+    "No target screenshots were reviewed.",
+    "Native result is bound to this exact commit; another feedback UI source requires its own matched native proof."
+  ],
+  "verifier_sha256": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
+  "inputs_manifest_sha256": "a590a916fc8f02b688ce9563272e023695f35fc7e037a6dd088d038e736d6a09"
+}

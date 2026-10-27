@@ -29,7 +29,7 @@
     {
       "id": 121928002415,
       "name": "Inspect ARM Linux host and optional Cuttlefish boot",
-      "status": "pending",
+      "status": "in_progress",
       "conclusion": null
     }
   ],
@@ -152,26 +152,28 @@
   "douyin_wireless_and_overseas": "NOT_VERIFIED",
   "physical_arm64_vivo": "NOT_VERIFIED",
   "latest_actual_native_run": {
-    "run_id": 40320078192,
-    "commit": "e0811cf46726e3bae9fcb839312b9efb6b92ce9e",
-    "job_id": 121565397826,
-    "result": "native-phone-transaction-name-pass-results.json",
+    "run_id": 40420346275,
+    "commit": "1441f2fa8b0c0b268c4fc49054275d0da5120909",
+    "job_id": 121915882210,
+    "result": "native-service-state-virtual-startup-pass-results.json",
     "conclusion": "success",
     "passed": true,
     "owned_location_passed": true,
-    "wechat_anonymous_startup_passed": true
+    "wechat_anonymous_startup_passed": true,
+    "both_targets_closed_and_own_startups_passed": true
   },
   "native_job_this_run": {
     "run_id": 40424038227,
+    "commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
     "job_id": 121928002415,
-    "status_at_curation": "pending",
+    "status": "in_progress",
     "passed": null,
-    "required_new_both_closed_and_own_phases": true
+    "requires_new_both_closed_and_own_phases": true
   },
   "active_native_runs": [
-    40420346275
+    40424038227
   ],
-  "pending_native_run": 40424038227,
+  "pending_native_run": null,
   "latest_passed_default_run": {
     "run_id": 40424038227,
     "commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
@@ -190,20 +192,21 @@
   "phone_delivery": "PUBLISHED_PRERELEASE_TWO_VERIFIED_OWN_APKS_NOT_PHYSICAL_PHONE_OR_TARGET_LOCATION_ACCEPTANCE",
   "phone_delivery_result": "phone-e081-published-delivery-results.json",
   "latest_passed_native_run": {
-    "run_id": 40320078192,
-    "commit": "e0811cf46726e3bae9fcb839312b9efb6b92ce9e",
-    "job_id": 121565397826,
-    "result": "native-phone-transaction-name-pass-results.json",
+    "run_id": 40420346275,
+    "commit": "1441f2fa8b0c0b268c4fc49054275d0da5120909",
+    "job_id": 121915882210,
+    "result": "native-service-state-virtual-startup-pass-results.json",
     "conclusion": "success",
     "passed": true,
     "owned_location_passed": true,
-    "wechat_anonymous_startup_passed": true
+    "wechat_anonymous_startup_passed": true,
+    "both_targets_closed_and_own_startups_passed": true
   },
   "next_candidate_preparation": "service-state-read-virtual-startup-preparation.json",
   "next_phone_delivery_preparation": "phone-41438448-draft-delivery-preparation.json",
   "phone_update_installed_on_user_device": "UNKNOWN",
   "release_url": "https://github.com/soozooq/gogogo/releases/tag/preview-2.4.32-container-e0811cf4",
-  "next_candidate_runtime_status": "DEFAULT50_CLIPBOARD780_AND18_PASS_PHONECI4_TWO_DRAFT_ASSETS_VERIFIED_NATIVE50_PENDING",
+  "next_candidate_runtime_status": "NATIVE49_CORE_SOURCE1441_PASSED_DEFAULT50_AND_PHONECI4_PASSED_MATCHING_NATIVE50_IN_PROGRESS",
   "preview_feedback_preparation": "preview-compact-feedback-preparation.json",
   "latest_actual_phone_delivery": {
     "result": "phone-41438448-verified-draft-delivery-results.json",

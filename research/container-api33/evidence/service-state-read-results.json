@@ -1,6 +1,6 @@
 {
   "schema": "GOGOGO_SERVICE_STATE_ACTUAL_DEFAULT_RESULTS_V1",
-  "scope": "ACTUAL_API33_CONTROLLED_SERVICE_STATE_AND_DEFAULT_REGRESSIONS_NOT_NATIVE_TARGET_SDK_OR_PHONE",
+  "scope": "ACTUAL_DEFAULT_SERVICE_STATE_WITH_MATCHED_NATIVE_IN_SEPARATE_RECEIPT_NOT_TARGET_LOCATION_OR_PHONE",
   "run_id": 40420346275,
   "commit": "1441f2fa8b0c0b268c4fc49054275d0da5120909",
   "tree": "649b2438edfbbdfaf11957e5546ecdf16fc1aa58",
@@ -118,9 +118,12 @@
   "matching_native": {
     "run_id": 40420346275,
     "job_id": 121915882210,
-    "status_at_curation": "in_progress",
-    "passed": null,
-    "new_close_and_own_restart_evidence_required": true
+    "commit": "1441f2fa8b0c0b268c4fc49054275d0da5120909",
+    "status": "completed",
+    "conclusion": "success",
+    "passed": true,
+    "result": "native-service-state-virtual-startup-pass-results.json",
+    "both_closed_and_own_phases_actually_verified": true
   },
   "new_preview_feedback_ui": "SUBSEQUENT_WORKTREE_CHANGE_NOT_TESTED_BY_THIS_RUN",
   "published_2_4_32_assets_changed": false,

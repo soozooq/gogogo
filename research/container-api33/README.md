@@ -12,7 +12,7 @@
 
 [反馈简化](evidence/no-extra-experiment-feedback-preparation.json)统一已有「一键复制反馈」。[三步流程](../../docs/original-app-preview-flow.md)为预览说明。固定完整微信8.0.79／抖音40.8.0不改签、不内嵌、不分发，账号私有数据不迁移。
 
-[继续研发候选](evidence/service-state-read-virtual-startup-preparation.json)补服务状态／预加载电话缓存。[CI50默认](evidence/preview-compact-feedback-results.json)18项0.257秒、六项case及447主检查／lint通过，三档摘要／来源／签名／材料核对。预览短反馈实际复制780字符，无坐标、同Guest主PID与模拟模式，再完成停止，不代表目标SDK采用。原生49继续、匹配50排队，新增关闭→停止→开启合成输入匿名重启，尚无通过结论。[2.4.33交付草稿](evidence/phone-41438448-draft-delivery-preparation.json)固定同轮来源、稳定证书与公开配方，已由[Phone CI4](evidence/phone-41438448-verified-draft-delivery-results.json)实际写入两份新草稿APK，主9242b55a…／预览513f8f98…摘要、证书、来源与内容核对，仍未发布且等待匹配原生50；当前2.4.32附件不改，不新增手机实验。
+[继续研发候选](evidence/service-state-read-virtual-startup-preparation.json)补服务状态／预加载电话缓存。[CI50默认](evidence/preview-compact-feedback-results.json)18项0.257秒、六项case及447主检查／lint通过，三档摘要／来源／签名／材料核对。预览短反馈实际复制780字符，无坐标、同Guest主PID与模拟模式，再完成停止，不代表目标SDK采用。[原生49已完整通过](evidence/native-service-state-virtual-startup-pass-results.json)：旧主进程停止后，模式2两款匿名UI均重启，框架16.175秒／六路径50.933秒及清理通过；绑定1441旧宿主，不代替带短反馈的414新宿主，匹配原生50现已运行。[2.4.33交付草稿](evidence/phone-41438448-draft-delivery-preparation.json)固定同轮来源、稳定证书与公开配方，已由[Phone CI4](evidence/phone-41438448-verified-draft-delivery-results.json)实际写入两份新草稿APK，主9242b55a…／预览513f8f98…摘要、证书、来源与内容核对，仍未发布且等待匹配原生50；当前2.4.32附件不改，不新增手机实验。
 
 下方保留此前各轮的命令和历史结果，不替代顶部当前状态。[CI38匿名启动通过](evidence/native-container-startup-pass-results.json)、[CI40旧PID集合失败](evidence/native-pid-set-and-owned-stage-results.json)、[CI39真实Provider归属失败](evidence/provider-attribution-failure-and-correction.json)均保留，不覆盖为成功。
 
