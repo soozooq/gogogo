@@ -134,6 +134,8 @@ CI40的同名PID集合变化不能证明主进程退出：9665仍在、新增103
 
 固定原包只读核对发现微信使用`sapp`命名空间／独立native库；公开腾讯SDK的setMockEnable与setEnableAntiMock不能代表其配置。抖音的AMap／BDLocation及平台方法标识只证明标识存在，非活动调用、开关值或拒绝因果。未改目标APK／mock标记、执行SDK、接受条款或读私有数据；详见[核对](evidence/target-location-sdk-boundary-review.json)。
 
+补充精确公开方法表：微信classes16的Manager、Options、Request及Listener在DEX中的父类型字段均为Object，未声明其他接口；52项公开声明未见同名mock开关，不能套用公开腾讯7.6的setter；不排除内部／混淆控制，也不证明拒绝原因。抖音classes48的AMapClient声明隐私接口、Option声明mock接口，不代表同意状态、开关值或活动provider。本次只读原包类／方法签名，未初始化SDK、请求定位／联网、提取Key或账号标识值、修改条款／权限／mock状态，不安排手机实验。独立构造另一套SDK选项不能代替目标原应用的实际初始化与采用证据。
+
 ## CI42原生框架已过与定位读取失败
 
 固定96e92522四归档／9原生输入已核对。系统651稳定，两个目标匿名UI与300秒主角色观察通过；原生自有call/query15.548秒通过，真实UID10104、主11428／Provider11460，新鲜nonce一致。URI授权旧边界不变，仍非独立UID或拒绝验证。自有定位在目标B等待的getText发生StaleObjectException，整项145.73秒失败；最终PNG可见B值也不能补写完整时效／停止／取消通过。

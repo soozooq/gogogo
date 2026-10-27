@@ -110,5 +110,87 @@
   },
   "decision": "Do not present an own Tencent SDK option, platform cache success or a matching method name as changing WeChat/Douyin runtime behavior; preserve mock flags and verify actual target adoption separately.",
   "user_experiment_requested": false,
-  "target_business": "UNVERIFIED"
+  "target_business": "UNVERIFIED",
+  "additional_original_public_api_review": {
+    "scope": "PINNED_ORIGINAL_PUBLIC_DECLARATIONS_PARENT_TYPES_AND_SIGNATURES_ONLY_NOT_RUNTIME_CONFIGURATION_OR_ADOPTION",
+    "wechat": {
+      "apk_sha256": "f2a725bc04302ad218a563533ae79356e66b64aa711b275bc919a8d432f7e15d",
+      "dex": "classes16.dex",
+      "selected_types": [
+        {
+          "class": "Lcom/tencent/map/geolocation/sapp/TencentLocationListener;",
+          "superclass": "Ljava/lang/Object;",
+          "interfaces": [],
+          "public_declared_method_count": 2
+        },
+        {
+          "class": "Lcom/tencent/map/geolocation/sapp/TencentLocationManager;",
+          "superclass": "Ljava/lang/Object;",
+          "interfaces": [],
+          "public_declared_method_count": 16
+        },
+        {
+          "class": "Lcom/tencent/map/geolocation/sapp/TencentLocationManagerOptions;",
+          "superclass": "Ljava/lang/Object;",
+          "interfaces": [],
+          "public_declared_method_count": 5
+        },
+        {
+          "class": "Lcom/tencent/map/geolocation/sapp/TencentLocationRequest;",
+          "superclass": "Ljava/lang/Object;",
+          "interfaces": [],
+          "public_declared_method_count": 29
+        }
+      ],
+      "total_public_declarations_checked": 52,
+      "mock_named_public_declarations_in_selected_types": [],
+      "get_instance_signatures": [
+        "getInstance(Context)",
+        "getInstance(Context, android.util.Pair)"
+      ],
+      "request_entry_signatures": [
+        "requestLocationUpdates(TencentLocationRequest,TencentLocationListener)",
+        "requestLocationUpdates(TencentLocationRequest,TencentLocationListener,Looper)",
+        "requestSingleFreshLocation(TencentLocationRequest,TencentLocationListener,Looper)",
+        "requestSingleFreshLocation(TencentLocationRequest,TencentLocationListener,Looper,boolean)"
+      ],
+      "options_set_key_and_request_identifier_setter_names_exist_but_values_not_extracted": true,
+      "does_not_prove_no_internal_or_obfuscated_mock_controls": true,
+      "does_not_prove_mock_rejection_or_active_configuration": true
+    },
+    "douyin": {
+      "apk_sha256": "9fc10c40b81b8244e515f9588d381f43e6ed870e6d9bebf14754a5e309ba380a",
+      "dex": "classes48.dex",
+      "selected_types": [
+        {
+          "class": "Lcom/amap/api/location/AMapLocationClient;",
+          "public_declared_method_count": 22
+        },
+        {
+          "class": "Lcom/amap/api/location/AMapLocationClientOption;",
+          "public_declared_method_count": 69
+        }
+      ],
+      "client_privacy_declarations": [
+        "updatePrivacyAgree(Context,boolean)",
+        "updatePrivacyShow(Context,boolean,boolean)"
+      ],
+      "option_mock_declarations": [
+        "isMockEnable()",
+        "setMockEnable(boolean)"
+      ],
+      "privacy_call_presence_does_not_prove_current_consent_or_constructor_gating": true,
+      "does_not_establish_active_provider_switch_value_or_target_adoption": true
+    },
+    "method_structure_local_receipt_sha256": "2ec409abedf3e32bb592fbd329face16eb58239d61f045cd66e9723bc7fa79f3",
+    "original_apks_modified": false,
+    "sdk_initialized_or_executed": false,
+    "new_location_or_network_request_started": false,
+    "key_or_identifier_values_extracted_or_published": false,
+    "private_app_or_account_data_read": false,
+    "privacy_or_permission_state_changed": false,
+    "phone_experiments_added": false,
+    "next_validation_boundary": "An independently initialized SDK with custom options is not the original app active configuration; use original app authorized location flow evidence without changing consent, keys or mock flags.",
+    "universal_no_root_impossibility_claimed": false
+  }
 }
