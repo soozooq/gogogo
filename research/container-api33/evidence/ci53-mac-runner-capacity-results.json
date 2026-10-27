@@ -39,5 +39,19 @@
     "passed": false
   },
   "arm_mac_result": "NO_EXECUTION_NOT_PASS",
-  "new_phone_release_published": false
+  "new_phone_release_published": false,
+  "conditional_retry_watch": {
+    "started": true,
+    "initial_phase": "WAITING_FOR_NATIVE_RUN_TO_FINISH",
+    "source_sha256": "95042cd80e1078721af69e4efb28a5a540b0c21daba4aaf5f4d62ec0184d0bc0",
+    "poll_seconds": 45,
+    "maximum_watch_hours": 3,
+    "conditions": [
+      "Same run53 attempt1 completed; its Linux and native jobs succeeded.",
+      "Original Mac job still cancelled without a runner and with the same capacity annotation.",
+      "All59 local runtime sources still match the fixed66258d1d source."
+    ],
+    "allowed_action": "One POST to rerun only job122257025243; no publication or repository edits.",
+    "post_acceptance_is_not_build_success": true
+  }
 }

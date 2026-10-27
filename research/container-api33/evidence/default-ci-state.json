@@ -173,5 +173,43 @@
     "passed": true
   },
   "latest_linux_result": "consumer-delivery-linux-results.json",
-  "mac_build_failure": "ci53-mac-runner-capacity-results.json"
+  "mac_build_failure": "ci53-mac-runner-capacity-results.json",
+  "phone_draft_candidate": {
+    "result": "phone-66258d1d-verified-draft-delivery-results.json",
+    "runtime_source": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+    "delivery_commit": "da2d9135845e6825c5eb40e012bfbfac65ca3656",
+    "run_id": 40527332462,
+    "job_id": 122270354238,
+    "conclusion": "success",
+    "apks": {
+      "main": {
+        "package": "com.soozooq.gogogo.test",
+        "version_name": "2.4.35-container-preview",
+        "version_code": 2400103,
+        "bytes": 40408206,
+        "sha256": "94019ea62938f0fb74d08a823bd97d15d6fa79dbfba0a9edc1810aeee903b0b2",
+        "certificate_sha256": "6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081",
+        "signature_and_alignment_verified": true,
+        "debuggable": true,
+        "file": "Tianwaitian-2.4.35-container-preview-arm64.apk",
+        "asset_id": 681948474,
+        "server_digest_verified": true
+      },
+      "host": {
+        "package": "com.soozooq.tianwaitian.containerresearch",
+        "version_name": "0.4-preview",
+        "version_code": 4,
+        "bytes": 4590083,
+        "sha256": "a85bf3535c3ada5e561eac0b68a0fbf938ea6b700bacc5b92a89fcb0ec9140c5",
+        "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+        "signature_and_alignment_verified": true,
+        "debuggable": true,
+        "file": "Tianwaitian-Original-Preview-66258d1d.apk",
+        "asset_id": 681948470,
+        "server_digest_verified": true
+      }
+    },
+    "published": false,
+    "mac_and_native_gates_pending": true
+  }
 }

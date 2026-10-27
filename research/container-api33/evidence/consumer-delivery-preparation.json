@@ -137,5 +137,12 @@
     "result": "NO_RUNNER_EXECUTION_NOT_PASS",
     "conclusion": "cancelled",
     "failure_record": "ci53-mac-runner-capacity-results.json"
+  },
+  "actual_phone_draft_delivery": {
+    "result": "phone-66258d1d-verified-draft-delivery-results.json",
+    "delivery_run_id": 40527332462,
+    "delivery_commit": "da2d9135845e6825c5eb40e012bfbfac65ca3656",
+    "verified": true,
+    "published": false
   }
 }
