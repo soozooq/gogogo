@@ -2,7 +2,7 @@
 
 唯一研发分支`research/container-api33-20261023`／Draft #60，日常#59固定2.4.31／2400099。先读根[PROJECT_STATUS.md](../../PROJECT_STATUS.md)，从分支HEAD继续，不给手机用户新增实验。
 
-未发布的新研发候选修正状态读取失败被误判成关闭、继而允许真实系统查询的缺口，见[准备记录](evidence/unreadable-mode-preparation.json)。只有明确成功读到CLOSE才放行，新增故障回归全部在云端自动运行；不修改已发布2.4.33，不把旧CI50当作新候选验证。
+未发布的新研发候选修正状态读取失败被误判成关闭、继而允许真实系统查询的缺口。[CI51默认](evidence/unreadable-mode-default-results.json)固定1e6a10ff／da217：5项定位3.921秒、19项受控无线0.231秒、七case与主447项／lint均独立核对通过，定位契约已接入默认CI。只有明确成功读到CLOSE才放行；本地两次测试前Provider超时／空Bundle失败保留，ARM64同源仍待结果，见[准备记录](evidence/unreadable-mode-preparation.json)。不增手机实验，不修改已发布2.4.33，不把旧CI50当作新候选验证。
 
 [2.4.33预览已发布](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.33-container-41438448)：固定运行时41438448／cf4引擎，交付bd8b3e42／Phone CI4。主程序2400101／实际云端SHA9242b55a…，预览0.2／2／513f8f98…；两份公开下载均HTTP200，版本／证书／对齐、API与服务器摘要、415份原CI非签名内容和公开签名配方均独立核对，私钥不上传。见[实际发布回执](evidence/phone-41438448-published-delivery-results.json)。旧2.4.32的tag及附件保留，发布不表示用户已安装。
 

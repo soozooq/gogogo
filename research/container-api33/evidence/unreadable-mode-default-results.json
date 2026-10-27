@@ -1,0 +1,164 @@
+{
+  "schema": "GOGOGO_UNREADABLE_MODE_ACTUAL_DEFAULT_RESULTS_V1",
+  "scope": "FIXED_SOURCE_PUBLIC_FRAMEWORK_CONTROLLED_FAULTS_AND_OWN_GUEST_NOT_TARGET_LOCATION_OR_PHONE",
+  "run_id": 40458413268,
+  "commit": "1e6a10ffd4fdb42aeb679d5e1d1fbd2a47707d92",
+  "engine_patch_sha256": "da217a395b23544c184ea839cfb5a14504c8a5875d320b988b86628a7d77654d",
+  "default_checks_conclusion": "success",
+  "artifacts": {
+    "own": {
+      "id": 12713721569,
+      "sha256": "f08fa5fddaadae851030fca3d430fdbde7f28a30f28c330c46f428b6a944aabd",
+      "verified": true
+    },
+    "mac": {
+      "id": 12713716469,
+      "sha256": "c1d90a2dfa98049d859e7f22e62a12978ad0606741db32b34c019feff8ec8036",
+      "verified": true
+    },
+    "linux": {
+      "id": 12714060207,
+      "sha256": "8dbef00ae1cf8001abb36a464ce7dcf60bf16016c97ec1841c5e57cac1c30711",
+      "verified": true
+    }
+  },
+  "case_junit": {
+    "x86_64-startup-framework": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 0.602,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-location-contract": {
+      "passed": true,
+      "junit_tests": 5,
+      "junit_seconds": 3.921,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-owned-location": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 4.214,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-ordinary-entry": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 15.045,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-installed-import": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 7.52,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-calculator": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 6.016,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-radio-privacy": {
+      "passed": true,
+      "junit_tests": 19,
+      "junit_seconds": 0.231,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    }
+  },
+  "all_three_api_digests_fixed_sources_own_signatures_and_materials_verified": true,
+  "new_methods_actually_passed": [
+    "unreadableModeDoesNotDelegateLastOrCurrentAndClosedModeRecovers",
+    "unreadableModeProtectsRadioAndNetworkAndClosedModeRecovers"
+  ],
+  "fault_scope": "REAL_PUBLIC_API33_WRAPPERS_AND_CONTROLLED_BASES_GETPATTERN_REMOTEEXCEPTION_RUNTIMEEXCEPTION_AND_UNKNOWN_99_NOT_REAL_MODEM_OR_BINDER_DEATH",
+  "own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4543712,
+        "sha256": "840f5e6a58a87ace50bd9e8a0dbf317e2734f4f2492abfaaea0a8efea8538233"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 526266,
+        "sha256": "bf2b565f502efa277f5a599460b17cd6aa54fe2cd6573e52e7cf7e4b5a3af8a0"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 74158,
+        "sha256": "5a76d48585eb046b0874127397861ed50bdb47a62eb7c2d209f00f841cda5796"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "moving_ui_source_count_verified": 59,
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "own_guest": {
+    "passed": true,
+    "stages": [
+      "TARGET_A",
+      "TARGET_B",
+      "UNREGISTERED_STABLE",
+      "CURRENT_CANCELLED"
+    ],
+    "report_source": "OWN_GUEST_ATOMIC_PRIVATE_FILE",
+    "host_pid": 3010,
+    "guest_pid": 3076
+  },
+  "local_pre_junit_failures_preserved": {
+    "scope": "OWNED_API33_SOFTWARE_EMULATOR_PRE_JUNIT_FAILURE_NOT_CODE_ASSERTION_OR_TARGET_LOCATION",
+    "attempts": [
+      {
+        "label": "unreadable-mode-radio-01",
+        "case_result_sha256": "0b9da4793c5e20b4d3913f4feba44e27df765cf977a8fbadd61a047c87749c9f",
+        "instrumentation_sha256": "bf018add2bb1b8446e4890aee8d975da6067244e60bfcc7661e0d48b752a537b",
+        "passed": false,
+        "tests_executed": 0
+      },
+      {
+        "label": "unreadable-mode-radio-02",
+        "case_result_sha256": "0b9da4793c5e20b4d3913f4feba44e27df765cf977a8fbadd61a047c87749c9f",
+        "instrumentation_sha256": "bf018add2bb1b8446e4890aee8d975da6067244e60bfcc7661e0d48b752a537b",
+        "passed": false,
+        "tests_executed": 0
+      }
+    ],
+    "diagnosis": "Own server provider processes exceeded Android provider publishing deadline; null reply crashes BundleCompat.getBinder during Application.onCreate. No new contract methods executed.",
+    "new_location_mode_predicate_in_crash_stack": false,
+    "relaxed_platform_timeouts_or_security": false,
+    "further_local_retries": false,
+    "fixed_commit_ci51": "PENDING_NOT_PASS"
+  },
+  "local_vm_stopped": true,
+  "published_2_4_33_source_414_unchanged_not_this_fix": true,
+  "native_same_source": "INDEPENDENT_RESULT_REQUIRED_NOT_IMPLIED_BY_DEFAULT_PASS",
+  "sdk_adoption_wechat_send_live_douyin_wireless_overseas_vivo": "NOT_VERIFIED",
+  "scope_limits": [
+    "Unknown policy protects new queries consulting this predicate; it is not proof a mock session is running.",
+    "Earlier SDK caches and physical-location subscriptions are not revoked or proven covered.",
+    "Tests use synthetic controlled radio/location bases, not real modem, scans, GPS or target SDK flow.",
+    "Native startup needs its independent same-source receipt.",
+    "No new phone experiments, permissions, JNI, dependencies, original-APK modification or mock-flag changes."
+  ],
+  "verifier_sha256": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
+  "inputs_manifest_sha256": "58bde3902acc61dc87c709bd00254996e6e76843d13848420eb6f8333cbb9544"
+}

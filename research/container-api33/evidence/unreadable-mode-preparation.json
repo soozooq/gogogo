@@ -1,6 +1,6 @@
 {
   "schema": "GOGOGO_UNREADABLE_MODE_PROTECTED_DELEGATION_PREPARATION_V1",
-  "scope": "IMPLEMENTED_COMPILED_CONTROLLED_RUNTIME_PENDING_NOT_PHONE_OR_TARGET_LOCATION",
+  "scope": "IMPLEMENTED_FIXED_CI51_DEFAULT_5_LOCATION_19_RADIO_PASSED_NATIVE_PENDING_NOT_PHONE_OR_TARGET_LOCATION",
   "base_research_commit": "ddda6d619562f6969937333d392de492efb921cd",
   "last_published_runtime_commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
   "published_2_4_33_unchanged_and_does_not_include_this_fix": true,
@@ -48,10 +48,24 @@
     "seconds": 0.425
   },
   "runtime_validation": {
-    "local_radio": "WARM_RETRY_PENDING_WITH_FIRST_FAILURE_PRESERVED",
-    "local_location": "PENDING",
-    "fixed_commit_default_ci": "PENDING",
-    "fixed_commit_native_arm64": "PENDING",
+    "local_radio": "TWO_PRE_JUNIT_INITIALIZATION_FAILURES_PRESERVED_NOT_PASS",
+    "local_location": "NOT_RUN_AFTER_SAME_BOOTSTRAP_FAILURE",
+    "fixed_commit_default_ci": {
+      "run_id": 40458413268,
+      "run_number": 51,
+      "commit": "1e6a10ffd4fdb42aeb679d5e1d1fbd2a47707d92",
+      "status": "completed",
+      "conclusion": "success",
+      "result": "unreadable-mode-default-results.json"
+    },
+    "fixed_commit_native_arm64": {
+      "run_id": 40458413268,
+      "job_id": 122039122708,
+      "commit": "1e6a10ffd4fdb42aeb679d5e1d1fbd2a47707d92",
+      "status": "in_progress",
+      "conclusion": null,
+      "result": "PENDING_NOT_PASS"
+    },
     "local_radio_first_attempt": {
       "passed": false,
       "test_methods_executed": 0,
@@ -61,6 +75,35 @@
       "instrumentation_sha256": "bf018add2bb1b8446e4890aee8d975da6067244e60bfcc7661e0d48b752a537b",
       "logcat_sha256": "c3abcbde7ca8e6543680c06b154469ba68071086ca6db7d4ed5ca070cccdff6b",
       "platform_timeouts_or_security_checks_changed": false
+    },
+    "local_initialization_failures": {
+      "scope": "OWNED_API33_SOFTWARE_EMULATOR_PRE_JUNIT_FAILURE_NOT_CODE_ASSERTION_OR_TARGET_LOCATION",
+      "attempts": [
+        {
+          "label": "unreadable-mode-radio-01",
+          "case_result_sha256": "0b9da4793c5e20b4d3913f4feba44e27df765cf977a8fbadd61a047c87749c9f",
+          "instrumentation_sha256": "bf018add2bb1b8446e4890aee8d975da6067244e60bfcc7661e0d48b752a537b",
+          "passed": false,
+          "tests_executed": 0
+        },
+        {
+          "label": "unreadable-mode-radio-02",
+          "case_result_sha256": "0b9da4793c5e20b4d3913f4feba44e27df765cf977a8fbadd61a047c87749c9f",
+          "instrumentation_sha256": "bf018add2bb1b8446e4890aee8d975da6067244e60bfcc7661e0d48b752a537b",
+          "passed": false,
+          "tests_executed": 0
+        }
+      ],
+      "diagnosis": "Own server provider processes exceeded Android provider publishing deadline; null reply crashes BundleCompat.getBinder during Application.onCreate. No new contract methods executed.",
+      "new_location_mode_predicate_in_crash_stack": false,
+      "relaxed_platform_timeouts_or_security": false,
+      "further_local_retries": false,
+      "fixed_commit_ci51": "PENDING_NOT_PASS"
+    },
+    "local_vm_shutdown": {
+      "stopped": true,
+      "elapsed_seconds": 792.64,
+      "reason": "REQUESTED"
     }
   },
   "default_ci_change": "Run the existing controlled location contract class on every x86_64 default job, alongside own Guest and third-party regressions. This adds no phone or product experiment entry.",

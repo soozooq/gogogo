@@ -17,7 +17,9 @@
 
 继续审查发现，Guest定位／无线Hook共用的判断函数调用兼容getter；该getter在RemoteException时返回关闭模式，使请求可能转向真实系统。新候选直接读取控制服务，仅在明确、成功读到关闭模式时放行；服务缺失、读取异常及未知模式继续走原虚拟保护路径。「保护路径」不表示服务一定在运行。公开2.4.33仍固定414源码，不包含这次修正，附件和标签保持原样。
 
-已完成编译、宿主静态检查、完整补丁干净重放及25项驱动检查。新增真实公共框架＋受控后端的状态故障检查，自动定位回归接入默认云端构建；运行结果与限制以[准备记录](research/container-api33/evidence/unreadable-mode-preparation.json)为准，未完成项不能借用CI50。没有新增手机实验页、权限、JNI、依赖、原包或mock标志变化；不归因用户旧微信失败，不声称能收回既有SDK缓存或此前已注册的物理定位回调。
+[CI51默认实际通过](research/container-api33/evidence/unreadable-mode-default-results.json)：固定1e6a10ff／da217a39补丁，5项公共定位契约3.921秒、19项受控无线0.231秒；七项case、变化UI、主447项／lint及三档API摘要、58／59来源、三同签名／11材料均核对。故障覆盖RemoteException、IllegalStateException和未知99：不向受控真实后端委托GPS／NETWORK缓存、current或基站／扫描；Wi-Fi／NetworkInfo副本继续脱敏，明确CLOSE后正常恢复。自有六路径4.214秒、四阶段及mock保持，普通入口15.045秒、已装导入7.520秒、计算器6.016秒。它是受控框架／自有回归，不是目标SDK采用。
+
+本地软件模拟器两次均在测试前因自有Provider发布超时、随后空Bundle读取而崩溃，0个JUnit方法执行；失败及摘要保留，VM已正常结束，未改系统超时、安全或ART。硬件CI51独立通过不能抹去该记录。新源码的ARM64作业122039122708仍在进行，未完成项不能借用CI50；[准备记录](research/container-api33/evidence/unreadable-mode-preparation.json)保留当前状态与边界。没有新增手机实验页、权限、JNI、依赖、原包或mock标志变化；不归因用户旧微信失败，不声称能收回既有SDK缓存或此前已注册的物理定位回调。
 
 ## 当前公开交付：2.4.33
 
