@@ -172,5 +172,17 @@
     "result": "passive-fixture-attribution-failure-results.json",
     "repair_preparation": "passive-fixture-identity-preparation.json",
     "original_pending_fields_are_pre_execution_snapshot": true
+  },
+  "actual_ci56_linux_followup": {
+    "commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",
+    "run_id": 40555343592,
+    "conclusion": "success",
+    "result": "passive-provider-linux-results.json",
+    "methods": 7,
+    "real_guest_paths": 9,
+    "feedback_characters": 1381,
+    "mac": "ci56-mac-capacity-results.json",
+    "native": "IN_PROGRESS_NOT_PASS",
+    "earlier_pending_fields_are_pre_execution_snapshot": true
   }
 }

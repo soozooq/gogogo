@@ -1,19 +1,32 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
-  "scope": "PASSIVE_GENERIC_FIXTURE_IDENTITY_REPAIR_NOT_CLOUD_VERIFIED",
-  "status": "not_started",
+  "scope": "CI56_LINUX_VERIFIED_MATCHED_NATIVE_RUNNING_PHONE_CONTROLLER_PREPARED",
+  "status": "in_progress",
   "conclusion": null,
-  "commit": null,
-  "run_id": null,
-  "base_commit": "e903212b24f55608402a85d3e86b105e77276dd1",
-  "preparation": "passive-fixture-identity-preparation.json",
+  "commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",
+  "run_id": 40555343592,
   "engine_patch_sha256": "420b83998686b0f25cf323bfd47bd5391245d9f323736e41473d4a3216b9f408",
-  "default_checks_conclusion": "PENDING_NEW_QUALIFICATION",
+  "preparation": "passive-fixture-identity-preparation.json",
+  "default_checks_conclusion": "LINUX_SUCCESS_VERIFIED_MAC_NO_RUNNER_NOT_PASS",
+  "default_result": "passive-provider-linux-results.json",
   "native": {
     "passed": false,
-    "status": "not_started",
+    "job_id": 122374016460,
+    "status": "in_progress",
     "result": "PENDING_NOT_PASS"
   },
+  "mac": {
+    "job_id": 122369802713,
+    "status": "completed",
+    "conclusion": "cancelled",
+    "result": "ci56-mac-capacity-results.json",
+    "retry_posted": false
+  },
+  "phone_controller_preparation": "phone-99940ea2-delivery-preparation.json",
+  "phone_delivery_run_id": null,
+  "phone_new_draft_release_id": null,
+  "phone_new_tag": "preview-2.4.35-container-99940ea2",
+  "publication": "NOT_STARTED_NOT_PASS",
   "previous_passive_candidate_failure": {
     "commit": "e903212b24f55608402a85d3e86b105e77276dd1",
     "run_id": 40553001338,
@@ -25,15 +38,10 @@
   "previous_driver_qualification": {
     "commit": "66a293fa2b36cc04e7c2e7986ce5588f8d0a134f",
     "run_id": 40547400219,
+    "conclusion": "success",
     "default_result": "original-main-identity-default-results.json",
-    "native": {
-      "passed": false,
-      "job_id": 122345264006,
-      "status": "in_progress",
-      "result": "PENDING_NOT_PASS",
-      "source": "66a293fa2b36cc04e7c2e7986ce5588f8d0a134f"
-    },
-    "covers_new_passive_fix": false
+    "native_result": "native-original-main-identity-pass-results.json",
+    "covers_passive_fix": false
   },
   "old_phone_draft_candidate": {
     "result": "phone-66258d1d-verified-draft-delivery-results.json",
@@ -100,17 +108,10 @@
     "result": "native-original-pidof-set-failure-results.json",
     "linux_result": "consumer-delivery-linux-results.json"
   },
-  "prior_full_default_native_pass": {
-    "run_id": 40466246255,
-    "commit": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
-    "default_result": "wechat-compatibility-presentation-default-results.json",
-    "native_result": "native-wechat-compatibility-presentation-pass-results.json"
-  },
   "candidate_versions_retained": {
     "main": "2.4.35 / 2400103",
     "host": "0.4-preview / 4"
   },
-  "production_runtime_unchanged_from_e903212b": true,
   "new_runtime_published": false,
   "target_sdk_and_vivo": "NOT_VERIFIED"
 }

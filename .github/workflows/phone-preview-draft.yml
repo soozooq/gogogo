@@ -1,4 +1,4 @@
-name: Phone preview draft
+name: Phone preview delivery
 
 on:
   workflow_dispatch:
@@ -9,6 +9,9 @@ on:
       - ci/restore_preview_signature.py
       - ci/stage_rootless_phone_preview.py
       - ci/test_restore_preview_signature.py
+      - ci/preview_release.py
+      - ci/qualify_native_preview.py
+      - ci/test_preview_release.py
       - ci/phone-preview/**
 
 permissions:
@@ -27,16 +30,17 @@ jobs:
       contents: write
     env:
       GH_REPO: soozooq/gogogo
-      SOURCE_COMMIT: 66258d1d9559789bd1247117d1eb780e24e58ad2
-      PREVIEW_TAG: preview-2.4.35-container-66258d1d
+      SOURCE_COMMIT: 99940ea20ef4e7bee27a65fe759a810bf0942672
+      PREVIEW_TAG: preview-2.4.35-container-99940ea2
     steps:
       - uses: actions/checkout@v5
         with:
           path: delivery
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/checkout@v5
         with:
-          ref: 66258d1d9559789bd1247117d1eb780e24e58ad2
+          ref: 99940ea20ef4e7bee27a65fe759a810bf0942672
           path: source
           persist-credentials: false
       - uses: actions/setup-java@v4
@@ -60,6 +64,8 @@ jobs:
           test -x "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
       - name: Check public signature reconstruction without credentials
         run: python3 -m unittest discover -s delivery/ci -p test_restore_preview_signature.py -v
+      - name: Check publication and retry boundaries
+        run: python3 -m unittest discover -s delivery/ci -p test_preview_release.py -v
       - name: Prepare the fixed SDK and placeholder build profile
         shell: bash
         run: |
@@ -73,29 +79,29 @@ jobs:
         run: |
           set -euo pipefail
           bash ./gradlew --no-daemon --init-script docs/build-profiles/main-preview-2.4.35.init.gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --console=plain
-      - name: Receive only the pinned CI53 self-owned set
+      - name: Receive only the pinned CI56 self-owned set
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          gh api repos/soozooq/gogogo/actions/artifacts/12741609554 > package-work/artifact-api.json
+          gh api repos/soozooq/gogogo/actions/artifacts/12757735984 > package-work/artifact-api.json
           python3 - <<'PY'
           import json
           from pathlib import Path
           value = json.loads(Path('package-work/artifact-api.json').read_text())
-          assert value['id'] == 12741609554 and not value['expired']
-          assert value['workflow_run']['id'] == 40523604093
-          assert value['workflow_run']['head_sha'] == '66258d1d9559789bd1247117d1eb780e24e58ad2'
-          assert value['digest'] == 'sha256:7f01d573c1bfadfb68ad7d1d6cc0d1e2b68b6bc7d1ff7981a1a08448f81a753a'
+          assert value['id'] == 12757735984 and not value['expired']
+          assert value['workflow_run']['id'] == 40555343592
+          assert value['workflow_run']['head_sha'] == '99940ea20ef4e7bee27a65fe759a810bf0942672'
+          assert value['digest'] == 'sha256:a1fbfa61b7a0d6c4c017effca410e51d0288c33918e1b7c22efcc09502b57f4c'
           PY
-          gh api repos/soozooq/gogogo/actions/artifacts/12741609554/zip > package-work/owned.zip
+          gh api repos/soozooq/gogogo/actions/artifacts/12757735984/zip > package-work/owned.zip
           python3 - <<'PY'
           import json
           from pathlib import Path
-          inputs = {'run_id': 40523604093, 'commit': '66258d1d9559789bd1247117d1eb780e24e58ad2',
-                    'artifacts': {'own': {'id': 12741609554, 'path': str(Path('package-work/owned.zip').resolve()),
-                    'sha256': '7f01d573c1bfadfb68ad7d1d6cc0d1e2b68b6bc7d1ff7981a1a08448f81a753a'}}}
+          inputs = {'run_id': 40555343592, 'commit': '99940ea20ef4e7bee27a65fe759a810bf0942672',
+                    'artifacts': {'own': {'id': 12757735984, 'path': str(Path('package-work/owned.zip').resolve()),
+                    'sha256': 'a1fbfa61b7a0d6c4c017effca410e51d0288c33918e1b7c22efcc09502b57f4c'}}}
           Path('package-work/verification-inputs.json').write_text(json.dumps(inputs))
           PY
           python3 source/research/container-api33/tools/verify-ci-receipts.py --repo source --sdk "$ANDROID_HOME" --inputs package-work/verification-inputs.json --output package-work/verified-owned.json
@@ -106,7 +112,7 @@ jobs:
               Path('package-work/base-host.apk').write_bytes(archive.read('probeHost-debug.apk'))
           PY
       - name: Restore the exact privately signed host using public APK metadata
-        run: python3 delivery/ci/restore_preview_signature.py --base package-work/base-host.apk --recipe delivery/ci/phone-preview/host-signature-66258d1d.json --output package-work/signed-host.apk
+        run: python3 delivery/ci/restore_preview_signature.py --base package-work/base-host.apk --recipe delivery/ci/phone-preview/host-signature-99940ea2.json --output package-work/signed-host.apk
       - name: Stage only the two verified phone APKs
         shell: bash
         run: |
@@ -115,35 +121,19 @@ jobs:
       - name: Save one flat phone download and its receipt
         uses: actions/upload-artifact@v4
         with:
-          name: tianwaitian-phone-preview-2.4.35-66258d1d
+          name: tianwaitian-phone-preview-2.4.35-99940ea2
           path: package-work/staged/*
           if-no-files-found: error
           retention-days: 14
-      - name: Attach only the two APKs to the existing unpublished draft
+
+      - name: Create or verify only this source's unpublished draft
+        working-directory: delivery
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          gh release view "$PREVIEW_TAG" --repo "$GH_REPO" --json isDraft,targetCommitish,assets > package-work/draft-before.json
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          value = json.loads(Path('package-work/draft-before.json').read_text())
-          assert value['isDraft'] is True
-          assert value['targetCommitish'] == '66258d1d9559789bd1247117d1eb780e24e58ad2'
-          assert value['assets'] == [], 'Existing draft assets are preserved; inspect before retrying'
-          PY
-          gh release upload "$PREVIEW_TAG" --repo "$GH_REPO" package-work/staged/Tianwaitian-2.4.35-container-preview-arm64.apk package-work/staged/Tianwaitian-Original-Preview-66258d1d.apk
-          gh release view "$PREVIEW_TAG" --repo "$GH_REPO" --json isDraft,targetCommitish,assets > package-work/draft-after.json
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-          value = json.loads(Path('package-work/draft-after.json').read_text())
-          assert value['isDraft'] is True, 'This job never publishes'
-          assert value['targetCommitish'] == '66258d1d9559789bd1247117d1eb780e24e58ad2'
-          assert {a['name'] for a in value['assets']} == {'Tianwaitian-2.4.35-container-preview-arm64.apk', 'Tianwaitian-Original-Preview-66258d1d.apk'}
-          PY
+          python3 ci/preview_release.py stage --config ci/release-qualifications/2.4.35.json --package-dir ../package-work/staged --work ../package-work/draft --delivery-run "$GITHUB_RUN_ID"
       - name: Preserve staging diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -153,7 +143,54 @@ jobs:
             package-work/artifact-api.json
             package-work/verification-inputs.json
             package-work/verified-owned.json
-            package-work/draft-before.json
-            package-work/draft-after.json
+            package-work/draft/*.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  publish-matched:
+    needs: stage-draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 175
+    permissions:
+      actions: write
+      checks: read
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: '12266719'
+          packages: ''
+          log-accepted-android-sdk-licenses: false
+      - name: Prepare only APK verification tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -x "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" ]; then
+            test -x "$ANDROID_HOME/cmdline-tools/16.0/bin/apkanalyzer"
+            test ! -e "$ANDROID_HOME/cmdline-tools/latest"
+            ln -s 16.0 "$ANDROID_HOME/cmdline-tools/latest"
+          fi
+          sdkmanager --sdk_root="$ANDROID_HOME" 'build-tools;33.0.2' 'build-tools;35.0.0'
+      - name: Wait for actual matched qualification and verify before publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 ci/preview_release.py publish --config ci/release-qualifications/2.4.35.json --sdk "$ANDROID_HOME" --work "$RUNNER_TEMP/matched-preview-publication" --delivery-run "$GITHUB_RUN_ID" --delivery-commit "$GITHUB_SHA"
+      - name: Preserve qualification and actual publication result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matched-preview-publication-${{ github.run_id }}
+          path: ${{ runner.temp }}/matched-preview-publication/*.json
           if-no-files-found: ignore
           retention-days: 14

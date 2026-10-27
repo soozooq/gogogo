@@ -1,0 +1,61 @@
+{
+  "schema": "GOGOGO_MATCHED_PREVIEW_DELIVERY_POLICY_V1",
+  "publish_enabled": true,
+  "repository": "soozooq/gogogo",
+  "branch": "research/container-api33-20261023",
+  "runtime_commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",
+  "qualification_run_id": 40555343592,
+  "qualification_job_ids": {
+    "linux": 122369802855,
+    "native": 122374016460
+  },
+  "mac_initial_job_id": 122369802713,
+  "mac_job_name": "Build and inspect (ARM Mac)",
+  "qualification_artifacts": {
+    "own": {
+      "name": "ci-owned-container-apks-99940ea20ef4e7bee27a65fe759a810bf0942672",
+      "id": 12757735984,
+      "bytes": 4855560,
+      "sha256": "a1fbfa61b7a0d6c4c017effca410e51d0288c33918e1b7c22efcc09502b57f4c"
+    },
+    "linux": {
+      "name": "container-research-linux-evidence-56",
+      "id": 12757666580,
+      "bytes": 440801,
+      "sha256": "dc4aaa6f8a71a7b2b01dcf0dcefba3edcf7c3a97431136661220d1b43c1d49c0"
+    },
+    "mac": {
+      "name": "container-research-arm-mac-build-evidence-56"
+    },
+    "native": {
+      "name": "cuttlefish-arm-host-56"
+    }
+  },
+  "tag": "preview-2.4.35-container-99940ea2",
+  "title": "天外天2.4.35 · 被动定位兼容预览",
+  "delivery_artifact_name": "tianwaitian-phone-preview-2.4.35-99940ea2",
+  "notes_path": "ci/release-qualifications/2.4.35-notes.md",
+  "live_config_path": "ci/release-qualifications/2.4.35.json",
+  "wait_seconds": 9000,
+  "poll_seconds": 45,
+  "mac_no_runner_retries": 1,
+  "profile_sha256": "67f15d335ae34ac7245dec166806773eaf83f772df0ae2b5fe7c7a9851c41ed4",
+  "expected_apks": {
+    "main": {
+      "file": "Tianwaitian-2.4.35-container-preview-arm64.apk",
+      "package": "com.soozooq.gogogo.test",
+      "version_name": "2.4.35-container-preview",
+      "version_code": 2400103,
+      "certificate_sha256": "6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081"
+    },
+    "host": {
+      "file": "Tianwaitian-Original-Preview-99940ea2.apk",
+      "package": "com.soozooq.tianwaitian.containerresearch",
+      "version_name": "0.4-preview",
+      "version_code": 4,
+      "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+      "sha256": "28556e78c87bbec41154c6920cfc7ddf3e4d745d24233e251194d4a0bfca1e10",
+      "bytes": 4590083
+    }
+  }
+}

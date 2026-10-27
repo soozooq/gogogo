@@ -23,5 +23,17 @@
     "research/container-api33/probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java": "ab35af6297082e4ae65a35e88ae3f4feab18b2315d3a3a33a5c79fb460b62e74"
   },
   "requires_new_matched_default_and_native": true,
-  "runtime_or_sdk_adoption_claimed": false
+  "runtime_or_sdk_adoption_claimed": false,
+  "actual_ci56_linux_followup": {
+    "commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",
+    "run_id": 40555343592,
+    "conclusion": "success",
+    "result": "passive-provider-linux-results.json",
+    "methods": 7,
+    "real_guest_paths": 9,
+    "feedback_characters": 1381,
+    "mac": "ci56-mac-capacity-results.json",
+    "native": "IN_PROGRESS_NOT_PASS",
+    "earlier_pending_fields_are_pre_execution_snapshot": true
+  }
 }

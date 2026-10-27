@@ -11,10 +11,10 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 
-SOURCE = '66258d1d9559789bd1247117d1eb780e24e58ad2'
+SOURCE = '99940ea20ef4e7bee27a65fe759a810bf0942672'
 MAIN_CERT = '6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081'
 HOST_CERT = '25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b'
-HOST_SHA = 'a85bf3535c3ada5e561eac0b68a0fbf938ea6b700bacc5b92a89fcb0ec9140c5'
+HOST_SHA = '28556e78c87bbec41154c6920cfc7ddf3e4d745d24233e251194d4a0bfca1e10'
 PROFILE_SHA = '67f15d335ae34ac7245dec166806773eaf83f772df0ae2b5fe7c7a9851c41ed4'
 
 
@@ -82,7 +82,7 @@ def main():
         raise ValueError('Main checks did not pass')
     output.mkdir(parents=True, exist_ok=False)
     names = {'main': 'Tianwaitian-2.4.35-container-preview-arm64.apk',
-             'host': 'Tianwaitian-Original-Preview-66258d1d.apk'}
+             'host': 'Tianwaitian-Original-Preview-99940ea2.apk'}
     shutil.copyfile(candidates[0], output / names['main'])
     shutil.copyfile(args.host, output / names['host'])
     apks = {'main': inspect(output / names['main'], sdk, 'com.soozooq.gogogo.test',
@@ -95,7 +95,7 @@ def main():
     receipt = {'schema': 'GOGOGO_CI_PHONE_PREVIEW_STAGING_V1', 'source_commit': SOURCE,
         'delivery_run_id': int(args.delivery_run_id), 'apks': apks, 'metadata_profile_sha256': PROFILE_SHA,
         'main_checks': {'junit': counts, 'lint_error_fatal_count': severe},
-        'host_original_ci_run': 40523604093, 'host_ci_non_signature_entries_equal': 415,
+        'host_original_ci_run': 40555343592, 'host_ci_non_signature_entries_equal': 415,
         'private_key_used_or_included': False, 'original_target_apks_included': False,
         'native_gate': 'NOT_CHECKED_BY_THIS_DELIVERY_JOB', 'phone_and_target_business': 'NOT_VERIFIED',
         'published': False}
@@ -108,7 +108,7 @@ def main():
         '微信发送／实时共享、抖音无线及海外定位尚未验收。\n\n'
         '候选发布后的流程：安装两份APK → 地图选点 → 首次导入原版并授权精确定位 → 确认并打开。\n'
         '当前支持微信8.0.79／3200、抖音40.8.0／400801完整原版；需自行登录，原应用保留。\n'
-        '原反馈按钮会自动附加有上限的Core内存调用摘要，不含坐标；计数不是SDK采用或本次会话证明。\n'
+        '原反馈按钮会自动附加有上限的Core内存调用摘要及被动通道计数，不含坐标；计数不是SDK采用或本次会话证明。\n'
         '预览页点击“一键复制反馈”，只选择已经看到的入口／结果即可，无需逐项实验。主页使用免腾讯Key的MapLibre／OpenFreeMap；联网地图待实机结果。\n\n'
         '源码：https://github.com/soozooq/gogogo/tree/' + SOURCE + '\n'
         '许可、对应来源与可替换库材料随预览APK保留于assets/research-notices。\n')

@@ -1,0 +1,27 @@
+{
+  "schema": "GOGOGO_CI56_MAC_CAPACITY_AND_CONDITIONAL_RETRY_V1",
+  "run_id": 40555343592,
+  "commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",
+  "job_id": 122369802713,
+  "conclusion": "cancelled",
+  "runner_id": 0,
+  "steps_executed": 0,
+  "build_or_android_runtime_pass": false,
+  "source_compile_failure_proven": false,
+  "annotations": [
+    "The job was not acquired by Runner of type hosted even after multiple attempts",
+    "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times.",
+    "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times.",
+    "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+  ],
+  "reason": "HOSTED_ARM64_RUNNER_NOT_ACQUIRED_CAPACITY",
+  "matching_native_job_id": 122374016460,
+  "matching_native_at_capture": "in_progress",
+  "retry_currently_allowed": false,
+  "retry_posted": false,
+  "future_retry_limit": 1,
+  "future_conditions": "Whole run completed; Linux/native actually successful; Mac no runner/no steps and explicit capacity annotation; same-source run attempt1 only.",
+  "planned_actor": "Separate delivery qualification job, not started at preparation",
+  "raw_job_api_sha256": "bf3d658ead0a1d106f73b0968bb9231cfd9b0186a284d68af169854302b10944",
+  "raw_annotation_api_sha256": "e916adb6e9d6091864f8401120a1bf9c751ec8fd33273dd57a179991e35fd1dd"
+}
