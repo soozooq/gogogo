@@ -84,5 +84,8 @@
       "Tianwaitian-2.4.32-container-preview-arm64.apk": "sha256:3ddd90ae7fcec31a00e61adfc6a9ca0e320a541d3b6e046ebcd70745aba2d87c",
       "Tianwaitian-Original-Preview-e0811cf4.apk": "sha256:14cdb415150c540c465a7db4033c02f71059f5b03be1759deb7a87114f93422f"
     }
-  }
+  },
+  "record_scope": "DELIVERY_TIME_DRAFT_SNAPSHOT_NOT_CURRENT_PUBLICATION_STATUS",
+  "current_publication_result": "phone-41438448-published-delivery-results.json",
+  "subsequent_matching_native_result": "native-preview-feedback-virtual-startup-pass-results.json"
 }

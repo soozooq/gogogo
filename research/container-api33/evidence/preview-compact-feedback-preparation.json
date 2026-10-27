@@ -47,7 +47,6 @@
   },
   "same_core_patch_sha256": "cf4dffbb4194276f6cce94f6cb9106ff8cfc79f5111886e8018076f0dca12e15",
   "new_permissions_dependencies_or_mock_flag_changes": false,
-  "pending_actual_regression": "EXISTING_ORDINARY_GPSTEST_IMPORT_A_TO_B_THEN_ACTUAL_CLIPBOARD_LESS_THAN1800_CHARS_NO_COORDINATES_SAME_GUEST_PID_SAME_OWN_MODE_THEN_EXISTING_STOP_CLEANUP",
   "junit_methods_added": 0,
   "actual_clipboard_runtime": {
     "run_id": 40424038227,
@@ -58,7 +57,7 @@
     "result": "preview-compact-feedback-results.json"
   },
   "published_2_4_32_apks_unchanged": true,
-  "new_candidate_distributed": false,
+  "new_candidate_distributed": true,
   "phone_experiments_requested": false,
   "target_sdk_and_wechat_douyin_business": "NOT_VERIFIED",
   "source_sha256": {
@@ -76,5 +75,7 @@
     "passed": true,
     "owned_location_passed": true,
     "both_targets_closed_and_own_startups_passed": true
-  }
+  },
+  "publication_result": "phone-41438448-published-delivery-results.json",
+  "planned_regression": "EXISTING_ORDINARY_GPSTEST_IMPORT_A_TO_B_THEN_ACTUAL_CLIPBOARD_LESS_THAN1800_CHARS_NO_COORDINATES_SAME_GUEST_PID_SAME_OWN_MODE_THEN_EXISTING_STOP_CLEANUP"
 }

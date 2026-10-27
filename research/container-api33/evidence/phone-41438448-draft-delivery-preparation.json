@@ -1,6 +1,6 @@
 {
   "schema": "GOGOGO_PHONE_41438448_DRAFT_DELIVERY_PREPARATION_V1",
-  "scope": "LOCAL_SIGNED_SAME_RUN_HOST_AND_MAIN_PREFLIGHT_DELIVERY_DRAFT_ONLY_NATIVE_PENDING",
+  "scope": "ACTUAL_DEFAULT_NATIVE_DELIVERY_AND_PUBLICATION_COMPLETE_PREPARATION_HISTORY_RETAINED",
   "runtime_source_commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
   "default_result": "preview-compact-feedback-results.json",
   "main_profile": "docs/build-profiles/main-preview-2.4.33.init.gradle",
@@ -86,7 +86,7 @@
   "publication_requires_matching_native_and_delivery_receipts": true,
   "published_2_4_32_assets_or_tag_changed": false,
   "new_phone_experiments_requested": false,
-  "new_candidate_published": false,
+  "new_candidate_published": true,
   "target_business_and_vivo": "NOT_VERIFIED",
   "local_staging_preflight": {
     "passed": true,
@@ -113,5 +113,7 @@
     "exact_two_assets_verified": true,
     "source_and_base_host_match": true,
     "gate_passed": true
-  }
+  },
+  "publication_result": "phone-41438448-published-delivery-results.json",
+  "draft_is_preparation_snapshot_not_current_state": true
 }

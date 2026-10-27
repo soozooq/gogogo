@@ -1,20 +1,16 @@
 # Android13免Root容器与普通应用入口
 
-唯一研发分支`research/container-api33-20261023`／Draft #60，日常#59固定2.4.31／2400099。当前以根[PROJECT_STATUS.md](../../PROJECT_STATUS.md)为准，不给单手机用户新增实验。
+唯一研发分支`research/container-api33-20261023`／Draft #60，日常#59固定2.4.31／2400099。先读根[PROJECT_STATUS.md](../../PROJECT_STATUS.md)，从分支HEAD继续，不给手机用户新增实验。
 
-[CI48原生完整通过](evidence/native-phone-transaction-name-pass-results.json)，固定e0811cf4／d6b29e92：两普通原包、两容器匿名UI、自有框架15.550秒及六路径48.947秒全部通过。微信已到匿名登录页，旧私有字段崩溃未观察到；抖音主PID9561／宿主UID10102保持300,838ms。四档API／固定源码／9原生输入及三件自有来源／签名／材料均核对，system_server659稳定，VM／包／staging清理通过。目标截图未生成，不声称看过。
+[2.4.33预览已发布](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.33-container-41438448)：固定运行时41438448／cf4引擎，交付bd8b3e42／Phone CI4。主程序2400101／实际云端SHA9242b55a…，预览0.2／2／513f8f98…；两份公开下载均HTTP200，版本／证书／对齐、API与服务器摘要、415份原CI非签名内容和公开签名配方均独立核对，私钥不上传。见[实际发布回执](evidence/phone-41438448-published-delivery-results.json)。旧2.4.32的tag及附件保留，发布不表示用户已安装。
 
-[CI48默认](evidence/phone-transaction-name-results.json)实际六项、16项受控回调0.218秒、六路径3.659秒、主447项／lint及三档核对通过；“私有常量确实不可读”的前置断言和公共框架流程已执行。原生匿名／自有成功仍不是微信发送／实时、抖音无线／海外或vivo验收；未接受条款、登录或发送。
+[CI50默认](evidence/preview-compact-feedback-results.json)18项受控电话／无线0.257秒、六项case、447主检查／lint通过；实际短反馈780字符、无坐标、同Guest主PID与模式，再正常停止。[同源原生50](evidence/native-preview-feedback-virtual-startup-pass-results.json)完成两普通原包、两容器关闭模式／停止旧进程／模式2不同新PID及真实UID匿名启动，自有框架15.112秒／六路径49.845秒、四阶段、mock、时效及清理均通过。四档API／9原生输入／59自有来源／同签名与材料核对。300秒抖音观察只属于关闭模式；无目标PNG，不声称看过目标截图。
 
-[修正](evidence/phone-transaction-name-preparation.json)使用运行时AIDL回调名称替代私有常量字段，不改变生产全局策略，保留mock／原始调用身份／无敏感回退。软件16项3.298秒通过，首轮0方法初始化失败保留，未改镜像或平台超时。[旧CI47失败](evidence/native-phone-callback-field-failure-results.json)及[旧CI46通过](evidence/native-owned-private-snapshot-pass-results.json)分别保留，均不替新源码背书。
+[本轮修正](evidence/service-state-read-virtual-startup-preparation.json)覆盖服务状态中的CellIdentity及预加载电话缓存；标准脱敏保留权限拒绝、null、原对象及mock，不等于全无线／SIM／国家／IP覆盖，也不归因用户旧失败。微信发送／实时、抖音无线／海外、目标SDK和vivo仍未确认生效，没有自动接受条款、登录或发送业务。
 
-[手机预览已发布](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.32-container-e0811cf4)，[交付／发布回执](evidence/phone-e081-published-delivery-results.json)已核对CI3归档API与服务器摘要、包名／版本、签名和对齐。实际云主包3ddd90ae…、预览14cdb415…，两份公开下载均HTTP200。固定e081源码，交付ecdec310；415份非签名内容和公开配方逐字节恢复已核对，私钥不上传。旧ff12失败包备份后移除，同一个Release发布为prerelease，既不新增分支，也不表示用户已安装或目标位置业务完成。
+[手机三步流程](../../docs/original-app-preview-flow.md)：地图选点带入、首次导入完整原版并精确授权、确认打开。预览页有问题时一键选择已有观察后复制反馈，不重新定位或启停模拟，不要求遍历实验。系统原应用保留，需自行登录，账号私有数据不迁移；微信8.0.79／3200、抖音40.8.0／400801原包不改签、不内嵌、不分发。
 
-[反馈简化](evidence/no-extra-experiment-feedback-preparation.json)统一已有「一键复制反馈」。[三步流程](../../docs/original-app-preview-flow.md)为预览说明。固定完整微信8.0.79／抖音40.8.0不改签、不内嵌、不分发，账号私有数据不迁移。
-
-[继续研发候选](evidence/service-state-read-virtual-startup-preparation.json)补服务状态／预加载电话缓存。[CI50默认](evidence/preview-compact-feedback-results.json)18项0.257秒、六项case及447主检查／lint通过，三档摘要／来源／签名／材料核对。预览短反馈实际复制780字符，无坐标、同Guest主PID与模拟模式，再完成停止，不代表目标SDK采用。[原生49已完整通过](evidence/native-service-state-virtual-startup-pass-results.json)：旧主进程停止后，模式2两款匿名UI均重启，框架16.175秒／六路径50.933秒及清理通过；绑定1441旧宿主，不代替带短反馈的414新宿主，[匹配原生50实际完整通过](evidence/native-preview-feedback-virtual-startup-pass-results.json)：新主PID／真实UID、双模式匿名UI、框架15.112秒／六路径49.845秒与系统／清理均核对，发布前来源及两附件摘要检查通过，2.4.33尚待公开。[2.4.33交付草稿](evidence/phone-41438448-draft-delivery-preparation.json)固定同轮来源、稳定证书与公开配方，已由[Phone CI4](evidence/phone-41438448-verified-draft-delivery-results.json)实际写入两份新草稿APK，主9242b55a…／预览513f8f98…摘要、证书、来源与内容核对，匹配原生50与发布前核对也已通过，仍未发布；当前2.4.32附件不改，不新增手机实验。
-
-下方保留此前各轮的命令和历史结果，不替代顶部当前状态。[CI38匿名启动通过](evidence/native-container-startup-pass-results.json)、[CI40旧PID集合失败](evidence/native-pid-set-and-owned-stage-results.json)、[CI39真实Provider归属失败](evidence/provider-attribution-failure-and-correction.json)均保留，不覆盖为成功。
+历史[CI49](evidence/native-service-state-virtual-startup-pass-results.json)绑定1441旧宿主，[CI48](evidence/native-phone-transaction-name-pass-results.json)绑定旧e081预览；[CI47崩溃](evidence/native-phone-callback-field-failure-results.json)、[CI44／45时效失败](evidence/native-owned-location-freshness-results.json)及后文早期命令保留，不替代当前固定源码结果。手机用户无需执行下列维护检查。
 
 ## 核对下载的 CI 回执（维护用）
 

@@ -1,22 +1,22 @@
 # 原版应用预览的手机流程
 
-本说明随候选安装包交付使用。当前研发状态见[PROJECT_STATUS.md](../PROJECT_STATUS.md)；[2.4.32预览版已发布](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.32-container-e0811cf4)，微信发送／实时位置、抖音无线及海外业务仍未完成真机验收。
+本说明随候选安装包交付使用。当前研发状态见[PROJECT_STATUS.md](../PROJECT_STATUS.md)；[2.4.33预览版已发布](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.33-container-41438448)，微信发送／实时位置、抖音无线及海外业务仍未完成真机验收。
 
 面向一部Android13／vivo手机，无Root、无电脑。预览页接收选点和已装原版导入已经完成云端界面检查；主程序首页发送端和vivo真机仍待实际结果。
 
-先安装[主程序APK](https://github.com/soozooq/gogogo/releases/download/preview-2.4.32-container-e0811cf4/Tianwaitian-2.4.32-container-preview-arm64.apk)和[原版预览APK](https://github.com/soozooq/gogogo/releases/download/preview-2.4.32-container-e0811cf4/Tianwaitian-Original-Preview-e0811cf4.apk)，不需要电脑。
+先安装[主程序APK](https://github.com/soozooq/gogogo/releases/download/preview-2.4.33-container-41438448/Tianwaitian-2.4.33-container-preview-arm64.apk)和[原版预览APK](https://github.com/soozooq/gogogo/releases/download/preview-2.4.33-container-41438448/Tianwaitian-Original-Preview-41438448.apk)，不需要电脑。
 
 ## 三步使用
 
 1. 在天外天地图选择地点，点击“将选点带入微信 / 抖音预览”，选择应用。此按钮在原生ARM64且预览入口已安装时显示，坐标会带入预览页。
 2. 首次点击“导入手机已装版本”。当前只接受固定微信8.0.79／3200、抖音40.8.0／400801的完整原版APK；版本不符或分包时按提示选择对应官方完整APK。导入只需一次。
-3. 确认地点，点击“应用坐标并打开”。以后直接改选地点再打开；结束时点击“停止容器内应用和模拟”。收到地图选点本身不会启动应用或启用模拟。
+3. 确认地点，点击“应用坐标并打开”。以后直接改选地点再打开；结束时点击“停止预览”。收到地图选点本身不会启动应用或启用模拟。
 
 预览环境需要自行登录，已有账号、聊天记录和其他私有数据不会自动迁入。系统原应用保留；本功能作用于从预览入口打开的应用。
 
 ## 正常使用后的一次反馈
 
-不需要单独跑实验、遍历所有入口或反复切换VPN。有问题时，只记下正在使用的入口，以及页面显示“选点地区”“真实地区”还是“找不到位置”，一次反馈即可。未使用的入口保留为未验证。
+不需要单独跑实验、遍历所有入口或反复切换VPN。有问题时，回到原版预览页点“一键复制反馈”，选择刚才使用的入口和页面结果（“选点地区”“真实地区”“找不到位置”或“还没查看”），直接粘贴发送即可。复制不读坐标、不重新定位、不启停模拟；未使用的入口保留为未验证。
 
 地图地点、附近内容与IP属地分别判定；普通模拟、自有检查通过或写入海外坐标，均不能替代当前目标页面结果。历史实验不要求重做。
 
@@ -24,8 +24,8 @@
 <summary>维护者证据，无需手机操作</summary>
 
 - [普通入口与已装导入](../research/container-api33/evidence/map-point-prefill-results.json)：接收端预填、原版导入、原应用保留及GPSTest实际界面。
-- [当前默认六路径与16项受控回归](../research/container-api33/evidence/phone-transaction-name-results.json)：CI48固定e081源码的自有A→B、停止稳定、取消零回调与私有常量不可读后的公共电话回调。
-- [当前原生完整回执](../research/container-api33/evidence/native-phone-transaction-name-pass-results.json)：同源码微信／抖音匿名UI、自有框架及六路径通过，系统和清理合格；目标SDK、账号和实际位置业务仍未验证。
+- [当前默认六路径与18项受控回归](../research/container-api33/evidence/preview-compact-feedback-results.json)：CI50固定414源码，实际短反馈780字符、同主PID／模式、A→B／停止与取消检查。
+- [当前原生完整回执](../research/container-api33/evidence/native-preview-feedback-virtual-startup-pass-results.json)：同源码两款关闭模式与模式2匿名启动、自有框架及六路径通过，系统及清理合格；目标SDK、账号和实际位置业务仍未验证。
 
 这些记录供维护者核对，不是用户操作清单。
 

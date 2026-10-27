@@ -1,6 +1,6 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
-  "scope": "VERIFIED_DEFAULT_NATIVE_CI50_AND_PHONECI4_ALL_GATES_PASS_AWAIT_PUBLICATION",
+  "scope": "VERIFIED_DEFAULT_NATIVE_CI50_PHONECI4_AND_PUBLISHED_2_4_33_NOT_TARGET_LOCATION",
   "run_id": 40424038227,
   "commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
   "tree": "6104a75ed1d7c9f8d15b16541cf0a95ecc3c0911",
@@ -195,8 +195,8 @@
     "native-container-startup-pass-results.json",
     "provider-attribution-failure-and-correction.json"
   ],
-  "phone_delivery": "PUBLISHED_PRERELEASE_TWO_VERIFIED_OWN_APKS_NOT_PHYSICAL_PHONE_OR_TARGET_LOCATION_ACCEPTANCE",
-  "phone_delivery_result": "phone-e081-published-delivery-results.json",
+  "phone_delivery": "PUBLISHED_PRERELEASE_2_4_33_TWO_VERIFIED_OWN_APKS_NOT_PHYSICAL_PHONE_OR_TARGET_LOCATION_ACCEPTANCE",
+  "phone_delivery_result": "phone-41438448-published-delivery-results.json",
   "latest_passed_native_run": {
     "run_id": 40424038227,
     "commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
@@ -208,20 +208,21 @@
     "owned_location_passed": true,
     "both_targets_closed_and_own_startups_passed": true
   },
-  "next_candidate_preparation": "service-state-read-virtual-startup-preparation.json",
-  "next_phone_delivery_preparation": "phone-41438448-draft-delivery-preparation.json",
+  "next_candidate_preparation": null,
+  "next_phone_delivery_preparation": null,
   "phone_update_installed_on_user_device": "UNKNOWN",
-  "release_url": "https://github.com/soozooq/gogogo/releases/tag/preview-2.4.32-container-e0811cf4",
-  "next_candidate_runtime_status": "SAME_SOURCE414_DEFAULT50_NATIVE50_AND_PHONECI4_ALL_GATES_VERIFIED_AWAIT_PUBLICATION",
+  "release_url": "https://github.com/soozooq/gogogo/releases/tag/preview-2.4.33-container-41438448",
+  "next_candidate_runtime_status": "RUNTIME414_DEFAULT50_NATIVE50_PHONECI4_COMPLETE_2_4_33_PUBLISHED_TARGET_POSITION_UNVERIFIED",
   "preview_feedback_preparation": "preview-compact-feedback-preparation.json",
   "latest_actual_phone_delivery": {
-    "result": "phone-41438448-verified-draft-delivery-results.json",
+    "result": "phone-41438448-published-delivery-results.json",
     "delivery_run_id": 40425812277,
     "delivery_commit": "bd8b3e429dc4aaf747c530a9489fb12bc7661ad9",
     "runtime_commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
-    "state": "VERIFIED_NEW_DRAFT_TWO_ASSETS_NOT_PUBLISHED_NATIVE50_PENDING",
+    "state": "PUBLISHED_TWO_VERIFIED_ASSETS",
     "actual_main_sha256": "9242b55ae66920d1e332abc2ca1f6869969c098a2355d32dd4072f914325854d",
     "actual_host_sha256": "513f8f98c73149043f553a6353e1d9af9eeabbcf0a48652c1763c27d73a19312",
-    "publication_pending": true
+    "publication_pending": false,
+    "published_at": "2026-10-27T04:23:30Z"
   }
 }
