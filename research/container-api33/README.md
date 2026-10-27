@@ -2,6 +2,8 @@
 
 唯一研发分支`research/container-api33-20261023`／Draft #60，日常#59固定2.4.31／2400099。先读根[PROJECT_STATUS.md](../../PROJECT_STATUS.md)，从分支HEAD继续，不给手机用户新增实验。
 
+未发布的新研发候选修正状态读取失败被误判成关闭、继而允许真实系统查询的缺口，见[准备记录](evidence/unreadable-mode-preparation.json)。只有明确成功读到CLOSE才放行，新增故障回归全部在云端自动运行；不修改已发布2.4.33，不把旧CI50当作新候选验证。
+
 [2.4.33预览已发布](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.33-container-41438448)：固定运行时41438448／cf4引擎，交付bd8b3e42／Phone CI4。主程序2400101／实际云端SHA9242b55a…，预览0.2／2／513f8f98…；两份公开下载均HTTP200，版本／证书／对齐、API与服务器摘要、415份原CI非签名内容和公开签名配方均独立核对，私钥不上传。见[实际发布回执](evidence/phone-41438448-published-delivery-results.json)。旧2.4.32的tag及附件保留，发布不表示用户已安装。
 
 [CI50默认](evidence/preview-compact-feedback-results.json)18项受控电话／无线0.257秒、六项case、447主检查／lint通过；实际短反馈780字符、无坐标、同Guest主PID与模式，再正常停止。[同源原生50](evidence/native-preview-feedback-virtual-startup-pass-results.json)完成两普通原包、两容器关闭模式／停止旧进程／模式2不同新PID及真实UID匿名启动，自有框架15.112秒／六路径49.845秒、四阶段、mock、时效及清理均通过。四档API／9原生输入／59自有来源／同签名与材料核对。300秒抖音观察只属于关闭模式；无目标PNG，不声称看过目标截图。

@@ -1,0 +1,77 @@
+{
+  "schema": "GOGOGO_UNREADABLE_MODE_PROTECTED_DELEGATION_PREPARATION_V1",
+  "scope": "IMPLEMENTED_COMPILED_CONTROLLED_RUNTIME_PENDING_NOT_PHONE_OR_TARGET_LOCATION",
+  "base_research_commit": "ddda6d619562f6969937333d392de492efb921cd",
+  "last_published_runtime_commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
+  "published_2_4_33_unchanged_and_does_not_include_this_fix": true,
+  "production_changes": [
+    "Guest hook policy reads mode directly from the location service, without the compatibility getter CLOSE-on-RemoteException fallback.",
+    "Only a successful explicit CLOSE_MODE permits physical-location delegation through hooks consulting this predicate.",
+    "Missing service, RemoteException, RuntimeException and unknown mode retain the existing protected virtual path; true is a delegation policy, not confirmation that a mock session is running."
+  ],
+  "compatibility_getPattern_fallback_changed": false,
+  "new_permissions_dependencies_jni_guest_apk_or_mock_flag_changes": false,
+  "controlled_checks": {
+    "expected_location_test_count": 5,
+    "expected_radio_test_count": 19,
+    "faults": [
+      "getPattern RemoteException",
+      "getPattern IllegalStateException",
+      "getPattern unknown value 99"
+    ],
+    "last_and_current": [
+      "Real API33 LocationManager wrapper and synthetic controlled physical base",
+      "No raw GPS/NETWORK last-location delegation",
+      "No physical current-location request; callback completes null when virtual sample is absent",
+      "Explicit CLOSE restores the same controlled physical base"
+    ],
+    "radio_and_network": [
+      "No controlled base cell getter or async cell-info update call in unreadable mode",
+      "Both real public TelephonyManager callback/executor forms return empty lists",
+      "No controlled Wi-Fi scan call; WifiInfo and NetworkInfo location fields are redacted on copies",
+      "Explicit CLOSE restores normal controlled requests and original Wi-Fi objects"
+    ],
+    "no_real_gnss_modem_wifi_scan_or_network_query": true,
+    "real_binder_death_and_missing_service_fault_injection": "NOT_TESTED",
+    "previously_delivered_sdk_cache_and_preexisting_physical_location_subscriptions": "NOT_REVOKED_OR_PROVEN_BY_THIS_CHANGE"
+  },
+  "build": {
+    "passed": true,
+    "command_exit": 0,
+    "gradle_seconds": 27,
+    "host_static_passed": true,
+    "full_clean_index_patch_replay_passed": true
+  },
+  "driver_unit_tests": {
+    "passed": true,
+    "test_methods": 25,
+    "seconds": 0.425
+  },
+  "runtime_validation": {
+    "local_radio": "WARM_RETRY_PENDING_WITH_FIRST_FAILURE_PRESERVED",
+    "local_location": "PENDING",
+    "fixed_commit_default_ci": "PENDING",
+    "fixed_commit_native_arm64": "PENDING",
+    "local_radio_first_attempt": {
+      "passed": false,
+      "test_methods_executed": 0,
+      "case": "unreadable-mode-radio-01",
+      "scope": "OWNED_API33_SOFTWARE_EMULATOR_FIRST_POST_BOOT_INITIALIZATION_NOT_A_LOCATION_ASSERTION",
+      "failure": "System killed own :black provider processes for timeout publishing content providers; subsequent null provider reply crashed BundleCompat.getBinder during Application.onCreate before JUnit methods.",
+      "instrumentation_sha256": "bf018add2bb1b8446e4890aee8d975da6067244e60bfcc7661e0d48b752a537b",
+      "logcat_sha256": "c3abcbde7ca8e6543680c06b154469ba68071086ca6db7d4ed5ca070cccdff6b",
+      "platform_timeouts_or_security_checks_changed": false
+    }
+  },
+  "default_ci_change": "Run the existing controlled location contract class on every x86_64 default job, alongside own Guest and third-party regressions. This adds no phone or product experiment entry.",
+  "source_sha256": {
+    "patches/blackbox-api33-build.patch": "da217a395b23544c184ea839cfb5a14504c8a5875d320b988b86628a7d77654d",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java": "35b85ba2c48d42280d732a609927ccfdd8079e484441156c87cb817e23786da8",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/RadioPrivacyContractInstrumentedTest.java": "832ff783e0a7b4f04761e251010accb4b04d45b6e3cef5ee1a36fd46babbf2e5",
+    "tools/run-cloud-check.py": "806640c6a231de99bd76e136088e36812d62eb836fc45a9dc99c018e11024fee",
+    "tools/run-emulator-checks.sh": "f59e5dd64d304cc36fcb663473e8405cd3e8093e7bbe1731d87453ab9c161abf"
+  },
+  "user_phone_experiments_added": false,
+  "target_location_sdk_accounts_vivo_and_wireless_overseas": "NOT_VERIFIED",
+  "original_user_wechat_failure_cause": "NOT_ESTABLISHED"
+}

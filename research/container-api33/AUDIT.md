@@ -1,5 +1,7 @@
 # 可复用基础审计
 
+当前未发布研发候选见[模式读取故障准备记录](evidence/unreadable-mode-preparation.json)：共享判断函数绕过getPattern的错误关闭回退，仅明确成功读到CLOSE时允许真实系统查询。状态缺失、异常、未知继续保护；true不是模拟正在运行的证明。新增公共LocationManager／TelephonyManager与合成无线后端故障检查，定位契约接入默认CI；不覆盖真实Binder死亡、已交付SDK缓存或此前物理订阅。以下2.4.33／CI50仍是独立旧运行时，不包含此修正，不得借用其结果。
+
 当前入口为根[PROJECT_STATUS.md](../../PROJECT_STATUS.md)。固定41438448／cf4的[CI50默认](evidence/preview-compact-feedback-results.json)与[同源原生](evidence/native-preview-feedback-virtual-startup-pass-results.json)实际完整通过，Phone CI4交付并核验后，[2.4.33两份自有APK已公开](evidence/phone-41438448-published-delivery-results.json)。主9242b55a…／预览513f8f98…、固定tag源码、归档与服务器摘要、签名／版本／对齐、59份来源／三同签名／11材料、415非签名内容与公开下载均核对；私钥不进入Git、CI或附件。旧2.4.32独立API复核保持原样。
 
 默认18项受控电话／无线、六项case及447主检查／lint通过；实际剪贴板780字符无坐标，同Guest主PID／模式并正常停止。原生两个普通原包及容器模式0→停止旧PID→模式2不同新主PID／真实UID匿名UI通过；框架15.112秒、六路径49.845秒、四阶段／mock／时效／私有原子报告保持，system_server656稳定，VM及包／staging清理完成。抖音300秒观察仅模式0；整轮4581.798秒不是启动耗时，目标PNG均无，不借旧截图。

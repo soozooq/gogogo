@@ -13,6 +13,12 @@
 
 不新增分支／PR、不自动合并、不删除／强推／重置其他工作区。两个PR保持Draft。手机用户不需要重跑旧实验或切换VPN。
 
+## 当前研发：状态不可读时禁止真实定位回退（尚未交付）
+
+继续审查发现，Guest定位／无线Hook共用的判断函数调用兼容getter；该getter在RemoteException时返回关闭模式，使请求可能转向真实系统。新候选直接读取控制服务，仅在明确、成功读到关闭模式时放行；服务缺失、读取异常及未知模式继续走原虚拟保护路径。「保护路径」不表示服务一定在运行。公开2.4.33仍固定414源码，不包含这次修正，附件和标签保持原样。
+
+已完成编译、宿主静态检查、完整补丁干净重放及25项驱动检查。新增真实公共框架＋受控后端的状态故障检查，自动定位回归接入默认云端构建；运行结果与限制以[准备记录](research/container-api33/evidence/unreadable-mode-preparation.json)为准，未完成项不能借用CI50。没有新增手机实验页、权限、JNI、依赖、原包或mock标志变化；不归因用户旧微信失败，不声称能收回既有SDK缓存或此前已注册的物理定位回调。
+
 ## 当前公开交付：2.4.33
 
 [2.4.33手机预览已发布](https://github.com/soozooq/gogogo/releases/tag/preview-2.4.33-container-41438448)，2026-10-27T04:23:30Z，prerelease。固定运行时**414384487b22a576aa1c6a29fca1df6a167ebd47**／引擎cf4dffbb，交付源码bd8b3e42／[Phone CI4](https://github.com/soozooq/gogogo/actions/runs/40425812277)。实际tag指向运行时源码，两份公开下载均已核对HTTP200。

@@ -318,6 +318,59 @@ public final class RadioPrivacyContractInstrumentedTest {
         }
     }
 
+    @Test public void unreadableModeProtectsRadioAndNetworkAndClosedModeRecovers() throws Throwable {
+        Field cache = Class.forName("top.niunaijun.bcore.fake.frameworks.BlackManager").getDeclaredField("mService");
+        cache.setAccessible(true);
+        Object previous = BLocationManager.get().getService();
+        Class<?> type = Class.forName("top.niunaijun.bcore.core.system.location.IBLocationManagerService");
+        Binder token = new Binder();
+        AtomicReference<Exception> failure = new AtomicReference<>();
+        Object unavailable = Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] {type},
+                (proxy, called, params) -> {
+                    if ("asBinder".equals(called.getName())) return token;
+                    if ("getPattern".equals(called.getName())) {
+                        if (failure.get() != null) throw failure.get();
+                        return 99;
+                    }
+                    throw new AssertionError("Unexpected controlled mode-service call: " + called.getName());
+                });
+        List<ScanResult> scans = new ArrayList<>(Arrays.asList(new ScanResult()));
+        WifiInfo wifi = new WifiInfo.Builder().setSsid("synthetic-unreadable-mode".getBytes(StandardCharsets.UTF_8))
+                .setBssid("02:11:22:33:44:55").setNetworkId(41).build();
+        Method scan = wifiMethod("getScanResults"), connection = wifiMethod("getConnectionInfo");
+        Object wifiService = wifiBase(wifi, scans);
+        try {
+            cache.set(BLocationManager.get(), unavailable);
+            for (Exception problem : new Exception[] {new RemoteException("CONTROLLED_MODE_UNAVAILABLE"),
+                    new IllegalStateException("CONTROLLED_MODE_FAILURE"), null}) {
+                failure.set(problem); baseCalls.set(0);
+                Method cell = method("getCellLocation"), all = method("getAllCellInfo");
+                assertNull(new ITelephonyManagerProxy.GetCellLocation().hook(base, cell, arguments(cell)));
+                assertTrue(((List<?>) new ITelephonyManagerProxy.GetAllCellInfo().hook(base, all, arguments(all))).isEmpty());
+                asyncFrameworkRequest(false, true); asyncFrameworkRequest(true, true);
+                assertTrue(((List<?>) new IWifiManagerProxy.GetScanResults().hook(wifiService, scan, arguments(scan))).isEmpty());
+                assertEquals("No physical cell request or scan on unreadable mode", 0, baseCalls.get());
+                WifiInfo redacted = (WifiInfo) new IWifiManagerProxy.GetConnectionInfo().hook(wifiService, connection, arguments(connection));
+                assertNotSame(wifi, redacted); assertEquals(WifiManager.UNKNOWN_SSID, redacted.getSSID());
+                assertTrue(redacted.getBSSID() == null || "02:00:00:00:00:00".equals(redacted.getBSSID()));
+                assertEquals(-1, redacted.getNetworkId()); assertEquals(41, wifi.getNetworkId());
+                NetworkInfo original = syntheticConnectedWifi();
+                withNetworkManager(syntheticNetworks(), new NetworkInfo[] {original}, manager -> {
+                    NetworkInfo[] result = manager.getAllNetworkInfo();
+                    assertEquals(1, result.length); assertNotSame(original, result[0]);
+                    assertNull(result[0].getExtraInfo()); assertEquals("synthetic-ssid", original.getExtraInfo());
+                    assertTrue(result[0].isConnected());
+                });
+            }
+            cache.set(BLocationManager.get(), previous);
+            BLocationManager.disableFakeLocation(user, pkg); baseCalls.set(0);
+            asyncFrameworkRequest(false, false);
+            assertSame(scans, new IWifiManagerProxy.GetScanResults().hook(wifiService, scan, arguments(scan)));
+            assertSame(wifi, new IWifiManagerProxy.GetConnectionInfo().hook(wifiService, connection, arguments(connection)));
+            assertEquals("Confirmed CLOSE restores ordinary controlled service calls", 3, baseCalls.get());
+        } finally { cache.set(BLocationManager.get(), previous); }
+    }
+
     @Test public void virtualAsyncCellRequestsCompleteOnTheFrameworkExecutorWithoutModemCalls() throws Throwable {
         asyncFrameworkRequest(false, true);
         asyncFrameworkRequest(true, true);

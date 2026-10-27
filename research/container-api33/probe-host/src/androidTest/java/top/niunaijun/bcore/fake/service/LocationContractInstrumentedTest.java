@@ -9,6 +9,8 @@ import android.location.LocationManager;
 import android.location.LocationRequest;
 import android.os.Build;
 import android.os.CancellationSignal;
+import android.os.Binder;
+import android.os.RemoteException;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
@@ -17,6 +19,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +51,8 @@ public final class LocationContractInstrumentedTest {
     private LocationManager manager;
     private int user;
     private String pkg;
+    private final AtomicInteger physicalDelegations = new AtomicInteger();
+    private final Location controlledBaseLocation = new Location("gps");
 
     @Before public void setup() throws Exception {
         assertEquals(33, Build.VERSION.SDK_INT);
@@ -57,17 +62,23 @@ public final class LocationContractInstrumentedTest {
         BLocationManager.get().setPattern(user, pkg, BLocationManager.OWN_MODE);
         assertTrue(BLocationManager.isFakeLocationEnable());
         Class<?> type = Class.forName("android.location.ILocationManager");
+        Object controlledBase = Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] {type},
+                (proxy, method, args) -> {
+                    physicalDelegations.incrementAndGet();
+                    if ("getLastLocation".equals(method.getName())) return controlledBaseLocation;
+                    throw new AssertionError("Unexpected physical delegation: " + method.getName());
+                });
         Object service = Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] {type},
                 (proxy, method, args) -> {
                     switch (method.getName()) {
                         case "getLastLocation":
-                            return new ILocationManagerProxy.GetLastLocation().hook(null, method, args);
+                            return new ILocationManagerProxy.GetLastLocation().hook(controlledBase, method, args);
                         case "getCurrentLocation":
-                            return new ILocationManagerProxy.GetCurrentLocation().hook(null, method, args);
+                            return new ILocationManagerProxy.GetCurrentLocation().hook(controlledBase, method, args);
                         case "registerLocationListener":
-                            return new ILocationManagerProxy.RegisterLocationListener().hook(null, method, args);
+                            return new ILocationManagerProxy.RegisterLocationListener().hook(controlledBase, method, args);
                         case "unregisterLocationListener":
-                            return new ILocationManagerProxy.UnregisterLocationListener().hook(null, method, args);
+                            return new ILocationManagerProxy.UnregisterLocationListener().hook(controlledBase, method, args);
                         default:
                             throw new AssertionError("Unexpected real-service call: " + method.getName());
                     }
@@ -94,6 +105,47 @@ public final class LocationContractInstrumentedTest {
         assertTrue(value.hasAccuracy());
         long age = SystemClock.elapsedRealtimeNanos() - value.getElapsedRealtimeNanos();
         assertTrue("Valid monotonic sample age: " + age, age >= 0 && age < 30_000_000_000L);
+    }
+
+    @Test public void unreadableModeDoesNotDelegateLastOrCurrentAndClosedModeRecovers() throws Exception {
+        Field cache = Class.forName("top.niunaijun.bcore.fake.frameworks.BlackManager").getDeclaredField("mService");
+        cache.setAccessible(true);
+        Object previous = BLocationManager.get().getService();
+        Class<?> type = Class.forName("top.niunaijun.bcore.core.system.location.IBLocationManagerService");
+        Binder token = new Binder();
+        AtomicReference<Exception> failure = new AtomicReference<>();
+        Object unavailable = Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] {type},
+                (proxy, method, args) -> {
+                    if ("asBinder".equals(method.getName())) return token;
+                    if ("getPattern".equals(method.getName())) {
+                        if (failure.get() != null) throw failure.get();
+                        return 99; // A future/unknown mode is not explicit CLOSE either.
+                    }
+                    if ("getLocation".equals(method.getName())) return null;
+                    throw new AssertionError("Unexpected controlled mode-service call: " + method.getName());
+                });
+        try {
+            cache.set(BLocationManager.get(), unavailable);
+            for (Exception problem : new Exception[] {new RemoteException("CONTROLLED_MODE_UNAVAILABLE"),
+                    new IllegalStateException("CONTROLLED_MODE_FAILURE"), null}) {
+                failure.set(problem);
+                assertNull(manager.getLastKnownLocation("gps"));
+                assertNull(manager.getLastKnownLocation("network"));
+                CountDownLatch complete = new CountDownLatch(1);
+                AtomicReference<Location> current = new AtomicReference<>(controlledBaseLocation);
+                manager.getCurrentLocation("network", null, executor, value -> {
+                    current.set(value); complete.countDown();
+                });
+                assertTrue("Unavailable target completes without a physical request", complete.await(30, TimeUnit.SECONDS));
+                assertNull(current.get());
+                assertEquals("No physical fallback on unreadable/unknown mode", 0, physicalDelegations.get());
+            }
+            cache.set(BLocationManager.get(), previous);
+            BLocationManager.disableFakeLocation(user, pkg);
+            assertSame("A confirmed CLOSE restores normal delegation", controlledBaseLocation,
+                    manager.getLastKnownLocation("gps"));
+            assertEquals(1, physicalDelegations.get());
+        } finally { cache.set(BLocationManager.get(), previous); }
     }
 
     @Test public void lastAndCurrentUseFrameworkCallbackAndFreshMarkedSamples() throws Exception {

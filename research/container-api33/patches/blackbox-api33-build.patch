@@ -504,10 +504,29 @@ index 3a16522..bf7f078 100644
          extraBundle.putInt("satellitesvalue", satelliteCount);
          location.setExtras(extraBundle);
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/frameworks/BLocationManager.java b/BCore/src/main/java/top/niunaijun/bcore/fake/frameworks/BLocationManager.java
-index 5053133..2229070 100644
+index 5053133..fd009ac 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/fake/frameworks/BLocationManager.java
 +++ b/BCore/src/main/java/top/niunaijun/bcore/fake/frameworks/BLocationManager.java
-@@ -112,4 +112,10 @@ public class BLocationManager extends BlackManager<IBLocationManagerService> {
+@@ -29,7 +29,17 @@ public class BLocationManager extends BlackManager<IBLocationManagerService> {
+     }
+ 
+     public static boolean isFakeLocationEnable() {
+-        return get().getPattern(BActivityThread.getUserId(), BActivityThread.getAppPackageName()) != CLOSE_MODE;
++        // Only an explicit, successful CLOSE read may enable physical-location
++        // delegation. The compatibility getter below returns CLOSE on Binder
++        // failure and must not decide the privacy policy of Guest hooks.
++        try {
++            IBLocationManagerService service = get().getService();
++            return service == null || service.getPattern(BActivityThread.getUserId(),
++                    BActivityThread.getAppPackageName()) != CLOSE_MODE;
++        } catch (RemoteException | RuntimeException unavailable) {
++            // Unavailable state is not proof that the user disabled the session.
++            return true;
++        }
+     }
+ 
+     public static void disableFakeLocation(int userId,String pkg) {
+@@ -112,4 +122,10 @@ public class BLocationManager extends BlackManager<IBLocationManagerService> {
              e.printStackTrace();
          }
      }
