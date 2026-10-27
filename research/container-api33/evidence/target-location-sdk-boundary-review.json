@@ -22,7 +22,7 @@
     "url": "https://lbs.qq.com/mobile/androidLocationSDK/androidGeoDownload",
     "section_date": "2024-06-06",
     "maven_version_in_section": "7.5.4.8",
-    "quote": "新增定位反作弊外部控制接口，默认关闭。 可在构建TencentLocationRequest对象时增加setEnableAntiMock(true)打开定位反作弊模块，返回结果仍然通过TencentLocation对象的getFakeReason和getFakeProbability接口获取",
+    "quote": "\u65b0\u589e\u5b9a\u4f4d\u53cd\u4f5c\u5f0a\u5916\u90e8\u63a7\u5236\u63a5\u53e3\uff0c\u9ed8\u8ba4\u5173\u95ed\u3002 \u53ef\u5728\u6784\u5efaTencentLocationRequest\u5bf9\u8c61\u65f6\u589e\u52a0setEnableAntiMock(true)\u6253\u5f00\u5b9a\u4f4d\u53cd\u4f5c\u5f0a\u6a21\u5757\uff0c\u8fd4\u56de\u7ed3\u679c\u4ecd\u7136\u901a\u8fc7TencentLocation\u5bf9\u8c61\u7684getFakeReason\u548cgetFakeProbability\u63a5\u53e3\u83b7\u53d6",
     "retrieval_cache_at": "2026-10-25T08:46:08.511Z",
     "does_not_prove_later_or_wechat_defaults": true
   },
@@ -192,5 +192,126 @@
     "phone_experiments_added": false,
     "next_validation_boundary": "An independently initialized SDK with custom options is not the original app active configuration; use original app authorized location flow evidence without changing consent, keys or mock flags.",
     "universal_no_root_impossibility_claimed": false
+  },
+  "additional_direct_framework_invoke_review": {
+    "scope": "STATIC_DIRECT_DALVIK_FRAMEWORK_INVOKES_IN_SELECTED_ORIGINAL_SDK_NAMESPACES_NO_CLASS_OR_NATIVE_EXECUTION",
+    "private_evidence_sha256": {
+      "target-sdk-framework-invoke-sites.json": "5f351f1638f3fa98bed2c6fd54bd03d52ee01f26e90cec7b03e433c38292a3bb",
+      "target-sdk-framework-invoke-crosscheck.json": "0f1c50d8f2e57877bef877b86681727d9043ede5fe9e8e07c23f7fa8eb340ec6",
+      "wechat-sdk-manager-delegation-invokes.json": "08671947bfe4ef73be085aa2ed545afdc15903b7e68ae2fff08f083df2262e34"
+    },
+    "targets": {
+      "wechat": {
+        "original_apk_sha256": "f2a725bc04302ad218a563533ae79356e66b64aa711b275bc919a8d432f7e15d",
+        "selected_namespaces": [
+          "Lcom/tencent/map/geolocation/sapp/",
+          "Lc/t/m/sapp/"
+        ],
+        "selected_classes_with_code": 27,
+        "method_bodies_decoded": 233,
+        "unparsed_method_bodies": 0,
+        "direct_framework_invoke_sites": 6,
+        "dex_files": [
+          "classes.dex",
+          "classes13.dex",
+          "classes16.dex",
+          "classes4.dex",
+          "classes7.dex"
+        ],
+        "wrapper_delegation": {
+          "constructor_references": [
+            "Lcom/tencent/cso/CsoLoader;->f(Ljava/lang/String;)V",
+            "Lcom/tencent/map/geolocation/sapp/databus/DataBusNativeInterface;->init(Landroid/content/Context;)V"
+          ],
+          "requestLocationUpdates_references": [
+            "Ljava/lang/Class;->getDeclaredMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;",
+            "Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;"
+          ],
+          "actual_loaded_implementation_and_reachability": "UNKNOWN_STATIC_ONLY"
+        }
+      },
+      "douyin": {
+        "original_apk_sha256": "9fc10c40b81b8244e515f9588d381f43e6ed870e6d9bebf14754a5e309ba380a",
+        "selected_namespaces": [
+          "Lcom/amap/api/location/",
+          "Lcom/loc/",
+          "Lcom/autonavi/",
+          "Lcom/bytedance/bdlocation/"
+        ],
+        "selected_classes_with_code": 342,
+        "method_bodies_decoded": 3181,
+        "unparsed_method_bodies": 0,
+        "direct_framework_invoke_sites": 398,
+        "dex_files": [
+          "classes16.dex",
+          "classes17.dex",
+          "classes21.dex",
+          "classes32.dex",
+          "classes37.dex",
+          "classes41.dex",
+          "classes43.dex",
+          "classes44.dex",
+          "classes48.dex",
+          "classes51.dex",
+          "classes54.dex",
+          "classes55.dex"
+        ],
+        "mock_flag_call_sites": [
+          {
+            "dex": "classes48.dex",
+            "caller": {
+              "class": "Lcom/loc/eu$b;",
+              "name": "b",
+              "parameters": [],
+              "return": "V"
+            },
+            "instruction_offset_code_units": 138,
+            "target": {
+              "class": "Landroid/location/Location;",
+              "name": "isFromMockProvider",
+              "parameters": [],
+              "return": "Z"
+            }
+          },
+          {
+            "dex": "classes48.dex",
+            "caller": {
+              "class": "Lcom/loc/gd;",
+              "name": "a",
+              "parameters": [
+                "Landroid/location/Location;",
+                "I"
+              ],
+              "return": "Z"
+            },
+            "instruction_offset_code_units": 1,
+            "target": {
+              "class": "Landroid/location/Location;",
+              "name": "isFromMockProvider",
+              "parameters": [],
+              "return": "Z"
+            }
+          }
+        ]
+      }
+    },
+    "independent_apkanalyzer_crosscheck": {
+      "all_exit_zero": true,
+      "douyin_both_mock_calls_confirmed": true,
+      "wechat_constructor_and_request_reflection_confirmed": true
+    },
+    "class_or_native_execution": false,
+    "original_apk_or_mock_flag_modified": false,
+    "constant_key_account_identifier_values_extracted": false,
+    "phone_experiments_or_new_sdk_instance_started": false,
+    "limits": [
+      "Direct instruction references do not establish runtime reachability, active provider, options or location adoption.",
+      "Selected namespaces may exclude obfuscated helper code elsewhere.",
+      "Reflective/native calls and saved SDK caches are not resolved.",
+      "No absence claim for unselected or native code.",
+      "Reading a mock flag in a bundled SDK is not proof that the active app rejects the sample.",
+      "The WeChat wrapper uses reflection and mentions native initialization; low direct-call counts cannot establish absence of Android location queries or mock detection.",
+      "Only the application own authorized runtime flow can establish its active delegate, configuration and actual adoption."
+    ]
   }
 }
