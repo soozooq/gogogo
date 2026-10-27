@@ -37,7 +37,7 @@
 
 [短反馈](research/container-api33/evidence/preview-compact-feedback-preparation.json)实际操作已通过：一键选择已有入口／结果后复制，不读坐标、不重新定位、不启停模拟／Guest；Core读取1.5秒上限，超时明确未知，晚回调不覆盖剪贴板，用户观察与复制时状态分别标注。这是GPSTest回归，不是微信／抖音页面验收。
 
-[2.4.33交付草稿准备](research/container-api33/evidence/phone-41438448-draft-delivery-preparation.json)：主程序2400101本地47秒构建、447项／lint及签名／对齐通过；预览0.2／2取同轮CI50宿主，沿用25bfd6e2证书，新SHA513f8f98…与415份非签名内容核对，公开配方逐字节恢复，私钥不上传。交付固定41438448，只向新空草稿写两份APK，不能发布；实际云端主包摘要尚未知。匹配原生与交付回执完成后再公开更新，不借用本地主包摘要。已发布2.4.32的源码、附件和标签保持，不要求增加手机实验。
+[2.4.33交付草稿准备](research/container-api33/evidence/phone-41438448-draft-delivery-preparation.json)：主程序2400101本地47秒构建、447项／lint及签名／对齐通过；预览0.2／2取同轮CI50宿主，沿用25bfd6e2证书，新SHA513f8f98…与415份非签名内容核对，公开配方逐字节恢复，私钥不上传。[Phone CI4交付已实际通过](research/container-api33/evidence/phone-41438448-verified-draft-delivery-results.json)，交付源码bd8b3e42／运行时41438448。主包真实云端SHA9242b55a…、40,408,206字节，预览513f8f98…、4,585,987字节；两档API归档摘要、六文件／新版本与证书／对齐、同轮59来源及415非签名内容、两附件服务器摘要均独立核对。新草稿424904119现有两份APK、仍未发布；交付工作流不能发布，匹配原生50复核完成后再公开。实际云端主包与本地a7f3bca…不同，不能混用。已发布2.4.32的源码、附件和标签保持，不要求增加手机实验。
 
 ## 当前修正：电话回调读取兼容
 

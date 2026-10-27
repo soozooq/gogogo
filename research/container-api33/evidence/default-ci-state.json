@@ -203,6 +203,16 @@
   "next_phone_delivery_preparation": "phone-41438448-draft-delivery-preparation.json",
   "phone_update_installed_on_user_device": "UNKNOWN",
   "release_url": "https://github.com/soozooq/gogogo/releases/tag/preview-2.4.32-container-e0811cf4",
-  "next_candidate_runtime_status": "DEFAULT50_CLIPBOARD780_AND18_PASS_MATCHING_NATIVE50_PENDING",
-  "preview_feedback_preparation": "preview-compact-feedback-preparation.json"
+  "next_candidate_runtime_status": "DEFAULT50_CLIPBOARD780_AND18_PASS_PHONECI4_TWO_DRAFT_ASSETS_VERIFIED_NATIVE50_PENDING",
+  "preview_feedback_preparation": "preview-compact-feedback-preparation.json",
+  "latest_actual_phone_delivery": {
+    "result": "phone-41438448-verified-draft-delivery-results.json",
+    "delivery_run_id": 40425812277,
+    "delivery_commit": "bd8b3e429dc4aaf747c530a9489fb12bc7661ad9",
+    "runtime_commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
+    "state": "VERIFIED_NEW_DRAFT_TWO_ASSETS_NOT_PUBLISHED_NATIVE50_PENDING",
+    "actual_main_sha256": "9242b55ae66920d1e332abc2ca1f6869969c098a2355d32dd4072f914325854d",
+    "actual_host_sha256": "513f8f98c73149043f553a6353e1d9af9eeabbcf0a48652c1763c27d73a19312",
+    "publication_pending": true
+  }
 }
