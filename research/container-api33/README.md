@@ -1,6 +1,8 @@
 # Android13免Root容器与普通应用入口
 
-当前为[SDK被动请求来源修正](evidence/passive-provider-preparation.json)：[原包请求／监听字段绑定](evidence/wechat-sdk-passive-provider-routing-results.json)确认passive监听会进入先筛gps来源的处理器，旧虚拟样本却标passive。新420b8399转发配置的合成GPS来源并枚举被动通道，通用mock／微信兼容／合成extras／零卫星／CLOSE委托保留。原一键反馈增加被动计数；原真实Guest操作自动覆盖九路径，契约编译7方法，本地17秒构建／静态／干净重放与27驱动通过，新源码云端尚待执行。版本保持2.4.35／0.4，不新增手机步骤。旧6625草稿不含此修正，仓库外旧复用发布准备已阻断；54默认通过和仍在运行的原生不覆盖此新引擎。
+[55实际失败](evidence/passive-fixture-attribution-failure-results.json)已独立核对API归档／58与59来源／签名材料：7定位方法6成功1归属断言失败，Wechat受控三通道通过；普通host新增测试未绑定虚拟包，九路径／无线／普通反馈／原生未执行。[修正fixture身份](evidence/passive-fixture-identity-preparation.json)建立明确generic包及实际Binder PID断言，保留全部计数／来源断言及7方法、finally恢复状态；生产420b8399与手机版本不变，最终15秒构建通过，新同源待验。旧草稿不发，不要求手机实验。
+
+当前为[SDK被动请求来源修正](evidence/passive-provider-preparation.json)：[原包请求／监听字段绑定](evidence/wechat-sdk-passive-provider-routing-results.json)确认passive监听会进入先筛gps来源的处理器，旧虚拟样本却标passive。新420b8399转发配置的合成GPS来源并枚举被动通道，通用mock／微信兼容／合成extras／零卫星／CLOSE委托保留。原一键反馈增加被动计数；原真实Guest操作自动覆盖九路径，契约编译7方法，本地17秒构建／静态／干净重放与27驱动通过，修正fixture身份后的新源码云端尚待执行。版本保持2.4.35／0.4，不新增手机步骤。旧6625草稿不含此修正，仓库外旧复用发布准备已阻断；54默认通过和仍在运行的原生不覆盖此新引擎。
 
 上一轮CI54固定66a293fa的[默认结果](evidence/original-main-identity-default-results.json)已验真：Mac实际构建、Linux27驱动／6定位／19无线／447主检查与lint、59自有来源／同签名／材料及1322字符普通反馈通过；[415非签名内容](evidence/original-main-identity-candidate-content-results.json)和手机源码／profile与现有2.4.35草稿一致。原生54作业122345264006运行中，未取得新ARM64通过，不追认53失败或目标SDK采纳；Phone CI6的实际来源仍66258d1d。
 

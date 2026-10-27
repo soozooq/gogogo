@@ -1,18 +1,26 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
-  "scope": "NEW_PASSIVE_PROVIDER_ORIGIN_CANDIDATE_NOT_CLOUD_VERIFIED",
+  "scope": "PASSIVE_GENERIC_FIXTURE_IDENTITY_REPAIR_NOT_CLOUD_VERIFIED",
   "status": "not_started",
   "conclusion": null,
   "commit": null,
   "run_id": null,
-  "base_commit": "2905a184a11b6b09a23359c22c521178bf0ab6a1",
-  "preparation": "passive-provider-preparation.json",
+  "base_commit": "e903212b24f55608402a85d3e86b105e77276dd1",
+  "preparation": "passive-fixture-identity-preparation.json",
   "engine_patch_sha256": "420b83998686b0f25cf323bfd47bd5391245d9f323736e41473d4a3216b9f408",
-  "default_checks_conclusion": "PENDING_NEW_SOURCE",
+  "default_checks_conclusion": "PENDING_NEW_QUALIFICATION",
   "native": {
     "passed": false,
     "status": "not_started",
     "result": "PENDING_NOT_PASS"
+  },
+  "previous_passive_candidate_failure": {
+    "commit": "e903212b24f55608402a85d3e86b105e77276dd1",
+    "run_id": 40553001338,
+    "linux_job_id": 122361471084,
+    "result": "passive-fixture-attribution-failure-results.json",
+    "native_job_id": 122365729584,
+    "native_conclusion": "skipped"
   },
   "previous_driver_qualification": {
     "commit": "66a293fa2b36cc04e7c2e7986ce5588f8d0a134f",
@@ -102,6 +110,7 @@
     "main": "2.4.35 / 2400103",
     "host": "0.4-preview / 4"
   },
+  "production_runtime_unchanged_from_e903212b": true,
   "new_runtime_published": false,
   "target_sdk_and_vivo": "NOT_VERIFIED"
 }

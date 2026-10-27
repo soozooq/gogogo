@@ -164,5 +164,13 @@
     "research/container-api33/tools/cuttlefish_owned_location.py": "545ca30dc806022f668bc922abf8f8ef1846f0635c7bec382e09968fabc883ee",
     "research/container-api33/tools/run-cloud-check.py": "9472c48edc851d98d8b78a3e80bbbaa9f23f961a23e87b0d744c0dece40ceb1e",
     "research/container-api33/evidence/wechat-sdk-passive-provider-routing-results.json": "5d976a67e4f33253191547b2f50a866615d020bd88106b85c3f58afc5596e0b7"
+  },
+  "actual_first_cloud_followup": {
+    "run_id": 40553001338,
+    "commit": "e903212b24f55608402a85d3e86b105e77276dd1",
+    "linux_conclusion": "failure",
+    "result": "passive-fixture-attribution-failure-results.json",
+    "repair_preparation": "passive-fixture-identity-preparation.json",
+    "original_pending_fields_are_pre_execution_snapshot": true
   }
 }

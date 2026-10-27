@@ -1,0 +1,108 @@
+{
+  "schema": "GOGOGO_PASSIVE_FIXTURE_ATTRIBUTION_CI55_FAILURE_V1",
+  "scope": "ACTUAL_LINUX_SOURCE_BOUND_CONTRACT_FAILURE_NOT_NATIVE_OR_PHONE_RESULT",
+  "commit": "e903212b24f55608402a85d3e86b105e77276dd1",
+  "run_id": 40553001338,
+  "linux_job_id": 122361471084,
+  "linux_conclusion": "failure",
+  "artifacts": {
+    "own": {
+      "id": 12756845217,
+      "sha256": "2911f6d6c4d4e5a9062ad93cbd1a8be3c418f1f69c196675e95546fe5d995382",
+      "verified": true
+    },
+    "linux": {
+      "id": 12756237563,
+      "sha256": "0febd4e94107a8cb55d5f8a85d773fdb0e714221da776715bc63cd37417051b3",
+      "verified": true
+    }
+  },
+  "api_archive_digests_sources_signatures_materials_verified": true,
+  "own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4547824,
+        "sha256": "e09bf9e81531d9f0db42c95933a14f184d91f028699aed8821cc073c7f79fc68"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 531414,
+        "sha256": "2213cdd963e2f00bc49d2d3785658197ba4155b81e2b79c07a02b6235272db56"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 75094,
+        "sha256": "b2a05009171056b03a76b3ce1538b6f773079776442520f63eca2a8edcd471fc"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "framework_and_moving_ui_passed": true,
+  "location_contract": {
+    "methods_executed": 7,
+    "successful_methods": [
+      "continuousFrameworkBatchCallbacksStopAtMaxUpdatesAndUnregister",
+      "unreadableModeDoesNotDelegateLastOrCurrentAndClosedModeRecovers",
+      "lastAndCurrentUseFrameworkCallbackAndFreshMarkedSamples",
+      "durationAndDisablingStopFutureDeliveries",
+      "wechatPresentationKeepsSyntheticOriginAcrossLastCurrentAndStreams",
+      "cancellationBeforeQueuedDeliverySuppressesCallback"
+    ],
+    "failed_methods": [
+      "passiveRequestsForwardSyntheticGpsOriginAndKeepSeparateCounters"
+    ],
+    "junit_seconds": 34.564,
+    "expected_counter_delta": 1,
+    "actual_counter_delta": 0,
+    "first_failing_source_line": 226,
+    "samples_before_counter_assertion_passed": [
+      "Passive provider available and enabled; unknown provider disabled.",
+      "Passive cache/current/two stream callbacks: GPS source, generic mock flag, synthetic extra and zero satellites."
+    ],
+    "whole_case_passed": false,
+    "raw_transcript_sha256": "2dab99727676f89db3351820e2e9702a137bf2f5e47733faa05b14c9550bcc9c"
+  },
+  "diagnosis": {
+    "scope": "SOURCE_CONTROLLED_FIXTURE_ATTRIBUTION_REVIEW_NOT_CAPTURED_APP_PACKAGE_VALUE",
+    "fixture_omitted_virtual_package_binding": true,
+    "production_null_package_counter_guard_preserved": true,
+    "explanation": "The ordinary host test did not establish a virtual package; BActivityThread.getAppPackageName can return null for an unbound host, and Core deliberately skips null-package attribution. The successful WeChat fixture explicitly binds a package.",
+    "actual_package_value_recorded_at_failure": false
+  },
+  "repair": "Use an explicit generic controlled AppConfig package, verify identity and actual Binder PIDs, keep every exact counter assertion and restore prior config/location/mode in finally.",
+  "not_executed": [
+    "19-method radio privacy",
+    "Real separate Guest nine-path location",
+    "Ordinary compact feedback length/runtime",
+    "Installed import and calculator",
+    "Matched native ARM64"
+  ],
+  "native_job": {
+    "id": 122365729584,
+    "conclusion": "skipped",
+    "reason": "LINUX_DEPENDENCY_FAILED_NOT_A_NATIVE_PASS"
+  },
+  "mac_at_capture": {
+    "job_id": 122361471757,
+    "status": "queued",
+    "result": "PENDING_NOT_PASS"
+  },
+  "new_runtime_or_phone_candidate_published": false,
+  "previous_native54_does_not_cover_this_fix": true,
+  "target_sdk_wechat_send_live_douyin_wireless_overseas_vivo": "NOT_VERIFIED",
+  "verifier_sha256": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
+  "inputs_manifest_sha256": "242c9b80b9b3b19dd7978a5f1e900e20717adcc3a2576eb3985895a41c06f963"
+}

@@ -197,41 +197,69 @@ public final class LocationContractInstrumentedTest {
     }
 
     @Test public void passiveRequestsForwardSyntheticGpsOriginAndKeepSeparateCounters() throws Exception {
-        assertTrue("Passive request channel is available", manager.getAllProviders().contains("passive"));
-        assertTrue(manager.isProviderEnabled("passive"));
-        assertFalse(manager.isProviderEnabled("unknown-provider"));
-        Bundle before = BLocationManager.get().getService().getConsumerDeliverySummary(user, pkg);
-        sample(manager.getLastKnownLocation("passive"), "gps");
-        CountDownLatch done = new CountDownLatch(1);
-        AtomicReference<Location> current = new AtomicReference<>();
-        manager.getCurrentLocation("passive", null, executor, value -> {
-            current.set(value); done.countDown();
-        });
-        assertTrue(done.await(30, TimeUnit.SECONDS));
-        sample(current.get(), "gps");
-        Samples stream = new Samples(2); listeners.add(stream);
-        manager.requestLocationUpdates("passive", new LocationRequest.Builder(150).setMaxUpdates(2).build(), executor, stream);
-        assertTrue(stream.done.await(30, TimeUnit.SECONDS));
-        sample(stream.first.get(), "gps"); sample(stream.last.get(), "gps");
-        manager.removeUpdates(stream);
-        assertEquals(2, stream.count.get());
-        long deadline = SystemClock.elapsedRealtime() + 30_000;
-        Bundle observed;
-        do {
-            observed = BLocationManager.get().getService().getConsumerDeliverySummary(user, pkg);
-            if (observed.getLong("stream_passive_transaction_returned")
-                    - before.getLong("stream_passive_transaction_returned") >= 2) break;
-            SystemClock.sleep(25);
-        } while (SystemClock.elapsedRealtime() < deadline);
-        assertEquals(1, observed.getLong("cache_passive_prepared") - before.getLong("cache_passive_prepared"));
-        assertEquals(1, observed.getLong("current_passive_prepared") - before.getLong("current_passive_prepared"));
-        assertEquals(1, observed.getLong("stream_passive_registered") - before.getLong("stream_passive_registered"));
-        assertEquals(2, observed.getLong("stream_passive_transaction_returned") - before.getLong("stream_passive_transaction_returned"));
-        assertEquals("Requested channel and source provider remain distinct", 0,
-                observed.getLong("cache_gps_prepared") - before.getLong("cache_gps_prepared"));
-        assertTrue(observed.getBoolean("last_stream_mock"));
-        assertTrue(observed.getBoolean("last_stream_synthetic"));
-        assertEquals("No physical provider is queried for passive forwarding", 0, physicalDelegations.get());
+        // The host is unbound, so it has no virtual package for consumer attribution.
+        // Model a generic virtual client explicitly; never weaken null-package guards.
+        final String target = "com.soozooq.tianwaitian.passivefixture";
+        Field config = BActivityThread.class.getDeclaredField("mAppConfig"); config.setAccessible(true);
+        Field configLock = BActivityThread.class.getDeclaredField("mConfigLock"); configLock.setAccessible(true);
+        Object thread = BActivityThread.currentActivityThread(), lock = configLock.get(null);
+        AppConfig previous; synchronized (lock) { previous = (AppConfig) config.get(thread); }
+        int priorMode = BLocationManager.get().getPattern(user, target);
+        BLocation priorLocation = BLocationManager.get().getLocation(user, target);
+        AppConfig fixture = new AppConfig(); fixture.packageName = target; fixture.processName = target;
+        fixture.userId = user;
+        try {
+            BLocationManager.get().setLocation(user, target, new BLocation(38.0, -121.0));
+            BLocationManager.get().setPattern(user, target, BLocationManager.OWN_MODE);
+            synchronized (lock) { config.set(thread, fixture); }
+            assertEquals("Controlled consumer identity is explicit", target, BActivityThread.getAppPackageName());
+            assertTrue("Passive request channel is available", manager.getAllProviders().contains("passive"));
+            assertTrue(manager.isProviderEnabled("passive"));
+            assertFalse(manager.isProviderEnabled("unknown-provider"));
+            Bundle before = BLocationManager.get().getService().getConsumerDeliverySummary(user, target);
+            sample(manager.getLastKnownLocation("passive"), "gps");
+            CountDownLatch done = new CountDownLatch(1);
+            AtomicReference<Location> current = new AtomicReference<>();
+            manager.getCurrentLocation("passive", null, executor, value -> {
+                current.set(value); done.countDown();
+            });
+            assertTrue(done.await(30, TimeUnit.SECONDS));
+            sample(current.get(), "gps");
+            Samples stream = new Samples(2); listeners.add(stream);
+            manager.requestLocationUpdates("passive", new LocationRequest.Builder(150).setMaxUpdates(2).build(), executor, stream);
+            assertTrue(stream.done.await(30, TimeUnit.SECONDS));
+            sample(stream.first.get(), "gps"); sample(stream.last.get(), "gps");
+            manager.removeUpdates(stream);
+            assertEquals(2, stream.count.get());
+            long deadline = SystemClock.elapsedRealtime() + 30_000;
+            Bundle observed;
+            do {
+                observed = BLocationManager.get().getService().getConsumerDeliverySummary(user, target);
+                if (observed.getLong("stream_passive_transaction_returned")
+                        - before.getLong("stream_passive_transaction_returned") >= 2) break;
+                SystemClock.sleep(25);
+            } while (SystemClock.elapsedRealtime() < deadline);
+            assertEquals(1, observed.getLong("cache_passive_prepared") - before.getLong("cache_passive_prepared"));
+            assertEquals(1, observed.getLong("current_passive_prepared") - before.getLong("current_passive_prepared"));
+            assertEquals(1, observed.getLong("stream_passive_registered") - before.getLong("stream_passive_registered"));
+            assertEquals(2, observed.getLong("stream_passive_transaction_returned") - before.getLong("stream_passive_transaction_returned"));
+            assertEquals("Requested channel and source provider remain distinct", 0,
+                    observed.getLong("cache_gps_prepared") - before.getLong("cache_gps_prepared"));
+            assertTrue(observed.getBoolean("last_stream_mock"));
+            assertTrue(observed.getBoolean("last_stream_synthetic"));
+            assertEquals("No physical provider is queried for passive forwarding", 0, physicalDelegations.get());
+            assertTrue("The attributed virtual consumer has a record", observed.getBoolean("present"));
+            assertEquals(android.os.Process.myPid(), observed.getInt("last_preparation_caller_pid"));
+            assertEquals(android.os.Process.myPid(), observed.getInt("last_stream_receiver_pid"));
+        } finally {
+            try {
+                for (LocationListener listener : listeners) manager.removeUpdates(listener);
+            } finally {
+                synchronized (lock) { config.set(thread, previous); }
+                try { BLocationManager.get().setLocation(user, target, priorLocation); }
+                finally { BLocationManager.get().setPattern(user, target, priorMode); }
+            }
+        }
     }
 
     @Test public void unreadableModeDoesNotDelegateLastOrCurrentAndClosedModeRecovers() throws Exception {
