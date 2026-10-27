@@ -68,6 +68,56 @@ index 925966c..af85cc7 100644
          ApplicationInfo applicationInfo = packageInfo.applicationInfo;
          if (packageInfo.providers == null) {
              packageInfo.providers = new ProviderInfo[]{};
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/BProcessManagerService.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/BProcessManagerService.java
+index 4779308..07d74d3 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/core/system/BProcessManagerService.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/core/system/BProcessManagerService.java
+@@ -222,13 +222,19 @@ public class BProcessManagerService implements ISystemService {
+ 
+     public void onProcessDie(ProcessRecord record) {
+         synchronized (mProcessLock) {
+-            killProcess(record);
+             Map<String, ProcessRecord> process = mProcessMap.get(record.bUID);
+-            if (process != null) {
+-                process.remove(record.processName);
+-                if (process.isEmpty()) {
+-                    mProcessMap.remove(record.bUID);
+-                }
++            // A stopped process can deliver its death callback after a replacement
++            // has reused the name or proxy slot. Only the exact registered record
++            // may retire that registration, its proc files and notifications.
++            if (process == null || process.get(record.processName) != record) {
++                mPidsSelfLocked.remove(record);
++                Slog.d(TAG, "Ignored retired process callback: " + record.processName + ", pid: " + record.pid);
++                return;
++            }
++            killProcess(record);
++            process.remove(record.processName);
++            if (process.isEmpty()) {
++                mProcessMap.remove(record.bUID);
+             }
+ 
+             mPidsSelfLocked.remove(record);
+@@ -260,6 +266,8 @@ public class BProcessManagerService implements ISystemService {
+                     if (appId == appId1) {
+                         mProcessMap.remove(processRecord.bUID);
+                         killProcess(processRecord);
++                        removeProc(processRecord);
++                        BNotificationManagerService.get().deletePackageNotification(processRecord.getPackageName(), processRecord.userId);
+                         tmp.remove(processRecord);
+                     }
+                 }
+@@ -280,8 +288,10 @@ public class BProcessManagerService implements ISystemService {
+             for (ProcessRecord value : process.values()) {
+                 killProcess(value);
+                 mPidsSelfLocked.remove(value);
++                removeProc(value);
+             }
+             mProcessMap.remove(bUID);
++            BNotificationManagerService.get().deletePackageNotification(packageName, userId);
+         }
+     }
+ 
 diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/accounts/BAccountManagerService.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/accounts/BAccountManagerService.java
 index d103d80..959b903 100644
 --- a/BCore/src/main/java/top/niunaijun/bcore/core/system/accounts/BAccountManagerService.java

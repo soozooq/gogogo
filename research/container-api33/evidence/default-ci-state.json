@@ -1,8 +1,8 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
-  "scope": "CI56_LINUX_VERIFIED_MATCHED_NATIVE_RUNNING_PHONE_CONTROLLER_PREPARED",
-  "status": "in_progress",
-  "conclusion": null,
+  "scope": "CI56_NATIVE_WECHAT_RESTART_FAILED_PHONE7_API_FAILED_NEW_OWNER_FIX_UNVERIFIED",
+  "status": "completed",
+  "conclusion": "failure",
   "commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",
   "run_id": 40555343592,
   "engine_patch_sha256": "420b83998686b0f25cf323bfd47bd5391245d9f323736e41473d4a3216b9f408",
@@ -12,8 +12,9 @@
   "native": {
     "passed": false,
     "job_id": 122374016460,
-    "status": "in_progress",
-    "result": "PENDING_NOT_PASS"
+    "status": "completed",
+    "result": "native-passive-wechat-restart-failure-results.json",
+    "conclusion": "failure"
   },
   "mac": {
     "job_id": 122369802713,
@@ -23,10 +24,10 @@
     "retry_posted": false
   },
   "phone_controller_preparation": "phone-99940ea2-delivery-preparation.json",
-  "phone_delivery_run_id": null,
+  "phone_delivery_run_id": 40564477274,
   "phone_new_draft_release_id": null,
   "phone_new_tag": "preview-2.4.35-container-99940ea2",
-  "publication": "NOT_STARTED_NOT_PASS",
+  "publication": "HELD_POLICY_DISABLED_AFTER_NATIVE_FAILURE",
   "previous_passive_candidate_failure": {
     "commit": "e903212b24f55608402a85d3e86b105e77276dd1",
     "run_id": 40553001338,
@@ -80,13 +81,14 @@
     },
     "published": false,
     "qualification_driver_source": "66a293fa2b36cc04e7c2e7986ce5588f8d0a134f",
-    "new_driver_native_gate_pending": true,
+    "new_driver_native_gate_pending": false,
     "host_all_415_non_signature_entries_match_ci54": true,
     "mac_gate_passed": true,
-    "native_gate_passed": false,
+    "native_gate_passed": true,
     "contains_passive_provider_fix": false,
     "held_not_new_delivery": true,
-    "earlier_reuse_publication_preparation_obsolete": true
+    "earlier_reuse_publication_preparation_obsolete": true,
+    "held_reason": "DOES_NOT_CONTAIN_NEW_PASSIVE_FIX_NOT_CURRENT_DELIVERY"
   },
   "current_published_2_4_34": {
     "source": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
@@ -113,5 +115,10 @@
     "host": "0.4-preview / 4"
   },
   "new_runtime_published": false,
-  "target_sdk_and_vivo": "NOT_VERIFIED"
+  "target_sdk_and_vivo": "NOT_VERIFIED",
+  "current_preparation": "retired-process-owner-preparation.json",
+  "current_candidate_source": "CURRENT_BRANCH_HEAD_PENDING_MATCHED_CI",
+  "current_engine_patch_sha256": "1644067914092e72d27cddaf652173ecb9e05cef83efb509953d1424ebb7776e",
+  "phone_delivery_result": "phone-99940ea2-build-and-release-api-failure-results.json",
+  "publish_enabled": false
 }

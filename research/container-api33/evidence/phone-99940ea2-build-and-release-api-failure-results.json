@@ -1,0 +1,66 @@
+{
+  "schema": "GOGOGO_PHONE7_ACTUAL_BYTES_INDEPENDENT_VERIFICATION_V1",
+  "runtime_commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",
+  "delivery_commit": "37a15f6bcac1a66ec0d0eb35e1300df6af01287a",
+  "delivery_run_id": 40564477274,
+  "delivery_stage_conclusion": "failure",
+  "publisher": "SKIPPED",
+  "apks": {
+    "main": {
+      "package": "com.soozooq.gogogo.test",
+      "version_name": "2.4.35-container-preview",
+      "version_code": 2400103,
+      "bytes": 40408206,
+      "sha256": "46e92a5d03724318010fa119eb06324bc0d002382415f2f69fa43ce3dcbf5381",
+      "certificate_sha256": "6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081",
+      "signature_and_alignment_verified": true,
+      "debuggable": true,
+      "file": "Tianwaitian-2.4.35-container-preview-arm64.apk"
+    },
+    "host": {
+      "package": "com.soozooq.tianwaitian.containerresearch",
+      "version_name": "0.4-preview",
+      "version_code": 4,
+      "bytes": 4590083,
+      "sha256": "28556e78c87bbec41154c6920cfc7ddf3e4d745d24233e251194d4a0bfca1e10",
+      "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+      "signature_and_alignment_verified": true,
+      "debuggable": true,
+      "file": "Tianwaitian-Original-Preview-99940ea2.apk"
+    }
+  },
+  "host_415_non_signature_entries_equal": true,
+  "profile_matches_fixed_source": true,
+  "checksums_match": true,
+  "main_checks": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0
+  },
+  "draft_api_failure_http_reason": "NOT_CAPTURED_BY_ORIGINAL_HELPER",
+  "published": false,
+  "native56": "FAILURE",
+  "mac56": "NO_RUNNER_NOT_COMPILED",
+  "phone_and_target_business": "NOT_VERIFIED",
+  "artifacts": {
+    "phone": {
+      "id": 12762154416,
+      "bytes": 26831351,
+      "sha256": "3e2fe7d89357f2c2cadbf96c48ef8d48ae2e7f2853c5354d5b27943958bb76c0"
+    },
+    "diagnostics": {
+      "id": 12763135445,
+      "bytes": 2109,
+      "sha256": "06f2add9468090896438c3fd27234940c06b616df18fa708c6a2d1c6cdc0e312"
+    }
+  },
+  "flat_files": 6,
+  "new_draft_exists": false,
+  "automatic_retry_posted": false,
+  "original_failure_preserved": true,
+  "requires_new_runtime_qualification": true
+}

@@ -1,6 +1,6 @@
 # 可复用基础审计
 
-当前99940／420b的[56 Linux完整结果](evidence/passive-provider-linux-results.json)已验真：7定位、19无线、真实Guest九路径（被动来源gps／mock／合成标记）、1381字符普通反馈、447主检查／lint及两档API／58与59来源／同签名材料均过。55归属失败保留，修复测试身份没有删断言。新56原生122374016460已开始，Mac56无runner容量取消；旧[54原生](evidence/native-original-main-identity-pass-results.json)已验真其307.414秒／46次AMS内核身份及6方法／六路径，仅旧source66a。 [同源交付准备](evidence/phone-99940ea2-delivery-preparation.json)保留相同2.35／0.4版本及证书，先新draft，再由独立作业有界等待并验真全四档和本轮APK／服务器字节／tag后公开；失败保留草稿，最多一次严格Mac容量重试，不重试原生失败。冻结策略变更或代码推进会停止旧发布。旧public34和6625draft不覆盖，无新手机步骤；恢复先读实际CI／发布回执。
+当前由[根入口](../../PROJECT_STATUS.md)继续：新引擎16440679仅允许当前ProcessRecord执行退出清理，避免迟到旧回调删除替代登记／复用proc文件；主动停止同步清理。受控host fixture与目标清理前有界进程快照已补，20秒编译／干净补丁重放／27驱动／12交付检查通过，新同源运行待验，见[准备](evidence/retired-process-owner-preparation.json)。[56原生微信OWN重开失败](evidence/native-passive-wechat-restart-failure-results.json)仍失败，抖音匿名双模式、自有框架／7方法／九路径通过分别记录，不等于SDK采纳。56 Mac无runner未编译，不重试。[Phone7两APK已独立核对但Release POST失败](evidence/phone-99940ea2-build-and-release-api-failure-results.json)，HTTP原因未捕获，发布跳过、无新draft。旧99940交付策略已关闭，preflight跳过打包；仅完整新同源资格后才有qualified下载，旧56冻结curator不得用于新source。公开2.4.34和旧6625草稿保留，无新手机实验。以下是历史快照。
 
 [55实际失败](evidence/passive-fixture-attribution-failure-results.json)已独立核对API归档／58与59来源／签名材料：7定位方法6成功1归属断言失败，Wechat受控三通道通过；普通host新增测试未绑定虚拟包，九路径／无线／普通反馈／原生未执行。[修正fixture身份](evidence/passive-fixture-identity-preparation.json)建立明确generic包及实际Binder PID断言，保留全部计数／来源断言及7方法、finally恢复状态；生产420b8399与手机版本不变，最终15秒构建通过，新同源待验。旧草稿不发，不要求手机实验。
 

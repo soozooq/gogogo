@@ -1,6 +1,6 @@
 {
   "schema": "GOGOGO_MATCHED_PREVIEW_DELIVERY_POLICY_V1",
-  "publish_enabled": true,
+  "publish_enabled": false,
   "repository": "soozooq/gogogo",
   "branch": "research/container-api33-20261023",
   "runtime_commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",

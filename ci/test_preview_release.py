@@ -13,6 +13,15 @@ spec.loader.exec_module(release)
 
 
 class PublicationBoundaryTest(unittest.TestCase):
+    def test_api_failure_preserves_bounded_server_reason_and_original_error_type(self):
+        import subprocess
+        error = subprocess.CalledProcessError(1, ['gh', 'api'],
+            output=b'{"message":"example service refusal"}', stderr=b'gh: example (HTTP 403)')
+        with patch.object(release, 'run', side_effect=error), self.assertRaises(subprocess.CalledProcessError) as caught:
+            release.api('releases', 'POST', {'draft': True})
+        self.assertIn('HTTP 403', '\n'.join(caught.exception.__notes__))
+        self.assertIn('example service refusal', '\n'.join(caught.exception.__notes__))
+
     def test_only_never_started_mac_capacity_failure_after_native_success_can_retry(self):
         config = {'qualification_run_id': 56, 'runtime_commit': 'a' * 40,
                   'qualification_job_ids': {'linux': 1, 'native': 2},

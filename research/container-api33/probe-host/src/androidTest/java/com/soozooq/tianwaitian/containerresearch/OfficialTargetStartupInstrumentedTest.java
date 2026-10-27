@@ -220,6 +220,7 @@ public final class OfficialTargetStartupInstrumentedTest {
             throw error;
         } finally {
             try {
+                captureBeforeCleanup(context, report);
                 report.put("visible_text", new JSONArray(lastText));
                 write(new File(folder, "result.json"), report);
                 device.dumpWindowHierarchy(new File(folder, "window.xml"));
@@ -230,6 +231,28 @@ public final class OfficialTargetStartupInstrumentedTest {
                 BlackBoxCore.get().uninstallPackageAsUser(pkg, 0);
                 apk.delete(); Configurator.getInstance().setWaitForIdleTimeout(idle);
             }
+        }
+    }
+
+    private void captureBeforeCleanup(Context context, JSONObject report) throws Exception {
+        JSONObject snapshot = new JSONObject().put("scope", "READ_ONLY_BEFORE_STOP_OR_UNINSTALL_NOT_LOCATION_ADOPTION")
+                .put("elapsed_ms", SystemClock.elapsedRealtime());
+        report.put("before_cleanup_process_snapshot", snapshot);
+        try {
+            snapshot.put("registered_guest_processes", registeredProcesses());
+            snapshot.put("target_pidof_auxiliary_only", shell("pidof " + pkg));
+            int uid = context.getApplicationInfo().uid;
+            JSONArray actual = new JSONArray();
+            List<ActivityManager.RunningAppProcessInfo> processes = ((ActivityManager)
+                    context.getSystemService(Context.ACTIVITY_SERVICE)).getRunningAppProcesses();
+            if (processes != null) for (ActivityManager.RunningAppProcessInfo process : processes) {
+                if (process.uid == uid && actual.length() < 16) actual.put(new JSONObject()
+                        .put("pid", process.pid).put("uid", process.uid).put("process_name", process.processName));
+            }
+            snapshot.put("actual_host_uid_processes_max16", actual).put("actual_host_uid", uid);
+            snapshot.put("foreground_package", device.getCurrentPackageName());
+        } catch (Exception | AssertionError error) {
+            snapshot.put("unavailable_error_class", error.getClass().getName());
         }
     }
 

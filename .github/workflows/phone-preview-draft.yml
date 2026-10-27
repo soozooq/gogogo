@@ -22,7 +22,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  delivery-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      enabled: ${{ steps.policy.outputs.enabled }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - name: Read the committed delivery hold before building a phone download
+        id: policy
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          policy = json.loads(Path('ci/release-qualifications/2.4.35.json').read_text())
+          enabled = policy['publish_enabled'] is True
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('enabled=' + str(enabled).lower() + '\n')
+          print('Phone delivery enabled:', enabled)
+          PY
   stage-draft:
+    needs: delivery-policy
+    if: needs.delivery-policy.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -127,6 +150,7 @@ jobs:
           retention-days: 14
 
       - name: Create or verify only this source's unpublished draft
+        continue-on-error: true
         working-directory: delivery
         env:
           GH_TOKEN: ${{ github.token }}
@@ -192,5 +216,13 @@ jobs:
         with:
           name: matched-preview-publication-${{ github.run_id }}
           path: ${{ runner.temp }}/matched-preview-publication/*.json
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Save the phone download only after full matched qualification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qualified-phone-preview-2.4.35-99940ea2-${{ github.run_id }}
+          path: ${{ runner.temp }}/matched-preview-publication/qualified-phone/*
           if-no-files-found: ignore
           retention-days: 14

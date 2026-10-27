@@ -13,19 +13,23 @@
 
 不新增分支／PR、不自动合并、不删除／强推／重置其他工作区。两个PR保持Draft。手机用户不需要重跑旧实验或切换VPN。
 
-## 当前研发：微信SDK被动通道来源已修正，2.4.35同源交付准备
+## 当前研发：修正进程退出回调归属，旧2.4.35自动发布已暂停
 
-[固定原包的实际请求／监听绑定](research/container-api33/evidence/wechat-sdk-passive-provider-routing-results.json)确认：aa$1按模式以gps或passive注册aa.a，aa构造器把aa$2写入同字段；aa$2先筛provider==gps，否则在mock检查前返回。旧虚拟样本把请求名passive写成来源，会与这条路径冲突；手机实际模式与旧失败因果仍未知。新420b8399在OWN模式转发配置的合成GPS来源，枚举／启用passive，保留合成extras、零卫星、通用mock与微信兼容呈现、CLOSE委托。原短反馈只加一行被动计数，不加页面／操作／权限／依赖／JNI，1.5秒／1800字符上限保持，版本仍主2.4.35／2400103、宿主0.4／4。
+[最新准备与本地检查](research/container-api33/evidence/retired-process-owner-preparation.json)：从本分支HEAD继续。引擎16440679修正一个已由源码确认的竞态：旧进程迟到的onProcessDie原先会按进程名删除替代进程登记，并清理已复用的proc目录与通知。现在仅完全相同的当前ProcessRecord有权退出清理；主动停止在仍拥有登记时清理资源，迟到回调只移除自身旧列表项。它是可复现的源码缺陷，**不能据此断言是56微信失败的已证实原因**。
 
-运行源码固定**99940ea20ef4e7bee27a65fe759a810bf0942672**。[CI56 Linux实际完整通过已验真](research/container-api33/evidence/passive-provider-linux-results.json)：两档API归档／58与59来源／三同签名及11材料核对；7定位4.574秒、19无线0.243秒、七case＋变化UI、主447项／lint均过。真实Guest3034、宿主2967与准备／接收PID对应，GPS／NETWORK／PASSIVE九路径4.278秒，最老样本326.831毫秒，被动样本来源gps、通用mock及合成标记保留，三通道计数／目标移动／注销稳定与取消零回调通过；普通反馈实际1381字符。正常入口15.251秒、已装导入7.885秒、计算器6.048秒。受控微信上下文三通道通过，仍不是原SDK执行或手机效果。
+现有云端框架case增加同名替代登记／proc文件canary与旧登记已消失的检查，明确为host单例受控fixture；原真实Guest框架／定位检查保留。目标匿名对照在stop／uninstall前补充最多16项同UID真实AMS进程、Core登记与辅助pidof快照，后置有界日志增加BProcessManager／ActivityStack标签，避免只剩清理后现场。20秒Android编译、完整补丁干净上游索引重放、27项云端驱动与12项发布／配方检查通过；**新源码的Linux、ARM64、Mac仍待实际运行**。主2.4.35／2400103、宿主0.4／4保持，不新增手机页面、权限或实验。
 
-[CI55失败保留](research/container-api33/evidence/passive-fixture-attribution-failure-results.json)：7方法6过1归属计数失败，普通host新增测试未建立虚拟包身份。99940仅给该测试绑定明确generic包、断言身份／实际Binder PID并嵌套finally恢复，生产空包保护与全部计数／来源断言保留；15秒编译和56实际全套通过。55九路径／无线／后续回归及原生未执行，不追认旧失败。
+## 最近完成结果：56原生微信重开失败，Phone7已打包但未发布
 
-[CI56 Mac实际未运行编译](research/container-api33/evidence/ci56-mac-capacity-results.json)：122369802713取消，runner=0／0步骤，原始注释明确hosted runner未取得及macOS ARM64容量限制，不能算通过或源代码编译失败。当前同源ARM64 **122374016460已经开始运行**，尚未取到结果。旧[54原生已独立验真](research/container-api33/evidence/native-original-main-identity-pass-results.json)，固定66a293fa／839947fa：四档归档／9原生及59来源、微信6032→6672与抖音10280→12420、真实UID／匿名双模式／3自有case／6方法与六路径51.738秒、system_server657稳定／VM及包清理通过。抖音普通原包主PID7826／UID10099经46次AMS＋内核核对、实际307.414秒稳定；新运行未出现多个同名候选，不能倒推53主身份。它仅证明上一轮，不覆盖420b的新被动修正。
+运行源码固定**99940ea20ef4e7bee27a65fe759a810bf0942672**／引擎420b8399。[56 Linux完整通过](research/container-api33/evidence/passive-provider-linux-results.json)：7定位、19无线、七case＋变化UI、447主检查／lint；真实Guest九路径4.278秒，被动样本来源gps、通用mock与合成标记保留，普通反馈1381字符。两档API／58及59来源／三同签名及材料已独立核对。固定原包[被动请求／监听绑定](research/container-api33/evidence/wechat-sdk-passive-provider-routing-results.json)发现的passive请求来源应为合成gps修正保留。
 
-[同源手机交付准备](research/container-api33/evidence/phone-99940ea2-delivery-preparation.json)：宿主已按56真实产物私签并核对415非签名内容，4,590,083字节、SHA28556e78…、沿25bfd6e2…证书；99940公开配方831操作复制4,471,632字节，逐字节恢复。主实际摘要须由本轮打包记录，不能借旧94019ea6。提交后的现有Phone工作流先构建主包并保留新tag `preview-2.4.35-container-99940ea2` 草稿，再由独立作业最多等待150分钟，收取56完整四档实际证据、严格7方法／真实九路径／原包300秒身份／系统与清理及本轮两APK／profile／447lint／签名／415内容／服务器字节／tag，全部通过后才公开。失败或超时保留草稿。旧6625草稿425599161和公开2.4.34附件保留，不复用旧草稿。
+[56原生实际失败已验真](research/container-api33/evidence/native-passive-wechat-restart-failure-results.json)：作业122374016460结束失败，三档API归档／9原生与59自有来源／签名材料匹配。微信关闭模式欢迎页通过、旧PID5931已消失，但OWN重开300秒未回到匿名页、登记主PID为0，最后显示自身预览页；crash日志0字节，DeadObject警告不能单独证明崩溃原因，旧记录无清理前快照。抖音双模式匿名启动通过（9841→11986／UID10102），关闭观察实际300635毫秒，同名pidof集合变化但登记主身份稳定。三个自有原生case均过：框架、定位九路径45.871秒／最老1742.188毫秒、7方法6.429秒；system_server643稳定，VM及包／staging清理完成。整轮4498.523秒不是启动耗时。**分项通过不能把整轮或微信重开改写成通过**。56 Mac无runner／0步骤容量取消，未编译；原生失败后不允许单独Mac重试，未POST重试。
 
-新交付冻结策略在 [ci/release-qualifications/2.4.35.json](ci/release-qualifications/2.4.35.json)。等待及发版前读取该分支最新策略，内容改变／关闭或运行源码推进就停止旧交付。仅在整轮56结束、Linux／原生实际成功且Mac从未取得runner、无步骤、明确容量注释、attempt1时最多单独重试一次Mac；不会重试原生／代码失败或取消作业。6项发布边界与5项签名配方检查、YAML阶段依赖和冻结输入核对通过。准备记录不等于交付或发布；恢复时先读取Phone作业／实际回执与release状态，再判断当前公开版本。手机用户无需新实验，真实微信采纳／发送／实时、抖音无线／海外和vivo仍未验收。
+[Phone7实际字节与接口失败](research/container-api33/evidence/phone-99940ea2-build-and-release-api-failure-results.json)：交付源码37a15f6b／run40564477274，已实际完成主447检查／lint、固定profile、扁平六文件、版本／签名／对齐及宿主415非签名内容核对。主40,408,206字节、SHA46e92a5d…；宿主4,590,083字节、SHA28556e78…，证书沿用。创建release草稿的POST失败，原helper没有保留HTTP响应，**原因未知**；发布作业跳过，无新99940草稿或tag，不能称已经交付／发布。
+
+[冻结交付策略](ci/release-qualifications/2.4.35.json)现为publish_enabled=false，新增preflight在构建前暂停旧候选的打包与发布。脚本现保留有界API失败详情；仅草稿附件步骤可继续，同源四档证据／7方法／九路径／300秒主身份／系统清理／本轮APK／签名／415内容／最新源码等门槛全部仍强制。只有完整核对后才创建qualified-phone下载目录；这是后续交付韧性修正，尚未实际执行或取得Release权限。旧策略和严格curator仍绑定失败56，**不得用来给新源码发版**；下一候选需重新冻结实际CI与签名包。旧6625草稿425599161及public2.4.34保持原样。所有旧准备中的“等待／运行中”字段是当时快照，以本入口最新实际结果为准。
+
+[55失败](research/container-api33/evidence/passive-fixture-attribution-failure-results.json)保留；99940仅修其generic fixture身份后56 Linux／原生7方法均实际通过，不追认55。上一轮[54原生通过](research/container-api33/evidence/native-original-main-identity-pass-results.json)仅覆盖66a293fa／839947fa及6方法／六路径，不能借给新引擎。微信发送／实时、抖音无线／海外定位与vivo仍未验收，手机用户无需重跑旧实验。
 
 ## 上一轮：修正原包主进程身份对照（66a293fa）
 

@@ -6,6 +6,7 @@ import hashlib
 import importlib.util
 import json
 import re
+import shutil
 import stat
 import subprocess
 import sys
@@ -35,7 +36,12 @@ def api(path, method='GET', data=None):
     command = ['gh', 'api', '--method', method, 'repos/' + REPO + '/' + path]
     if data is not None:
         command += ['--input', '-']
-    result = run(command, input=json.dumps(data).encode() if data is not None else None)
+    try:
+        result = run(command, input=json.dumps(data).encode() if data is not None else None)
+    except subprocess.CalledProcessError as error:
+        detail = (error.output or b'').decode(errors='replace') + '\n' + (error.stderr or b'').decode(errors='replace')
+        error.add_note('GitHub API ' + method + ' ' + path + ': ' + detail[:2500])
+        raise
     return json.loads(result) if result.strip() else {}
 
 
@@ -118,17 +124,7 @@ def live_policy_matches(config_path, config):
             'Delivery policy changed or was stopped; keep the draft')
 
 
-def stage(args, config, config_path):
-    package = Path(args.package_dir)
-    work = Path(args.work)
-    work.mkdir(parents=True, exist_ok=False)
-    manifest = json.loads((package / 'candidate-manifest.json').read_text())
-    validate_manifest(manifest, config, args.delivery_run)
-    for value in manifest['apks'].values():
-        path = package / value['file']
-        require(path.stat().st_size == value['bytes'] and sha(path.read_bytes()) == value['sha256'],
-                'Staged bytes differ from manifest')
-    live_policy_matches(config_path, config)
+def attach_draft(config, manifest, package, work):
     release = release_for_tag(config)
     if release is None:
         release = api('releases', 'POST', {'tag_name': config['tag'],
@@ -145,6 +141,21 @@ def stage(args, config, config_path):
     after = api('releases/' + str(release['id']))
     validate_release(after, config, manifest, draft=True, complete=True)
     save(work / 'draft-after.json', after)
+    return after
+
+
+def stage(args, config, config_path):
+    package = Path(args.package_dir)
+    work = Path(args.work)
+    work.mkdir(parents=True, exist_ok=False)
+    manifest = json.loads((package / 'candidate-manifest.json').read_text())
+    validate_manifest(manifest, config, args.delivery_run)
+    for value in manifest['apks'].values():
+        path = package / value['file']
+        require(path.stat().st_size == value['bytes'] and sha(path.read_bytes()) == value['sha256'],
+                'Staged bytes differ from manifest')
+    live_policy_matches(config_path, config)
+    after = attach_draft(config, manifest, package, work)
     print(json.dumps({'draft_staged': True, 'release_id': after['id'], 'published': False}))
 
 
@@ -314,8 +325,37 @@ def publish(args, config, config_path):
     contents = inspector.non_signature_entries(host)
     require(len(contents) == 415 and contents == inspector.non_signature_entries(work / 'own/probeHost-debug.apk'),
             'Actual host differs from matched CI APK')
-    release = release_for_tag(config)
-    require(release is not None, 'Expected draft missing')
+    # A later code change or policy stop invalidates this pending delivery.
+    live_policy_matches(config_path, config)
+    run(['git', 'fetch', '--no-tags', 'origin', config['branch']])
+    own = json.loads((work / 'own/manifest.json').read_text())
+    for name, digest in own['sources_sha256'].items():
+        require(sha(run(['git', 'show', 'FETCH_HEAD:research/container-api33/' + name])) == digest,
+                'Research inputs advanced; preserve the draft')
+    require(not run(['git', 'diff', '--name-only', config['runtime_commit'], 'FETCH_HEAD', '--',
+                    'app', 'externalDemo', 'build.gradle', 'settings.gradle', 'gradle', 'gradle.properties',
+                    'gradlew', 'gradlew.bat',
+                    'docs/build-profiles/main-preview-2.4.35.init.gradle']).strip(), 'Main source advanced')
+    qualified = {'schema': 'GOGOGO_MATCHED_QUALIFIED_PHONE_ARTIFACT_V1',
+                 'runtime_commit': config['runtime_commit'], 'qualification_run_id': config['qualification_run_id'],
+                 'delivery_commit': args.delivery_commit, 'delivery_run_id': args.delivery_run,
+                 'all_four_archive_sources_signatures_materials_verified': True,
+                 'native_seven_methods_and_real_guest_nine_paths_verified': True,
+                 'profile_main447lint_versions_signatures_and_415_entries_verified': True,
+                 'apks': manifest['apks'], 'published': False,
+                 'release_server_bytes_and_tag': 'NOT_YET_VERIFIED',
+                 'target_sdk_or_vivo_business_verified': False}
+    save(work / 'qualified-phone.json', qualified)
+    qualified_dir = work / 'qualified-phone'
+    qualified_dir.mkdir()
+    for name in expected_files:
+        shutil.copyfile(work / 'phone' / name, qualified_dir / name)
+    save(qualified_dir / 'QUALIFICATION-RECEIPT.json', qualified)
+    # Release attachment is separate from this already-verified phone artifact.
+    live_policy_matches(config_path, config)
+    draft_work = work / 'release-draft'
+    draft_work.mkdir()
+    release = attach_draft(config, manifest, work / 'phone', draft_work)
     validate_release(release, config, manifest, draft=True, complete=True)
     save(work / 'release-before.json', release)
     for asset in release['assets']:
@@ -330,17 +370,6 @@ def publish(args, config, config_path):
     else:
         require(tag['object']['type'] == 'commit' and tag['object']['sha'] == config['runtime_commit'], 'Tag source differs')
 
-    # A later code change or policy stop invalidates this pending delivery.
-    live_policy_matches(config_path, config)
-    run(['git', 'fetch', '--no-tags', 'origin', config['branch']])
-    own = json.loads((work / 'own/manifest.json').read_text())
-    for name, digest in own['sources_sha256'].items():
-        require(sha(run(['git', 'show', 'FETCH_HEAD:research/container-api33/' + name])) == digest,
-                'Research inputs advanced; preserve the draft')
-    require(not run(['git', 'diff', '--name-only', config['runtime_commit'], 'FETCH_HEAD', '--',
-                    'app', 'externalDemo', 'build.gradle', 'settings.gradle', 'gradle', 'gradle.properties',
-                    'gradlew', 'gradlew.bat',
-                    'docs/build-profiles/main-preview-2.4.35.init.gradle']).strip(), 'Main source advanced')
     receipt = {'schema': 'GOGOGO_MATCHED_PREVIEW_PUBLICATION_V1', 'runtime_commit': config['runtime_commit'],
                'qualification_run_id': config['qualification_run_id'], 'delivery_commit': args.delivery_commit,
                'delivery_run_id': args.delivery_run, 'release_id': release['id'], 'tag': config['tag'],
@@ -391,7 +420,8 @@ def main():
         if work.is_dir():
             (work / 'failure.json').write_text(json.dumps({'operation': args.operation,
                 'error': type(error).__name__ + ': ' + str(error)[:700], 'published_not_assumed': True,
-                'runtime_commit': config['runtime_commit'], 'qualification_run_id': config['qualification_run_id']}, indent=2) + '\n')
+                'runtime_commit': config['runtime_commit'], 'qualification_run_id': config['qualification_run_id'],
+                'api_details': getattr(error, '__notes__', [])}, indent=2) + '\n')
         raise
 
 
