@@ -8,6 +8,7 @@ import android.content.ClipboardManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Build;
@@ -102,7 +103,7 @@ public final class ProbeActivity extends Activity {
         adaptActionRows();
         try { entries = GuestImport.catalog(this); }
         catch (Exception error) {
-            status.setText("应用清单读取失败，请重新安装预览包。");
+            showStatus("应用清单读取失败，请重新安装预览包。");
             open.setEnabled(false); choose.setEnabled(false); installed.setEnabled(false);
             feedback.setEnabled(false); return;
         }
@@ -117,7 +118,7 @@ public final class ProbeActivity extends Activity {
         Button download = findViewById(R.id.download_original);
         download.setOnClickListener(v -> {
             try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(selected().url))); }
-            catch (android.content.ActivityNotFoundException error) { status.setText("请使用浏览器打开官方发布页下载对应版本。"); }
+            catch (android.content.ActivityNotFoundException error) { showStatus("请使用浏览器打开官方发布页下载对应版本。"); }
         });
         installed.setOnClickListener(v -> importChosen(selected(), null, true));
         choose.setOnClickListener(v -> {
@@ -136,8 +137,8 @@ public final class ProbeActivity extends Activity {
         open.setOnClickListener(v -> openSelected());
         Button stop = findViewById(R.id.stop_guest);
         stop.setOnClickListener(v -> {
-            try { stopActive(); status.setText("已请求停止；可修改坐标后重新打开。"); }
-            catch (RuntimeException error) { status.setText("停止请求失败，请稍后重试。"); }
+            try { stopActive(); showStatus("已请求停止；可修改坐标后重新打开。"); }
+            catch (RuntimeException error) { showStatus("停止请求失败，请稍后重试。"); }
         });
         feedback.setOnClickListener(v -> chooseFeedbackResult());
         apps.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -184,6 +185,16 @@ public final class ProbeActivity extends Activity {
 
     @Override protected void onResume() { super.onResume(); if (!busy) refresh(); }
 
+    private void showStatus(String message) {
+        status.setText(message);
+        // Action results must be visible even when the form was scrolled to its
+        // inputs. Passive refresh keeps its place; only explicit results reveal.
+        status.post(() -> {
+            if (!destroyed) status.requestRectangleOnScreen(
+                    new Rect(0, 0, status.getWidth(), status.getHeight()), true);
+        });
+    }
+
     private double number(EditText edit, double max) {
         double value;
         try { value = Double.parseDouble(edit.getText().toString().trim()); }
@@ -196,7 +207,7 @@ public final class ProbeActivity extends Activity {
 
     private void openSelected() {
         GuestImport.Entry entry = selected();
-        if (!entry.supportsDevice()) { status.setText("所选原版仅支持原生 ARM64 设备。"); return; }
+        if (!entry.supportsDevice()) { showStatus("所选原版仅支持原生 ARM64 设备。"); return; }
         try {
             double lat = 0, lon = 0;
             if (entry.location) {
@@ -222,11 +233,11 @@ public final class ProbeActivity extends Activity {
             } else BLocationManager.disableFakeLocation(0, entry.packageName);
             saved.edit().putString("active", entry.packageName).apply();
             if (!BlackBoxCore.get().launchApk(entry.packageName, 0)) {
-                stopActive(); status.setText("启动请求失败，请重试。"); return;
+                stopActive(); showStatus("启动请求失败，请重试。"); return;
             }
-            status.setText("已应用设置并请求打开，请以应用实际显示为准。");
-        } catch (IllegalArgumentException error) { status.setText("请检查纬度和经度。"); }
-        catch (RuntimeException error) { status.setText("未能应用并打开，请重试。"); }
+            showStatus("已应用设置并请求打开，请以应用实际显示为准。");
+        } catch (IllegalArgumentException error) { showStatus("请检查纬度和经度。"); }
+        catch (RuntimeException error) { showStatus("未能应用并打开，请重试。"); }
     }
 
     private void stopActive() {
@@ -320,7 +331,7 @@ public final class ProbeActivity extends Activity {
                 + "external_app_actually_opened=NOT_AUTO_VERIFIED\nsdk_location_adoption=UNKNOWN\n"
                 + "real_consumer_coordinates=NOT_READ\nno_active_fix_or_mock_start_stop=true\n"
                 + "no_ip_ssid_cell_ids_keys_phone_identifiers=true\nstarted_elapsed_ms=" + started + "\n";
-        feedbackPending = true; feedback.setEnabled(false); status.setText("正在整理短反馈……");
+        feedbackPending = true; feedback.setEnabled(false); showStatus("正在整理短反馈……");
         final int generation = ++feedbackGeneration;
         final long deadline = SystemClock.elapsedRealtime() + 1500;
         // A slow/dead Core cannot make copying wait indefinitely. Late results
@@ -369,8 +380,8 @@ public final class ProbeActivity extends Activity {
             ClipboardManager clipboard = getSystemService(ClipboardManager.class);
             if (clipboard == null) throw new IllegalStateException("CLIPBOARD_UNAVAILABLE");
             clipboard.setPrimaryClip(ClipData.newPlainText("天外天预览反馈", report));
-            status.setText("短反馈已复制，可直接粘贴发送。无需再跑实验。");
-        } catch (RuntimeException unavailable) { status.setText("复制未完成，请稍后重试。"); }
+            showStatus("短反馈已复制，可直接粘贴发送。无需再跑实验。");
+        } catch (RuntimeException unavailable) { showStatus("复制未完成，请稍后重试。"); }
     }
 
     @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] results) {
@@ -378,7 +389,7 @@ public final class ProbeActivity extends Activity {
         if (request != 2 || !waitingPermission) return;
         waitingPermission = false;
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) openSelected();
-        else status.setText("需要精确定位授权后才能启动定位应用；可再次点击打开授权。");
+        else showStatus("需要精确定位授权后才能启动定位应用；可再次点击打开授权。");
     }
 
     @Override protected void onActivityResult(int request, int result, Intent data) {
@@ -391,7 +402,7 @@ public final class ProbeActivity extends Activity {
 
     private void importChosen(GuestImport.Entry entry, Uri uri, boolean fromInstalled) {
         if (busy || !entry.supportsDevice()) return;
-        busy = true; refresh(); status.setText("正在核验原版并导入，只需一次……");
+        busy = true; refresh(); showStatus("正在核验原版并导入，只需一次……");
         io.execute(() -> {
             boolean ready = false; File file = null;
             String failure = "导入未完成：请检查指定原版 APK 和可用存储。";
@@ -410,7 +421,7 @@ public final class ProbeActivity extends Activity {
             finally { if (file != null) file.delete(); }
             final boolean done = ready;
             final String message = failure;
-            runOnUiThread(() -> { if (!destroyed) { busy = false; refresh(); if (!done) status.setText(message); } });
+            runOnUiThread(() -> { if (!destroyed) { busy = false; refresh(); if (!done) showStatus(message); } });
         });
     }
 

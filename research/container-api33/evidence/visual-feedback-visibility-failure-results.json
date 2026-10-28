@@ -1,0 +1,59 @@
+{
+  "scope": "ACTUAL_CI_FAILURE_NOT_TARGET_LOCATION_OR_VISUAL_ACCEPTANCE",
+  "commit": "7e90cf097f596f443830a3e36e6ac23a0d543bf6",
+  "run_id": 40634096253,
+  "linux_job_id": 122636958005,
+  "linux_conclusion": "FAILURE",
+  "mac_job_id": 122636958281,
+  "mac_conclusion": "SUCCESS_BUILD_ONLY",
+  "archives": {
+    "own": {
+      "id": 12792687591,
+      "sha256": "4f82cee0ad7b55b75870de980757ec6f9e1cacc0b8cb78a18f83ade55300e2ce",
+      "verified": true
+    },
+    "mac": {
+      "id": 12792279708,
+      "sha256": "d520f4ee6d4ed6efa58ee59675a8fd853889620ddc8e13534e21d0d9ff903ae1",
+      "verified": true
+    },
+    "linux": {
+      "id": 12792957302,
+      "sha256": "2654bdb05d7c054e6e3b957332d8641374b444bb8fe55f29b8720dd1cc793d01",
+      "verified": true
+    }
+  },
+  "own_sources_verified": 73,
+  "same_ci_own_signatures_verified": true,
+  "notice_materials_per_apk": 11,
+  "default_cases": {
+    "x86_64-startup-framework": {
+      "passed": true
+    },
+    "x86_64-owned-location": {
+      "passed": true
+    },
+    "x86_64-ordinary-entry": {
+      "passed": false
+    },
+    "x86_64-location-contract": {
+      "passed": true
+    },
+    "read-only-ui-capture": {
+      "passed": true
+    }
+  },
+  "ordinary_entry": {
+    "elapsed_seconds": 23.039,
+    "failure": "Compact feedback copied: exact success text not found in visible UI within 10s",
+    "clipboard_content_assertions_executed": false,
+    "stop_assertions_executed": false,
+    "existing_screenshot": "GPSTest synthetic selected target B; not preview UI"
+  },
+  "visual_suite_executed": false,
+  "visual_screenshots": 0,
+  "native_skipped_intentionally": true,
+  "candidate_distributed": false,
+  "source_finding": "Action result TextView is inside the scrolling form; fixed action buttons remain outside. Reveal explicit results without scrolling passive refresh. Cause still to be confirmed by the next actual run.",
+  "repair_assertions_removed_or_lowered": false
+}

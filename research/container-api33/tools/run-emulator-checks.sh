@@ -32,7 +32,23 @@ fi
 echo "$research_acceleration" > "$CONTAINER_RESEARCH_WORKDIR/evidence/selected-acceleration.txt"
 "$ANDROID_HOME/emulator/emulator" -avd api33-research-check -port 5580 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel "$research_acceleration" -memory 1536 -cores 2 -no-snapshot-load -no-snapshot-save > "$CONTAINER_RESEARCH_WORKDIR/evidence/emulator.log" 2>&1 &
 research_emulator_pid=$!
-trap 'kill "$research_emulator_pid" 2>/dev/null || true' EXIT
+research_boot_ready=false
+finish_research_emulator() {
+    research_exit_status=$?
+    # UI capture is independent of a failed earlier ordinary regression. Preserve
+    # that failure, still collect own layout evidence, then stop the same VM.
+    if [ "$research_boot_ready" = true ] && [ -n "${TWT_VISUAL_MAIN_APK:-}" ]; then
+        if python3 "$spec_root/tools/run-visual-layout-check.py" --sdk "$ANDROID_HOME" --root "$CONTAINER_RESEARCH_WORKDIR" --serial emulator-5580 --main-apk "$TWT_VISUAL_MAIN_APK"; then
+            :
+        else
+            research_visual_status=$?
+            if [ "$research_exit_status" -eq 0 ]; then research_exit_status=$research_visual_status; fi
+        fi
+    fi
+    kill "$research_emulator_pid" 2>/dev/null || true
+    exit "$research_exit_status"
+}
+trap finish_research_emulator EXIT
 research_deadline=$((SECONDS + 1200))
 until [ "$("$research_adb" -s emulator-5580 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ]; do
     if ! kill -0 "$research_emulator_pid" 2>/dev/null; then
@@ -45,6 +61,7 @@ until [ "$("$research_adb" -s emulator-5580 shell getprop sys.boot_completed 2>/
     fi
     sleep 5
 done
+research_boot_ready=true
 python3 "$spec_root/tools/run-read-only-ui-check.py" --sdk "$ANDROID_HOME" --root "$CONTAINER_RESEARCH_WORKDIR" --serial emulator-5580
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-startup-framework" --startup-contract
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-location-contract" --location-contract
@@ -53,6 +70,3 @@ python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emu
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-installed-import" --installed-baseline
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-calculator"
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-radio-privacy" --radio-contract
-if [ -n "${TWT_VISUAL_MAIN_APK:-}" ]; then
-    python3 "$spec_root/tools/run-visual-layout-check.py" --sdk "$ANDROID_HOME" --root "$CONTAINER_RESEARCH_WORKDIR" --serial emulator-5580 --main-apk "$TWT_VISUAL_MAIN_APK"
-fi
