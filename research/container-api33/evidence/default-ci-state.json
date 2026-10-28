@@ -1,19 +1,20 @@
 {
   "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
-  "scope": "CI57_DEFAULTS_VERIFIED_PHONE9_PACKAGED_API403_NATIVE_AND_PUBLISHER_WAITING",
-  "status": "in_progress",
-  "conclusion": null,
+  "scope": "CI57_ALL_FOUR_VERIFIED_PHONE9_DOWNLOAD415_RECOVERY_PREPARED",
+  "status": "completed",
+  "conclusion": "success",
   "commit": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
   "run_id": 40595256036,
   "engine_patch_sha256": "1644067914092e72d27cddaf652173ecb9e05cef83efb509953d1424ebb7776e",
   "preparation": "retired-process-owner-preparation.json",
-  "default_checks_conclusion": "LINUX_AND_MAC_SUCCESS_VERIFIED_NATIVE_PENDING",
+  "default_checks_conclusion": "LINUX_MAC_AND_MATCHED_NATIVE_SUCCESS_VERIFIED",
   "default_result": "retired-process-owner-linux-results.json",
   "native": {
-    "passed": false,
+    "passed": true,
     "job_id": 122512447262,
-    "status": "in_progress",
-    "result": "PENDING_NOT_PASS"
+    "status": "completed",
+    "conclusion": "success",
+    "result": "native-retired-process-owner-pass-results.json"
   },
   "mac": {
     "job_id": 122509448125,
@@ -26,7 +27,7 @@
   "phone_delivery_run_id": 40596941748,
   "phone_new_draft_release_id": null,
   "phone_new_tag": "preview-2.4.35-container-c8052d31",
-  "publication": "PUBLISHER_RUNNING_WAITING_NATIVE_NOT_PASS_RELEASE_API403",
+  "publication": "PHONE9_FAILED_HTTP415_BEFORE_QUALIFICATION_RECOVERY_PREPARED",
   "previous_passive_candidate_failure": {
     "commit": "e903212b24f55608402a85d3e86b105e77276dd1",
     "run_id": 40553001338,
@@ -118,7 +119,7 @@
   "current_preparation": "retired-process-owner-preparation.json",
   "current_candidate_source": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
   "current_engine_patch_sha256": "1644067914092e72d27cddaf652173ecb9e05cef83efb509953d1424ebb7776e",
-  "phone_delivery_result": "phone-c8052d31-build-and-release-api-results.json",
+  "phone_delivery_result": "phone9-publication-download-failure-results.json",
   "publish_enabled": true,
   "previous_ci56_native_failure": {
     "commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",
@@ -133,7 +134,10 @@
   "phone_stage_conclusion": "success",
   "phone_draft_attachment": "FAILED_OPTIONAL_HTTP403_RESOURCE_NOT_ACCESSIBLE_BY_INTEGRATION",
   "publisher_job_id": 122516449530,
-  "publisher_status": "in_progress",
-  "qualified_phone_artifact": "CONDITIONAL_NOT_CREATED_YET",
-  "controller_commit": "4de425d27de2fa14fb3764ce1f463a4f9e8440bf"
+  "publisher_status": "completed",
+  "qualified_phone_artifact": "NOT_CREATED_BY_PHONE9",
+  "controller_commit": "4de425d27de2fa14fb3764ce1f463a4f9e8440bf",
+  "publisher_conclusion": "failure",
+  "controller_recovery_preparation": "phone9-download-recovery-preparation.json",
+  "controller_recovery_run_id": null
 }

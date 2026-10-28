@@ -13,6 +13,72 @@ spec.loader.exec_module(release)
 
 
 class PublicationBoundaryTest(unittest.TestCase):
+    def test_actions_zip_and_release_asset_use_their_supported_media_types(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(release.subprocess, 'run') as invoke:
+            release.download('actions/artifacts/123/zip', Path(directory) / 'own.zip')
+            self.assertEqual(['gh', 'api', 'repos/soozooq/gogogo/actions/artifacts/123/zip'], invoke.call_args.args[0])
+            release.download('releases/assets/456', Path(directory) / 'host.apk')
+            self.assertIn('Accept: application/octet-stream', invoke.call_args.args[0])
+            before = invoke.call_count
+            with self.assertRaises(ValueError):
+                release.download('actions/artifacts/123', Path(directory) / 'metadata.zip')
+            self.assertEqual(before, invoke.call_count)
+
+    def test_replay_requires_the_exact_successful_build_job_and_archive(self):
+        config = {'runtime_commit': 'a' * 40, 'reuse_delivery': {
+            'runtime_commit': 'a' * 40, 'run_id': 9, 'commit': 'b' * 40,
+            'stage_job_id': 12, 'artifact_id': 13, 'artifact_bytes': 20, 'artifact_sha256': 'c' * 64}}
+        ref = release.delivery_reference(config, 10, 'd' * 40)
+        self.assertEqual({'run_id': 9, 'commit': 'b' * 40, 'reused': True}, ref)
+        stage = {'id': 12, 'conclusion': 'success'}
+        artifact = {'id': 13, 'size_in_bytes': 20, 'digest': 'sha256:' + 'c' * 64}
+        release.validate_reused_delivery(config, 9, 'b' * 40, stage, artifact)
+        for label, change in [('job_failed', lambda j, a: j.update(conclusion='failure')),
+                              ('another_job', lambda j, a: j.update(id=14)),
+                              ('another_archive', lambda j, a: a.update(id=15)),
+                              ('changed_bytes', lambda j, a: a.update(size_in_bytes=21)),
+                              ('changed_digest', lambda j, a: a.update(digest='sha256:' + 'e' * 64))]:
+            j, a = dict(stage), dict(artifact); change(j, a)
+            with self.subTest(label=label), self.assertRaises(ValueError):
+                release.validate_reused_delivery(config, 9, 'b' * 40, j, a)
+        with self.assertRaises(ValueError):
+            release.validate_reused_delivery(config, 10, 'b' * 40, stage, artifact)
+        with self.assertRaises(ValueError):
+            release.validate_reused_delivery(config, 9, 'd' * 40, stage, artifact)
+        broken = copy.deepcopy(config); broken['reuse_delivery']['runtime_commit'] = 'f' * 40
+        with self.assertRaises(ValueError):
+            release.delivery_reference(broken, 10, 'd' * 40)
+        self.assertEqual({'run_id': 10, 'commit': 'd' * 40, 'reused': False},
+                         release.delivery_reference({}, 10, 'd' * 40))
+
+    def test_only_known_release_creation_refusal_after_full_qualification_can_fall_back(self):
+        import subprocess
+        command = ['gh', 'api', '--method', 'POST', 'repos/soozooq/gogogo/releases', '--input', '-']
+        refused = subprocess.CalledProcessError(1, command,
+            output=b'{"message":"Resource not accessible by integration","status":"403"}',
+            stderr=b'gh: Resource not accessible by integration (HTTP 403)')
+        qualified = {'published': False, 'all_four_archive_sources_signatures_materials_verified': True,
+                     'native_seven_methods_and_real_guest_nine_paths_verified': True,
+                     'profile_main447lint_versions_signatures_and_415_entries_verified': True}
+        with tempfile.TemporaryDirectory() as directory:
+            work = Path(directory); target = work / 'qualified'; target.mkdir()
+            for message, status in [('Not Found', '404'), ('Bad credentials', '401'),
+                                    ('Unsupported Accept header', '415'), ('Other refusal', '403')]:
+                error = subprocess.CalledProcessError(1, command,
+                    output=json.dumps({'message': message, 'status': status}).encode(),
+                    stderr=('gh: HTTP ' + status).encode())
+                self.assertFalse(release.save_qualified_release_refusal(error, work, target, qualified))
+                self.assertFalse((target / 'DELIVERY-STATUS.json').exists())
+            incomplete = dict(qualified, native_seven_methods_and_real_guest_nine_paths_verified=False)
+            with self.assertRaises(ValueError):
+                release.save_qualified_release_refusal(refused, work, target, incomplete)
+            self.assertFalse((target / 'DELIVERY-STATUS.json').exists())
+            with patch('builtins.print'):
+                self.assertTrue(release.save_qualified_release_refusal(refused, work, target, qualified))
+            status = json.loads((target / 'DELIVERY-STATUS.json').read_text())
+            self.assertTrue(status['qualified_download_ready']); self.assertFalse(status['published'])
+            self.assertEqual('QUALIFIED_ARTIFACT_READY_RELEASE_CREATION_REFUSED', status['delivery_state'])
+
     def test_native_qualifier_rejects_other_source_before_reading_raw_runtime(self):
         import subprocess
         import sys

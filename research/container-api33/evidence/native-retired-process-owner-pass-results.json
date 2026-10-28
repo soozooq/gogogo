@@ -1,0 +1,447 @@
+{
+  "schema": "GOGOGO_NATIVE_CONSUMER_DELIVERY_PASS_RESULTS_V1",
+  "scope": "ACTUAL_NATIVE_ARM64_ANONYMOUS_STARTUP_GENERIC_GUEST_AND_CONTROLLED_WECHAT_PACKAGE_PRESENTATION_NOT_SDK_OR_PHONE_ADOPTION",
+  "round": 57,
+  "run_id": 40595256036,
+  "commit": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+  "job_id": 122512447262,
+  "conclusion": "success",
+  "engine_patch_sha256": "1644067914092e72d27cddaf652173ecb9e05cef83efb509953d1424ebb7776e",
+  "artifacts": {
+    "own": {
+      "id": 12775788117,
+      "sha256": "64da4721716e2d6c41e6fe5d6d56f57555d529b5b098280eadfa0d7534692bef",
+      "verified": true
+    },
+    "linux": {
+      "id": 12777325224,
+      "sha256": "51c63df80f37491ea68819da43eafc859fce8b6df58536a3a3c8821dcec0324d",
+      "verified": true
+    },
+    "mac": {
+      "id": 12776161879,
+      "sha256": "6c906651cbe6ef767df7506e97cc9035e6c3162244d6f8f007cf71325b483c1b",
+      "verified": true
+    },
+    "native": {
+      "id": 12780177446,
+      "sha256": "d0b6bb944c7942e6583daaf06705397f68ffe135e11e8f5bfe85f4e643b88745",
+      "verified": true
+    }
+  },
+  "all_four_api_digests_fixed_sources_and_own_apks_verified": true,
+  "native_source_count_verified": 9,
+  "same_run_own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4547952,
+        "sha256": "4d7d37758aa1d2565cc026d346fc8083101c50d8613c5bbe9867175ae1422a37"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 534258,
+        "sha256": "0afb10f11dbd9149645ecd2b13538a0a343d5eb8cf859178e104fd65a70f480a"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 75094,
+        "sha256": "c6bed773eb4b5406f9b0eba6e472053443921ca075c613817c5a7fc73eee2972"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "qualified_environment": {
+    "properties": {
+      "ro.build.version.sdk": "33",
+      "ro.build.version.incremental": "16596636",
+      "ro.build.fingerprint": "generic/aosp_cf_arm64_phone/vsoc_arm64:13/TP1A.220624.019/16596636:userdebug/test-keys",
+      "ro.product.name": "aosp_cf_arm64_phone",
+      "ro.hardware": "cutf_cvm",
+      "ro.product.cpu.abi": "arm64-v8a",
+      "ro.product.cpu.abilist": "arm64-v8a,armeabi-v7a,armeabi",
+      "ro.dalvik.vm.native.bridge": "0",
+      "ro.hw_timeout_multiplier": "50",
+      "sys.boot_completed": "1"
+    },
+    "kernel_arch": "aarch64",
+    "shell_uid": "2000",
+    "selinux": "Enforcing",
+    "guest_cpu_online": "0-3",
+    "system_server_crash_pids": []
+  },
+  "system_server_pid_before_and_after": "657",
+  "targets": {
+    "wechat": {
+      "passed": true,
+      "junit_seconds": 565.791,
+      "closed_startup": {
+        "passed": true,
+        "stage": "WELCOME_WITHOUT_LOGIN",
+        "guest_pid": "5942",
+        "input_pattern": 0
+      },
+      "virtual_startup": {
+        "passed": true,
+        "synthetic_input_only": true,
+        "target_location_business_tested": false,
+        "previous_main_pid": 5942,
+        "returned_to_host_before_stop": true,
+        "previous_main_absent": true,
+        "input_pattern": 2,
+        "stage": "WELCOME_WITHOUT_LOGIN",
+        "main_pid": 6420,
+        "main_uid": 10097,
+        "visible_text": [
+          "Log In",
+          "Sign Up",
+          "语言"
+        ]
+      },
+      "both_modes_anonymous_ui_confirmed": true,
+      "previous_main_actually_absent_before_restart": true,
+      "new_main_has_distinct_pid_and_real_host_uid": true,
+      "location_business_tested": false,
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "captured_crash_log_bytes": 0,
+      "png_available": true,
+      "png_reviewed": false,
+      "owned_package_cleanup": {
+        "com.soozooq.tianwaitian.containerresearch.test": true,
+        "com.soozooq.tianwaitian.containerresearch": true
+      },
+      "before_cleanup_process_snapshot": {
+        "scope": "READ_ONLY_BEFORE_STOP_OR_UNINSTALL_NOT_LOCATION_ADOPTION",
+        "elapsed_ms": 1800023,
+        "registered_guest_processes": [
+          {
+            "pid": 6669,
+            "uid": 10097,
+            "process_name": "com.tencent.mm:push"
+          },
+          {
+            "pid": 6420,
+            "uid": 10097,
+            "process_name": "com.tencent.mm"
+          }
+        ],
+        "target_pidof_auxiliary_only": "6420",
+        "actual_host_uid_processes_max16": [
+          {
+            "pid": 6420,
+            "uid": 10097,
+            "process_name": "com.soozooq.tianwaitian.containerresearch:p2"
+          },
+          {
+            "pid": 5720,
+            "uid": 10097,
+            "process_name": "com.soozooq.tianwaitian.containerresearch"
+          },
+          {
+            "pid": 5758,
+            "uid": 10097,
+            "process_name": "com.soozooq.tianwaitian.containerresearch:black"
+          },
+          {
+            "pid": 6669,
+            "uid": 10097,
+            "process_name": "com.soozooq.tianwaitian.containerresearch:p0"
+          },
+          {
+            "pid": 6690,
+            "uid": 10097,
+            "process_name": "com.soozooq.tianwaitian.containerresearch:p1"
+          }
+        ],
+        "actual_host_uid": 10097,
+        "foreground_package": "com.soozooq.tianwaitian.containerresearch"
+      },
+      "retired_callback_log_count": 2
+    },
+    "douyin": {
+      "passed": true,
+      "junit_seconds": 932.13,
+      "closed_startup": {
+        "passed": true,
+        "stage": "PRIVACY_WITHOUT_ACCEPTANCE",
+        "guest_pid": "10142",
+        "input_pattern": 0
+      },
+      "virtual_startup": {
+        "passed": true,
+        "synthetic_input_only": true,
+        "target_location_business_tested": false,
+        "previous_main_pid": 10142,
+        "returned_to_host_before_stop": true,
+        "previous_main_absent": true,
+        "input_pattern": 2,
+        "stage": "PRIVACY_WITHOUT_ACCEPTANCE",
+        "main_pid": 11954,
+        "main_uid": 10102,
+        "visible_text": [
+          "个人信息保护指引",
+          "欢迎使用抖音！我们将通过《用户服务协议》与《基础服务数据处理规则》帮助你了解我们为你提供的基础服务，及保障该服务正常运行所必需的信息。\n根据《常见类型移动互联网应用程序必要个人信息范围规定》，抖音为短视频类App，基本功能为“不超过一定时长的视频搜索、播放”。我们在该基本功能基础上结合用户日常使用情况，提供“基础服务”，点击下方“同意”按钮仅代表你同意使用本产品的基础服务，并同意我们基于提供该等服务收集、处理必要的个人信息及数据。\n为了向你提供更丰富优质的服务，我们在基础服务之外为你提供购买商品和服务等扩展服务。针对扩展服务所需的个人信息收集及处理，我们会在你使用具体服务时获取你的相应同意；如果你拒绝提供，你可能无法使用相应的扩展服务，但不影响你使用我们的基础服务。我们通过《隐私政策》帮助你全面了解我们的服务及收集、处理个人信息的详细情况。",
+          "不同意",
+          "同意"
+        ]
+      },
+      "both_modes_anonymous_ui_confirmed": true,
+      "previous_main_actually_absent_before_restart": true,
+      "new_main_has_distinct_pid_and_real_host_uid": true,
+      "location_business_tested": false,
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "captured_crash_log_bytes": 0,
+      "png_available": false,
+      "png_reviewed": false,
+      "owned_package_cleanup": {
+        "com.soozooq.tianwaitian.containerresearch.test": true,
+        "com.soozooq.tianwaitian.containerresearch": true
+      },
+      "closed_mode_only_300s_hold": {
+        "requested_seconds": 300,
+        "observed_ms": 301174,
+        "initial_target_pid": "10142",
+        "last_target_pid": "10142",
+        "identity_basis": "CORE_REGISTERED_MAIN_PROCESS_AND_ACTUAL_ACTIVITY_MANAGER_PID_UID",
+        "main_pid": 10142,
+        "main_uid": 10102,
+        "initial_registered_processes": [
+          {
+            "pid": 10142,
+            "uid": 10102,
+            "process_name": "com.ss.android.ugc.aweme"
+          }
+        ],
+        "last_registered_processes": [
+          {
+            "pid": 10142,
+            "uid": 10102,
+            "process_name": "com.ss.android.ugc.aweme"
+          }
+        ],
+        "same_name_pid_set_changed": false,
+        "passed": true
+      },
+      "ordinary_original_300s_hold": {
+        "requested_seconds": 300,
+        "first_ui_stage": "PRIVACY_WITHOUT_ACCEPTANCE",
+        "initial_target_pid": "7696",
+        "passed": true,
+        "observed_seconds": 304.425,
+        "identity_scope": "AMS_REGISTERED_MAIN_AND_KERNEL_PID_UID_NOT_PIDOF_SET",
+        "initial_main_identity": {
+          "phase": "AT_UI",
+          "expected_uid": 10099,
+          "identity_scope": "AMS_REGISTERED_MAIN_AND_KERNEL_PID_UID_NOT_PIDOF_SET",
+          "pidof_candidates": [
+            7696
+          ],
+          "ams_record_headers": [
+            "*APP* UID 10099 ProcessRecord{66ac52a 7696:com.ss.android.ugc.aweme/u0a99}"
+          ],
+          "pid": 7696,
+          "uid": 10099,
+          "confirmed": true
+        },
+        "initial_target_uid": 10099,
+        "last_target_pid": "7696",
+        "last_target_uid": 10099
+      },
+      "ordinary_main_role_identity": {
+        "scope": "AMS_REGISTERED_MAIN_AND_KERNEL_PID_UID_NOT_PIDOF_SET",
+        "main_pid": 7696,
+        "real_uid": 10099,
+        "checks": 48,
+        "observed_seconds": 304.425,
+        "main_identity_confirmed_by_live_kernel_each_check": true,
+        "additional_same_name_candidates_observed": false,
+        "bounded_jsonl_sha256": "1cd361dcdde820e84f6b63d3aea700d05763868bd89967f5f6e8554788cd09cb",
+        "full_ams_dump_copied": false
+      },
+      "before_cleanup_process_snapshot": {
+        "scope": "READ_ONLY_BEFORE_STOP_OR_UNINSTALL_NOT_LOCATION_ADOPTION",
+        "elapsed_ms": 3916936,
+        "registered_guest_processes": [
+          {
+            "pid": 11954,
+            "uid": 10102,
+            "process_name": "com.ss.android.ugc.aweme"
+          }
+        ],
+        "target_pidof_auxiliary_only": "11954",
+        "actual_host_uid_processes_max16": [
+          {
+            "pid": 11954,
+            "uid": 10102,
+            "process_name": "com.soozooq.tianwaitian.containerresearch:p1"
+          },
+          {
+            "pid": 9894,
+            "uid": 10102,
+            "process_name": "com.soozooq.tianwaitian.containerresearch"
+          },
+          {
+            "pid": 9929,
+            "uid": 10102,
+            "process_name": "com.soozooq.tianwaitian.containerresearch:black"
+          }
+        ],
+        "actual_host_uid": 10102,
+        "foreground_package": "com.soozooq.tianwaitian.containerresearch"
+      },
+      "retired_callback_log_count": 1
+    }
+  },
+  "owned_framework": {
+    "passed": true,
+    "junit_seconds": 14.796,
+    "observed": {
+      "scope": "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION",
+      "passed": true,
+      "pending_intents_sent": false,
+      "location_requested": false,
+      "startup_contract_run_id": "e34bffcc-04f8-441e-86df-0f4696a97fb9",
+      "framework_http_legacy_class_resolved": true,
+      "expected_real_host_uid": 10104,
+      "process_api_uid": 10001,
+      "binder_self_uid": 10104,
+      "binder_self_pid": 12980,
+      "process_api_pid": 12980,
+      "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
+      "binder_self_uid_matches_real_host": true,
+      "activity_attribution_uid": 10104,
+      "application_attribution_uid": 10104,
+      "activity_attribution_uid_matches_real_host": true,
+      "application_attribution_uid_matches_real_host": true,
+      "activity_attribution_package": "com.soozooq.tianwaitian.containerresearch",
+      "pending_activity_created": true,
+      "pending_service_created": true,
+      "provider_call_nonce_matches": true,
+      "provider_pid": 13009,
+      "provider_caller_pid": 12980,
+      "provider_process_separate": true,
+      "provider_process_api_uid": 10001,
+      "provider_caller_binder_uid": 10104,
+      "provider_query_nonce_matches": true,
+      "provider_query_pid": 13009,
+      "host_manager_stale_death_fixture": {
+        "scope": "CONTROLLED_HOST_REGISTRY_NOT_REAL_GUEST_DEATH",
+        "replacement_same_name_preserved": true,
+        "replacement_slot_files_preserved": true,
+        "absent_old_registration_is_inert": true,
+        "passed": true
+      }
+    },
+    "captured_crash_log_bytes": 0
+  },
+  "owned_location": {
+    "passed": true,
+    "junit_seconds": 46.374,
+    "host_pid": 13128,
+    "guest_pid": 13204,
+    "report_source": "OWN_GUEST_ATOMIC_PRIVATE_FILE",
+    "stage_names": [
+      "TARGET_A",
+      "TARGET_B",
+      "UNREGISTERED_STABLE",
+      "CURRENT_CANCELLED"
+    ],
+    "all_nine_paths_preserve_mock": true,
+    "maximum_sample_age_at_record_ms": 1606.406176,
+    "gnss_satellites_and_first_fix": 0,
+    "cancelled_callbacks": 0,
+    "own_staging_removed": true,
+    "package_cleanup": {
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true
+    }
+  },
+  "qemu_process_stopped": true,
+  "whole_observed_seconds_not_app_startup_time": 4391.975,
+  "network_scope": "Dedicated local IPv4/broadcast on TAP; no DHCP/NAT or Internet proof",
+  "terms_login_messages_target_location_tested": false,
+  "real_modem_sdk_location_account_and_vivo": "NOT_VERIFIED",
+  "scope_limits": [
+    "New synthetic mode only proves anonymous startup, not target SDK location adoption.",
+    "The Douyin 300s hold is in closed mode; no 300s own-mode hold is claimed.",
+    "Owned Guest shares real host UID; functional positives do not prove permission denial or isolation.",
+    "No target screenshots were reviewed.",
+    "Native result is bound to this exact commit; another feedback UI source requires its own matched native proof.",
+    "Ordinary main identity is AMS role plus real kernel PID/UID; whole pidof sets are auxiliary and all bounded snapshots are checked. Stable anonymous main identity is not location adoption.",
+    "The seven-method compatibility contract uses a controlled package context. It does not execute the actual WeChat SDK or prove adoption of coordinates.",
+    "Consumer counters are volatile Core history; prepared samples and returned Binder calls do not prove actual SDK adoption or the current application session."
+  ],
+  "verifier_sha256": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
+  "inputs_manifest_sha256": "278fb8ec94714aec713371064c39f5cfa38e226b2e9a582fb29b600c16deb6c1",
+  "controlled_presentation_contract": {
+    "passed": true,
+    "junit_methods": 7,
+    "junit_seconds": 6.703,
+    "method_names": [
+      "continuousFrameworkBatchCallbacksStopAtMaxUpdatesAndUnregister",
+      "unreadableModeDoesNotDelegateLastOrCurrentAndClosedModeRecovers",
+      "lastAndCurrentUseFrameworkCallbackAndFreshMarkedSamples",
+      "passiveRequestsForwardSyntheticGpsOriginAndKeepSeparateCounters",
+      "durationAndDisablingStopFutureDeliveries",
+      "wechatPresentationKeepsSyntheticOriginAcrossLastCurrentAndStreams",
+      "cancellationBeforeQueuedDeliverySuppressesCallback"
+    ],
+    "observed_scope": "CONTROLLED_PUBLIC_API33_PACKAGE_FIXTURE_NOT_REAL_WECHAT_OR_SDK",
+    "evidence_source": "EXACT_SOURCE_CONTRACT_CLASS_JUNIT_TRANSCRIPT",
+    "actual_wechat_process_or_sdk_executed": false,
+    "synthetic_origin_retained": true,
+    "both_framework_mock_aliases_for_wechat": false,
+    "generic_mock_marked_after_restoration": true,
+    "physical_base_delegations": 0,
+    "captured_crash_log_bytes": 0,
+    "transcript_sha256": "e467db1dd4883a245a4bb6fb8dd7ba4468bfe8c5d488071163af630b03409f56"
+  },
+  "all_three_owned_native_cases_passed": true,
+  "qualification_driver_commit": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+  "phone_candidate_app_source": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+  "previous_ci53_failure_retained_not_reclassified": true,
+  "previous_ci55_fixture_failure_retained_not_reclassified": true,
+  "passive_samples_keep_virtual_gps_source_and_synthetic_origin": true,
+  "passive_request_counters_separate_from_source_provider": true,
+  "actual_separate_guest_consumer_delivery": {
+    "last_preparation_caller_pid": 13204,
+    "cache_gps_prepared": 2,
+    "cache_passive_prepared": 2,
+    "current_network_prepared": 2,
+    "stream_gps_transaction_returned": 22,
+    "last_event_age_ms": 5296,
+    "stream_network_registered": 1,
+    "current_passive_prepared": 2,
+    "stream_network_transaction_returned": 22,
+    "maximum_profiles": 16,
+    "stream_passive_transaction_returned": 22,
+    "present": true,
+    "last_stream_mock": true,
+    "scope": "CORE_MEMORY_VIRTUAL_PREPARATION_AND_BINDER_SEND_NOT_SDK_ADOPTION",
+    "stream_passive_registered": 1,
+    "current_gps_prepared": 2,
+    "stream_gps_registered": 1,
+    "first_event_elapsed_ms": 4104135,
+    "last_stream_synthetic": true,
+    "last_event_elapsed_ms": 4110986,
+    "last_stream_receiver_pid": 13204,
+    "cache_network_prepared": 2
+  },
+  "controlled_retired_process_registry": {
+    "scope": "CONTROLLED_HOST_REGISTRY_NOT_REAL_GUEST_DEATH",
+    "replacement_same_name_preserved": true,
+    "replacement_slot_files_preserved": true,
+    "absent_old_registration_is_inert": true,
+    "passed": true
+  },
+  "target_live_main_snapshots_checked_before_cleanup": true,
+  "previous_ci56_failure_retained_not_reclassified": true,
+  "ci56_root_cause_proven": false,
+  "new_target_sdk_location_or_phone_result": "NOT_VERIFIED"
+}

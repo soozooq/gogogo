@@ -1,6 +1,6 @@
 # 天外天接手入口
 
-更新时间：2026-10-27。以本文件为主入口；运行源码、交付源码和证据提交分别记录，不能混用旧轮成功。
+更新时间：2026-10-28。以本文件为主入口；运行源码、交付源码和证据提交分别记录，不能混用旧轮成功。
 
 ## 用户目标与唯一主线
 
@@ -13,23 +13,23 @@
 
 不新增分支／PR、不自动合并、不删除／强推／重置其他工作区。两个PR保持Draft。手机用户不需要重跑旧实验或切换VPN。
 
-## 当前研发：57默认通过，Phone9实际打包／403已核对，原生与自动核验进行中
+## 当前研发：57同源原生已验真通过，修复交付下载并复用Phone9
 
-[最新准备与本地检查](research/container-api33/evidence/retired-process-owner-preparation.json)：运行源码固定c8052d318bed3cf9c0e37ddc864abea4cc74c816，从本分支HEAD继续。引擎16440679修正一个已由源码确认的竞态：旧进程迟到的onProcessDie原先会按进程名删除替代进程登记，并清理已复用的proc目录与通知。现在仅完全相同的当前ProcessRecord有权退出清理；主动停止在仍拥有登记时清理资源，迟到回调只移除自身旧列表项。它是可复现的源码缺陷，**不能据此断言是56微信失败的已证实原因**。
+运行源码仍固定**c8052d318bed3cf9c0e37ddc864abea4cc74c816**／引擎16440679，唯一研发从本分支HEAD继续。退出回调仅清理完全相同的当前ProcessRecord，主动停止在拥有登记时清理资源；合成被动GPS来源、微信兼容呈现／通用mock、合成extras与零卫星保留。主2.4.35／2400103、宿主0.4／4不变，无新手机页面、权限或实验。
 
-现有云端框架case增加同名替代登记／proc文件canary与旧登记已消失的检查，明确为host单例受控fixture；原真实Guest框架／定位检查保留。目标匿名对照在stop／uninstall前补充最多16项同UID真实AMS进程、Core登记与辅助pidof快照，后置有界日志增加BProcessManager／ActivityStack标签，避免只剩清理后现场。20秒Android编译、完整补丁干净上游索引重放、27项云端驱动与12项发布／配方检查通过；[57实际默认结果已独立验真](research/container-api33/evidence/retired-process-owner-linux-results.json)：Linux7定位4.563秒／19无线0.241秒／七case＋变化UI／447主检查与lint通过；新增退出归属fixture实际通过，真实Guest3020／宿主2954的九路径3.621秒、最老326.568毫秒及三通道计数通过，普通反馈1380字符。Mac122509448125实际构建成功，三档API摘要／58与59来源／三同签名及11材料均匹配c805。它只覆盖Mac构建及受控fixture，不是实际微信采用。**同源ARM64122512447262正在运行，尚无新原生通过**。主2.4.35／2400103、宿主0.4／4保持，不新增手机页面、权限或实验。
+[57原生实际通过已独立验真](research/container-api33/evidence/native-retired-process-owner-pass-results.json)：run40595256036／原生122512447262成功，四档API归档／9原生与59自有来源／三同签名与11材料匹配c805。微信关闭5942→OWN新6420／UID10097、抖音10142→11954／UID10102均到匿名UI；旧主实际消失，清理前Core及真实AMS快照再次确认新主活着。目标有界日志分别记录2／1次已退休回调被忽略；不倒推56旧失败一定由该竞态导致。抖音普通原包主7696／UID10099经48次AMS＋内核检查、实际304.425秒稳定。自有框架14.796秒、7方法6.703秒、独立Guest九路径46.374秒，最老样本1606.406毫秒、取消零回调、合成与mock保留；system_server657稳定，VM及包／staging清理完成。整轮4391.975秒不是启动耗时。
 
-[新的同源交付准备](research/container-api33/evidence/phone-c8052d31-delivery-preparation.json)绑定57的实际own／Linux／Mac归档ID与摘要及当前原生作业；宿主已私签并核对全部415非签名内容、版本／证书／对齐，4,594,179字节、SHA4d1f0725…，公开配方831操作复制4,471,760字节并逐字节恢复，私钥不进Git或CI。当前冻结策略只为新c805候选启用，旧99940失败候选与6625草稿不复用。controller已提交4de425d27de2fa14fb3764ce1f463a4f9e8440bf，[Phone9](https://github.com/soozooq/gogogo/actions/runs/40596941748)已经运行；后续实际结果见下文，准备记录中的尚未启动字段是提交前快照。
+[57默认结果](research/container-api33/evidence/retired-process-owner-linux-results.json)仍有效：Linux7定位／19无线／447主检查与lint、受控退出归属fixture、真实Guest九路径与1380字符反馈均过，Mac仅为实际build-only通过。原生成功只覆盖匿名启动、公共契约及自有消费者，**微信SDK采纳／发送／实时、抖音无线／海外及vivo效果仍未验收**，没有自动同意条款、登录或发送消息。56／55旧失败保留，不追认。
 
-交付会独立有界等待57原生，重新核对四档证据、7方法／九路径、完整300秒主身份／内核／系统清理、退出归属fixture与两个目标清理前活主进程快照，再核对本轮两APK／签名／415内容／profile／447lint／最新源码。只有完整通过才创建qualified-phone下载目录；Release接口若仍失败，保留实际失败与合格下载，不能写成已公开。原生失败、超时、策略关闭／改变或运行源码推进均停止发布。仅早期草稿附件步骤可继续；其他门槛强制。14项本地发布／配方边界已过，含主角色稳定时同名辅助PID消失的真实56记录、主更换／UID错／快照缺失拒绝及旧源码在读现场前拒绝。此前Phone8实际只通过暂停策略作业，打包／发布跳过。公开版仍2.4.34，手机无需新实验。
+## Phone9最终失败原因明确，现有两APK不重建
 
-## Phone9已实际打包，自动publisher正在等待同源原生
+[Phone9打包字节](research/container-api33/evidence/phone-c8052d31-build-and-release-api-results.json)已核对，交付源码4de425d2／run40596941748：主f1796794…／40,408,202字节／证书6eec4ddd…，宿主4d1f0725…／4,594,179字节／证书25bfd6e2…；447检查／lint、profile／签名／版本／对齐及415非签名内容均过。旧记录中的native等待字段是当时快照，最终57原生见上文。
 
-[两包与HTTP403实际回执](research/container-api33/evidence/phone-c8052d31-build-and-release-api-results.json)：运行c805，交付4de425d2／run40596941748，stage122515194094成功。两档API归档／固定profile／扁平六文件／447主检查与lint／版本／签名／对齐／宿主415内容已独立核对。主2.4.35／2400103、40,408,202字节、SHAf1796794…、证书6eec4ddd…；宿主0.4／4、4,594,179字节、SHA4d1f0725…、证书25bfd6e2…。本轮主摘要与旧Phone7不同，不能借旧包摘要。
+[Phone9发布作业122516449530最终失败](research/container-api33/evidence/phone9-publication-download-failure-results.json)：等到57全部成功后，下载第一份own归档时错误地带上octet-stream Accept，接口实际返回**HTTP415 Unsupported Accept header，必须接受JSON**。四档云端资格核对尚未执行，qualified下载目录未生成，不能说备用包已交付。此前创建Release草稿的HTTP403 Resource not accessible by integration是另一个已记录问题；Phone7未捕获HTTP原因，不倒推它也为403。
 
-创建新release草稿仍失败，此次已真实捕获GitHub响应：**HTTP403 Resource not accessible by integration**。这是当前CI凭据调用该发布接口被拒绝，不能据此断言确切权限设置或Phone7相同原因；没有新c805草稿／tag或公开包。早期附件步骤按已配置的可继续规则保留失败，其余打包检查完成；不能把stage成功说成草稿成功。
+[交付恢复准备](research/container-api33/evidence/phone9-download-recovery-preparation.json)只改controller：Actions ZIP使用正常API媒体类型，release asset才使用octet-stream；冻结Phone9成功stage122515194094及归档12776327526／SHA1a3f41bb…，跳过新打包。新执行会重验57四档实际ID／摘要、原生7方法／九路径／完整300秒主身份／清理前活主／系统清理与原两包／最新源码。执行来源与原构建来源分别记录。仅在全部通过后，Release创建POST若仍是已知integration403，可成功交付已核验Artifact并明确published=false；其他错误不会被当成发布成功。当前恢复作业尚待本次controller提交后触发，**此时没有新的云端合格下载**。
 
-独立publisher **122516449530已实际开始**，正在“Wait for actual matched qualification and verify before publication”步骤等待57原生；不是已通过。它会在所有同源及两包门槛全部通过后创建条件下载 `qualified-phone-preview-2.4.35-c8052d31-40596941748`，目录未创建前不声称有合格下载。随后若Release接口仍拒绝，发布作业可能失败但always上传已合格下载与真实失败；不能把这种结果记成已公开。无需通过重复打包、借旧原生或取消现有原生来修饰状态。公开2.4.34与旧6625草稿附件的服务器摘要仍保持原样。接手先读实际Phone9／57最终回执；本段是publisher等待中的快照。手机暂不需要操作。
+17项本地发布／配方检查、实际workflow策略片段及使用真实四档／两APK的本地记录API回放通过；回放没有远程POST／上传／发布，不能代替新云端交付回执。无需重跑原生、重建APK或让手机重复实验。根入口与两个Draft PR只维持这一条研发线。公开2.4.34和旧6625草稿的tag、正文、附件保持原样；新的合格Artifact也不会被写成已公开Release。
 
 ## 最近完成结果：56原生微信重开失败，Phone7已打包但未发布
 

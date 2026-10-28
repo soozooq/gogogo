@@ -32,7 +32,10 @@
       "sha256": "6c906651cbe6ef767df7506e97cc9035e6c3162244d6f8f007cf71325b483c1b"
     },
     "native": {
-      "name": "cuttlefish-arm-host-57"
+      "name": "cuttlefish-arm-host-57",
+      "id": 12780177446,
+      "bytes": 1861179,
+      "sha256": "d0b6bb944c7942e6583daaf06705397f68ffe135e11e8f5bfe85f4e643b88745"
     }
   },
   "tag": "preview-2.4.35-container-c8052d31",
@@ -62,5 +65,14 @@
       "bytes": 4594179
     }
   },
-  "requires_retired_process_fixture": true
+  "requires_retired_process_fixture": true,
+  "reuse_delivery": {
+    "runtime_commit": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+    "run_id": 40596941748,
+    "commit": "4de425d27de2fa14fb3764ce1f463a4f9e8440bf",
+    "stage_job_id": 122515194094,
+    "artifact_id": 12776327526,
+    "artifact_bytes": 26831512,
+    "artifact_sha256": "1a3f41bba0322c8c9009ac892e1a5a580e0139bb9e9fcca783d896ac88d7bbcf"
+  }
 }

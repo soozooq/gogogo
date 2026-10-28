@@ -1,8 +1,8 @@
 # 可复用基础审计
 
-[Phone9实际打包回执](evidence/phone-c8052d31-build-and-release-api-results.json)已核对：主f1796794…／40,408,202字节，宿主4d1f0725…／4,594,179字节，签名／版本／profile／447lint／415内容及两档API归档通过。新草稿POST实际HTTP403 Resource not accessible by integration，无新draft或发布；stage成功只表示打包和已配置可继续的附件失败。publisher122516449530实际在等待同源原生，只有完整资格后才有条件qualified下载；当前尚非合格交付。公开34／旧6625draft保持。
+当前运行c805／16440679。[57完整原生已独立验真通过](evidence/native-retired-process-owner-pass-results.json)：四档API／9原生与59来源／签名材料匹配，微信5942→6420、抖音10142→11954匿名双模式与清理前活主确认，自有7方法6.703秒／九路径46.374秒，普通抖音304.425秒／48次AMS内核身份，system_server657及VM／包清理通过。实际目标SDK位置与vivo未验收，旧56失败不追认。
 
-当前由[根入口](../../PROJECT_STATUS.md)继续，运行固定c805／16440679，退出回调仅清理同一当前记录。[57默认实际验真](evidence/retired-process-owner-linux-results.json)：新增host退出归属fixture、7定位／19无线／真实九路径3.621秒、1380字符反馈、447主检查／lint和Mac实际构建通过，三档归档／58及59来源／三同签名及材料匹配；原生122512447262运行中，不能称微信重开已修好。[新同源交付准备](evidence/phone-c8052d31-delivery-preparation.json)宿主4d1f0725…／4,594,179字节，415内容／公开配方恢复已核对；14边界检查过，冻结57实际归档与新清理前主身份／退出fixture门槛。controller提交后触发新Phone任务，完整同源后才qualified下载／发布，运行前不称交付。56失败、Phone7接口原因未知及Phone8实际暂停保留，旧public34与6625draft不覆盖，无新手机实验。以下历史快照。
+[Phone9最终失败](evidence/phone9-publication-download-failure-results.json)是下载own ZIP误设octet-stream导致415，未生成云端合格归档；早期Release创建403是独立问题。两APK f1796794…／4d1f0725…仍匹配57，签名／profile／447lint／415内容已核对。[恢复准备](evidence/phone9-download-recovery-preparation.json)固定原成功stage／归档跳过重建，所有四档／原生／两包／最新源码门槛保留；只对完整资格后的已知Release创建403提供明确published=false的Artifact交付。17检查及真实归档／APK的本地记录API回放过，未远程上传，恢复云端执行待controller提交。跟随[主入口](../../PROJECT_STATUS.md)实际回执。以下保留历史快照。
 
 [55实际失败](evidence/passive-fixture-attribution-failure-results.json)已独立核对API归档／58与59来源／签名材料：7定位方法6成功1归属断言失败，Wechat受控三通道通过；普通host新增测试未绑定虚拟包，九路径／无线／普通反馈／原生未执行。[修正fixture身份](evidence/passive-fixture-identity-preparation.json)建立明确generic包及实际Binder PID断言，保留全部计数／来源断言及7方法、finally恢复状态；生产420b8399与手机版本不变，最终15秒构建通过，新同源待验。旧草稿不发，不要求手机实验。
 

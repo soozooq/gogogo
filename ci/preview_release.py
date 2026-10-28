@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Stage a draft, then independently qualify the same source before publication."""
+"""Qualify pinned phone packages, then publish or deliver the verified artifact."""
 import argparse
 import base64
 import hashlib
 import importlib.util
 import json
+import os
 import re
 import shutil
 import stat
@@ -52,9 +53,75 @@ def save(path, value):
 
 
 def download(path, destination):
+    command = ['gh', 'api']
+    if re.fullmatch(r'releases/assets/[1-9][0-9]*', path):
+        command += ['-H', 'Accept: application/octet-stream']
+    else:
+        require(re.fullmatch(r'actions/artifacts/[1-9][0-9]*/zip', path), 'Unsupported binary download endpoint')
+        # Actions ZIPs use the normal GitHub API media type before redirecting.
+        # An octet-stream Accept header on this endpoint is rejected with HTTP415.
+    command += ['repos/' + REPO + '/' + path]
     with destination.open('xb') as stream:
-        subprocess.run(['gh', 'api', '-H', 'Accept: application/octet-stream',
-                        'repos/' + REPO + '/' + path], stdout=stream, check=True)
+        subprocess.run(command, stdout=stream, check=True)
+
+
+def delivery_reference(config, current_run, current_commit):
+    pin = config.get('reuse_delivery')
+    if pin is None:
+        require(type(current_run) is int and current_run > 0
+                and re.fullmatch('[0-9a-f]{40}', current_commit), 'Current delivery identity missing')
+        return {'run_id': current_run, 'commit': current_commit, 'reused': False}
+    require(pin['runtime_commit'] == config['runtime_commit']
+            and re.fullmatch('[0-9a-f]{40}', pin['commit'])
+            and re.fullmatch('[0-9a-f]{64}', pin['artifact_sha256'])
+            and all(type(pin[k]) is int and pin[k] > 0
+                    for k in ['run_id', 'stage_job_id', 'artifact_id', 'artifact_bytes']),
+            'Frozen reusable delivery identity differs')
+    return {'run_id': pin['run_id'], 'commit': pin['commit'], 'reused': True}
+
+
+def validate_reused_delivery(config, run_id, commit, stage, artifact):
+    if 'reuse_delivery' not in config:
+        return
+    pin = config['reuse_delivery']
+    ref = delivery_reference(config, run_id, commit)
+    require(run_id == ref['run_id'] and commit == ref['commit']
+            and stage['id'] == pin['stage_job_id'] and stage['conclusion'] == 'success'
+            and artifact['id'] == pin['artifact_id']
+            and artifact['size_in_bytes'] == pin['artifact_bytes']
+            and artifact['digest'] == 'sha256:' + pin['artifact_sha256'],
+            'Reused package, staging job or frozen archive differs')
+
+
+def save_qualified_release_refusal(error, work, qualified_dir, qualified):
+    """A known creation refusal may end in artifact delivery, never publication."""
+    if not isinstance(error, subprocess.CalledProcessError):
+        return False
+    command = ['gh', 'api', '--method', 'POST', 'repos/' + REPO + '/releases', '--input', '-']
+    try:
+        response = json.loads(error.output or b'{}')
+    except (ValueError, TypeError):
+        return False
+    if error.cmd != command or not isinstance(response, dict) \
+            or response.get('message') != 'Resource not accessible by integration' \
+            or str(response.get('status')) != '403' or b'HTTP 403' not in (error.stderr or b''):
+        return False
+    require(qualified_dir.is_dir() and qualified['published'] is False
+            and all(qualified[k] is True for k in [
+                'all_four_archive_sources_signatures_materials_verified',
+                'native_seven_methods_and_real_guest_nine_paths_verified',
+                'profile_main447lint_versions_signatures_and_415_entries_verified']),
+            'Artifact fallback requires full existing qualification')
+    receipt = {**qualified, 'schema': 'GOGOGO_QUALIFIED_ARTIFACT_RELEASE_UNAVAILABLE_V1',
+               'delivery_state': 'QUALIFIED_ARTIFACT_READY_RELEASE_CREATION_REFUSED',
+               'qualified_download_ready': True, 'published': False,
+               'release_server_bytes_and_tag': 'NOT_VERIFIED_RELEASE_CREATION_REFUSED_HTTP403',
+               'release_error': response, 'api_details': getattr(error, '__notes__', [])}
+    save(work / 'release-unavailable.json', receipt)
+    save(qualified_dir / 'DELIVERY-STATUS.json', receipt)
+    print(json.dumps({'qualified_download_ready': True, 'published': False,
+                      'release_creation': 'REFUSED_HTTP403_RESOURCE_NOT_ACCESSIBLE_BY_INTEGRATION'}))
+    return True
 
 
 def extract(path, destination, maximum=128 * 1024 * 1024):
@@ -304,15 +371,17 @@ def publish(args, config, config_path):
         require(re.findall(r'^OK \((\d+) tests?\)$', text, re.M) == [str(count)]
                 and 'FAILURES!!!' not in text, 'Required Linux methods differ')
 
-    # The publication job consumes its own completed staging job, not another run.
+    # A frozen replay reuses exact already-built bytes, while repeating every gate.
     delivery = api('actions/runs/' + str(args.delivery_run))
     require(delivery['head_sha'] == args.delivery_commit, 'Delivery workflow source differs')
     jobs = api('actions/runs/' + str(args.delivery_run) + '/jobs?filter=all&per_page=100')
-    require(latest_jobs(jobs)['stage-draft']['conclusion'] == 'success', 'Draft staging did not succeed')
+    stage_job = latest_jobs(jobs)['stage-draft']
+    require(stage_job['conclusion'] == 'success', 'Draft staging did not succeed')
     values = api('actions/runs/' + str(args.delivery_run) + '/artifacts?per_page=100')['artifacts']
     matches = [v for v in values if v['name'] == config['delivery_artifact_name']]
     require(len(matches) == 1, 'Ambiguous/missing current phone artifact')
     item = matches[0]
+    validate_reused_delivery(config, args.delivery_run, args.delivery_commit, stage_job, item)
     require(not item['expired'] and item['workflow_run']['id'] == args.delivery_run
             and item['workflow_run']['head_sha'] == args.delivery_commit, 'Phone artifact belongs to another source/run')
     phone_zip = work / 'phone.zip'
@@ -359,6 +428,8 @@ def publish(args, config, config_path):
     qualified = {'schema': 'GOGOGO_MATCHED_QUALIFIED_PHONE_ARTIFACT_V1',
                  'runtime_commit': config['runtime_commit'], 'qualification_run_id': config['qualification_run_id'],
                  'delivery_commit': args.delivery_commit, 'delivery_run_id': args.delivery_run,
+                 'qualification_execution_run_id': int(os.environ['GITHUB_RUN_ID']) if os.environ.get('GITHUB_RUN_ID') else None,
+                 'qualification_execution_commit': os.environ.get('GITHUB_SHA'),
                  'all_four_archive_sources_signatures_materials_verified': True,
                  'native_seven_methods_and_real_guest_nine_paths_verified': True,
                  'profile_main447lint_versions_signatures_and_415_entries_verified': True,
@@ -375,7 +446,12 @@ def publish(args, config, config_path):
     live_policy_matches(config_path, config)
     draft_work = work / 'release-draft'
     draft_work.mkdir()
-    release = attach_draft(config, manifest, work / 'phone', draft_work)
+    try:
+        release = attach_draft(config, manifest, work / 'phone', draft_work)
+    except subprocess.CalledProcessError as error:
+        if save_qualified_release_refusal(error, work, qualified_dir, qualified):
+            return
+        raise
     validate_release(release, config, manifest, draft=True, complete=True)
     save(work / 'release-before.json', release)
     for asset in release['assets']:
