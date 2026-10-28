@@ -27,8 +27,11 @@
 | [59](research/container-api33/evidence/visual-stop-overlay-and-capture-probe-failure-results.json)／0b3348f3 | 复制已过，Stop后10秒PID3443仍在；日志有剪贴板浮层但原因未证实。驱动只处理已知Android13浮层再点Stop，原10秒PID／CLOSE断言保留；60、61全入口实际通过。截图前pm path缺包正常exit1误判也已修正 |
 | [60](research/container-api33/evidence/visual-clean-boundary-failure-results.json)／47550800 | 全7运行case、7定位／19无线／独立九路径／447lint及Mac build-only均过，反馈1381字符、正常停止通过；截图因运行case有意保留己方包而按保护拒绝。已改到moving capture验证清理后执行，未删现存安装保护 |
 | [61](research/container-api33/evidence/visual-first-layout-geometry-failure-results.json)／117563a2 | 全7运行case／447lint／Mac再过。实际UI测试首个搜索控件48dp可见高度断言失败，未保存当时几何／截图，原因未知；system_server555稳定、三己方包清理及显示设置恢复过。现等待稳定几何、用同一自动化视口与dp换算，记录实际矩形并收集全部profile，再统一判失败；48dp和全部profile要求不变 |
+| [62](research/container-api33/evidence/visual-large-type-layout-results.json)／a4b0d107 | 全7运行case／447lint／Mac过，实际取回16张PNG／XML（14个常规阶段＋2张失败现场）。UI 71.086秒：360dp两主题流程完成；320dp／1.5字体两主题坐标框未被自动化滚动找到，整轮失败。普通“键盘”PNG早于输入法出现，不能算真实键盘验收。根据原图确认地图主操作隐藏、大字搜索按钮换行、预览头占空间，正按下文修正 |
 
-58～61实际三档API摘要／73来源／三同签名与每包11材料均已独立核对。61渲染用x86主包38,492,094字节、SHA3d204ee7…，不是ARM手机包。**仍没有新界面画面通过的结论，也没有新候选交付。** 本轮下一步是同源云端实际16图（360dp／320dp＋1.5倍字体、浅深色、地图／搜索／预览／键盘），并据原PNG继续修排版。失败profile保留且使整轮失败，不让一项失败遮住其他主题画面；不重跑昂贵原生目标对照。
+58～62实际三档API摘要／73来源／三同签名与每包11材料均已独立核对。渲染x86包不是ARM手机包，62地图瓦片及地图SDK联网加载未验收。**完整新界面尚未通过，也没有新候选交付。** 新修改将地图主操作固定在滚动区外，地点库等保留在“更多”，大字体去除装饰标语；搜索服务改矢量图标、说明与署名压缩；预览页键盘显示时收起页头。仍是2.4.36／宿主0.5，未分发前继续同一候选。主447／lint／ARM64构建52秒、宿主／驱动33秒及launcher检查通过，引擎未改。
+
+自动化滚动不再因缺少滚动确认立即反向，收图会等待输入文本已显示和真实IME窗口；临时启用云端软件键盘并还原设置，同时检查输入框与固定操作可见。原48dp、四profile全部通过及16个正确阶段要求保留。下一步收新同源画面，继续以原PNG修排版；不增加手机实验或重跑昂贵原生目标对照。
 
 ## 当前可下载候选：2.4.35，Phone10合格Artifact已实际交付
 

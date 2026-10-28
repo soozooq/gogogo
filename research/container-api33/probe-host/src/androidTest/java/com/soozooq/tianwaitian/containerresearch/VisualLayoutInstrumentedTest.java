@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Rect;
+import android.view.accessibility.AccessibilityWindowInfo;
 import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -72,10 +73,13 @@ public final class VisualLayoutInstrumentedTest {
                 capture(profile + "-map");
                 assertTapTarget(required(MAIN, "twt_home_search"));
                 assertTapTarget(required(MAIN, "twt_bottom_navigation"));
+                assertTapTarget(required(MAIN, "twt_home_controls"));
                 required(MAIN, "twt_home_search").click();
                 UiObject2 query = required(MAIN, "twt_search_query");
                 assertTapTarget(query);
                 query.setText("北京");
+                assertTrue("Search input applied before capture", device.wait(Until.hasObject(
+                        By.res(MAIN, "twt_search_query").text("北京")), 10000));
                 capture(profile + "-search");
 
                 context.startActivity(new Intent(context, ProbeActivity.class).setAction(ProbeActivity.PREFILL_ACTION)
@@ -94,6 +98,12 @@ public final class VisualLayoutInstrumentedTest {
                 latitude = reveal("target_latitude");
                 latitude.click();
                 latitude.setText("-33.86");
+                assertTrue("Coordinate edit applied before capture", device.wait(Until.hasObject(
+                        By.res(HOST, "target_latitude").text("-33.86")), 10000));
+                long imeDeadline = SystemClock.elapsedRealtime() + 10000;
+                while (!imeVisible() && SystemClock.elapsedRealtime() < imeDeadline) SystemClock.sleep(50);
+                assertTrue("Actual input method visible for keyboard layout", imeVisible());
+                assertTapTarget(reveal("target_latitude"));
                 assertTapTarget(required(HOST, "open_guest"));
                 assertTapTarget(required(HOST, "copy_preview_feedback"));
                 capture(profile + "-keyboard");
@@ -150,14 +160,24 @@ public final class VisualLayoutInstrumentedTest {
     }
 
     private UiObject2 reveal(String id) {
-        for (int n = 0; n < 8; n++) {
+        for (int n = 0; n < 11; n++) {
             UiObject2 node = device.findObject(By.res(HOST, id));
             if (node != null && node.getVisibleBounds().height() >= unitsForDp(48)) return node;
+            if (n == 10) break;
             UiObject2 form = required(HOST, "preview_form");
-            if (!form.scroll(Direction.DOWN, 0.5f)) form.scroll(Direction.UP, 1f);
+            // Re-query after every real swipe. Some ScrollViews move but do not
+            // acknowledge scrolling: don't undo that movement on a false return.
+            form.scroll(n < 5 ? Direction.DOWN : Direction.UP, 0.6f);
         }
         fail("Coordinate field unreachable: " + id);
         return null;
+    }
+
+    private boolean imeVisible() {
+        for (AccessibilityWindowInfo window : InstrumentationRegistry.getInstrumentation().getUiAutomation().getWindows()) {
+            if (window.getType() == AccessibilityWindowInfo.TYPE_INPUT_METHOD) return true;
+        }
+        return false;
     }
 
     private int unitsForDp(int dp) {
@@ -189,7 +209,8 @@ public final class VisualLayoutInstrumentedTest {
         assertTrue(device.takeScreenshot(new File(evidence, name + ".png")));
         device.dumpWindowHierarchy(new File(evidence, name + ".xml"));
         pages.put(new JSONObject().put("name", name).put("automation_viewport_width", device.getDisplayWidth())
-                .put("automation_viewport_height", device.getDisplayHeight()).put("profile_width_dp", profileWidthDp));
+                .put("automation_viewport_height", device.getDisplayHeight()).put("profile_width_dp", profileWidthDp)
+                .put("input_method_window_visible", imeVisible()));
     }
 
     private String shell(String command) throws Exception {

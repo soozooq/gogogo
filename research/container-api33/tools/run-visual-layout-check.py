@@ -55,8 +55,10 @@ try:
     result['system_server_before'] = shell('pidof', 'system_server')
     for key, command in {'size': ['wm', 'size'], 'density': ['wm', 'density'],
                          'font': ['settings', 'get', 'system', 'font_scale'],
-                         'night': ['settings', 'get', 'secure', 'ui_night_mode']}.items():
+                         'night': ['settings', 'get', 'secure', 'ui_night_mode'],
+                         'hardware_ime': ['settings', 'get', 'secure', 'show_ime_with_hard_keyboard']}.items():
         settings[key] = shell(*command)
+    shell('settings', 'put', 'secure', 'show_ime_with_hard_keyboard', '1')
     for package, path in paths.items():
         assert path.is_file() and not package_present(package), 'Existing own install preserved'
     result['apks'] = {package: {'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
@@ -106,6 +108,9 @@ finally:
         shell('settings', 'delete' if font == 'null' else 'put', 'system', 'font_scale',
               *([] if font == 'null' else [font]))
         shell('cmd', 'uimode', 'night', {'1': 'no', '2': 'yes', '0': 'auto'}.get(settings.get('night'), 'auto'))
+        hardware_ime = settings.get('hardware_ime', 'null')
+        shell('settings', 'delete' if hardware_ime == 'null' else 'put', 'secure',
+              'show_ime_with_hard_keyboard', *([] if hardware_ime == 'null' else [hardware_ime]))
     except Exception:
         restored = False
     result['display_settings_restored'] = restored

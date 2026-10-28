@@ -19,6 +19,7 @@ import android.provider.DocumentsContract;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.WindowInsets;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -91,6 +92,14 @@ public final class ProbeActivity extends Activity {
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
                 | WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
         setContentView(R.layout.preview_entry);
+        if (Build.VERSION.SDK_INT >= 30) {
+            View header = findViewById(R.id.preview_header);
+            findViewById(R.id.preview_root).setOnApplyWindowInsetsListener((view, insets) -> {
+                int visible = insets.isVisible(WindowInsets.Type.ime()) ? View.GONE : View.VISIBLE;
+                if (header.getVisibility() != visible) header.setVisibility(visible);
+                return insets;
+            });
+        }
         apps = findViewById(R.id.guest_choice);
         installed = findViewById(R.id.import_installed_guest);
         choose = findViewById(R.id.import_guest);
