@@ -15,14 +15,14 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.provider.DocumentsContract;
-import android.text.InputType;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import java.io.File;
@@ -87,34 +87,39 @@ public final class ProbeActivity extends Activity {
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         saved = getSharedPreferences("research-entry", MODE_PRIVATE);
-        LinearLayout root = new LinearLayout(this);
-        root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(20), dp(24), dp(20), dp(24));
-        TextView title = new TextView(this);
-        title.setText("天外天 · 无 Root 预览\n使用选点合成位置。原版导入后在此入口登录，实际位置效果待确认。");
-        title.setTextSize(18);
-        root.addView(title);
-        apps = new Spinner(this); apps.setId(R.id.guest_choice);
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                | WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+        setContentView(R.layout.preview_entry);
+        apps = findViewById(R.id.guest_choice);
+        installed = findViewById(R.id.import_installed_guest);
+        choose = findViewById(R.id.import_guest);
+        coordinates = findViewById(R.id.coordinate_section);
+        latitude = findViewById(R.id.target_latitude);
+        longitude = findViewById(R.id.target_longitude);
+        open = findViewById(R.id.open_guest);
+        feedback = findViewById(R.id.copy_preview_feedback);
+        status = findViewById(R.id.import_status);
+        adaptActionRows();
         try { entries = GuestImport.catalog(this); }
-        catch (Exception error) { title.setText("准入清单读取失败，请重新构建研究包。"); setContentView(root); return; }
-        apps.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, entries));
+        catch (Exception error) {
+            status.setText("应用清单读取失败，请重新安装预览包。");
+            open.setEnabled(false); choose.setEnabled(false); installed.setEnabled(false);
+            feedback.setEnabled(false); return;
+        }
+        ArrayAdapter<GuestImport.Entry> adapter = new ArrayAdapter<>(this,
+                R.layout.preview_spinner_item, entries);
+        adapter.setDropDownViewResource(R.layout.preview_spinner_item);
+        apps.setAdapter(adapter);
         IncomingTarget incoming = incomingTarget();
         String previous = saved.getString("selected", "com.android.gpstest.osmdroid");
         if (incoming != null) previous = incoming.packageName;
         for (int i = 0; i < entries.size(); i++) if (entries.get(i).packageName.equals(previous)) apps.setSelection(i);
-        root.addView(apps);
-        Button download = new Button(this); download.setText("获取对应版本的原版 APK");
+        Button download = findViewById(R.id.download_original);
         download.setOnClickListener(v -> {
             try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(selected().url))); }
             catch (android.content.ActivityNotFoundException error) { status.setText("请使用浏览器打开官方发布页下载对应版本。"); }
         });
-        root.addView(download);
-        LinearLayout imports = new LinearLayout(this);
-        installed = new Button(this); installed.setId(R.id.import_installed_guest);
-        installed.setText("导入手机已装版本");
         installed.setOnClickListener(v -> importChosen(selected(), null, true));
-        imports.addView(installed, new LinearLayout.LayoutParams(0, -2, 1));
-        choose = new Button(this); choose.setId(R.id.import_guest); choose.setText("选择原版 APK");
         choose.setOnClickListener(v -> {
             pendingImport = selected();
             Intent pick = new Intent(Intent.ACTION_OPEN_DOCUMENT);
@@ -124,44 +129,41 @@ public final class ProbeActivity extends Activity {
                     "com.android.externalstorage.documents", "primary:Download"));
             startActivityForResult(pick, 1);
         });
-        imports.addView(choose, new LinearLayout.LayoutParams(0, -2, 1));
-        root.addView(imports);
-        coordinates = new LinearLayout(this); coordinates.setOrientation(LinearLayout.VERTICAL);
-        TextView hint = new TextView(this);
+        TextView hint = findViewById(R.id.coordinate_hint);
         hint.setText(incoming == null ? "目标坐标（WGS84）" : "已带入地图选点（WGS84），确认后应用");
-        coordinates.addView(hint);
-        latitude = coordinate(coordinates, R.id.target_latitude, "纬度 −90～90",
-                incoming == null ? saved.getString("latitude", "38.125") : Double.toString(incoming.latitude));
-        longitude = coordinate(coordinates, R.id.target_longitude, "经度 −180～180",
-                incoming == null ? saved.getString("longitude", "-121.875") : Double.toString(incoming.longitude));
-        root.addView(coordinates);
-        open = new Button(this); open.setId(R.id.open_guest); open.setOnClickListener(v -> openSelected()); root.addView(open);
-        Button stop = new Button(this); stop.setId(R.id.stop_guest); stop.setText("停止预览");
+        latitude.setText(incoming == null ? saved.getString("latitude", "38.125") : Double.toString(incoming.latitude));
+        longitude.setText(incoming == null ? saved.getString("longitude", "-121.875") : Double.toString(incoming.longitude));
+        open.setOnClickListener(v -> openSelected());
+        Button stop = findViewById(R.id.stop_guest);
         stop.setOnClickListener(v -> {
             try { stopActive(); status.setText("已请求停止；可修改坐标后重新打开。"); }
             catch (RuntimeException error) { status.setText("停止请求失败，请稍后重试。"); }
         });
-        LinearLayout actions = new LinearLayout(this);
-        actions.addView(stop, new LinearLayout.LayoutParams(0, -2, 1));
-        feedback = new Button(this); feedback.setId(R.id.copy_preview_feedback); feedback.setText("一键复制反馈");
         feedback.setOnClickListener(v -> chooseFeedbackResult());
-        actions.addView(feedback, new LinearLayout.LayoutParams(0, -2, 1)); root.addView(actions);
-        status = new TextView(this); status.setId(R.id.import_status); root.addView(status);
         apps.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 saved.edit().putString("selected", selected().packageName).apply(); refresh();
             }
             public void onNothingSelected(AdapterView<?> parent) { }
         });
-        ScrollView scroll = new ScrollView(this); scroll.addView(root); setContentView(scroll);
         refresh();
     }
 
-    private EditText coordinate(LinearLayout parent, int id, String hint, String value) {
-        EditText edit = new EditText(this); edit.setId(id); edit.setHint(hint); edit.setText(value);
-        edit.setSingleLine(true);
-        edit.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL | InputType.TYPE_NUMBER_FLAG_SIGNED);
-        parent.addView(edit); return edit;
+    private void adaptActionRows() {
+        // Let labels grow at the user's font size. The main action and feedback
+        // remain outside the scrolling form, including while editing coordinates.
+        if (getResources().getConfiguration().fontScale <= 1.2f
+                && getResources().getConfiguration().screenWidthDp >= 320) return;
+        for (int id : new int[] {R.id.import_actions, R.id.coordinate_fields, R.id.preview_actions}) {
+            LinearLayout row = findViewById(id);
+            row.setOrientation(LinearLayout.VERTICAL);
+            for (int i = 0; i < row.getChildCount(); i++) {
+                View child = row.getChildAt(i);
+                child.setLayoutParams(new LinearLayout.LayoutParams(
+                        child instanceof android.widget.Space ? 1 : ViewGroup.LayoutParams.MATCH_PARENT,
+                        child instanceof android.widget.Space ? dp(8) : ViewGroup.LayoutParams.WRAP_CONTENT));
+            }
+        }
     }
 
     private void refresh() {

@@ -72,7 +72,7 @@ public final class GoGoUi {
 
         TextView tagline = new TextView(context);
         tagline.setText(R.string.twt_tagline);
-        tagline.setTextSize(11);
+        tagline.setTextSize(12);
         tagline.setTextColor(color(context, R.color.gogogo_text_muted));
         words.addView(tagline, matchWrap());
         strip.addView(words, wordLp);
@@ -231,7 +231,7 @@ public final class GoGoUi {
     public static TextView heroTitle(Context context, String text) {
         TextView view = new TextView(context);
         view.setText(text);
-        view.setTextSize(28);
+        view.setTextSize(26);
         view.setTextColor(color(context, R.color.gogogo_text));
         view.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         view.setGravity(Gravity.START);
@@ -296,8 +296,8 @@ public final class GoGoUi {
     public static MaterialCardView card(Context context) {
         MaterialCardView card = new MaterialCardView(context);
         card.setCardBackgroundColor(color(context, R.color.gogogo_surface));
-        card.setRadius(dp(context, 18));
-        card.setCardElevation(dp(context, 1));
+        card.setRadius(dp(context, 20));
+        card.setCardElevation(0);
         card.setStrokeColor(color(context, R.color.gogogo_border));
         card.setStrokeWidth(dp(context, 1));
         card.setUseCompatPadding(false);
@@ -317,10 +317,7 @@ public final class GoGoUi {
             String text,
             View.OnClickListener listener) {
         MaterialButton button = baseButton(context, text, listener);
-        button.setBackgroundTintList(ColorStateList.valueOf(
-                color(context, R.color.gogogo_primary)));
-        button.setTextColor(color(context, R.color.gogogo_on_primary));
-        button.setStrokeWidth(0);
+        setActionEmphasis(button, true);
         return button;
     }
 
@@ -329,13 +326,20 @@ public final class GoGoUi {
             String text,
             View.OnClickListener listener) {
         MaterialButton button = baseButton(context, text, listener);
-        button.setBackgroundTintList(ColorStateList.valueOf(
-                color(context, R.color.gogogo_surface)));
-        button.setTextColor(color(context, R.color.gogogo_primary));
-        button.setStrokeWidth(dp(context, 1));
-        button.setStrokeColor(ColorStateList.valueOf(
-                color(context, R.color.gogogo_border)));
+        setActionEmphasis(button, false);
         return button;
+    }
+
+    public static void setActionEmphasis(MaterialButton button, boolean primary) {
+        Context context = button.getContext();
+        button.setBackgroundTintList(buttonColors(context,
+                primary ? R.color.gogogo_primary : R.color.gogogo_surface,
+                R.color.gogogo_surface_alt));
+        button.setTextColor(buttonColors(context,
+                primary ? R.color.gogogo_on_primary : R.color.gogogo_primary,
+                R.color.gogogo_text_muted));
+        button.setStrokeWidth(primary ? 0 : dp(context, 1));
+        button.setStrokeColor(ColorStateList.valueOf(color(context, R.color.gogogo_border)));
     }
 
     public static MaterialButton dangerButton(
@@ -345,7 +349,8 @@ public final class GoGoUi {
         MaterialButton button = baseButton(context, text, listener);
         button.setBackgroundTintList(ColorStateList.valueOf(
                 color(context, R.color.gogogo_surface)));
-        button.setTextColor(color(context, R.color.gogogo_danger));
+        button.setTextColor(buttonColors(context,
+                R.color.gogogo_danger, R.color.gogogo_text_muted));
         button.setStrokeWidth(dp(context, 1));
         button.setStrokeColor(ColorStateList.valueOf(
                 color(context, R.color.gogogo_border)));
@@ -358,7 +363,8 @@ public final class GoGoUi {
             View.OnClickListener listener) {
         MaterialButton button = baseButton(context, text, listener);
         button.setBackgroundTintList(ColorStateList.valueOf(Color.TRANSPARENT));
-        button.setTextColor(color(context, R.color.gogogo_primary));
+        button.setTextColor(buttonColors(context,
+                R.color.gogogo_primary, R.color.gogogo_text_muted));
         button.setStrokeWidth(0);
         button.setInsetTop(0);
         button.setInsetBottom(0);
@@ -375,17 +381,40 @@ public final class GoGoUi {
                 com.google.android.material.R.attr.materialButtonOutlinedStyle);
         button.setText(text);
         button.setAllCaps(false);
-        button.setTextSize(14);
-        button.setAllCaps(false);
+        button.setTextSize(15);
+        button.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         button.setSingleLine(false);
         button.setMaxLines(3);
         button.setMinWidth(0);
         button.setGravity(Gravity.CENTER);
-        button.setCornerRadius(dp(context, 14));
-        button.setMinHeight(dp(context, 48));
+        button.setCornerRadius(dp(context, 16));
+        button.setMinHeight(dp(context, 52));
+        button.setMinimumHeight(dp(context, 52));
+        button.setPadding(dp(context, 16), dp(context, 10),
+                dp(context, 16), dp(context, 10));
+        button.setStateListAnimator(null);
         button.setInsetTop(dp(context, 2));
         button.setInsetBottom(dp(context, 2));
         button.setOnClickListener(listener);
+        return button;
+    }
+
+    private static ColorStateList buttonColors(Context context, int enabled, int disabled) {
+        return new ColorStateList(new int[][] {
+                new int[] {-android.R.attr.state_enabled}, new int[] {}},
+                new int[] {color(context, disabled), color(context, enabled)});
+    }
+
+    /** Vector icons keep controls consistent across fonts and Android vendors. */
+    public static MaterialButton iconButton(Context context, int icon, String description,
+                                             View.OnClickListener listener) {
+        MaterialButton button = textButton(context, "", listener);
+        button.setIcon(ContextCompat.getDrawable(context, icon));
+        button.setIconTint(ColorStateList.valueOf(color(context, R.color.gogogo_primary)));
+        button.setIconSize(dp(context, 22));
+        button.setIconPadding(0);
+        button.setPadding(dp(context, 13), dp(context, 10), dp(context, 13), dp(context, 10));
+        button.setContentDescription(description);
         return button;
     }
 
@@ -398,7 +427,8 @@ public final class GoGoUi {
         input.setBackground(bg);
         input.setTextColor(color(context, R.color.gogogo_text));
         input.setHintTextColor(color(context, R.color.gogogo_text_muted));
-        input.setTextSize(15);
+        input.setTextSize(16);
+        input.setMinHeight(dp(context, 52));
         input.setSingleLine(true);
         int h = dp(context, 14);
         int v = dp(context, 12);

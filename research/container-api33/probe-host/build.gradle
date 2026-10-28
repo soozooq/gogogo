@@ -8,8 +8,8 @@ android {
         applicationId 'com.soozooq.tianwaitian.containerresearch'
         minSdk 26
         targetSdk 33
-        versionCode 4
-        versionName '0.4-preview'
+        versionCode 5
+        versionName '0.5-preview'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         ndk { abiFilters 'arm64-v8a', 'x86_64' }
     }

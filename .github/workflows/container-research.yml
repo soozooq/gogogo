@@ -131,10 +131,10 @@ jobs:
           echo "$feedback_status" > "$feedback_evidence/returncode.txt"
           exit "$feedback_status"
       - name: Prepare own host, driver and consumer for the same CI run (no original target APKs)
-        if: ${{ inputs.run_cuttlefish_container_probe || contains(github.event.head_commit.message, '[cuttlefish-container]') }}
+        if: ${{ inputs.run_cuttlefish_container_probe || contains(github.event.head_commit.message, '[cuttlefish-container]') || contains(github.event.head_commit.message, '[visual-layout]') }}
         run: python3 research/container-api33/tools/ci_owned_apks.py --workdir "$CONTAINER_RESEARCH_WORKDIR" --output "$RUNNER_TEMP/ci-owned-container-apks" --include-consumer
       - name: Transfer only the self-owned APKs for ARM CI (one day, not a phone release)
-        if: ${{ inputs.run_cuttlefish_container_probe || contains(github.event.head_commit.message, '[cuttlefish-container]') }}
+        if: ${{ inputs.run_cuttlefish_container_probe || contains(github.event.head_commit.message, '[cuttlefish-container]') || contains(github.event.head_commit.message, '[visual-layout]') }}
         uses: actions/upload-artifact@v4
         with:
           name: ci-owned-container-apks-${{ github.sha }}
@@ -146,6 +146,12 @@ jobs:
           if [ -c /dev/kvm ]; then
             sudo chmod a+rw /dev/kvm
           fi
+      - name: Build the own main app for rendering checks only (never a phone APK)
+        run: |
+          set -euo pipefail
+          bash ./gradlew --no-daemon --init-script docs/build-profiles/main-preview-2.4.36.init.gradle --init-script docs/build-profiles/visual-check-x86.init.gradle :app:assembleDebug --console=plain
+          cp app/build/outputs/apk/debug/Go_2.4.36-container-preview_arm64-v8a_debug.apk "$CONTAINER_RESEARCH_WORKDIR/visual-main-x86.apk"
+          echo "TWT_VISUAL_MAIN_APK=$CONTAINER_RESEARCH_WORKDIR/visual-main-x86.apk" >> "$GITHUB_ENV"
       - name: Run ordinary import and calculator regression on x86_64
         run: bash research/container-api33/tools/run-emulator-checks.sh x86_64
       - name: Upload build evidence (no APK distribution)

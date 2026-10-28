@@ -1,0 +1,13 @@
+<resources>
+    <style name="PreviewTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">@color/preview_primary</item>
+        <item name="android:windowBackground">@color/preview_background</item>
+        <item name="android:statusBarColor">@color/preview_background</item>
+        <item name="android:navigationBarColor">@color/preview_surface</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:textColorPrimary">@color/preview_ink</item>
+        <item name="android:textColorSecondary">@color/preview_muted</item>
+    </style>
+</resources>

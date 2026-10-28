@@ -87,11 +87,10 @@ public final class TianwaitianSearchActivity extends AppCompatActivity {
 
         LinearLayout heading = GoGoUi.row(this);
         heading.setGravity(Gravity.CENTER_VERTICAL);
-        MaterialButton back = GoGoUi.textButton(this, "‹", v -> finish());
-        back.setTextSize(23);
-        back.setContentDescription("返回地图首页");
+        MaterialButton back = GoGoUi.iconButton(this, R.drawable.ic_gogogo_back,
+                "返回地图首页", v -> finish());
         heading.addView(back, new LinearLayout.LayoutParams(
-                dp(43), ViewGroup.LayoutParams.WRAP_CONTENT));
+                dp(48), ViewGroup.LayoutParams.WRAP_CONTENT));
         LinearLayout headingText = new LinearLayout(this);
         headingText.setOrientation(LinearLayout.VERTICAL);
         headingText.addView(GoGoUi.heroTitle(this, "搜索地点"), GoGoUi.matchWrap());
@@ -110,6 +109,7 @@ public final class TianwaitianSearchActivity extends AppCompatActivity {
         LinearLayout inputRow = GoGoUi.row(this);
         inputRow.setGravity(Gravity.CENTER_VERTICAL);
         queryField = new EditText(this);
+        queryField.setId(R.id.twt_search_query);
         queryField.setSingleLine(true);
         queryField.setTextSize(15);
         queryField.setHint("城市、街道、建筑或 98.5,16.7");
@@ -119,10 +119,10 @@ public final class TianwaitianSearchActivity extends AppCompatActivity {
         GoGoUi.styleInput(queryField);
         inputRow.addView(queryField, GoGoUi.weighted());
         GoGoUi.addHorizontalGap(this, inputRow, 5);
-        MaterialButton clear = GoGoUi.textButton(this, "×", v -> queryField.setText(""));
-        clear.setContentDescription("清空搜索词");
+        MaterialButton clear = GoGoUi.iconButton(this, R.drawable.ic_close,
+                "清空搜索词", v -> queryField.setText(""));
         inputRow.addView(clear, new LinearLayout.LayoutParams(
-                dp(46), ViewGroup.LayoutParams.WRAP_CONTENT));
+                dp(48), ViewGroup.LayoutParams.WRAP_CONTENT));
         root.addView(inputRow, GoGoUi.matchWrap());
 
         root.addView(GoGoUi.gap(this, 8));

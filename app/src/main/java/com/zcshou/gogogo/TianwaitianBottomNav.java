@@ -66,7 +66,8 @@ public final class TianwaitianBottomNav {
         nav.setId(R.id.twt_bottom_navigation);
         nav.inflateMenu(R.menu.twt_bottom_nav);
         nav.setBackgroundColor(GoGoUi.color(activity, R.color.gogogo_surface));
-        nav.setElevation(GoGoUi.dp(activity, 8));
+        nav.setElevation(0);
+        nav.setItemIconSize(GoGoUi.dp(activity, 23));
         nav.setLabelVisibilityMode(NavigationBarView.LABEL_VISIBILITY_LABELED);
         nav.setItemHorizontalTranslationEnabled(false);
         ColorStateList tint = new ColorStateList(

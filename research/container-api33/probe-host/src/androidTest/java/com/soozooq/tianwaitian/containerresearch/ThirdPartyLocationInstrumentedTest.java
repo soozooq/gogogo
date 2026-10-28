@@ -16,6 +16,7 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.uiautomator.By;
 import androidx.test.uiautomator.BySelector;
 import androidx.test.uiautomator.Configurator;
+import androidx.test.uiautomator.Direction;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject2;
 import androidx.test.uiautomator.StaleObjectException;
@@ -197,11 +198,26 @@ public final class ThirdPartyLocationInstrumentedTest {
 
     private <T> T fresh(BySelector selector, Function<UiObject2, T> action, String description) {
         long deadline = SystemClock.elapsedRealtime() + 30000;
+        int formScrolls = 0;
+        Direction direction = Direction.DOWN;
         while (SystemClock.elapsedRealtime() < deadline) {
             UiObject2 node = device.findObject(selector);
             if (node != null) {
                 try { return action.apply(node); }
                 catch (StaleObjectException changedBeforeAction) { /* Reacquire the replaced node. */ }
+            }
+            // The ordinary form now scrolls independently from its fixed actions.
+            // Only scroll our own form; never scroll a permission or Guest page.
+            if (formScrolls < 6) {
+                UiObject2 form = device.findObject(By.res(
+                        "com.soozooq.tianwaitian.containerresearch", "preview_form"));
+                if (form != null) {
+                    try {
+                        if (!form.scroll(direction, 0.6f)) direction =
+                                direction == Direction.DOWN ? Direction.UP : Direction.DOWN;
+                        formScrolls++;
+                    } catch (StaleObjectException changedBeforeScroll) { /* Reacquire. */ }
+                }
             }
             SystemClock.sleep(50);
         }

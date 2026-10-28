@@ -13,6 +13,14 @@
 
 不新增分支／PR、不自动合并、不删除／强推／重置其他工作区。两个PR保持Draft。手机用户不需要重跑旧实验或切换VPN。
 
+## 界面优化候选：2.4.36／预览宿主0.5，尚未交付
+
+用户新增要求：美术与排版一起优化。地图首页、统一搜索、设置和共享控件改为统一靛蓝色、字体层级、圆角、留白、矢量图标及可读禁用态；地图选点卡限制为实际可用高度，署名移到卡片上方，加载失败显示可重试提示。可用时原版预览为主操作，缺少配套入口时系统模拟控制为主操作。
+
+原版预览改为01选择应用、02确认地点的卡片表单，坐标有常显标签。打开／停止／一键复制反馈固定在底部，小屏大字体转纵向表单；独立浅色／深色主题。沿用原导入、明确打开、停止及1.5秒反馈逻辑，无新增手机实验、权限、依赖或引擎修改。界面约定集中在[DESIGN.md](DESIGN.md)。版本使用新2.4.36／2400104与宿主0.5／5，旧2.4.35下载保持原字节。
+
+[准备记录](research/container-api33/evidence/visual-refresh-preparation.json)：本地主程序447检查／lint／ARM64构建与宿主／驱动构建通过，launcher静态检查通过。本地软件模拟器在应用安装阶段失去package／activity服务，系统日志记录Lost network stack；两个安装均Broken pipe，没有有效界面截图或定位测试结果，VM已结束。新增云端真实Android界面检查覆盖360dp与320dp＋1.5倍字体、浅／深色的16张地图／搜索／预览／键盘截图及48dp点击区域、固定操作可见性、坐标带入不启动Guest／模拟／权限请求；**尚未实际执行，不能称画面通过**。本次只触发默认云端与界面检查，不重跑昂贵原生目标对照，不借57替新APK背书。未更新Phone发布策略或旧附件。
+
 ## 当前可下载候选：2.4.35，Phone10合格Artifact已实际交付
 
 [下载已核验安装包ZIP（GitHub需登录）](https://github.com/soozooq/gogogo/actions/runs/40626531080/artifacts/12789442894)，26,833,656字节、SHA43c8b4c9…，保留至2026-11-11T03:25:33Z。工作区同字节副本 `/workspace/deliverables/Tianwaitian-2.4.35-qualified.zip`。ZIP内只有两份自有APK及六份说明／校验／资格元数据，不含原版微信／抖音APK、账号资料或私钥。完整[实际交付与下载验真回执](research/container-api33/evidence/phone10-qualified-artifact-verified-delivery-results.json)。

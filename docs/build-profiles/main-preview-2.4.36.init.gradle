@@ -1,0 +1,11 @@
+// Visual refresh candidate; preserve previous signed downloads and version codes.
+gradle.beforeProject { project ->
+    if (project.path == ':app') {
+        project.pluginManager.withPlugin('com.android.application') {
+            project.extensions.getByName('androidComponents').finalizeDsl { android ->
+                android.defaultConfig.versionCode = 2400104
+                android.defaultConfig.versionName = '2.4.36-container-preview'
+            }
+        }
+    }
+}

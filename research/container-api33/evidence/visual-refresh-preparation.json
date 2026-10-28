@@ -1,0 +1,49 @@
+{
+  "scope": "VISUAL_LAYOUT_PREPARATION_NOT_RUNTIME_OR_PHONE_QUALIFICATION",
+  "base_commit": "0e991fd65466321f26a41ec00ba2917c037b5913",
+  "versions": {
+    "main": "2.4.36-container-preview",
+    "main_code": 2400104,
+    "host": "0.5-preview",
+    "host_code": 5
+  },
+  "engine_sha256_unchanged": "1644067914092e72d27cddaf652173ecb9e05cef83efb509953d1424ebb7776e",
+  "local": {
+    "main": {
+      "unit": {
+        "tests": 447,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "lint_errors": 0,
+      "build": "1m"
+    },
+    "host_and_driver_build": "31s",
+    "launcher_static_checks": "PASS"
+  },
+  "local_emulator": {
+    "sys_boot_completed_observed": true,
+    "install_main": "FAILED_PACKAGE_BROKEN_PIPE_32",
+    "install_host": "FAILED_PACKAGE_BROKEN_PIPE_32",
+    "system_server_crash": "Lost network stack; root cause not established",
+    "screenshots": 0,
+    "ui_tests_executed": false,
+    "vm_stopped": true
+  },
+  "cloud_visual_checks": {
+    "executed": false,
+    "planned_screenshots": 16,
+    "profiles": [
+      "light-360",
+      "dark-360",
+      "light-large-320",
+      "dark-large-320"
+    ],
+    "no_guest_import_or_launch": true,
+    "no_new_location_permission_or_mock_start": true
+  },
+  "phone_candidate_distributed": false,
+  "previous_2_4_35_bytes_changed": false,
+  "target_sdk_location_or_vivo_verified": false
+}

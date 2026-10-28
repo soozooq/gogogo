@@ -1,0 +1,11 @@
+<resources>
+    <color name="preview_background">#101521</color>
+    <color name="preview_surface">#1A2233</color>
+    <color name="preview_soft">#26365F</color>
+    <color name="preview_border">#30405F</color>
+    <color name="preview_primary">#B5C4FF</color>
+    <color name="preview_ink">#EDF3FF</color>
+    <color name="preview_muted">#B1C0D7</color>
+    <color name="preview_on_primary">#091528</color>
+    <color name="preview_disabled">#252F44</color>
+</resources>

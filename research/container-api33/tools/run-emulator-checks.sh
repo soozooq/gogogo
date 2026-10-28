@@ -53,3 +53,6 @@ python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emu
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-installed-import" --installed-baseline
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-calculator"
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-radio-privacy" --radio-contract
+if [ -n "${TWT_VISUAL_MAIN_APK:-}" ]; then
+    python3 "$spec_root/tools/run-visual-layout-check.py" --sdk "$ANDROID_HOME" --root "$CONTAINER_RESEARCH_WORKDIR" --serial emulator-5580 --main-apk "$TWT_VISUAL_MAIN_APK"
+fi

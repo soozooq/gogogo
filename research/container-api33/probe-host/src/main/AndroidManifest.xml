@@ -31,7 +31,7 @@
     <application android:name=".ProbeApplication" android:label="天外天 · 原版应用预览"
         android:allowBackup="false" android:extractNativeLibs="true"
         android:permission="${applicationId}.INTERNAL"
-        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        android:theme="@style/PreviewTheme">
         <uses-library android:name="org.apache.http.legacy" android:required="false" />
         <activity android:name=".ProbeActivity" android:exported="true" android:permission="">
             <intent-filter>

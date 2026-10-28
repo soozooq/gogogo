@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Lab 29: consistent dark tokens, retaining every light-theme resource name. -->
-    <color name="gogogo_bg">#0B1124</color>
-    <color name="gogogo_surface">#141D33</color>
-    <color name="gogogo_surface_alt">#1D2944</color>
-    <color name="gogogo_primary">#79B8FF</color>
+    <color name="gogogo_bg">#101521</color>
+    <color name="gogogo_surface">#1A2233</color>
+    <color name="gogogo_surface_alt">#252F44</color>
+    <color name="gogogo_primary">#B5C4FF</color>
     <color name="gogogo_primary_dark">#B4D1FF</color>
     <color name="gogogo_on_primary">#091528</color>
     <color name="gogogo_primary_soft">#26365F</color>
-    <color name="gogogo_accent">#B5A0FF</color>
+    <color name="gogogo_accent">#B5C4FF</color>
     <color name="gogogo_text">#EDF3FF</color>
     <color name="gogogo_text_muted">#B1C0D7</color>
     <color name="gogogo_border">#30405F</color>
@@ -19,7 +19,7 @@
     <!-- Tianwaitian v1: brand auxiliaries and legacy app bar. -->
     <color name="twt_appbar_bg">#1C2A4A</color>
     <color name="twt_purple">#B5A0FF</color>
-    <color name="twt_nav_selected">#B5A0FF</color>
+    <color name="twt_nav_selected">#B5C4FF</color>
     <color name="twt_cyan">#72E8E6</color>
     <color name="twt_gold">#F2CE8A</color>
     <!-- Night search overlay: avoid white scrims beneath white search text. -->
