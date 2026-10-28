@@ -61,6 +61,7 @@ public final class ThirdPartyLocationInstrumentedTest {
         assertTrue(evidence.isDirectory() || evidence.mkdirs());
         long idle = Configurator.getInstance().getWaitForIdleTimeout();
         Configurator.getInstance().setWaitForIdleTimeout(0);
+        boolean ordinaryPassed = false;
         assertEquals("", shell("pm path " + GUEST));
         assertEquals(PackageManager.PERMISSION_DENIED, context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION));
         try {
@@ -136,6 +137,17 @@ public final class ThirdPartyLocationInstrumentedTest {
             stages.put(new JSONObject().put("stage", "COMPACT_FEEDBACK_READ_ONLY")
                     .put("characters", feedback.length()).put("guest_pid_preserved", true)
                     .put("mock_mode_preserved", true).put("coordinates_not_recorded", true));
+            // Android13's clipboard preview is a separate SystemUI window over
+            // the bottom controls. Dismiss/wait for that known transient window
+            // before sending the actual Stop tap; retain the full PID deadline.
+            UiObject2 overlay = device.wait(Until.findObject(By.res(
+                    "com.android.systemui", "clipboard_ui")), 1000);
+            if (overlay != null) {
+                UiObject2 dismiss = device.findObject(By.res("com.android.systemui", "dismiss_button"));
+                if (dismiss != null) dismiss.click();
+                assertTrue("Clipboard SystemUI overlay gone before Stop", device.wait(Until.gone(
+                        By.res("com.android.systemui", "clipboard_ui")), 10000));
+            }
             clickFresh(By.res(context.getPackageName(), "stop_guest"), "Stop button");
             long deadline = SystemClock.elapsedRealtime() + 10000;
             while (SystemClock.elapsedRealtime() < deadline && !shell("pidof " + GUEST).isEmpty()) SystemClock.sleep(100);
@@ -149,8 +161,13 @@ public final class ThirdPartyLocationInstrumentedTest {
                     .put("wgs84_prefill_received_without_autostart", true).put("invalid_prefill_ignored", true)
                     .put("stages", stages).put("same_guest_pid", firstPid).put("stop_process_absent", true)
                     .put("stop_virtual_mode", "CLOSE_MODE").put("passed", true).toString(2));
+            ordinaryPassed = true;
         } finally {
             try {
+                if (!ordinaryPassed) {
+                    device.dumpWindowHierarchy(new File(evidence, "failure-window.xml"));
+                    device.takeScreenshot(new File(evidence, "failure-screen.png"));
+                }
                 write(new File(evidence, "last-visible-text.json"), new JSONArray(lastTexts).toString(2));
                 if (!new File(evidence, "screen.png").isFile()) {
                     device.dumpWindowHierarchy(new File(evidence, "window.xml"));

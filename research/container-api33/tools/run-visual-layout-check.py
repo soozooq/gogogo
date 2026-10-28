@@ -38,6 +38,15 @@ def shell(*parts):
     return run(['shell', *parts]).stdout.decode().strip()
 
 
+def package_present(package):
+    probe = run(['shell', 'pm', 'path', package], check=False)
+    if probe.returncode == 1 and not (probe.stdout + probe.stderr).strip():
+        return False  # API33's normal response for an absent package.
+    if probe.returncode != 0 or not probe.stdout.startswith(b'package:'):
+        raise RuntimeError('Package presence probe failed for ' + package)
+    return True
+
+
 try:
     assert shell('getprop', 'ro.kernel.qemu') == '1'
     assert shell('getprop', 'sys.boot_completed') == '1'
@@ -49,7 +58,7 @@ try:
                          'night': ['settings', 'get', 'secure', 'ui_night_mode']}.items():
         settings[key] = shell(*command)
     for package, path in paths.items():
-        assert path.is_file() and not shell('pm', 'path', package), 'Existing own install preserved'
+        assert path.is_file() and not package_present(package), 'Existing own install preserved'
     result['apks'] = {package: {'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
                               'bytes': path.stat().st_size} for package, path in paths.items()}
     for package, path in paths.items():
@@ -84,7 +93,7 @@ finally:
     for package in reversed(installed):
         try:
             removed = run(['uninstall', package], timeout=120, check=False)
-            cleanup[package] = removed.returncode == 0 and b'Success' in removed.stdout and not shell('pm', 'path', package)
+            cleanup[package] = removed.returncode == 0 and b'Success' in removed.stdout and not package_present(package)
         except Exception:
             cleanup[package] = False
     result['owned_package_cleanup'] = cleanup

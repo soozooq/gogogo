@@ -23,6 +23,8 @@
 
 [CI58实际失败](research/container-api33/evidence/visual-feedback-visibility-failure-results.json)固定7e90cf09：447／lint、ARM Mac build-only、自有框架／7定位方法／真实Guest九路径通过，但普通入口23.039秒时在“短反馈已复制”可见断言失败；旧截图是GPSTest选点B，不是新预览页面，不能当作美术验收。完整三档API摘要、73来源／签名／11材料已独立核对。安装导入与坐标A→B此前已走到，但反馈内容／停止、后续计算器／无线及16图检查均未完成，整轮保持失败。UI源发现操作结果文本位于滚动区，现新增显式结果自动滚入可见区；普通恢复刷新不抢滚动位置，原复制和只读断言均保留。云端退出清理现在仍尝试独立画面检查并传播此前失败，避免因单项失败丢失全部美术证据；不是忽略失败。修正后的同源结果待执行。
 
+[CI59实际失败](research/container-api33/evidence/visual-stop-overlay-and-capture-probe-failure-results.json)固定0b3348f3：复制成功文字、反馈内容／1800字符、Guest PID和模式保持等原断言均已通过，验证了状态可见修正；随后Stop点击后10秒PID3443仍在，最终清理才发送SIG9，不能算正常停止通过。日志存在Android剪贴板浮层，但没有当时的失败页面，原因尚不能确定。测试现仅处理AOSP Android13已知clipboard_ui浮层后再发Stop点击，仍保留10秒真实PID消失／CLOSE断言；失败另外保存当前页面。独立画面脚本已被调用，但把pm path未安装时正常exit1当命令错误，0个UI测试／0张新图；现区分正常空返回与服务／权限错误。14秒驱动构建与语法检查通过，原UI／引擎不改，修正后的实际结果待执行。58、59均保持失败，新2.4.36尚未交付。
+
 ## 当前可下载候选：2.4.35，Phone10合格Artifact已实际交付
 
 [下载已核验安装包ZIP（GitHub需登录）](https://github.com/soozooq/gogogo/actions/runs/40626531080/artifacts/12789442894)，26,833,656字节、SHA43c8b4c9…，保留至2026-11-11T03:25:33Z。工作区同字节副本 `/workspace/deliverables/Tianwaitian-2.4.35-qualified.zip`。ZIP内只有两份自有APK及六份说明／校验／资格元数据，不含原版微信／抖音APK、账号资料或私钥。完整[实际交付与下载验真回执](research/container-api33/evidence/phone10-qualified-artifact-verified-delivery-results.json)。
