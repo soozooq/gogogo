@@ -1,6 +1,6 @@
 > **接手／继续研发先读：[PROJECT_STATUS.md](PROJECT_STATUS.md)**。当前研发统一在 `research/container-api33-20261023` / Draft #60；日常候选版在 #59。旧版本说明和实验记录不能替代主进度。
 
-> **当前进度（2026-10-28）**：57轮同源原生匿名重开／定位契约已独立验真通过。Phone9两APK已核对，自动交付因下载请求头415失败；恢复流程复用现有包、重验全部门槛后交付Artifact，公开Release仍受403限制。实际微信／抖音定位未验收，手机不必重复实验；最新回执以接手入口为准。
+> **当前进度（2026-10-28）**：[2.4.35合格候选安装包已可下载](https://github.com/soozooq/gogogo/actions/runs/40626531080/artifacts/12789442894)（GitHub需登录，保留至11月11日）。57同源匿名重开／定位契约与两APK完整核对通过；已有2.4.34主程序只更新预览APK，其余安装两份。此为Artifact交付，公开Release仍2.4.34；微信／抖音实际位置业务仍未验收，正常使用异常时一键反馈即可。
 
 > **诊断简化候选版（2026-10-23）**：[一次复制日志，不必逐项实验](docs/simple-support-flow.md)。功能分支版本 `2.4.31-simple-support`，底部「诊断」默认只需点击「一键复制完整日志」，自动汇总当下的位置缓存、网络状态和已有记录；其余工具收进一个可选高级入口。包含此前的[GMS 顺序](docs/gms-task-ordering.md)、[Framework Provider 清理](docs/provider-lifecycle-ordering.md)及[海外坐标与回放校验](docs/location-coordinate-correctness.md)。用户已反馈微信发送位置与实时共享都未成功；本版简化反馈操作，不代表微信／抖音及海外功能已兼容。
 

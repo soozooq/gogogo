@@ -1,8 +1,8 @@
 # 可复用基础审计
 
-当前运行c805／16440679。[57完整原生已独立验真通过](evidence/native-retired-process-owner-pass-results.json)：四档API／9原生与59来源／签名材料匹配，微信5942→6420、抖音10142→11954匿名双模式与清理前活主确认，自有7方法6.703秒／九路径46.374秒，普通抖音304.425秒／48次AMS内核身份，system_server657及VM／包清理通过。实际目标SDK位置与vivo未验收，旧56失败不追认。
+[Phone10合格Artifact已实际交付并独立核对](evidence/phone10-qualified-artifact-verified-delivery-results.json)：run40626531080／执行beab6368，复用原构建4de425d2／Phone9，stage跳过。四档API／来源签名材料、原生7方法／九路径／300秒主身份／清理前活主及两APK／profile447lint／415内容／最新源码云端核对通过；8文件ZIP的服务器摘要43c8b4c9…与下载副本一致，主f1796794…／宿主4d1f0725…仍为原字节。Release创建实际403后明确published=false交付Artifact，既不虚构Release，也不把旧Phone9的415失败追认为通过。下载入口见[主进度](../../PROJECT_STATUS.md)。
 
-[Phone9最终失败](evidence/phone9-publication-download-failure-results.json)是下载own ZIP误设octet-stream导致415，未生成云端合格归档；早期Release创建403是独立问题。两APK f1796794…／4d1f0725…仍匹配57，签名／profile／447lint／415内容已核对。[恢复准备](evidence/phone9-download-recovery-preparation.json)固定原成功stage／归档跳过重建，所有四档／原生／两包／最新源码门槛保留；只对完整资格后的已知Release创建403提供明确published=false的Artifact交付。17检查及真实归档／APK的本地记录API回放过，未远程上传，恢复云端执行待controller提交。跟随[主入口](../../PROJECT_STATUS.md)实际回执。以下保留历史快照。
+[57原生完整通过](evidence/native-retired-process-owner-pass-results.json)固定c805／16440679：微信5942→6420、抖音10142→11954匿名双模式／清理前活主，自有7方法6.703秒／九路径46.374秒，普通抖音304.425秒／48次AMS内核身份、system_server657与清理均过。源码中已退休回调归属修正受控检查通过，但56旧失败因果仍未知。实际SDK／账号位置、无线／海外及vivo未验收；无新手机实验。以下历史快照。
 
 [55实际失败](evidence/passive-fixture-attribution-failure-results.json)已独立核对API归档／58与59来源／签名材料：7定位方法6成功1归属断言失败，Wechat受控三通道通过；普通host新增测试未绑定虚拟包，九路径／无线／普通反馈／原生未执行。[修正fixture身份](evidence/passive-fixture-identity-preparation.json)建立明确generic包及实际Binder PID断言，保留全部计数／来源断言及7方法、finally恢复状态；生产420b8399与手机版本不变，最终15秒构建通过，新同源待验。旧草稿不发，不要求手机实验。
 

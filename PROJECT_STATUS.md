@@ -13,23 +13,34 @@
 
 不新增分支／PR、不自动合并、不删除／强推／重置其他工作区。两个PR保持Draft。手机用户不需要重跑旧实验或切换VPN。
 
-## 当前研发：57同源原生已验真通过，修复交付下载并复用Phone9
+## 当前可下载候选：2.4.35，Phone10合格Artifact已实际交付
 
-运行源码仍固定**c8052d318bed3cf9c0e37ddc864abea4cc74c816**／引擎16440679，唯一研发从本分支HEAD继续。退出回调仅清理完全相同的当前ProcessRecord，主动停止在拥有登记时清理资源；合成被动GPS来源、微信兼容呈现／通用mock、合成extras与零卫星保留。主2.4.35／2400103、宿主0.4／4不变，无新手机页面、权限或实验。
+[下载已核验安装包ZIP（GitHub需登录）](https://github.com/soozooq/gogogo/actions/runs/40626531080/artifacts/12789442894)，26,833,656字节、SHA43c8b4c9…，保留至2026-11-11T03:25:33Z。工作区同字节副本 `/workspace/deliverables/Tianwaitian-2.4.35-qualified.zip`。ZIP内只有两份自有APK及六份说明／校验／资格元数据，不含原版微信／抖音APK、账号资料或私钥。完整[实际交付与下载验真回执](research/container-api33/evidence/phone10-qualified-artifact-verified-delivery-results.json)。
 
-[57原生实际通过已独立验真](research/container-api33/evidence/native-retired-process-owner-pass-results.json)：run40595256036／原生122512447262成功，四档API归档／9原生与59自有来源／三同签名与11材料匹配c805。微信关闭5942→OWN新6420／UID10097、抖音10142→11954／UID10102均到匿名UI；旧主实际消失，清理前Core及真实AMS快照再次确认新主活着。目标有界日志分别记录2／1次已退休回调被忽略；不倒推56旧失败一定由该竞态导致。抖音普通原包主7696／UID10099经48次AMS＋内核检查、实际304.425秒稳定。自有框架14.796秒、7方法6.703秒、独立Guest九路径46.374秒，最老样本1606.406毫秒、取消零回调、合成与mock保留；system_server657稳定，VM及包／staging清理完成。整轮4391.975秒不是启动耗时。
+[Phone10](https://github.com/soozooq/gogogo/actions/runs/40626531080)的交付作业122612702022实际成功，执行源码**beab6368d0e35b4abc12fa89b293c37583b06f1d**；直接复用Phone9成功stage122515194094／原构建源码4de425d2与原包归档12776327526，打包作业跳过、没有重建APK或重跑原生。云端重新下载四档实际证据并核对全部来源／签名材料、原生7方法／九路径／300秒身份／清理前活主快照／系统清理及两包、profile／447检查／lint／415内容／最新源码。下载后再次独立复核，服务器ZIP与工作区副本摘要相同。
 
-[57默认结果](research/container-api33/evidence/retired-process-owner-linux-results.json)仍有效：Linux7定位／19无线／447主检查与lint、受控退出归属fixture、真实Guest九路径与1380字符反馈均过，Mac仅为实际build-only通过。原生成功只覆盖匿名启动、公共契约及自有消费者，**微信SDK采纳／发送／实时、抖音无线／海外及vivo效果仍未验收**，没有自动同意条款、登录或发送消息。56／55旧失败保留，不追认。
+| 文件 | 实际版本 | 摘要与大小 |
+| --- | --- | --- |
+| `Tianwaitian-2.4.35-container-preview-arm64.apk` | 2.4.35／2400103 | SHA f1796794…；40,408,202字节；证书6eec4ddd… |
+| `Tianwaitian-Original-Preview-c8052d31.apk` | 0.4／4 | SHA 4d1f0725…；4,594,179字节；证书25bfd6e2… |
 
-## Phone9最终失败原因明确，现有两APK不重建
+手机解压后，已有2.4.34主程序时只更新“Original-Preview”预览APK；首次或仍在2.4.31时安装两份。沿用地图选点→预览入口导入原版→确认打开的正常流程；当前固定支持微信8.0.79／3200、抖音40.8.0／400801，登录由用户自行操作。正常使用遇到问题，一键复制已有观察即可，不做旧实验矩阵。
 
-[Phone9打包字节](research/container-api33/evidence/phone-c8052d31-build-and-release-api-results.json)已核对，交付源码4de425d2／run40596941748：主f1796794…／40,408,202字节／证书6eec4ddd…，宿主4d1f0725…／4,594,179字节／证书25bfd6e2…；447检查／lint、profile／签名／版本／对齐及415非签名内容均过。旧记录中的native等待字段是当时快照，最终57原生见上文。
+这次**成功交付的是合格Artifact，不是公开Release**。Release创建仍实际返回HTTP403 Resource not accessible by integration；仅在完整资格通过后，已知403才转为明确published=false的Artifact交付，其他错误继续失败。没有新c805草稿／tag，公开Release仍2.4.34，旧6625草稿与全部旧附件不变。后续运行源码更新使用新候选版本并重新绑定同源证据，不把已分发的2.4.35／宿主0.4当作可随意修改的未交付草稿；仅controller修复可在冻结字节不变时复用。
 
-[Phone9发布作业122516449530最终失败](research/container-api33/evidence/phone9-publication-download-failure-results.json)：等到57全部成功后，下载第一份own归档时错误地带上octet-stream Accept，接口实际返回**HTTP415 Unsupported Accept header，必须接受JSON**。四档云端资格核对尚未执行，qualified下载目录未生成，不能说备用包已交付。此前创建Release草稿的HTTP403 Resource not accessible by integration是另一个已记录问题；Phone7未捕获HTTP原因，不倒推它也为403。
+## 57同源原生与默认结果已通过，目标位置业务仍未验收
 
-[交付恢复准备](research/container-api33/evidence/phone9-download-recovery-preparation.json)只改controller：Actions ZIP使用正常API媒体类型，release asset才使用octet-stream；冻结Phone9成功stage122515194094及归档12776327526／SHA1a3f41bb…，跳过新打包。新执行会重验57四档实际ID／摘要、原生7方法／九路径／完整300秒主身份／清理前活主／系统清理与原两包／最新源码。执行来源与原构建来源分别记录。仅在全部通过后，Release创建POST若仍是已知integration403，可成功交付已核验Artifact并明确published=false；其他错误不会被当成发布成功。当前恢复作业尚待本次controller提交后触发，**此时没有新的云端合格下载**。
+运行源码固定**c8052d318bed3cf9c0e37ddc864abea4cc74c816**／引擎16440679。退出回调仅清理完全相同的当前ProcessRecord，主动停止在拥有登记时清理资源；合成被动GPS来源、微信兼容呈现／通用mock、合成extras及零卫星保留，无新手机页面、权限或实验。
 
-17项本地发布／配方检查、实际workflow策略片段及使用真实四档／两APK的本地记录API回放通过；回放没有远程POST／上传／发布，不能代替新云端交付回执。无需重跑原生、重建APK或让手机重复实验。根入口与两个Draft PR只维持这一条研发线。公开2.4.34和旧6625草稿的tag、正文、附件保持原样；新的合格Artifact也不会被写成已公开Release。
+[57原生实际通过已独立验真](research/container-api33/evidence/native-retired-process-owner-pass-results.json)：run40595256036／原生122512447262成功，四档API归档／9原生与59自有来源／三同签名与11材料匹配c805。微信关闭5942→OWN新6420／UID10097、抖音10142→11954／UID10102均到匿名UI；旧主实际消失，清理前Core及真实AMS快照确认新主活着。目标有界日志分别记录2／1次已退休回调被忽略；不倒推56旧失败一定由该竞态导致。抖音普通原包主7696／UID10099经48次AMS＋内核检查、实际304.425秒稳定。自有框架14.796秒、7方法6.703秒、独立Guest九路径46.374秒，最老样本1606.406毫秒、取消零回调；system_server657稳定，VM及包／staging清理完成。整轮4391.975秒不是启动耗时。
+
+[57默认结果](research/container-api33/evidence/retired-process-owner-linux-results.json)：Linux7定位／19无线／447主检查与lint、受控退出归属fixture、真实Guest九路径与1380字符反馈均过，Mac仅为实际build-only通过。**微信SDK采纳／发送／实时、抖音无线／海外及vivo效果仍未验收**。匿名UI及自有契约不是目标账号位置业务，没有自动同意条款、登录或发送消息。
+
+## 交付失败与修复均保留
+
+[Phone9最终失败](research/container-api33/evidence/phone9-publication-download-failure-results.json)是下载own ZIP误带octet-stream Accept，实际HTTP415，云端四档核对未执行、无qualified下载。早期Release创建403是独立问题；Phone7未记录HTTP原因，不能倒推相同原因。原两APK字节与Phone10交付内容完全相同，原失败不追认。
+
+[恢复准备](research/container-api33/evidence/phone9-download-recovery-preparation.json)修正Actions ZIP正常API媒体类型、release asset保留octet-stream，冻结复用原成功stage及归档ID／大小／摘要；所有资格门槛保持。17项本地检查、策略片段及真实归档／APK的本地记录API回放通过，回放不算云端交付。随后Phone10实际执行12项云端发布边界及全部实际证据／APK检查、生成8文件合格归档并成功上传，最终回执取代准备中的尚未启动字段。
 
 ## 最近完成结果：56原生微信重开失败，Phone7已打包但未发布
 
