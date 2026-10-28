@@ -71,7 +71,7 @@ try:
                     timeout=480, check=False)
     (out / 'instrumentation.txt').write_bytes(execution.stdout + execution.stderr)
     names = shell('run-as', host, 'ls', 'files/visual-layout-evidence').splitlines()
-    assert len(names) <= 40
+    assert len(names) <= 48  # 16 normal pages plus at most one failure page/profile.
     for name in names:
         assert re.fullmatch(r'[a-zA-Z0-9_-]+\.(json|png|xml)', name)
         (out / name).write_bytes(run(['exec-out', 'run-as', host, 'cat',

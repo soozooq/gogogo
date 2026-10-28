@@ -1,0 +1,69 @@
+{
+  "scope": "DEFAULT_REGRESSIONS_PASS_FIRST_VISUAL_GEOMETRY_ASSERTION_FAILED",
+  "commit": "117563a27cbb88619b03493397006cdc28bbc5dc",
+  "run_id": 40637614928,
+  "linux_job_id": 122648092777,
+  "linux_conclusion": "FAILURE",
+  "mac_job_id": 122648092495,
+  "mac_conclusion": "SUCCESS_BUILD_ONLY",
+  "archives": {
+    "own": {
+      "id": 12794750647,
+      "sha256": "9a66cfbd441faa1cee8c80c5bded784366cf1a63bb3cf47ea6ed7f5fd962868a",
+      "verified": true
+    },
+    "mac": {
+      "id": 12794805462,
+      "sha256": "10a7e6af8b6716d144cbe1f66f03dca9c205bae302e5a14fefa9c73da39221f9",
+      "verified": true
+    },
+    "linux": {
+      "id": 12794556735,
+      "sha256": "ea2cb98812478a8ae09e8d6fab4dd7b58d2cd301228cc49764a943d4bcd42e42",
+      "verified": true
+    }
+  },
+  "own_sources_verified": 73,
+  "same_ci_signatures_verified": true,
+  "notice_materials_per_apk": 11,
+  "default_cases": {
+    "x86_64-startup-framework": true,
+    "x86_64-radio-privacy": true,
+    "x86_64-owned-location": true,
+    "x86_64-ordinary-entry": true,
+    "x86_64-location-contract": true,
+    "x86_64-installed-import": true,
+    "x86_64-calculator": true,
+    "read-only-ui-capture": true
+  },
+  "visual": {
+    "executed": true,
+    "junit_seconds": 3.308,
+    "first_failure": "48dp minimum visible height: com.soozooq.gogogo.test:id/twt_home_search",
+    "observed_control_rectangle": "NOT_CAPTURED",
+    "new_ui_screenshots": 0,
+    "main_render_build_sha256": "3d204ee73088460d4228273e283be3a9132897e696694f2a9fbab723b6c45f9b",
+    "main_render_build_bytes": 38492094,
+    "system_server_before": "555",
+    "system_server_after": "555",
+    "cleanup": {
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true,
+      "com.soozooq.gogogo.test": true
+    },
+    "settings_restored": true,
+    "cause": "UNKNOWN_WITHOUT_GEOMETRY_OR_FAILURE_SCREENSHOT"
+  },
+  "repair": {
+    "stable_nonzero_geometry_before_access": true,
+    "unchanged_minimum_height_dp": 48,
+    "measurement_uses_matching_automation_viewport_and_profile_dp": true,
+    "all_profile_screens_collected_before_aggregate_failure": true,
+    "first_page_captured_before_geometry_checks": true,
+    "bounded_failure_images_and_actual_rectangles": true,
+    "local_driver_build": "PASS_13_SECONDS"
+  },
+  "production_ui_changed": false,
+  "candidate_distributed": false,
+  "new_native_probe": false
+}

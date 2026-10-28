@@ -15,17 +15,20 @@
 
 ## 界面优化候选：2.4.36／预览宿主0.5，尚未交付
 
-用户新增要求：美术与排版一起优化。地图首页、统一搜索、设置和共享控件改为统一靛蓝色、字体层级、圆角、留白、矢量图标及可读禁用态；地图选点卡限制为实际可用高度，署名移到卡片上方，加载失败显示可重试提示。可用时原版预览为主操作，缺少配套入口时系统模拟控制为主操作。
+用户新增要求：美术与排版一起优化。地图首页、统一搜索、设置和共享控件统一靛蓝色、字阶、圆角、留白、矢量图标及禁用态；地图选点卡按实际可用高度滚动，署名保留在卡片上方，加载失败可重试。原版预览改为01选择应用、02确认地点的卡片表单，打开／停止／一键反馈固定在底部，小屏大字体转纵向；浅／深色主题完整。显式结果自动滚入可见区，普通刷新不抢位置。设计集中在[DESIGN.md](DESIGN.md)。
 
-原版预览改为01选择应用、02确认地点的卡片表单，坐标有常显标签。打开／停止／一键复制反馈固定在底部，小屏大字体转纵向表单；独立浅色／深色主题。沿用原导入、明确打开、停止及1.5秒反馈逻辑，无新增手机实验、权限、依赖或引擎修改。界面约定集中在[DESIGN.md](DESIGN.md)。版本使用新2.4.36／2400104与宿主0.5／5，旧2.4.35下载保持原字节。
+主2.4.36／2400104与宿主0.5／5均未交付。沿用原导入、明确打开、停止和1.5秒反馈协议，无新手机实验、权限、依赖或引擎修改。旧2.4.35字节／下载及Phone发布策略不动；57原生只属于旧c805，不借给新界面APK。正常使用有问题仍一键反馈，不要求手机做矩阵。
 
-[准备记录](research/container-api33/evidence/visual-refresh-preparation.json)：本地主程序447检查／lint／ARM64构建与宿主／驱动构建通过，launcher静态检查通过。本地软件模拟器在应用安装阶段失去package／activity服务，系统日志记录Lost network stack；两个安装均Broken pipe，没有有效界面截图或定位测试结果，VM已结束。新增云端真实Android界面检查覆盖360dp与320dp＋1.5倍字体、浅／深色的16张地图／搜索／预览／键盘截图及48dp点击区域、固定操作可见性、坐标带入不启动Guest／模拟／权限请求；**尚未实际执行，不能称画面通过**。本次只触发默认云端与界面检查，不重跑昂贵原生目标对照，不借57替新APK背书。未更新Phone发布策略或旧附件。
+本地447／lint／主ARM64与宿主／驱动构建、launcher检查通过。软件VM系统Lost network stack导致两包安装Broken pipe，0有效截图，已停止，见[原始准备](research/container-api33/evidence/visual-refresh-preparation.json)。下列云端失败全部保留：
 
-[CI58实际失败](research/container-api33/evidence/visual-feedback-visibility-failure-results.json)固定7e90cf09：447／lint、ARM Mac build-only、自有框架／7定位方法／真实Guest九路径通过，但普通入口23.039秒时在“短反馈已复制”可见断言失败；旧截图是GPSTest选点B，不是新预览页面，不能当作美术验收。完整三档API摘要、73来源／签名／11材料已独立核对。安装导入与坐标A→B此前已走到，但反馈内容／停止、后续计算器／无线及16图检查均未完成，整轮保持失败。UI源发现操作结果文本位于滚动区，现新增显式结果自动滚入可见区；普通恢复刷新不抢滚动位置，原复制和只读断言均保留。云端退出清理现在仍尝试独立画面检查并传播此前失败，避免因单项失败丢失全部美术证据；不是忽略失败。修正后的同源结果待执行。
+| 轮次 | 实际结果与后续修正 |
+| --- | --- |
+| [58](research/container-api33/evidence/visual-feedback-visibility-failure-results.json)／7e90cf09 | 普通入口复制成功文本不在可见区，后续断言未执行；现显式结果滚入可见区，59已验证原复制／内容／只读断言通过 |
+| [59](research/container-api33/evidence/visual-stop-overlay-and-capture-probe-failure-results.json)／0b3348f3 | 复制已过，Stop后10秒PID3443仍在；日志有剪贴板浮层但原因未证实。驱动只处理已知Android13浮层再点Stop，原10秒PID／CLOSE断言保留；60、61全入口实际通过。截图前pm path缺包正常exit1误判也已修正 |
+| [60](research/container-api33/evidence/visual-clean-boundary-failure-results.json)／47550800 | 全7运行case、7定位／19无线／独立九路径／447lint及Mac build-only均过，反馈1381字符、正常停止通过；截图因运行case有意保留己方包而按保护拒绝。已改到moving capture验证清理后执行，未删现存安装保护 |
+| [61](research/container-api33/evidence/visual-first-layout-geometry-failure-results.json)／117563a2 | 全7运行case／447lint／Mac再过。实际UI测试首个搜索控件48dp可见高度断言失败，未保存当时几何／截图，原因未知；system_server555稳定、三己方包清理及显示设置恢复过。现等待稳定几何、用同一自动化视口与dp换算，记录实际矩形并收集全部profile，再统一判失败；48dp和全部profile要求不变 |
 
-[CI59实际失败](research/container-api33/evidence/visual-stop-overlay-and-capture-probe-failure-results.json)固定0b3348f3：复制成功文字、反馈内容／1800字符、Guest PID和模式保持等原断言均已通过，验证了状态可见修正；随后Stop点击后10秒PID3443仍在，最终清理才发送SIG9，不能算正常停止通过。日志存在Android剪贴板浮层，但没有当时的失败页面，原因尚不能确定。测试现仅处理AOSP Android13已知clipboard_ui浮层后再发Stop点击，仍保留10秒真实PID消失／CLOSE断言；失败另外保存当前页面。独立画面脚本已被调用，但把pm path未安装时正常exit1当命令错误，0个UI测试／0张新图；现区分正常空返回与服务／权限错误。14秒驱动构建与语法检查通过，原UI／引擎不改，修正后的实际结果待执行。58、59均保持失败，新2.4.36尚未交付。
-
-[CI60实际结果](research/container-api33/evidence/visual-clean-boundary-failure-results.json)固定47550800：导入／坐标A→B／复制／PID及模式保持／正常停止的全部原断言实际通过，7定位方法／19无线／独立九路径／计算器／已装导入／447lint及Mac build-only均通过。三档API摘要、73来源／签名／11材料已独立核对。整轮仍失败：运行检查为了复用会保留己方host／driver，随后截图脚本按“有现存安装则保留并拒绝”保护停止，0个UI测试／0张新图。修正执行顺序到只读moving capture已经验证清理三件己方包之后，再跑独立界面检查与其余回归；保留现存安装保护，各项失败仍传播，未降低通过要求。应用UI和引擎不变，后续同源画面待实际执行，新界面未交付。
+58～61实际三档API摘要／73来源／三同签名与每包11材料均已独立核对。61渲染用x86主包38,492,094字节、SHA3d204ee7…，不是ARM手机包。**仍没有新界面画面通过的结论，也没有新候选交付。** 本轮下一步是同源云端实际16图（360dp／320dp＋1.5倍字体、浅深色、地图／搜索／预览／键盘），并据原PNG继续修排版。失败profile保留且使整轮失败，不让一项失败遮住其他主题画面；不重跑昂贵原生目标对照。
 
 ## 当前可下载候选：2.4.35，Phone10合格Artifact已实际交付
 

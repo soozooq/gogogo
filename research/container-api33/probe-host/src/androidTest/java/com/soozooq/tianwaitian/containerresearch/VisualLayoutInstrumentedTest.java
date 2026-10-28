@@ -16,6 +16,7 @@ import androidx.test.uiautomator.Configurator;
 import androidx.test.uiautomator.Direction;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject2;
+import androidx.test.uiautomator.StaleObjectException;
 import androidx.test.uiautomator.Until;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -37,7 +38,11 @@ public final class VisualLayoutInstrumentedTest {
     private static final String GUEST = "com.android.gpstest.osmdroid";
     private final UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
     private final JSONArray pages = new JSONArray();
+    private final JSONArray issues = new JSONArray();
     private File evidence;
+    private int profileWidthDp = 360;
+    private String currentProfile;
+    private JSONObject lastControl;
 
     @Test public void ownScreensRemainUsableAcrossThemesAndFontSizes() throws Exception {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
@@ -51,6 +56,10 @@ public final class VisualLayoutInstrumentedTest {
             assertEquals(PackageManager.PERMISSION_DENIED, context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION));
             for (String profile : new String[] {"light-360", "dark-360", "light-large-320", "dark-large-320"}) {
                 boolean large = profile.contains("large");
+                profileWidthDp = large ? 320 : 360;
+                currentProfile = profile;
+                lastControl = null;
+                try {
                 shell("wm size " + (large ? "640x1280" : "720x1600"));
                 shell("wm density 320");
                 shell("settings put system font_scale " + (large ? "1.5" : "1.0"));
@@ -60,10 +69,10 @@ public final class VisualLayoutInstrumentedTest {
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
                 UiObject2 search = required(MAIN, "twt_home_search");
                 required(MAIN, "twt_home_target");
-                assertTapTarget(search);
-                assertTapTarget(required(MAIN, "twt_bottom_navigation"));
                 capture(profile + "-map");
-                search.click();
+                assertTapTarget(required(MAIN, "twt_home_search"));
+                assertTapTarget(required(MAIN, "twt_bottom_navigation"));
+                required(MAIN, "twt_home_search").click();
                 UiObject2 query = required(MAIN, "twt_search_query");
                 assertTapTarget(query);
                 query.setText("北京");
@@ -94,14 +103,26 @@ public final class VisualLayoutInstrumentedTest {
                 assertEquals("No location permission request in this flow", PackageManager.PERMISSION_DENIED,
                         context.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION));
                 shell("am force-stop " + MAIN);
+                } catch (Exception | AssertionError problem) {
+                    JSONObject issue = new JSONObject().put("profile", profile)
+                            .put("error_class", problem.getClass().getSimpleName())
+                            .put("message", String.valueOf(problem.getMessage()));
+                    if (lastControl != null) issue.put("control", lastControl);
+                    issues.put(issue);
+                    try { capture(profile + "-failure"); }
+                    catch (Exception captureFailure) { issue.put("capture_error", captureFailure.getClass().getSimpleName()); }
+                }
             }
-            passed = true;
+            passed = issues.length() == 0;
+            assertTrue("Every visual profile must pass: " + issues, passed);
         } finally {
             Configurator.getInstance().setWaitForIdleTimeout(idle);
             JSONObject result = new JSONObject().put("scope", "SELF_OWNED_VISUAL_UI_ONLY_NOT_TARGET_LOCATION")
                     .put("passed", passed).put("pages", pages).put("expected_page_count", 16)
+                    .put("issues", issues)
                     .put("guest_imported", false).put("guest_launched", false)
                     .put("location_permission_requested", false).put("target_sdk_adoption_verified", false);
+            if (lastControl != null) result.put("last_control", lastControl);
             try (FileOutputStream output = new FileOutputStream(new File(evidence, "result.json"))) {
                 output.write(result.toString(2).getBytes(StandardCharsets.UTF_8));
             }
@@ -109,15 +130,29 @@ public final class VisualLayoutInstrumentedTest {
     }
 
     private UiObject2 required(String pkg, String id) {
-        UiObject2 node = device.wait(Until.findObject(By.res(pkg, id)), 30000);
-        assertNotNull("Visible own UI: " + pkg + "/" + id, node);
-        return node;
+        long deadline = SystemClock.elapsedRealtime() + 30000;
+        Rect previous = null; int stable = 0;
+        while (SystemClock.elapsedRealtime() < deadline) {
+            UiObject2 node = device.findObject(By.res(pkg, id));
+            if (node != null) {
+                try {
+                    Rect bounds = node.getVisibleBounds();
+                    if (bounds.width() > 0 && bounds.height() > 0 && bounds.equals(previous)) {
+                        if (++stable >= 3) return node;
+                    } else stable = 0;
+                    previous = bounds;
+                } catch (StaleObjectException recreated) { stable = 0; previous = null; }
+            }
+            SystemClock.sleep(50);
+        }
+        fail("Stable visible own UI: " + pkg + "/" + id);
+        return null;
     }
 
     private UiObject2 reveal(String id) {
         for (int n = 0; n < 8; n++) {
             UiObject2 node = device.findObject(By.res(HOST, id));
-            if (node != null && node.getVisibleBounds().height() >= 48 * 2) return node;
+            if (node != null && node.getVisibleBounds().height() >= unitsForDp(48)) return node;
             UiObject2 form = required(HOST, "preview_form");
             if (!form.scroll(Direction.DOWN, 0.5f)) form.scroll(Direction.UP, 1f);
         }
@@ -125,18 +160,36 @@ public final class VisualLayoutInstrumentedTest {
         return null;
     }
 
-    private void assertTapTarget(UiObject2 node) {
+    private int unitsForDp(int dp) {
+        // UiAutomation can expose compatibility coordinates after display changes.
+        // Convert the unchanged 48dp requirement within that same viewport space.
+        return Math.round(dp * device.getDisplayWidth() / (float) profileWidthDp);
+    }
+
+    private void assertTapTarget(UiObject2 node) throws Exception {
         Rect bounds = node.getVisibleBounds();
-        assertTrue("48dp minimum visible height: " + node.getResourceName(), bounds.height() >= 96);
-        assertTrue("Control within viewport", bounds.left >= 0 && bounds.top >= 0
-                && bounds.right <= device.getDisplayWidth() && bounds.bottom <= device.getDisplayHeight());
+        lastControl = new JSONObject().put("resource", node.getResourceName())
+                .put("profile", currentProfile)
+                .put("bounds", bounds.toShortString()).put("profile_width_dp", profileWidthDp)
+                .put("automation_viewport_width", device.getDisplayWidth())
+                .put("automation_viewport_height", device.getDisplayHeight())
+                .put("minimum_height_dp", 48).put("minimum_height_in_viewport", unitsForDp(48));
+        boolean largeEnough = bounds.height() >= unitsForDp(48);
+        boolean inside = bounds.left >= 0 && bounds.top >= 0
+                && bounds.right <= device.getDisplayWidth() && bounds.bottom <= device.getDisplayHeight();
+        if (!largeEnough || !inside) {
+            // Keep this a failing check, but collect the remaining screenshots
+            // so one bad target does not hide every other page/theme.
+            issues.put(lastControl.put("criterion", "48DP_VISIBLE_AND_INSIDE_VIEWPORT")
+                    .put("height_passed", largeEnough).put("viewport_passed", inside));
+        }
     }
 
     private void capture(String name) throws Exception {
         assertTrue(device.takeScreenshot(new File(evidence, name + ".png")));
         device.dumpWindowHierarchy(new File(evidence, name + ".xml"));
-        pages.put(new JSONObject().put("name", name).put("screen_width_px", device.getDisplayWidth())
-                .put("screen_height_px", device.getDisplayHeight()));
+        pages.put(new JSONObject().put("name", name).put("automation_viewport_width", device.getDisplayWidth())
+                .put("automation_viewport_height", device.getDisplayHeight()).put("profile_width_dp", profileWidthDp));
     }
 
     private String shell(String command) throws Exception {
