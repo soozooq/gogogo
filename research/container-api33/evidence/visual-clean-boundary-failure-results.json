@@ -1,0 +1,53 @@
+{
+  "scope": "DEFAULT_REGRESSIONS_PASS_VISUAL_PRECONDITION_FAILURE_NOT_TARGET_LOCATION",
+  "commit": "475508002a62753bcdae2ad3b28e2a2444ec3855",
+  "run_id": 40636502822,
+  "linux_job_id": 122644580066,
+  "linux_conclusion": "FAILURE",
+  "mac_job_id": 122644579887,
+  "mac_conclusion": "SUCCESS_BUILD_ONLY",
+  "archives": {
+    "linux": {
+      "id": 12793814127,
+      "sha256": "2a9422ab922cb5b7c3d0b80461aaea51c8c0e26ed3296e41150f7af07b65925d",
+      "verified": true
+    },
+    "own": {
+      "id": 12793519225,
+      "sha256": "cfa98295a9544d57ddc63b8b5ca229d31700ff4b0d2b731a9c5190f72321fba8",
+      "verified": true
+    },
+    "mac": {
+      "id": 12793319505,
+      "sha256": "1ddca9584bd711e3f4db4e0aa4896ed49228ad02d935e85a28b645ddf975f936",
+      "verified": true
+    }
+  },
+  "own_sources_verified": 73,
+  "notice_materials_per_apk": 11,
+  "same_ci_signatures_verified": true,
+  "default_cases": {
+    "x86_64-startup-framework": true,
+    "x86_64-radio-privacy": true,
+    "x86_64-owned-location": true,
+    "x86_64-ordinary-entry": true,
+    "x86_64-location-contract": true,
+    "x86_64-installed-import": true,
+    "x86_64-calculator": true,
+    "read-only-ui-capture": true
+  },
+  "ordinary_flow": {
+    "passed": true,
+    "copy_and_stop_pid_close_assertions_passed": true,
+    "clipboard_overlay_handled_only_in_test": true
+  },
+  "visual_suite": {
+    "ui_tests_executed": false,
+    "screenshots": 0,
+    "failure": "Existing own install preserved: runtime cases intentionally retain host/driver for reuse"
+  },
+  "integration_repair": "Run visual checks after read-only moving capture has verified removal of its own host/driver/consumer, before independent runtime cases. Preserve all failure results; never uninstall unknown existing packages.",
+  "runtime_ui_source_changed": false,
+  "candidate_distributed": false,
+  "native_skipped_intentionally": true
+}

@@ -25,6 +25,8 @@
 
 [CI59实际失败](research/container-api33/evidence/visual-stop-overlay-and-capture-probe-failure-results.json)固定0b3348f3：复制成功文字、反馈内容／1800字符、Guest PID和模式保持等原断言均已通过，验证了状态可见修正；随后Stop点击后10秒PID3443仍在，最终清理才发送SIG9，不能算正常停止通过。日志存在Android剪贴板浮层，但没有当时的失败页面，原因尚不能确定。测试现仅处理AOSP Android13已知clipboard_ui浮层后再发Stop点击，仍保留10秒真实PID消失／CLOSE断言；失败另外保存当前页面。独立画面脚本已被调用，但把pm path未安装时正常exit1当命令错误，0个UI测试／0张新图；现区分正常空返回与服务／权限错误。14秒驱动构建与语法检查通过，原UI／引擎不改，修正后的实际结果待执行。58、59均保持失败，新2.4.36尚未交付。
 
+[CI60实际结果](research/container-api33/evidence/visual-clean-boundary-failure-results.json)固定47550800：导入／坐标A→B／复制／PID及模式保持／正常停止的全部原断言实际通过，7定位方法／19无线／独立九路径／计算器／已装导入／447lint及Mac build-only均通过。三档API摘要、73来源／签名／11材料已独立核对。整轮仍失败：运行检查为了复用会保留己方host／driver，随后截图脚本按“有现存安装则保留并拒绝”保护停止，0个UI测试／0张新图。修正执行顺序到只读moving capture已经验证清理三件己方包之后，再跑独立界面检查与其余回归；保留现存安装保护，各项失败仍传播，未降低通过要求。应用UI和引擎不变，后续同源画面待实际执行，新界面未交付。
+
 ## 当前可下载候选：2.4.35，Phone10合格Artifact已实际交付
 
 [下载已核验安装包ZIP（GitHub需登录）](https://github.com/soozooq/gogogo/actions/runs/40626531080/artifacts/12789442894)，26,833,656字节、SHA43c8b4c9…，保留至2026-11-11T03:25:33Z。工作区同字节副本 `/workspace/deliverables/Tianwaitian-2.4.35-qualified.zip`。ZIP内只有两份自有APK及六份说明／校验／资格元数据，不含原版微信／抖音APK、账号资料或私钥。完整[实际交付与下载验真回执](research/container-api33/evidence/phone10-qualified-artifact-verified-delivery-results.json)。

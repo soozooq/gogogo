@@ -33,11 +33,13 @@ echo "$research_acceleration" > "$CONTAINER_RESEARCH_WORKDIR/evidence/selected-a
 "$ANDROID_HOME/emulator/emulator" -avd api33-research-check -port 5580 -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel "$research_acceleration" -memory 1536 -cores 2 -no-snapshot-load -no-snapshot-save > "$CONTAINER_RESEARCH_WORKDIR/evidence/emulator.log" 2>&1 &
 research_emulator_pid=$!
 research_boot_ready=false
+research_visual_attempted=false
+research_visual_status=0
 finish_research_emulator() {
     research_exit_status=$?
     # UI capture is independent of a failed earlier ordinary regression. Preserve
     # that failure, still collect own layout evidence, then stop the same VM.
-    if [ "$research_boot_ready" = true ] && [ -n "${TWT_VISUAL_MAIN_APK:-}" ]; then
+    if [ "$research_boot_ready" = true ] && [ "$research_visual_attempted" = false ] && [ -n "${TWT_VISUAL_MAIN_APK:-}" ]; then
         if python3 "$spec_root/tools/run-visual-layout-check.py" --sdk "$ANDROID_HOME" --root "$CONTAINER_RESEARCH_WORKDIR" --serial emulator-5580 --main-apk "$TWT_VISUAL_MAIN_APK"; then
             :
         else
@@ -63,6 +65,17 @@ until [ "$("$research_adb" -s emulator-5580 shell getprop sys.boot_completed 2>/
 done
 research_boot_ready=true
 python3 "$spec_root/tools/run-read-only-ui-check.py" --sdk "$ANDROID_HOME" --root "$CONTAINER_RESEARCH_WORKDIR" --serial emulator-5580
+# The read-only capture removes its own host/driver. Later runtime cases retain
+# them for reuse, so run the visual suite at this verified clean boundary.
+# Its failure is retained while the independent regressions still run.
+if [ -n "${TWT_VISUAL_MAIN_APK:-}" ]; then
+    research_visual_attempted=true
+    if python3 "$spec_root/tools/run-visual-layout-check.py" --sdk "$ANDROID_HOME" --root "$CONTAINER_RESEARCH_WORKDIR" --serial emulator-5580 --main-apk "$TWT_VISUAL_MAIN_APK"; then
+        :
+    else
+        research_visual_status=$?
+    fi
+fi
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-startup-framework" --startup-contract
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-location-contract" --location-contract
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-owned-location" --guest-location
@@ -70,3 +83,4 @@ python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emu
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-installed-import" --installed-baseline
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-calculator"
 python3 "$spec_root/tools/run-cloud-check.py" --sdk "$ANDROID_HOME" --serial emulator-5580 --label "$research_abi-radio-privacy" --radio-contract
+exit "$research_visual_status"
