@@ -199,6 +199,8 @@ def release_for_tag(config):
 def validate_manifest(value, config, delivery_run):
     require(value['source_commit'] == config['runtime_commit']
             and value['delivery_run_id'] == delivery_run, 'Phone source/run differs')
+    require(value.get('delivery_generation', 1) == config.get('delivery_generation', 1),
+            'Phone packaging generation differs')
     require(value['main_checks'] == {'junit': COUNTS, 'lint_error_fatal_count': 0},
             'Phone main checks did not pass')
     require(value['host_original_ci_run'] == config['qualification_run_id']

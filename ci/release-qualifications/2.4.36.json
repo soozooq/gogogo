@@ -66,5 +66,6 @@
       "bytes": 4603006
     }
   },
-  "requires_retired_process_fixture": true
+  "requires_retired_process_fixture": true,
+  "delivery_generation": 2
 }

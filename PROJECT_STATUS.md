@@ -22,7 +22,9 @@
 
 **原生67作业123441209819仍在运行，尚无通过结论；2.4.36尚无合格下载。** 新[交付策略](ci/release-qualifications/2.4.36.json)固定本轮源码／作业／已完成归档，等待同源原生7方法、独立Guest九路径、匿名重开、300秒主PID／UID观察及系统／包清理。之后还须核对本轮两APK、版本、签名、ARM64主包、447／lint、423份非签名内容、20界面阶段和最新源码，才能产生qualified下载。发布作业和下载结果要实际取回核对。
 
-[打包准备回执](research/container-api33/evidence/phone-visual-update-preparation.json)：新版宿主沿25bfd6e2…证书，4603006字节／SHA2198b7d6…；与本轮CI宿主全部423非签名内容相同，公开配方可精确恢复，CI不需私钥。主包沿6eec4ddd…证书，必须使用干净固定源码的实际云端构建，不能拿渲染x86包或研发目录增量APK交付。新策略明确73来源／423内容／20阶段；旧2.4.35的59／415及其配方不适用新版。控制器21项本地边界／恢复／打包检查已通过，这不算新的云端交付。
+[打包准备回执](research/container-api33/evidence/phone-visual-update-preparation.json)：新版宿主沿25bfd6e2…证书，4603006字节／SHA2198b7d6…；与本轮CI宿主全部423非签名内容相同，公开配方可精确恢复，CI不需私钥。主包沿6eec4ddd…证书，必须使用干净固定源码的实际云端构建，不能拿渲染x86包或研发目录增量APK交付。新策略明确73来源／423内容／20阶段；旧2.4.35的59／415及其配方不适用新版。控制器22项本地边界／恢复／打包检查已通过（含实际复制配置与回执摘要一致的结构回归），这不算新的云端交付。
+
+[Phone11实际回执](research/container-api33/evidence/phone11-manifest-profile-failure-results.json)：云端已构建主2.4.36（SHA bff006e1…）与宿主0.5，两APK的版本／签名／ARM64及423内容独立核对通过。但打包回执误写旧版配置SHA67f15d33…，实际随包配置正确为6a2c0c8e…，校验以 `Phone profile differs` 拒绝，尚未尝试Release POST、没有合格下载。现回执直接散列实际配置文件；策略generation2拒绝旧回执，并通过原有live策略校验让旧等待作业退出，后续新轮复用同一原生67，不取消或重跑原生。新打包轮的实际结果另记。
 
 旧65已装导入启用状态失败保留，未采集当时实际View，不能断言缓存原因；66已验证新的完整状态事件、显式AX刷新及实际View启用。65／66的20阶段JUnit均过，但外层遗漏仍要求16张而失败、原生跳过；67才验证数量同步后的整轮默认检查。[66回执](research/container-api33/evidence/visual-collector-count-failure-results.json)及[65回执](research/container-api33/evidence/visual-20-stage-and-import-state-results.json)均保留。
 

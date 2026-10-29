@@ -134,7 +134,8 @@ def main():
         apks[role]['file'] = names[role]
     # Cloud fixture signing can change the main APK hash; record the actual bytes built here.
     receipt = {'schema': 'GOGOGO_CI_PHONE_PREVIEW_STAGING_V1', 'source_commit': source_commit,
-        'delivery_run_id': int(args.delivery_run_id), 'apks': apks, 'metadata_profile_sha256': PROFILE_SHA,
+        'delivery_run_id': int(args.delivery_run_id), 'apks': apks,
+        'metadata_profile_sha256': digest(profile), 'delivery_generation': config.get('delivery_generation', 1),
         'main_checks': {'junit': counts, 'lint_error_fatal_count': severe},
         'host_original_ci_run': config['qualification_run_id'],
         'host_ci_non_signature_entries_equal': config['host_ci_non_signature_entries'],
