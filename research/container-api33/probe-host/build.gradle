@@ -1,0 +1,79 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    compileSdk 33
+    defaultConfig {
+        applicationId 'com.soozooq.tianwaitian.containerresearch'
+        minSdk 26
+        targetSdk 33
+        versionCode 5
+        versionName '0.5-preview'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+        ndk { abiFilters 'arm64-v8a', 'x86_64' }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    packagingOptions { jniLibs { useLegacyPackaging true } }
+    sourceSets.main.assets.srcDir layout.buildDirectory.dir('generated/researchGuestAssets')
+    sourceSets.main.assets.srcDir layout.buildDirectory.dir('generated/researchNoticeAssets')
+    sourceSets.androidTest.assets.srcDir layout.buildDirectory.dir('generated/researchNoticeAssets')
+}
+
+// One pinned source manifest supplies both the cloud verifier and the ordinary import UI.
+def researchSources = new File(System.getenv('CONTAINER_RESEARCH_SPEC_DIR'), 'sources.json')
+def reviewedTargets = new File(System.getenv('CONTAINER_RESEARCH_SPEC_DIR'), 'evidence/official-target-apk-readiness.json')
+def catalogOutput = layout.buildDirectory.file('generated/researchGuestAssets/approved-guests.json')
+def generateResearchGuestCatalog = tasks.register('generateResearchGuestCatalog') {
+    inputs.file researchSources
+    inputs.file reviewedTargets
+    outputs.file catalogOutput
+    doLast {
+        def sources = new groovy.json.JsonSlurper().parse(researchSources)
+        def entries = [
+            [key: 'guest', label: 'Fossify 计算器', location: false],
+            [key: 'third_party_location', label: 'GPSTest 定位', location: true]
+        ].collect { item ->
+            def source = sources[item.key]
+            [label: item.label, location: item.location, package: source['package'],
+             sha256: source.sha256, size: source.size, version_code: source.version_code,
+             version_name: source.version_name, certificate_sha256: source.certificate_sha256,
+             url: source.url, arm64_only: false]
+        }
+        def targets = new groovy.json.JsonSlurper().parse(reviewedTargets)
+        ['wechat', 'douyin'].each { key ->
+            def source = targets.targets.find { it.source_key == key }
+            if (source == null) throw new GradleException('Missing reviewed original target: ' + key)
+            entries.add([label: key == 'wechat' ? '微信（位置待验证）' : '抖音（位置待验证）',
+                location: true, package: source['package'], sha256: source.sha256, size: source.size,
+                version_code: source.version_code, version_name: source.version_name,
+                certificate_sha256: source.certificate_sha256, url: targets.source[key].url,
+                arm64_only: true])
+        }
+        def target = catalogOutput.get().asFile
+        target.parentFile.mkdirs()
+        target.text = groovy.json.JsonOutput.toJson(entries)
+    }
+}
+tasks.named('preBuild').configure { dependsOn generateResearchGuestCatalog }
+
+// Each own CI APK carries the preserved license/source material. Target APKs
+// remain external inputs and never become assets of either own APK.
+def noticeSpec = new File(System.getenv('CONTAINER_RESEARCH_SPEC_DIR'))
+def generateResearchNotices = tasks.register('generateResearchNotices', Sync) {
+    from(new File(noticeSpec, 'licenses')) { include '*.txt', '*provenance.json' }
+    from(new File(noticeSpec, 'THIRD_PARTY_NOTICES.md'))
+    from(new File(noticeSpec, 'CI_SOURCE_AND_RELINK.md'))
+    into layout.buildDirectory.dir('generated/researchNoticeAssets/research-notices')
+}
+tasks.named('preBuild').configure { dependsOn generateResearchNotices }
+
+dependencies {
+    implementation project(':BCore')
+    androidTestImplementation 'androidx.test:runner:1.5.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'
+}

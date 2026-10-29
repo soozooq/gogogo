@@ -205,17 +205,17 @@ public final class LabRecoveryTriage {
 
         result.append("建议：");
         if (snapshot.localServiceFlag || snapshot.lifecycle == Lifecycle.RUNNING) {
-            result.append("模拟服务可能正在运行；不要在取证页强行移除 Provider。先在首页正常停止，再回来复查。");
+            result.append("模拟服务可能正在运行；导出反馈无需停止，结束使用时在首页正常停止即可。不要在取证页强行移除 Provider。");
         } else if (currentPending > 0 || currentFailures > 0) {
-            result.append("存在未完成或失败的清理 API 记录；先保存摘要，在实验仪表盘核对详细结果。不要仅凭记录认定残留。");
+            result.append("存在未完成或失败的清理 API 记录；一键复制反馈即可。不要仅凭记录认定残留。");
         } else if (snapshot.lifecycle == Lifecycle.INTERRUPTED_CANDIDATE) {
-            result.append("存在异常退出候选；请打开 Consumer Matrix 查看新鲜度，并核对启动扫尾记录。");
+            result.append("存在异常退出候选；已有记录会随完整反馈一起导出，无需重新执行实验。");
         } else if (snapshot.lifecycle == Lifecycle.REBOOT_UNCERTAIN) {
-            result.append("旧会话和本次启动未必处于同一开机周期；建议重新做一次完整启动／停止对照。");
+            result.append("旧会话和本次启动未必处于同一开机周期；保留已有时间标记并复制反馈即可。");
         } else if (observed == 0) {
-            result.append("缺少清理取证数据；需要先用测试场景完成一次正常启动／停止后再对比。");
+            result.append("缺少清理取证数据；仍可直接复制反馈，无需专门启动／停止来补记录。");
         } else {
-            result.append("可在 Consumer Matrix 验证实时流，并到实验仪表盘查阅完整清理取证。");
+            result.append("已有清理历史会随完整反馈一起导出，无需逐项打开实验页。");
         }
 
         if (olderWarnings > 0) {

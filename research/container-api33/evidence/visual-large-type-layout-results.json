@@ -1,0 +1,125 @@
+{
+  "scope": "ACTUAL_OWN_UI_IMAGES_WITH_LARGE_FONT_FAILURE_NOT_TARGET_LOCATION",
+  "commit": "a4b0d107a0ba39b557a8c4a46ccd7e269f7591c8",
+  "run_id": 40639388437,
+  "linux_job_id": 122653716854,
+  "linux_conclusion": "FAILURE",
+  "mac_job_id": 122653717003,
+  "mac_conclusion": "SUCCESS_BUILD_ONLY",
+  "archives": {
+    "own": {
+      "id": 12794978360,
+      "sha256": "05ed62ba3d660990ed6ae0b2949be1aa863fab595dedb2a7b9ec006838656d42",
+      "verified": true
+    },
+    "mac": {
+      "id": 12795375247,
+      "sha256": "9c3b6e36e323fda7692a566d9b39c1ded49f5e7d1a76ccd9ef84e57b5e84289d",
+      "verified": true
+    },
+    "linux": {
+      "id": 12795052695,
+      "sha256": "9c91d47117b0461b700344d067ad00a0d1eb918f0324be586da4f51db8c2f2f9",
+      "verified": true
+    }
+  },
+  "own_sources_verified": 73,
+  "same_ci_own_signatures_verified": true,
+  "notice_materials_per_apk": 11,
+  "default_cases": {
+    "x86_64-startup-framework": true,
+    "x86_64-radio-privacy": true,
+    "x86_64-owned-location": true,
+    "x86_64-ordinary-entry": true,
+    "x86_64-location-contract": true,
+    "x86_64-installed-import": true,
+    "x86_64-calculator": true,
+    "read-only-ui-capture": true
+  },
+  "visual": {
+    "passed": false,
+    "junit_seconds": 71.086,
+    "png_count": 16,
+    "xml_count": 16,
+    "normal_stage_images": 14,
+    "failure_images": 2,
+    "issues": [
+      {
+        "profile": "light-large-320",
+        "error_class": "AssertionError",
+        "message": "Coordinate field unreachable: target_latitude",
+        "control": {
+          "resource": "com.soozooq.tianwaitian.containerresearch:id/copy_preview_feedback",
+          "profile": "light-large-320",
+          "bounds": "[32,1154][608,1256]",
+          "profile_width_dp": 320,
+          "automation_viewport_width": 640,
+          "automation_viewport_height": 1280,
+          "minimum_height_dp": 48,
+          "minimum_height_in_viewport": 96
+        }
+      },
+      {
+        "profile": "dark-large-320",
+        "error_class": "AssertionError",
+        "message": "Coordinate field unreachable: target_latitude",
+        "control": {
+          "resource": "com.soozooq.tianwaitian.containerresearch:id/copy_preview_feedback",
+          "profile": "dark-large-320",
+          "bounds": "[32,1154][608,1256]",
+          "profile_width_dp": 320,
+          "automation_viewport_width": 640,
+          "automation_viewport_height": 1280,
+          "minimum_height_dp": 48,
+          "minimum_height_in_viewport": 96
+        }
+      }
+    ],
+    "normal_360_profiles_completed": true,
+    "large_320_profiles_completed": false,
+    "normal_keyboard_png_shows_ime": false,
+    "normal_keyboard_xml_includes_ime": true,
+    "keyboard_capture_timing": "PNG_CAPTURED_BEFORE_IME_APPEARED_NOT_A_KEYBOARD_ACCEPTANCE",
+    "system_server_stable": true,
+    "owned_cleanup": {
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true,
+      "com.soozooq.gogogo.test": true
+    },
+    "display_settings_restored": true
+  },
+  "manual_image_review": {
+    "reviewed": [
+      "light-360-map",
+      "light-360-preview",
+      "light-360-keyboard",
+      "light-large-320-failure",
+      "light-large-320-map",
+      "light-large-320-search",
+      "dark-360-preview",
+      "dark-large-320-preview"
+    ],
+    "findings": [
+      "Large map target card hides primary action",
+      "Large search service text wraps into vertical two characters and verbose heading/attribution takes space",
+      "Large preview header and fixed action stack reduce form viewport",
+      "Normal light and dark resources render coherently",
+      "Map tiles/network load not established by these early frames"
+    ],
+    "no_images_edited": true
+  },
+  "next_ui_repair": {
+    "pinned_map_primary_action": true,
+    "alternate_actions_in_more_menu": true,
+    "compact_search_labels_and_vector_service_control": true,
+    "preview_header_hidden_while_ime_visible": true,
+    "scroll_gesture_requery_without_immediate_undo": true,
+    "wait_for_actual_input_value_and_ime": true,
+    "local_main_build_447_lint": "PASS_52_SECONDS",
+    "local_host_driver_build": "PASS_33_SECONDS"
+  },
+  "candidate_distributed": false,
+  "engine_changed": false,
+  "same_source_native_target_qualified": false,
+  "wechat_douyin_vivo_location_verified": false
+}

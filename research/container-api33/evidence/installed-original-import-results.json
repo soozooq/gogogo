@@ -1,0 +1,179 @@
+{
+  "schema": "GOGOGO_INSTALLED_ORIGINAL_IMPORT_RESULTS_V1",
+  "scope": "ACTUAL_X86_64_ORDINARY_INSTALLED_PUBLIC_APK_IMPORT_NOT_PHONE_OR_TARGET_LOCATION",
+  "run_id": 40248613788,
+  "commit": "96e925224b598432048f3cd72cee3009db582767",
+  "tree": "7344cc5b4c4dbe7c43d8b09b9ec8bcb84510dec8",
+  "default_checks_conclusion": "success",
+  "artifacts": {
+    "linux": {
+      "id": 12620206867,
+      "sha256": "fe6d94e9c467bd9adfb7869496f044c677362238b1d89f002fa986e18852b7d4",
+      "verified": true
+    },
+    "mac": {
+      "id": 12620061836,
+      "sha256": "e4c7aa3e26153e578a00ab08e5a89a99abdaa6e3e4310cd73197730797b1f81c",
+      "verified": true
+    },
+    "own": {
+      "id": 12619282983,
+      "sha256": "2510612c10d2aa6cd496811e0a8fa255d5534cb70d74233ebc49ebd73a5510e8",
+      "verified": true
+    }
+  },
+  "source_count_verified_per_case": 58,
+  "ordinary_installed_import": {
+    "junit_seconds": 7.971,
+    "junit_test_count": 1,
+    "passed": true,
+    "actual_button_used": true,
+    "original_uid_source_path_and_version_preserved": true,
+    "original_legacy_and_modern_signer_verified": true,
+    "original_certificate_sha256": "affdb124d3f4720c2f98dbca9eacba0514fba4306e20a2786c861c3c0d6ff292",
+    "temporary_apk_removed": true,
+    "virtual_copy_removed": true,
+    "original_system_control_removed_later_by_cloud_driver": true,
+    "evidence_basis": "PASSED_FIXED_SOURCE_JUNIT_ASSERTIONS_PLUS_SYSTEM_INSTALLED_TRUE_SIGNER_LOGCAT_AND_FINAL_HOST_SCREEN",
+    "custom_json_not_transferred_by_fixed_CI42_driver": true,
+    "final_host_screenshot_viewed": true,
+    "not_target_apps_or_private_account_data": true
+  },
+  "case_junit": {
+    "x86_64-calculator": {
+      "seconds": 6.589,
+      "passed": true,
+      "transcript_result": "OK (1 test)"
+    },
+    "x86_64-installed-import": {
+      "seconds": 7.971,
+      "passed": true,
+      "transcript_result": "OK (1 test)"
+    },
+    "x86_64-ordinary-entry": {
+      "seconds": 11.959,
+      "passed": true,
+      "transcript_result": "OK (1 test)"
+    },
+    "x86_64-radio-privacy": {
+      "seconds": 0.092,
+      "passed": true,
+      "transcript_result": "OK (9 tests)"
+    },
+    "x86_64-startup-framework": {
+      "seconds": 0.899,
+      "passed": true,
+      "transcript_result": "OK (1 test)"
+    }
+  },
+  "framework_observed": {
+    "scope": "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION",
+    "passed": true,
+    "pending_intents_sent": false,
+    "location_requested": false,
+    "startup_contract_run_id": "490b19e6-cdee-4d6a-93b0-51ae8abcd108",
+    "framework_http_legacy_class_resolved": true,
+    "expected_real_host_uid": 10129,
+    "process_api_uid": 10001,
+    "binder_self_uid": 10129,
+    "binder_self_pid": 2657,
+    "process_api_pid": 2657,
+    "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
+    "binder_self_uid_matches_real_host": true,
+    "activity_attribution_uid": 10129,
+    "application_attribution_uid": 10129,
+    "activity_attribution_uid_matches_real_host": true,
+    "application_attribution_uid_matches_real_host": true,
+    "activity_attribution_package": "com.soozooq.tianwaitian.containerresearch",
+    "pending_activity_created": true,
+    "pending_service_created": true,
+    "provider_call_nonce_matches": true,
+    "provider_pid": 2684,
+    "provider_caller_pid": 2657,
+    "provider_process_separate": true,
+    "provider_process_api_uid": 10001,
+    "provider_caller_binder_uid": 10129,
+    "provider_query_nonce_matches": true,
+    "provider_query_pid": 2684
+  },
+  "read_only_ui_capture": {
+    "source_count_verified": 59,
+    "passed": true,
+    "scope": "SELF_OWNED_MOVING_UI_ONLY_NOT_TARGET_STARTUP_OR_LOCATION",
+    "old_cli": {
+      "returncode": 0,
+      "idle_error_observed": true
+    },
+    "observed": {
+      "scope": "SELF_OWNED_UI_CAPTURE_ONLY_NOT_TARGET_STARTUP",
+      "target": "owned-fixture",
+      "package": "com.soozooq.tianwaitian.locationconsumer",
+      "api": 33,
+      "capture_method": "UI_AUTOMATION_WITHOUT_IDLE_WAIT",
+      "own_driver_targeting": true,
+      "plain_application": true,
+      "passed": true,
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "input_events_sent": false,
+      "root_package": "com.soozooq.tianwaitian.locationconsumer",
+      "visible_text": [
+        "Read-only moving fixture 107"
+      ],
+      "stage": "OWN_UI_VISIBLE",
+      "elapsed_ms": 27
+    },
+    "cleanup": {
+      "com.soozooq.tianwaitian.locationconsumer": true,
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true
+    },
+    "host_engine_process_absent": true
+  },
+  "same_run_own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4534140,
+        "sha256": "b68d87a3bbb81cf9aa87e9d9def6a31888af80e7b9236d60898182ad5bce77b4"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 503242,
+        "sha256": "4d4d22bcd71bf1bc49d680b34286bf45b2b28d85e7cc4282c4a831cbb64cc126"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 72818,
+        "sha256": "a04d8246ca72392cd8079d2ab434a603186f78dcc5ad444d37765c0f7b789426"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "native_job": {
+    "id": 121337102085,
+    "status_at_capture": "in_progress",
+    "commit": "96e925224b598432048f3cd72cee3009db582767",
+    "passed": false,
+    "actual_location_result": "NOT_YET_REPORTED"
+  },
+  "previous_native_failure": "native-pid-set-and-owned-stage-results.json",
+  "phone_update_distributed": false,
+  "wechat_send_and_live_location": "UNFULFILLED",
+  "douyin_wireless_and_overseas": "UNFULFILLED",
+  "subsequent_native_result": "native-owned-location-stale-ui-results.json",
+  "subsequent_structured_import_report": "map-point-prefill-results.json"
+}

@@ -1,0 +1,113 @@
+{
+  "schema": "GOGOGO_NATIVE_TRIGGER_CORRECTION_PREPARATION_V1",
+  "scope": "WORKFLOW_SELECTION_AND_DEFAULT_RECEIPTS_NOT_NEW_NATIVE_RUNTIME",
+  "base_commit": "8060b5734160a3b6a15e2e5d4183b4c2f9b39303",
+  "ci37": {
+    "run_id": 40208971971,
+    "default_job_ids": [
+      121215912460,
+      121215912315
+    ],
+    "default_checks_conclusion": "success",
+    "native_job": {
+      "id": 121217370901,
+      "conclusion": "skipped",
+      "reason": "COMMIT_MESSAGE_MISSED_BOTH_OPT_IN_MARKERS",
+      "passed": false
+    },
+    "same_run_own_apk_transport": "NOT_PREPARED_OR_UPLOADED",
+    "artifacts": {
+      "linux": {
+        "id": 12604444800,
+        "sha256": "a7f65697e02100f31a64a0122b80d8b4e60152d0eea3dd013b215643165d71dd",
+        "verified": true
+      },
+      "mac": {
+        "id": 12604452993,
+        "sha256": "787779c8488639bc489c3fde3a95d4f8802c83c9bb137e538f0edab5c4ea5a3a",
+        "verified": true
+      }
+    },
+    "source_inputs_per_case_verified": 55,
+    "actual_own_framework": {
+      "scope": "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION",
+      "passed": true,
+      "pending_intents_sent": false,
+      "location_requested": false,
+      "startup_contract_run_id": "2435e8de-9e9a-401c-840f-dcb4fb95a596",
+      "framework_http_legacy_class_resolved": true,
+      "expected_real_host_uid": 10129,
+      "process_api_uid": 10001,
+      "binder_self_uid": 10129,
+      "binder_self_pid": 2564,
+      "process_api_pid": 2564,
+      "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
+      "binder_self_uid_matches_real_host": true,
+      "activity_attribution_uid": 10129,
+      "application_attribution_uid": 10129,
+      "activity_attribution_uid_matches_real_host": true,
+      "application_attribution_uid_matches_real_host": true,
+      "activity_attribution_package": "com.soozooq.tianwaitian.containerresearch",
+      "pending_activity_created": true,
+      "pending_service_created": true
+    },
+    "case_junit": {
+      "x86_64-startup-framework": [
+        "Time: 0.56",
+        "OK (1 test)"
+      ],
+      "x86_64-calculator": [
+        "Time: 5.726",
+        "OK (1 test)"
+      ],
+      "x86_64-ordinary-entry": [
+        "Time: 11.162",
+        "OK (1 test)"
+      ],
+      "x86_64-radio-privacy": [
+        "Time: 0.071",
+        "OK (9 tests)"
+      ]
+    },
+    "feedback_main": {
+      "junit": {
+        "tests": 447,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "lint_error_fatal_count": 0,
+      "passed": true
+    }
+  },
+  "correction": {
+    "push_markers": "[cuttlefish-boot] [cuttlefish-container]",
+    "new_explicit_workflow_dispatch_container_input": "run_cuttlefish_container_probe",
+    "manual_input_runs_same_run_own_transport_boot_originals_and_container": true,
+    "manual_path_actual_runtime": "NOT_VERIFIED",
+    "native_lock_group_unchanged": true,
+    "cancel_running_native": false,
+    "app_code_or_build_inputs_changed": false
+  },
+  "prior_active_native": {
+    "run_id": 40205388335,
+    "job_id": 121206560217,
+    "status_at_review": "in_progress",
+    "contains_network_array_fix": false
+  },
+  "prior_pending_native": {
+    "run_id": 40207482457,
+    "job_id": 121213057132,
+    "status_at_review": "pending",
+    "interpretation": "CAN_BE_SUPERSEDED_BY_NEW_PENDING_NOT_PASS"
+  },
+  "source_sha256": {
+    ".github/workflows/container-research.yml": "63ee9814d9bae57a137a34387c125b9c7f7718c52c8d95321e0078080119791c"
+  },
+  "phone_update_distributed": false,
+  "static_workflow_selection_matrix": {
+    "cases": 8,
+    "passed": true,
+    "scope": "ACTUAL_EXPRESSIONS_LOCAL_EVALUATION_NOT_MANUAL_GITHUB_RUNTIME"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "schema": "GOGOGO_MAP_POINT_PREFILL_PREPARATION_V1",
+  "scope": "LOCAL_COMPILE_AND_STATIC_CONTRACT_NOT_ACTUAL_MAIN_PHONE_UI_OR_TARGET_LOCATION",
+  "base_commit": "96e925224b598432048f3cd72cee3009db582767",
+  "flow": "Existing map selection -> visible preview handoff when installed on native ARM64 -> choose WeChat/Douyin -> prefilled ordinary host -> user confirms import/apply/open.",
+  "explicit_action": "com.soozooq.tianwaitian.containerresearch.action.PREFILL_TARGET_V1",
+  "coordinate_system": "WGS84",
+  "receiver_only_finite_in_range_location_catalog_entry": true,
+  "receiver_ignores_wrong_actions_coordinate_system_invalid_coordinates_or_malformed_parcels": true,
+  "receiver_does_not_auto_import_launch_guest_enable_mock_or_read_real_location": true,
+  "original_account_or_app_data_migrated": false,
+  "new_permissions": [],
+  "new_specific_visibility_query": "com.soozooq.tianwaitian.containerresearch",
+  "ordinary_ui_contract_extended": "Reject NaN without replacing saved input, accept finite WGS84 target into actual fields, require CLOSE_MODE and no Guest PID before explicit user apply, then preserve existing original-GPSTest A-to-B and stop UI checks.",
+  "installed_import_report_followup": "Transfer the structured installed-import.json and require every original/temp/virtual cleanup assertion in addition to JUnit. CI42 had assertions/logcat but did not transfer this JSON; do not retrofit it.",
+  "build": {
+    "host_and_driver_passed": true,
+    "host_seconds": 14,
+    "main_tests_and_lint_passed": true,
+    "main_seconds": 47,
+    "main_junit": 447,
+    "main_junit_failures_errors_skipped": 0,
+    "main_lint_error_fatal": 0
+  },
+  "compiled_sender_and_receiver_action_equal": true,
+  "static_host_and_launcher_checks_passed": true,
+  "controlled_python_tests": {
+    "count": 25,
+    "seconds": 0.781,
+    "passed": true
+  },
+  "new_runtime": "CI43_RECEIVER_UI_AND_STRUCTURED_INSTALLED_IMPORT_ACTUALLY_PASS",
+  "native_followup_requested": false,
+  "active_native_ci42_unchanged": {
+    "run_id": 40248613788,
+    "commit": "96e925224b598432048f3cd72cee3009db582767",
+    "job_id": 121337102085,
+    "state": "COMPLETED_LOCATION_STALE_UI_FAILURE"
+  },
+  "new_main_handoff_sources_added_to_ci_receipt": true,
+  "source_sha256": {
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeActivity.java": "0e5171d9b5a5f998afb29b6cbf7b80bc3ff109046fed25fcf0e91afa1b1875f0",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ThirdPartyLocationInstrumentedTest.java": "d066b1d65eafbeaa1392c925d44003c234c3c5f2c477e8d260f01c214983e5b4",
+    "tools/run-cloud-check.py": "e6d486e47d6f8b27603ae12413da49a3e891ea8d7c647fce309ba8dfbeaf61d2"
+  },
+  "repository_source_sha256": {
+    "app/src/main/java/com/zcshou/gogogo/TianwaitianContainerPreview.java": "880762162794d21a2a4a5484c8ff04ff28c7136b04bf0880e199a93d1c87757a",
+    "app/src/main/java/com/zcshou/gogogo/TianwaitianHomeActivity.java": "98691ff6d3f67d4830558fd980a733a80f1529ff73659828532956aec4321954",
+    "app/src/main/AndroidManifest.xml": "f3fbbb3cd56b07392fdba06ec3b96b13352697fee9f398ea97583c038f36cdfd",
+    ".github/workflows/container-research.yml": "ddafda585239e6fc13be2370e40667c460db7bd7a037a2ffb11467b4a7501cd2"
+  },
+  "phone_update_distributed": false,
+  "recorded_build_and_source_commit": "dfe8f511f1f16e8946d203f0ee7e7c5755033926",
+  "subsequent_actual_result": "map-point-prefill-results.json"
+}

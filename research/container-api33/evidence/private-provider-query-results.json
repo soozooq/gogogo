@@ -1,0 +1,135 @@
+{
+  "schema": "GOGOGO_PRIVATE_PROVIDER_QUERY_RESULTS_V1",
+  "scope": "ACTUAL_API33_X86_64_OWN_SYNTHETIC_QUERY_CURSOR_AND_CALL_NOT_PERMISSION_ISOLATION_NATIVE_LOCATION_OR_TARGET_BUSINESS",
+  "run_id": 40244887727,
+  "commit": "886225a703d32aa56b12ad51cc766f8557cb607b",
+  "tree": "1b3c937ccd8de8dfe3d1e0fca6d8c0046e31daf5",
+  "default_checks_conclusion": "success",
+  "artifacts": {
+    "linux": {
+      "id": 12618048517,
+      "sha256": "42ccbc4f126c91fc556ff356cf93458e024e2b6fbc5d48cbf904bb446039b5e7",
+      "verified": true
+    },
+    "mac": {
+      "id": 12618526267,
+      "sha256": "2696978d91668b9483d293cbbf93a6da47a91246f18a58ce79952719bd5d027a",
+      "verified": true
+    }
+  },
+  "source_inputs_per_case_verified": 57,
+  "observed": {
+    "scope": "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION",
+    "passed": true,
+    "pending_intents_sent": false,
+    "location_requested": false,
+    "startup_contract_run_id": "d197f656-4e98-433d-91eb-f6c9bc2abdd5",
+    "framework_http_legacy_class_resolved": true,
+    "expected_real_host_uid": 10129,
+    "process_api_uid": 10001,
+    "binder_self_uid": 10129,
+    "binder_self_pid": 2658,
+    "process_api_pid": 2658,
+    "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
+    "binder_self_uid_matches_real_host": true,
+    "activity_attribution_uid": 10129,
+    "application_attribution_uid": 10129,
+    "activity_attribution_uid_matches_real_host": true,
+    "application_attribution_uid_matches_real_host": true,
+    "activity_attribution_package": "com.soozooq.tianwaitian.containerresearch",
+    "pending_activity_created": true,
+    "pending_service_created": true,
+    "provider_call_nonce_matches": true,
+    "provider_pid": 2685,
+    "provider_caller_pid": 2658,
+    "provider_process_separate": true,
+    "provider_process_api_uid": 10001,
+    "provider_caller_binder_uid": 10129,
+    "provider_query_nonce_matches": true,
+    "provider_query_pid": 2685
+  },
+  "case_junit": {
+    "x86_64-startup-framework": [
+      "Time: 0.902",
+      "OK (1 test)"
+    ],
+    "x86_64-radio-privacy": [
+      "Time: 0.106",
+      "OK (9 tests)"
+    ],
+    "x86_64-calculator": [
+      "Time: 6.258",
+      "OK (1 test)"
+    ],
+    "x86_64-ordinary-entry": [
+      "Time: 11.998",
+      "OK (1 test)"
+    ]
+  },
+  "read_only_ui_capture": {
+    "source_count_verified": 59,
+    "passed": true,
+    "scope": "SELF_OWNED_MOVING_UI_ONLY_NOT_TARGET_STARTUP_OR_LOCATION",
+    "old_cli": {
+      "returncode": 0,
+      "idle_error_observed": true
+    },
+    "observed": {
+      "scope": "SELF_OWNED_UI_CAPTURE_ONLY_NOT_TARGET_STARTUP",
+      "target": "owned-fixture",
+      "package": "com.soozooq.tianwaitian.locationconsumer",
+      "api": 33,
+      "capture_method": "UI_AUTOMATION_WITHOUT_IDLE_WAIT",
+      "own_driver_targeting": true,
+      "plain_application": true,
+      "passed": true,
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "input_events_sent": false,
+      "root_package": "com.soozooq.tianwaitian.locationconsumer",
+      "visible_text": [
+        "Read-only moving fixture 109"
+      ],
+      "stage": "OWN_UI_VISIBLE",
+      "elapsed_ms": 30
+    },
+    "cleanup": {
+      "com.soozooq.tianwaitian.locationconsumer": true,
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true
+    },
+    "host_engine_process_absent": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "same_run_own_apk_transport": "NOT_PREPARED_IN_DEFAULT_ONLY_RUN; NOT_REUSED_FROM_CI40",
+  "native_job_this_run": {
+    "id": 121325857282,
+    "conclusion": "skipped",
+    "reason": "INTENTIONAL_DEFAULT_ONLY_OPT_IN_FALSE",
+    "passed": false
+  },
+  "active_native_run": {
+    "run_id": 40242481707,
+    "commit": "cf4e28221a712aa7837622e9665d0d8d4d78af83",
+    "job_id": 121318547685,
+    "status_at_capture": "in_progress",
+    "new_query_fixture_is_not_in_that_run": true,
+    "owned_location_result": "NOT_YET_REPORTED"
+  },
+  "preexisting_uri_permission_hook": "IActivityManagerProxy.CheckUriPermission returns PERMISSION_GRANTED; unchanged. Query success only proves synthetic functional Cursor IPC, not denial enforcement, isolation or the cause of UID-cache behavior.",
+  "engine_permissions_or_provider_exported_changed": false,
+  "actual_arm64_owned_location": "NOT_YET_REPORTED",
+  "wechat_send_and_live_location": "UNFULFILLED",
+  "douyin_wireless_and_overseas": "UNFULFILLED",
+  "phone_update_distributed": false
+}

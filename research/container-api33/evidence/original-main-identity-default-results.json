@@ -1,0 +1,194 @@
+{
+  "schema": "GOGOGO_CONSUMER_DELIVERY_ACTUAL_LINUX_RESULTS_V1",
+  "scope": "ACTUAL_X86_64_CONTROLLED_AND_SEPARATE_OWN_GUEST_PASSIVE_COUNTERS_NOT_WECHAT_SDK_OR_PHONE_ADOPTION",
+  "run_id": 40547400219,
+  "commit": "66a293fa2b36cc04e7c2e7986ce5588f8d0a134f",
+  "engine_patch_sha256": "839947fae2ffcb1379ff328b9a6c757f8253114a12ec4a20854670c53aed14e8",
+  "linux_job_id": 122341584359,
+  "linux_conclusion": "success",
+  "artifacts": {
+    "own": {
+      "id": 12753492350,
+      "sha256": "205fc5c5366a4e933cd630035c20684563cf187db3c4fc52caa0eb5ed0701b11",
+      "verified": true
+    },
+    "mac": {
+      "id": 12752958888,
+      "sha256": "8817b78c3921c0226c214de846269bcb9d774e02cce663b9744038ff3a2bc3eb",
+      "verified": true
+    },
+    "linux": {
+      "id": 12754695729,
+      "sha256": "9a11038442a12b7dced73f2c840301288b7986d067a6e37819a20b24fd074c46",
+      "verified": true
+    }
+  },
+  "three_api_archive_digests_fixed_sources_signatures_materials_verified": true,
+  "case_junit": {
+    "x86_64-startup-framework": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 0.495,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-location-contract": {
+      "passed": true,
+      "junit_tests": 6,
+      "junit_seconds": 4.203,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-radio-privacy": {
+      "passed": true,
+      "junit_tests": 19,
+      "junit_seconds": 0.138,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-owned-location": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 3.264,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-ordinary-entry": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 12.095,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-installed-import": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 8.601,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-calculator": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 5.537,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    }
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4547692,
+        "sha256": "a248e1a43e9feab5766ab86f8d7f309e257b77c7d7f9c2091ccf5e5acbe7c341"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 530330,
+        "sha256": "9a97f72849ee3553c6d03c0964851f611879fb0a394e9e0a1d5d991ef8277cfa"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 74158,
+        "sha256": "ad57d5bac2f30188601d79062c5a34ec15b5406a7424eb0092ed5d08d3ee18f2"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "controlled_wechat_context": {
+    "junit_methods": 6,
+    "real_wechat_or_sdk": false,
+    "source_bound_assertions": [
+      "Both providers cache/current prepare counts match requests; each stream has two returned sends.",
+      "Actual Binder caller/receiver PID matches the fixture client.",
+      "Detached summary mutation and host configuration reads do not change Core consumer counters.",
+      "WeChat both mock aliases false and synthetic extra true; generic flag preserved after restoration."
+    ]
+  },
+  "real_separate_owned_guest": {
+    "host_pid": 2950,
+    "guest_pid": 3017,
+    "actual_consumer_delivery": {
+      "last_preparation_caller_pid": 3017,
+      "cache_gps_prepared": 2,
+      "current_network_prepared": 2,
+      "stream_gps_transaction_returned": 3,
+      "last_event_age_ms": 1953,
+      "stream_network_registered": 1,
+      "stream_network_transaction_returned": 3,
+      "maximum_profiles": 16,
+      "present": true,
+      "last_stream_mock": true,
+      "scope": "CORE_MEMORY_VIRTUAL_PREPARATION_AND_BINDER_SEND_NOT_SDK_ADOPTION",
+      "current_gps_prepared": 2,
+      "stream_gps_registered": 1,
+      "first_event_elapsed_ms": 45813,
+      "last_stream_synthetic": true,
+      "last_event_elapsed_ms": 46418,
+      "last_stream_receiver_pid": 3017,
+      "cache_network_prepared": 2
+    },
+    "maximum_sample_age_ms": 313.919135,
+    "generic_all_six_paths_mock_marked": true,
+    "cancelled_callbacks": 0,
+    "report_source": "OWN_GUEST_ATOMIC_PRIVATE_FILE"
+  },
+  "actual_normal_feedback": {
+    "stage": "COMPACT_FEEDBACK_READ_ONLY",
+    "characters": 1322,
+    "guest_pid_preserved": true,
+    "mock_mode_preserved": true,
+    "coordinates_not_recorded": true
+  },
+  "new_phone_experiment": false,
+  "arm_mac_build": {
+    "job_id": 122341584180,
+    "status": "completed",
+    "result": "VERIFIED_ACTUAL_BUILD_PASS_NOT_ARM64_ANDROID_RUNTIME"
+  },
+  "matched_native": {
+    "job_id": 122345264006,
+    "status": "pending_separate_verification",
+    "result": "PENDING_NOT_PASS"
+  },
+  "new_phone_apk_published": false,
+  "current_public_2_4_34_has_passive_counters": false,
+  "target_sdk_wechat_send_live_douyin_wireless_overseas_vivo": "NOT_VERIFIED",
+  "scope_limits": [
+    "Prepared samples and returned one-way Binder transactions do not prove SDK acceptance.",
+    "Counters are bounded volatile Core history, not a current application session or UI-correlated observation.",
+    "A missing record can mean no use, restart, or eviction; it is not SDK rejection proof.",
+    "Mac is an actual host build, not Android ARM64 runtime. Same-source native requires separate evidence; CI53 failure is retained.",
+    "Phone CI6 keeps its actual runtime source66258d1d; CI54 qualification uses corrected driver66a293fa. All415 host non-signature entries and tracked Android app/profile paths match; no new phone-source provenance is invented."
+  ],
+  "verifier_sha256": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
+  "inputs_manifest_sha256": "0f2d26e82e22133e3af6e72f419b04d2890752718159704444a7c225403b0cba",
+  "qualification_driver_change": {
+    "runtime_base_commit": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+    "new_source": "66a293fa2b36cc04e7c2e7986ce5588f8d0a134f",
+    "ordinary_main_identity_only": true,
+    "previous_failure": "native-original-pidof-set-failure-results.json",
+    "previous_failure_not_reclassified": true,
+    "new_native": "PENDING_NOT_PASS"
+  },
+  "cloud_driver_tests": {
+    "job_id": 122341584359,
+    "methods": 27,
+    "seconds": 0.644,
+    "conclusion": "success",
+    "log_summary": "Ran 27 tests in 0.644s"
+  },
+  "candidate_payload_comparison": "original-main-identity-candidate-content-results.json"
+}

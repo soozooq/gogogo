@@ -1,0 +1,15 @@
+{
+  "scope": "GITHUB_CLOUD_SETUP_FAILURE_NOT_APP_OR_ARM_RUNTIME",
+  "run_id": 39981576854,
+  "commit": "c95e5685621ab5d82ddd965da4fdedbb03c341fa",
+  "failed_job_id": 120509941083,
+  "failed_step": "android-actions/setup-android@v3",
+  "message": "Warning: Failed to find package 'tools'; sdkmanager tools exited1",
+  "reason": "Action defaults still request the obsolete tools package; SDK repository no longer supplies it.",
+  "source": "https://github.com/android-actions/setup-android/blob/v3/action.yml",
+  "fix": "Pin12266719 command-line tools, disable automatic extra packages, keep explicit serial SDK installation. Supply latest alias if absent for existing verifiers.",
+  "app_build_started": false,
+  "app_test_started": false,
+  "arm_job_at_observation": "QUEUED",
+  "new_run": "PENDING_PUSH"
+}

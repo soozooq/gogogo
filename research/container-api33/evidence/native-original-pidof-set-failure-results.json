@@ -1,0 +1,112 @@
+{
+  "schema": "GOGOGO_CI53_ORIGINAL_PIDOF_SET_FAILURE_RESULTS_V1",
+  "scope": "ACTUAL_NATIVE_FAILURE_OF_ORIGINAL_DOYIN_HOLD_BEFORE_DOUYIN_CONTAINER_AND_OWNED_CONTRACTS_NOT_TARGET_LOCATION",
+  "commit": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+  "run_id": 40523604093,
+  "native_job_id": 122261508507,
+  "conclusion": "failure",
+  "artifacts": {
+    "own": {
+      "id": 12741609554,
+      "sha256": "7f01d573c1bfadfb68ad7d1d6cc0d1e2b68b6bc7d1ff7981a1a08448f81a753a",
+      "verified": true
+    },
+    "linux": {
+      "id": 12743058330,
+      "sha256": "d07681cb796d6099e5690058208de713097694447e6c1a0092879be4a5e8cb84",
+      "verified": true
+    },
+    "native": {
+      "id": 12745934756,
+      "sha256": "85c2e09b368f30dd5fa0b368f27cfbc58a45142fffee8d209d1e77431df4b376",
+      "verified": true
+    }
+  },
+  "all_three_provided_api_digests_and_sources_verified": true,
+  "mac_archive": "NOT_PROVIDED_NO_RUNNER_NOT_PASS",
+  "native_source_count_verified": 9,
+  "own_source_count_verified": 59,
+  "douyin_original": {
+    "state": "ORIGINAL_POST_UI_TARGET_PROCESS_CHANGED",
+    "privacy_ui_reached": true,
+    "initial_pidof": "7690",
+    "last_pidof": "7690 8696",
+    "initial_pid_remains_in_last_pidof": true,
+    "requested_hold_seconds": 300,
+    "observed_before_failure_seconds": 32.763,
+    "hold_passed": false,
+    "crash_log_bytes": 0,
+    "main_process_identity": "NOT_CAPTURED_CANNOT_RETROSPECTIVELY_PROVE_RESTART_OR_STABILITY",
+    "system_checkpoints": {
+      "BEFORE_INSTALL": "662",
+      "AFTER_INSTALL": "662",
+      "AFTER_UI_CAPTURE": "662",
+      "DURING_POST_UI_OBSERVATION": "662"
+    },
+    "owned_package_removed": true,
+    "owned_ui_package_cleanup": {
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true
+    }
+  },
+  "wechat_container_anonymous_startup": {
+    "passed": true,
+    "closed": {
+      "passed": true,
+      "stage": "WELCOME_WITHOUT_LOGIN",
+      "guest_pid": "5887",
+      "input_pattern": 0
+    },
+    "virtual": {
+      "passed": true,
+      "synthetic_input_only": true,
+      "target_location_business_tested": false,
+      "previous_main_pid": 5887,
+      "returned_to_host_before_stop": true,
+      "previous_main_absent": true,
+      "input_pattern": 2,
+      "stage": "WELCOME_WITHOUT_LOGIN",
+      "main_pid": 6513,
+      "main_uid": 10097,
+      "visible_text": [
+        "Log In",
+        "Sign Up",
+        "语言"
+      ]
+    },
+    "owned_package_cleanup": {
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true
+    },
+    "not_location_business": true
+  },
+  "douyin_container": {
+    "passed": false,
+    "state": "SKIPPED_ORIGINAL_SYSTEM_CONTROL_NOT_CONFIRMED"
+  },
+  "owned_framework_location_and_controlled_contracts_executed": false,
+  "system_server_crash_pids": [],
+  "qemu_process_stopped": true,
+  "whole_observed_seconds_not_app_startup_time": 3025.009,
+  "qualified_properties": {
+    "ro.build.version.sdk": "33",
+    "ro.build.version.incremental": "16596636",
+    "ro.build.fingerprint": "generic/aosp_cf_arm64_phone/vsoc_arm64:13/TP1A.220624.019/16596636:userdebug/test-keys",
+    "ro.product.name": "aosp_cf_arm64_phone",
+    "ro.hardware": "cutf_cvm",
+    "ro.product.cpu.abi": "arm64-v8a",
+    "ro.product.cpu.abilist": "arm64-v8a,armeabi-v7a,armeabi",
+    "ro.dalvik.vm.native.bridge": "0",
+    "ro.hw_timeout_multiplier": "50",
+    "sys.boot_completed": "1"
+  },
+  "shell_uid": "2000",
+  "selinux": "Enforcing",
+  "target_terms_login_messages": false,
+  "original_apk_runtime_was_not_the_container": "The failure occurred in a directly installed original, so it does not establish a regression in the virtual consumer counters.",
+  "repair_direction": "Identify the AMS-registered original main PID and real package UID, confirm kernel PID/UID, retain full hold and fatal checks. Do not accept mere pidof membership.",
+  "old_failure_reclassified_as_pass": false,
+  "new_qualification_required": true,
+  "verifier_sha256": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
+  "inputs_manifest_sha256": "a90484bbc34cd8bf162f772dd74e10959d19d1ecccca5e8abda9d56c9814acfa"
+}

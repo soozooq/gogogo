@@ -1,0 +1,28 @@
+{
+  "schema": "GOGOGO_PHONE9_FINAL_DOWNLOAD_MEDIA_TYPE_FAILURE_V1",
+  "scope": "ACTUAL_CLOUD_PUBLISHER_FAILURE_BEFORE_ARCHIVE_QUALIFICATION_NOT_NATIVE_FAILURE",
+  "runtime_commit": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+  "delivery_commit": "4de425d27de2fa14fb3764ce1f463a4f9e8440bf",
+  "run_id": 40596941748,
+  "publisher_job_id": 122516449530,
+  "conclusion": "failure",
+  "qualification_run_id": 40595256036,
+  "qualification_workflow_conclusion": "success",
+  "failure_phase": "DOWNLOAD_FIRST_OWN_ARCHIVE",
+  "http_status": 415,
+  "actual_server_reason": "Unsupported 'Accept' header: 'application/octet-stream'. Must accept 'application/json'.",
+  "failed_artifact_id": 12775788117,
+  "publication_artifact": {
+    "id": 12779747843,
+    "bytes": 5885,
+    "sha256": "2db172801b07f43608f868db1efba5ff1d0434f28b3a8cde8d00efc76ce27098"
+  },
+  "four_archive_cloud_qualification_executed": false,
+  "qualified_download_created": false,
+  "published": false,
+  "previous_stage_release_creation_http403_is_separate": true,
+  "actual_native57_independently_verified_followup": "native-retired-process-owner-pass-results.json",
+  "local_four_archives_qualification_after_download_via_connector": true,
+  "original_apk_checks_still_valid": true,
+  "failure_not_reclassified_as_success": true
+}

@@ -1,0 +1,68 @@
+{
+  "schema": "GOGOGO_MATCHED_PHONE_DELIVERY_PREPARATION_V1",
+  "scope": "PREPARED_CONTROLLER_AND_REAL_CI56_LINUX_NOT_PHONE_DELIVERY_NATIVE_OR_PUBLICATION_PASS",
+  "captured_at": "2026-10-27T18:46:53.356297+00:00",
+  "base_research_commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",
+  "runtime_commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",
+  "qualification_run_id": 40555343592,
+  "qualification_native_job_id": 122374016460,
+  "qualification_native_status": "in_progress_not_pass",
+  "qualification_linux_result": "passive-provider-linux-results.json",
+  "mac_result": "ci56-mac-capacity-results.json",
+  "phone_delivery_run_id": null,
+  "new_draft_release_id": null,
+  "tag": "preview-2.4.35-container-99940ea2",
+  "versions": {
+    "main": "2.4.35-container-preview / 2400103",
+    "host": "0.4-preview / 4"
+  },
+  "source_profile_sha256": "67f15d335ae34ac7245dec166806773eaf83f772df0ae2b5fe7c7a9851c41ed4",
+  "signed_host": {
+    "bytes": 4590083,
+    "sha256": "28556e78c87bbec41154c6920cfc7ddf3e4d745d24233e251194d4a0bfca1e10",
+    "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+    "all_415_ci_non_signature_entries_equal": true,
+    "recipe_exact_bytes_restored": true,
+    "source_own_artifact_id": 12757735984,
+    "source_own_archive_sha256": "a1fbfa61b7a0d6c4c017effca410e51d0288c33918e1b7c22efcc09502b57f4c",
+    "base_sha256": "67d9972be8f7151813dfb3084e6f673eaee0f0cb0e73feade8f929fffa95a472",
+    "public_recipe_operations": 831,
+    "non_signature_compressed_bytes_copied": 4471632,
+    "private_key_uploaded": false
+  },
+  "main_actual_sha256": "PENDING_ACTUAL_DELIVERY_NOT_INVENTED",
+  "controller_behavior": [
+    "Stage one flat six-file download, create only this source tag draft and attach two verified owned APKs; preserve existing assets and older releases.",
+    "Separate publication job waits at most150 minutes, validates all four actual API archives/fixed sources/signatures/materials and strict native7method+real9path+300s AMS/kernel identity/system/cleanup.",
+    "Reverify this delivery run successful staging job, actual profile/main447lint/APK versions/signatures/415 source payloads/server bytes and exact tag before publication.",
+    "Read latest live policy each poll and immediately before publication; changed/disabled policy or advanced runtime source preserves the draft.",
+    "Only one never-started Mac capacity retry after the whole source-matched run completed with actual Linux/native success and explicit capacity annotation; no native/code retry or weaker gate."
+  ],
+  "maximum_wait_seconds": 9000,
+  "maximum_mac_no_runner_retry": 1,
+  "mac_retry_posted_at_preparation": false,
+  "native_failure_keeps_draft": true,
+  "local_checks": {
+    "publication_boundary_test_methods": 6,
+    "publication_boundary_test_seconds": 0.003,
+    "signature_restore_test_methods": 5,
+    "signature_restore_test_seconds": 0.001,
+    "workflow_yaml_stage_then_publication_parsed": true,
+    "frozen_source_run_artifact_recipe_apk_pins_matched": true
+  },
+  "old_draft_6625_retained_not_reused": 425599161,
+  "published_2_4_34_unchanged": true,
+  "no_new_phone_steps_permissions_dependencies_jni": true,
+  "target_sdk_wechat_send_live_douyin_wireless_overseas_vivo": "NOT_VERIFIED",
+  "published": false,
+  "source_sha256": {
+    ".github/workflows/phone-preview-draft.yml": "954e630e0434fe26c1557020f896c00ba95aa20ed8c09b6b699aabdb27bff352",
+    "ci/stage_rootless_phone_preview.py": "17283dfcee430a8f81bd298ecca1389c19b4de34e8f0c343c0c7d1629f5c68e7",
+    "ci/preview_release.py": "85e37e99d6295e84f4bf2742ac078ec9fd5ec0f88b61fde1e2041ecda58033e7",
+    "ci/qualify_native_preview.py": "314485ff5b46ced3974e4c9ba64aa0e2e5b4ef3906e3cf901e1c1342cec68e4e",
+    "ci/test_preview_release.py": "84db26b6e37dc8da1508473c8d9a3c48c13a348d7c0b3f071aaa151c9dc594cf",
+    "ci/release-qualifications/2.4.35.json": "95a9d11ebf313b6e4878aaaa62409b67b81b899912a56a729219f1ea2cf18964",
+    "ci/release-qualifications/2.4.35-notes.md": "0cddc2aa7680b81ba6ee536d4f6c935bad09d26bb1bdee2b836bda98dd25b70e",
+    "ci/phone-preview/host-signature-99940ea2.json": "69a3224c748923e8f70d105843664d4b97c43512aff3b88c67149d3f423e8f97"
+  }
+}

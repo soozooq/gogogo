@@ -1,0 +1,153 @@
+{
+  "schema": "GOGOGO_API33_LOCATION_AND_SIGNATURE_V1",
+  "date_utc": "2026-10-23",
+  "development": {
+    "branch": "research/container-api33-20261023",
+    "draft_pr": 60,
+    "previous_research_commit": "c134948383d35df9238ad803694f65906f62a296",
+    "new_branch_created": false
+  },
+  "production": {
+    "commit": "2620b741dd6a971143577737c64ebc4496120d77",
+    "version": "2.4.31-simple-support",
+    "version_code": 2400099,
+    "runtime_source_changed": false,
+    "last_user_wechat_result": "FAILED_SEND_AND_LIVE"
+  },
+  "build": {
+    "blackbox_core": "PASS",
+    "standalone_host": "PASS",
+    "instrumentation_apk": "PASS",
+    "arm64": "BUILD_ONLY_RUNTIME_NOT_TESTED",
+    "log_final_status": "BUILD SUCCESSFUL in 16s"
+  },
+  "patch_application": {
+    "scope": "PINNED_SOURCE_PATCH_APPLICATION_ONLY",
+    "upstream_commit": "df6249da4b032649689a98242f147da6c5342172",
+    "patch_sha256": "f2cd907eef2fc8df8a07cec26bfb0f58c0ad86748fcc8f9678df661d8932905b",
+    "changed_paths": 14,
+    "fresh_application": "PASS",
+    "matches_reviewed_worktree": "PASS"
+  },
+  "scope": {
+    "runtime": "AOSP_API33_X86_64_CLOUD_EMULATOR",
+    "shell_uid": 2000,
+    "selinux": "Enforcing",
+    "controlled_location_test": "PUBLIC_LOCATION_MANAGER_WITH_TEST_PROXY_TO_REAL_HOOK_METHODS",
+    "continuous_delivery": "ENGINE_LOCATION_SERVICE_BINDER_TO_FRAMEWORK_LISTENER",
+    "guest_location_hook_installation": "NOT_TESTED",
+    "calculator_location_replacement": "DISABLED",
+    "independent_linux_uid_isolation": false
+  },
+  "cases": {
+    "api33-location-contract-01": {
+      "inputs": {
+        "started_at_utc": "2026-10-23T11:52:12.250670+00:00",
+        "scope": "CLOUD_EMULATOR_ONLY_NOT_VIVO_OR_WECHAT",
+        "case": "controlled_location_contract",
+        "serial": "emulator-5580",
+        "api": 33,
+        "abi": "x86_64",
+        "shell_uid": "2000",
+        "selinux": "Enforcing",
+        "artifacts": {
+          "probe-host-build/outputs/apk/debug/probeHost-debug.apk": "e3131646a7d52c048cd6ed942492468e578f42d736075bb6b2ed52a288d1e1d0",
+          "probe-host-build/outputs/apk/androidTest/debug/probeHost-debug-androidTest.apk": "a2602155593229e9d2497b52b88d8ca3f5a5372f5036a7e259674ad11f410347"
+        },
+        "research_source_sha256": {
+          "sources.json": "3c8138b24880d6498e369798f5bd59de7a47553eddd1b8612124ee5dec2a58e1",
+          "patches/blackbox-api33-build.patch": "f2cd907eef2fc8df8a07cec26bfb0f58c0ad86748fcc8f9678df661d8932905b",
+          "tools/build-environment.init.gradle": "91d540143534254cb847711dbe2b0becfef4856a553df2bfbfa017afb3926c09",
+          "tools/inspect-apk.py": "b5f23956668389f7a360889142c12f1010e6963d8fddb56a7d795aa27e3565c4",
+          "tools/license-inventory.py": "db7967954a98c7e041d7b4a53f81a46703b5069661b15ef9ddff002c2ea2b2ed",
+          "tools/prepare.py": "bd32f6d43c07da330c31918357974b692bf047781a37fb5ec8442c118e323a61",
+          "tools/run-build.sh": "ba7a3e3d5b233ca4200ac1f7bb160c0be5eb3686323caa992826022cfac045ad",
+          "tools/run-cloud-check.py": "a26879e9bd0aa632a2a6fddded9ee317a35b10bf891ab1a002a6de3bf73c0b93",
+          "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ExternalGuestInstrumentedTest.java": "d97978ae524d3f31a938a1a4c24ad20c55b9c8a0e23cf500d38135fa62b141cd",
+          "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java": "b36cd994d40fa173fcd3c0830d688a102e0f63bf24584e3e1b6aa2e723f36e54",
+          "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/GuestImport.java": "d9352a39d22ae77fae282c935f4f45b61b9498b346d6b85780fd51c2b5e1eb97",
+          "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeActivity.java": "1a94711cd2bf3d5c4f3d451af663aea1cbf1a045281d6608a9dd86ee44bc4d12",
+          "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeApplication.java": "bcaf641d21a388213fc43fe6536cff4263c6e9c8ef9c87036fc903c12613deac",
+          "probe-host/build.gradle": "ace461c2eb6937a7447ea63cc602fb08c0f4c99f8da0de501bbb52047a897fe0",
+          "probe-host/src/main/AndroidManifest.xml": "6f414973acb3df08880b18a0ea85caa4e8a77145ad0b4692e892cae3d33abcfe"
+        }
+      },
+      "result": {
+        "passed": true,
+        "control_removed": true,
+        "guest_system_installed_after_cleanup": false,
+        "wechat_result": "NOT_TESTED",
+        "location_replacement": "CONTROLLED_PUBLIC_API33_TEST_ONLY",
+        "guest_signer_metadata": "NOT_TESTED"
+      },
+      "junit_file": "api33-location-contract-01-junit.txt",
+      "tests": 4,
+      "test_seconds": 4.353
+    },
+    "api33-signature-calculator-01": {
+      "inputs": {
+        "started_at_utc": "2026-10-23T11:52:58.003791+00:00",
+        "scope": "CLOUD_EMULATOR_ONLY_NOT_VIVO_OR_WECHAT",
+        "case": "container_uninstalled_guest",
+        "serial": "emulator-5580",
+        "api": 33,
+        "abi": "x86_64",
+        "shell_uid": "2000",
+        "selinux": "Enforcing",
+        "artifacts": {
+          "probe-host-build/outputs/apk/debug/probeHost-debug.apk": "e3131646a7d52c048cd6ed942492468e578f42d736075bb6b2ed52a288d1e1d0",
+          "probe-host-build/outputs/apk/androidTest/debug/probeHost-debug-androidTest.apk": "a2602155593229e9d2497b52b88d8ca3f5a5372f5036a7e259674ad11f410347",
+          "guest/calculator-10-foss-release.apk": "7c5443c22d6d62c67dfe80df33ea9161ff0fa440f92590bcb45d7008b57613ed"
+        },
+        "research_source_sha256": {
+          "sources.json": "3c8138b24880d6498e369798f5bd59de7a47553eddd1b8612124ee5dec2a58e1",
+          "patches/blackbox-api33-build.patch": "f2cd907eef2fc8df8a07cec26bfb0f58c0ad86748fcc8f9678df661d8932905b",
+          "tools/build-environment.init.gradle": "91d540143534254cb847711dbe2b0becfef4856a553df2bfbfa017afb3926c09",
+          "tools/inspect-apk.py": "b5f23956668389f7a360889142c12f1010e6963d8fddb56a7d795aa27e3565c4",
+          "tools/license-inventory.py": "db7967954a98c7e041d7b4a53f81a46703b5069661b15ef9ddff002c2ea2b2ed",
+          "tools/prepare.py": "bd32f6d43c07da330c31918357974b692bf047781a37fb5ec8442c118e323a61",
+          "tools/run-build.sh": "ba7a3e3d5b233ca4200ac1f7bb160c0be5eb3686323caa992826022cfac045ad",
+          "tools/run-cloud-check.py": "a26879e9bd0aa632a2a6fddded9ee317a35b10bf891ab1a002a6de3bf73c0b93",
+          "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ExternalGuestInstrumentedTest.java": "d97978ae524d3f31a938a1a4c24ad20c55b9c8a0e23cf500d38135fa62b141cd",
+          "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java": "b36cd994d40fa173fcd3c0830d688a102e0f63bf24584e3e1b6aa2e723f36e54",
+          "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/GuestImport.java": "d9352a39d22ae77fae282c935f4f45b61b9498b346d6b85780fd51c2b5e1eb97",
+          "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeActivity.java": "1a94711cd2bf3d5c4f3d451af663aea1cbf1a045281d6608a9dd86ee44bc4d12",
+          "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeApplication.java": "bcaf641d21a388213fc43fe6536cff4263c6e9c8ef9c87036fc903c12613deac",
+          "probe-host/build.gradle": "ace461c2eb6937a7447ea63cc602fb08c0f4c99f8da0de501bbb52047a897fe0",
+          "probe-host/src/main/AndroidManifest.xml": "6f414973acb3df08880b18a0ea85caa4e8a77145ad0b4692e892cae3d33abcfe"
+        }
+      },
+      "result": {
+        "passed": true,
+        "control_removed": true,
+        "guest_system_installed_after_cleanup": false,
+        "wechat_result": "NOT_TESTED",
+        "location_replacement": "DISABLED",
+        "guest_signer_metadata": "PASS"
+      },
+      "junit_file": "api33-signature-calculator-01-junit.txt",
+      "tests": 1,
+      "test_seconds": 45.117
+    }
+  },
+  "host_artifact_report": "api33-location-host-artifact.json",
+  "original_guest_signer_observation": "10-23 11:53:25.803  2262  2291 I System.out: ORIGINAL_GUEST_SIGNER_SHA256=affdb124d3f4720c2f98dbca9eacba0514fba4306e20a2786c861c3c0d6ff292; legacy_and_modern_metadata=PASS; system_guest_installed=false",
+  "remaining": {
+    "wechat_send_and_live": "UNFULFILLED",
+    "douyin_wireless_location": "UNFULFILLED",
+    "overseas_location": "UNFULFILLED",
+    "real_guest_location_calls_and_gms": "NOT_TESTED",
+    "vivo_arm64_runtime": "NOT_TESTED",
+    "binder_death_fault_injection": "NOT_TESTED",
+    "signature_rotation_multisigner_split_apks": "NOT_TESTED"
+  },
+  "historical_phase_one": {
+    "commit": "c134948383d35df9238ad803694f65906f62a296",
+    "files": [
+      "results.json",
+      "source-snapshot.json",
+      "container-calculator.png"
+    ],
+    "not_rerun_or_relabelled_as_current": true
+  }
+}

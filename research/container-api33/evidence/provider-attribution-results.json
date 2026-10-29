@@ -1,0 +1,152 @@
+{
+  "schema": "GOGOGO_PROVIDER_ATTRIBUTION_RESULTS_V1",
+  "scope": "ACTUAL_API33_X86_64_OWN_PUBLIC_CROSS_PROCESS_CALL_AND_THREE_APK_INTEGRITY_NOT_NATIVE_LOCATION_OR_TARGET_BUSINESS",
+  "run_id": 40242481707,
+  "commit": "cf4e28221a712aa7837622e9665d0d8d4d78af83",
+  "tree": "0f3ca261670e5989fe59a0db73a08d03bd886697",
+  "default_checks_conclusion": "success",
+  "artifacts": {
+    "linux": {
+      "id": 12616929448,
+      "sha256": "565c3cbef66ed8773f0af30ab73e6ada2997ebbd4fac36979880f3727bae0b60",
+      "verified": true
+    },
+    "mac": {
+      "id": 12617381830,
+      "sha256": "c92b9d315fe372aa61d7cff9c87172f89248c5bd3bfe6ce7ad1420fc74343f54",
+      "verified": true
+    },
+    "own": {
+      "id": 12617187668,
+      "sha256": "f54fb1201da896e32c76a704f56ad7de8e159e8ab5c63632c2c229789ffc81f6",
+      "verified": true
+    }
+  },
+  "observed": {
+    "scope": "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION",
+    "passed": true,
+    "pending_intents_sent": false,
+    "location_requested": false,
+    "startup_contract_run_id": "5f19b6d1-ac54-473d-83a3-b3bbb864d699",
+    "framework_http_legacy_class_resolved": true,
+    "expected_real_host_uid": 10129,
+    "process_api_uid": 10001,
+    "binder_self_uid": 10129,
+    "binder_self_pid": 2634,
+    "process_api_pid": 2634,
+    "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
+    "binder_self_uid_matches_real_host": true,
+    "activity_attribution_uid": 10129,
+    "application_attribution_uid": 10129,
+    "activity_attribution_uid_matches_real_host": true,
+    "application_attribution_uid_matches_real_host": true,
+    "activity_attribution_package": "com.soozooq.tianwaitian.containerresearch",
+    "pending_activity_created": true,
+    "pending_service_created": true,
+    "provider_call_nonce_matches": true,
+    "provider_pid": 2661,
+    "provider_caller_pid": 2634,
+    "provider_process_separate": true
+  },
+  "case_junit": {
+    "x86_64-startup-framework": [
+      "Time: 0.587",
+      "OK (1 test)"
+    ],
+    "x86_64-radio-privacy": [
+      "Time: 0.091",
+      "OK (9 tests)"
+    ],
+    "x86_64-calculator": [
+      "Time: 6.111",
+      "OK (1 test)"
+    ],
+    "x86_64-ordinary-entry": [
+      "Time: 12.322",
+      "OK (1 test)"
+    ]
+  },
+  "source_inputs_per_case_verified": 57,
+  "read_only_ui_capture": {
+    "source_count_verified": 59,
+    "passed": true,
+    "scope": "SELF_OWNED_MOVING_UI_ONLY_NOT_TARGET_STARTUP_OR_LOCATION",
+    "old_cli": {
+      "returncode": 0,
+      "idle_error_observed": true
+    },
+    "observed": {
+      "scope": "SELF_OWNED_UI_CAPTURE_ONLY_NOT_TARGET_STARTUP",
+      "target": "owned-fixture",
+      "package": "com.soozooq.tianwaitian.locationconsumer",
+      "api": 33,
+      "capture_method": "UI_AUTOMATION_WITHOUT_IDLE_WAIT",
+      "own_driver_targeting": true,
+      "plain_application": true,
+      "passed": true,
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "input_events_sent": false,
+      "root_package": "com.soozooq.tianwaitian.locationconsumer",
+      "visible_text": [
+        "Read-only moving fixture 116"
+      ],
+      "stage": "OWN_UI_VISIBLE",
+      "elapsed_ms": 516
+    },
+    "cleanup": {
+      "com.soozooq.tianwaitian.locationconsumer": true,
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true
+    },
+    "host_engine_process_absent": true
+  },
+  "own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4532220,
+        "sha256": "5ed404c474ef367cf98e21993760a260d9ee482fdb82faf16e332865081f9d0d"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 500414,
+        "sha256": "73039e9c90552b81d22e9ee934df675994ba8fa502559f79b1a923b3e96d2b0d"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 71358,
+        "sha256": "5a53d5b477e2b064f27e946b6d6ae20f5a10107d438a1e734317f4f6825ce058"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "previous_failed_result": "provider-attribution-failure-and-correction.json",
+  "provider_permission_exported_and_uid_checks_kept": true,
+  "native_job": {
+    "id": 121318547685,
+    "status_at_capture": "completed",
+    "conclusion": "failure",
+    "owned_location_actual_result": "NOT_EXECUTED_TARGET_PID_SET_GATE_FAILED",
+    "passed": false,
+    "actual_result": "native-pid-set-and-owned-stage-results.json"
+  },
+  "latest_actual_native_startup_baseline": "native-container-startup-pass-results.json",
+  "actual_arm64_owned_location": "NOT_EXECUTED_NOT_PASS_OR_LOCATION_FAILURE",
+  "wechat_send_and_live_location": "UNFULFILLED",
+  "douyin_wireless_and_overseas": "UNFULFILLED",
+  "phone_update_distributed": false
+}

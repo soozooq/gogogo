@@ -1,0 +1,114 @@
+{
+  "scope": "ACTUAL_RUNTIME_AND_20_UI_METHOD_PASS_WITH_COLLECTOR_COUNT_FAILURE",
+  "commit": "3081eca3b1c6d4a0aad424a8178e9334dc316445",
+  "run_id": 40868903749,
+  "linux_job_id": 123430602388,
+  "linux_conclusion": "FAILURE",
+  "mac_job_id": 123430602797,
+  "mac_conclusion": "SUCCESS_BUILD_ONLY",
+  "native_job_id": 123434512140,
+  "native_conclusion": "SKIPPED_NOT_PASS",
+  "archives": {
+    "own": {
+      "id": 12894259343,
+      "sha256": "2ce399d005d1a206effd9ac70bb642a72fd2cbe544147336090ba91aaa86ce73",
+      "verified": true
+    },
+    "mac": {
+      "id": 12894867606,
+      "sha256": "80d02b2a91b1139569d9e46a0e5c51790625f07608ad901ac9908f923187f5fa",
+      "verified": true
+    },
+    "linux": {
+      "id": 12896190068,
+      "sha256": "0ff4bdcc87f823fea96c95243df14a68e3d5188401c68d5a98f198885274bafb",
+      "verified": true
+    }
+  },
+  "own_transport": {
+    "source_count_verified": 73,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4558083,
+        "sha256": "d0b5cd0c539e33509b8c9647d44f496564cbb736ab2229f0d548ca8e355c8beb"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 542150,
+        "sha256": "aa7ece440e80bb93f0013731243f6007290dd99c147366310f9999d36f5944c0"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 75094,
+        "sha256": "f036588c8063e135679e46b78e39383e11378150a221da69421b3214076a3c37"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "default_cases": {
+    "x86_64-startup-framework": true,
+    "x86_64-radio-privacy": true,
+    "x86_64-owned-location": true,
+    "x86_64-ordinary-entry": true,
+    "x86_64-location-contract": true,
+    "x86_64-installed-import": true,
+    "x86_64-calculator": true,
+    "read-only-ui-capture": true
+  },
+  "installed_import": {
+    "passed": true,
+    "junit_seconds": 7.529,
+    "actual_pre_cleanup_ui_state": {
+      "scope": "OWN_IMPORT_UI_STATE_BEFORE_VIRTUAL_UNINSTALL_NOT_LOCATION",
+      "accessibility_open_enabled": true,
+      "virtual_installed": true,
+      "view_open_enabled": true,
+      "view_feedback_enabled": true,
+      "view_spinner_enabled": true,
+      "status_indicates_imported": true
+    },
+    "previous_65_failure_retained": true,
+    "previous_65_cache_cause_not_proven": true
+  },
+  "visual": {
+    "instrumented_method_passed": true,
+    "junit_seconds": 48.153,
+    "actual_stages": 20,
+    "issues": [],
+    "wrapper_passed": false,
+    "exact_failing_source_condition": "assert observed['passed'] is True and len(observed['pages']) == 16",
+    "actual_declared_expected_page_count": 20,
+    "system_server_before_and_after": "561",
+    "system_server_stable": true,
+    "owned_cleanup": {
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true,
+      "com.soozooq.gogogo.test": true
+    },
+    "settings_restored": true
+  },
+  "correction": {
+    "collector_requires_exact_four_profiles_times_five_stages": true,
+    "expected_count": 20,
+    "maximum_files_with_four_failure_frames": 49,
+    "existing_actual_66_raw_pages_match_corrected_set": true,
+    "local_syntax_check_passed": true,
+    "recorded_artifact_validation_not_new_device_run": true
+  },
+  "new_phone_candidate_distributed": false,
+  "engine_changed": false,
+  "native_qualified": false,
+  "wechat_douyin_vivo_location_verified": false
+}

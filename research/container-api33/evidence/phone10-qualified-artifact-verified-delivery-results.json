@@ -1,0 +1,78 @@
+{
+  "schema": "GOGOGO_PHONE10_QUALIFIED_ARTIFACT_ACTUAL_VERIFIED_DELIVERY_V1",
+  "scope": "ACTUAL_CLOUD_AND_DOWNLOAD_VERIFIED_QUALIFIED_ARTIFACT_NOT_PUBLIC_RELEASE_OR_TARGET_LOCATION_ADOPTION",
+  "runtime_commit": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+  "qualification_run_id": 40595256036,
+  "qualification_native_job_id": 122512447262,
+  "package_build_run_id": 40596941748,
+  "package_build_commit": "4de425d27de2fa14fb3764ce1f463a4f9e8440bf",
+  "execution_run_id": 40626531080,
+  "execution_commit": "beab6368d0e35b4abc12fa89b293c37583b06f1d",
+  "execution_job_id": 122612702022,
+  "execution_conclusion": "success",
+  "package_rebuild": "SKIPPED_EXACT_FROZEN_PHONE9_BYTES_REUSED",
+  "artifact": {
+    "id": 12789442894,
+    "name": "qualified-phone-preview-2.4.35-c8052d31-40626531080",
+    "bytes": 26833656,
+    "sha256": "43c8b4c96c3ede01e6a1c15079b01d5fd6a2022ffe39d1c2be9f2ff9a44262e4",
+    "url": "https://github.com/soozooq/gogogo/actions/runs/40626531080/artifacts/12789442894",
+    "files": 8
+  },
+  "qualification_artifact": {
+    "id": 12789383136,
+    "bytes": 24200,
+    "sha256": "2e79ad2dd3a9f1214cf5fdb829e4db6f9d8f354dc9c0457aa99d1d0874b22c18"
+  },
+  "apks": {
+    "main": {
+      "package": "com.soozooq.gogogo.test",
+      "version_name": "2.4.35-container-preview",
+      "version_code": 2400103,
+      "bytes": 40408202,
+      "sha256": "f17967946b8c2095d577f4469e32af72a3958b757073007c7186b085d9187ce4",
+      "certificate_sha256": "6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081",
+      "signature_and_alignment_verified": true,
+      "debuggable": true,
+      "file": "Tianwaitian-2.4.35-container-preview-arm64.apk"
+    },
+    "host": {
+      "package": "com.soozooq.tianwaitian.containerresearch",
+      "version_name": "0.4-preview",
+      "version_code": 4,
+      "bytes": 4594179,
+      "sha256": "4d1f072585c69e446bfb72f5cefa57ee6a221f557f5a44ed1e903576b1470b95",
+      "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+      "signature_and_alignment_verified": true,
+      "debuggable": true,
+      "file": "Tianwaitian-Original-Preview-c8052d31.apk"
+    }
+  },
+  "all_four_cloud_archive_and_independent_local_proofs_match": true,
+  "host_415_non_signature_entries_equal": true,
+  "versions_signatures_alignment_profile_checksums_verified": true,
+  "main_checks": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0
+  },
+  "same_owned_sources_verified": 59,
+  "notice_materials_per_owned_apk": 11,
+  "native_pass_result": "native-retired-process-owner-pass-results.json",
+  "publication_state": "QUALIFIED_ARTIFACT_READY_RELEASE_CREATION_REFUSED",
+  "published": false,
+  "release_creation": "ACTUAL_HTTP403_RESOURCE_NOT_ACCESSIBLE_BY_INTEGRATION",
+  "new_release_or_tag_created": false,
+  "old_public34_and_6625draft_assets_unchanged": true,
+  "native57_qualification_run_not_repeated": true,
+  "new_phone_experiments": false,
+  "target_sdk_wechat_send_live_douyin_wireless_overseas_vivo": "NOT_VERIFIED",
+  "private_key_uploaded": false,
+  "workspace_export_sha256_identical": true,
+  "github_download_may_require_sign_in": true,
+  "local_export_path": "/workspace/deliverables/Tianwaitian-2.4.35-qualified.zip"
+}

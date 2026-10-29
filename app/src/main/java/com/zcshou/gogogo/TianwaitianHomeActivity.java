@@ -3,7 +3,6 @@ package com.zcshou.gogogo;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.ColorStateList;
-import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -42,6 +41,9 @@ import java.util.Locale;
  * Shizuku controls remain in SimpleMockActivity, accessed with one tap.
  */
 public final class TianwaitianHomeActivity extends AppCompatActivity {
+    private MaterialButton previewButton;
+    private MaterialButton consoleButton;
+    private TextView mapStatus;
     public static final String EXTRA_PREFILL_LONGITUDE = "twt.home.prefill.longitude";
     public static final String EXTRA_PREFILL_LATITUDE = "twt.home.prefill.latitude";
     public static final String EXTRA_PREFILL_LABEL = "twt.home.prefill.label";
@@ -150,17 +152,14 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
         // Top overlay is branded; the live map remains visible between panels.
         MaterialCardView brandCard = GoGoUi.card(this);
         brandCard.setRadius(dp(20));
-        brandCard.setCardElevation(dp(5));
-        brandCard.setStrokeWidth(0);
-        brandCard.setCardBackgroundColor(GoGoUi.color(this, R.color.twt_appbar_bg));
 
         LinearLayout brand = new LinearLayout(this);
         brand.setGravity(Gravity.CENTER_VERTICAL);
-        brand.setBackgroundResource(R.drawable.twt_launch_header_bg);
-        brand.setPadding(dp(13), dp(9), dp(13), dp(9));
+        brand.setPadding(dp(16), dp(10), dp(8), dp(10));
         ImageView emblem = new ImageView(this);
         emblem.setImageResource(R.drawable.twt_constellation_motif);
-        emblem.setImageTintList(ColorStateList.valueOf(Color.WHITE));
+        emblem.setImageTintList(ColorStateList.valueOf(
+                GoGoUi.color(this, R.color.gogogo_primary)));
         emblem.setContentDescription(null);
         brand.addView(emblem, new LinearLayout.LayoutParams(dp(36), dp(36)));
 
@@ -171,23 +170,21 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
         wordLayout.leftMargin = dp(10);
         TextView title = new TextView(this);
         title.setText(R.string.app_name);
-        title.setTextColor(Color.WHITE);
-        title.setTextSize(20);
+        title.setTextColor(GoGoUi.color(this, R.color.gogogo_text));
+        title.setTextSize(21);
         title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         words.addView(title);
         TextView tagline = new TextView(this);
-        tagline.setText("探索坐标之外  ·  星座视界");
-        tagline.setTextColor(0xFFE0E8FF);
-        tagline.setTextSize(11);
+        tagline.setText("选一个地点，开启下一程");
+        tagline.setTextColor(GoGoUi.color(this, R.color.gogogo_text_muted));
+        tagline.setTextSize(12);
+        if (getResources().getConfiguration().fontScale > 1.2f) tagline.setVisibility(View.GONE);
         words.addView(tagline);
         brand.addView(words, wordLayout);
-        MaterialButton tools = GoGoUi.textButton(this, "⋯", v -> openMapTools());
-        tools.setTextColor(Color.WHITE);
-        tools.setTextSize(22);
-        tools.setSingleLine(true);
-        tools.setContentDescription("打开地图工具");
+        MaterialButton tools = GoGoUi.iconButton(this, R.drawable.twt_more,
+                "打开地图工具", v -> openMapTools());
         brand.addView(tools, new LinearLayout.LayoutParams(
-                dp(44), ViewGroup.LayoutParams.WRAP_CONTENT));
+                dp(48), ViewGroup.LayoutParams.WRAP_CONTENT));
         brandCard.addView(brand);
 
         // Compact map search surface sits UNDER the original constellation
@@ -199,30 +196,33 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
 
         MaterialCardView searchCard = GoGoUi.card(this);
         searchCard.setRadius(dp(16));
-        searchCard.setCardElevation(dp(4));
         searchCard.setContentDescription("搜索城市、地址或经纬度，打开统一搜索页面");
+        searchCard.setId(R.id.twt_home_search);
         LinearLayout searchRow = new LinearLayout(this);
         searchRow.setGravity(Gravity.CENTER_VERTICAL);
-        searchRow.setPadding(dp(16), dp(6), dp(12), dp(6));
-        TextView searchIcon = new TextView(this);
-        searchIcon.setText("⌕");
-        searchIcon.setTextSize(28);
-        searchIcon.setTextColor(GoGoUi.color(this, R.color.twt_nav_selected));
-        searchRow.addView(searchIcon, new LinearLayout.LayoutParams(dp(30),
-                ViewGroup.LayoutParams.WRAP_CONTENT));
+        searchRow.setPadding(dp(16), dp(12), dp(16), dp(12));
+        searchRow.setMinimumHeight(dp(52));
+        ImageView searchIcon = new ImageView(this);
+        searchIcon.setImageResource(R.drawable.ic_search);
+        searchIcon.setImageTintList(ColorStateList.valueOf(
+                GoGoUi.color(this, R.color.gogogo_primary)));
+        searchIcon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        searchRow.addView(searchIcon, new LinearLayout.LayoutParams(dp(22), dp(22)));
         TextView searchHint = new TextView(this);
         searchHint.setText("搜索城市、街道、建筑或经纬度");
+        searchHint.setPadding(dp(12), 0, dp(4), 0);
         searchHint.setSingleLine(true);
         searchHint.setEllipsize(android.text.TextUtils.TruncateAt.END);
         searchHint.setTextSize(14);
         searchHint.setTextColor(GoGoUi.color(this, R.color.gogogo_text_muted));
         searchRow.addView(searchHint, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView arrow = new TextView(this);
-        arrow.setText("›");
-        arrow.setTextSize(22);
-        arrow.setTextColor(GoGoUi.color(this, R.color.twt_nav_selected));
-        searchRow.addView(arrow);
+        ImageView arrow = new ImageView(this);
+        arrow.setImageResource(R.drawable.ic_gogogo_chevron);
+        arrow.setImageTintList(ColorStateList.valueOf(
+                GoGoUi.color(this, R.color.gogogo_text_muted)));
+        arrow.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        searchRow.addView(arrow, new LinearLayout.LayoutParams(dp(18), dp(18)));
         searchCard.addView(searchRow);
         searchCard.setClickable(true);
         searchCard.setFocusable(true);
@@ -232,6 +232,16 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         searchLp.topMargin = dp(9);
         topStack.addView(searchCard, searchLp);
+        mapStatus = GoGoUi.muted(this, "地图加载中，可先搜索地点");
+        mapStatus.setGravity(Gravity.CENTER);
+        mapStatus.setPadding(dp(8), dp(8), dp(8), dp(8));
+        mapStatus.setBackgroundResource(R.drawable.twt_settings_header_bg);
+        mapStatus.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+        LinearLayout.LayoutParams mapStatusLp = GoGoUi.matchWrap();
+        mapStatusLp.topMargin = dp(6);
+        topStack.addView(mapStatus, mapStatusLp);
+        mapStatus.setOnClickListener(v -> { if (map != null) loadMapStyle(); });
+        mapStatus.setClickable(false);
 
         FrameLayout.LayoutParams top = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -239,17 +249,24 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
         top.setMargins(dp(12), dp(10), dp(12), 0);
         root.addView(topStack, top);
 
-        // Bottom glass-like command deck, using semantic DayNight surface colors.
+        // The selected target scrolls independently from the pinned primary action.
         MaterialCardView deck = GoGoUi.card(this);
-        deck.setRadius(dp(19));
-        deck.setCardElevation(dp(8));
+        deck.setRadius(dp(24));
+        deck.setCardElevation(dp(3));
         LinearLayout content = GoGoUi.cardContent(this);
-        content.setPadding(dp(13), dp(10), dp(13), dp(10));
+        content.setPadding(dp(18), dp(16), dp(18), dp(12));
+
+        TextView targetCaption = GoGoUi.muted(this, "已选目标 · 地图选点");
+        targetCaption.setTextSize(12);
+        content.addView(targetCaption, GoGoUi.matchWrap());
+        content.addView(GoGoUi.gap(this, 5));
 
         labelView = GoGoUi.sectionTitle(this, selectedLabel);
-        labelView.setSingleLine(true);
+        labelView.setId(R.id.twt_home_target);
+        labelView.setMaxLines(2);
         labelView.setEllipsize(android.text.TextUtils.TruncateAt.END);
-        labelView.setTextSize(16);
+        labelView.setTextSize(21);
+        labelView.setPadding(0, 0, 0, dp(3));
         content.addView(labelView, GoGoUi.matchWrap());
 
         targetView = GoGoUi.muted(this, "");
@@ -260,62 +277,103 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
 
         content.addView(GoGoUi.gap(this, 5));
         TextView note = GoGoUi.muted(this,
-                "点按地图选点 · 不会自动启动模拟");
-        note.setTextSize(11);
+                "点按地图选点，确认后打开");
+        note.setTextSize(12);
         content.addView(note, GoGoUi.matchWrap());
-        content.addView(GoGoUi.gap(this, 8));
+        LinearLayout actionBar = GoGoUi.row(this);
+        actionBar.setPadding(dp(18), dp(8), dp(18), dp(12));
+        FrameLayout actionSlot = new FrameLayout(this);
+        previewButton = GoGoUi.primaryButton(this, "打开应用预览",
+                v -> TianwaitianContainerPreview.chooseApp(this,
+                        selectedPoint.getLongitude(), selectedPoint.getLatitude()));
+        previewButton.setVisibility(TianwaitianContainerPreview.isAvailable(this)
+                ? View.VISIBLE : View.GONE);
+        previewButton.setId(R.id.twt_home_preview);
+        previewButton.setContentDescription("将选点带入微信或抖音预览，确认后打开");
+        actionSlot.addView(previewButton);
 
-        // The native bottom navigation owns Diagnostics, Audit and Settings.
-        // Keep only the two location-specific actions in this lightweight deck.
         MaterialButton console = GoGoUi.primaryButton(this,
                 "模拟控制", v -> openSimulationConsole());
-        MaterialButton places = GoGoUi.secondaryButton(this,
-                "全球地点库", v -> placePicker.launch(
-                        new Intent(this, LabPlacePickerActivity.class)));
-        boolean stack = LabResponsiveUiPolicy.stackTianwaitianLauncherActions(
-                getResources().getConfiguration().screenWidthDp,
-                getResources().getConfiguration().fontScale);
-        if (stack) {
-            content.addView(console, GoGoUi.matchWrap());
-            content.addView(GoGoUi.gap(this, 5));
-            content.addView(places, GoGoUi.matchWrap());
-        } else {
-            LinearLayout locationActions = GoGoUi.row(this);
-            locationActions.addView(console, GoGoUi.weighted());
-            GoGoUi.addHorizontalGap(this, locationActions, 8);
-            locationActions.addView(places, GoGoUi.weighted());
-            content.addView(locationActions, GoGoUi.matchWrap());
-        }
-
-        ScrollView deckScroll = new ScrollView(this);
+        consoleButton = console;
+        console.setId(R.id.twt_home_controls);
+        actionSlot.addView(console);
+        actionBar.addView(actionSlot, GoGoUi.weighted());
+        GoGoUi.addHorizontalGap(this, actionBar, 8);
+        actionBar.addView(GoGoUi.iconButton(this, R.drawable.twt_more,
+                "更多定位选项：地点库、模拟控制和地图工具", v -> openMoreOptions()),
+                new LinearLayout.LayoutParams(dp(48), ViewGroup.LayoutParams.WRAP_CONTENT));
+        // Cap to actual available height after bottom navigation. Large text and
+        // landscape can scroll inside the card without covering the search bar.
+        ScrollView deckScroll = new ScrollView(this) {
+            @Override protected void onMeasure(int widthSpec, int heightSpec) {
+                int available = root.getHeight();
+                if (available > 0) {
+                    int cap = Math.max(dp(136), Math.min(available / 2,
+                            available - topStack.getHeight() - dp(100)));
+                    int footer = actionBar.getMeasuredHeight() > 0 ? actionBar.getMeasuredHeight() : dp(72);
+                    heightSpec = View.MeasureSpec.makeMeasureSpec(
+                            Math.max(dp(64), cap - footer), View.MeasureSpec.AT_MOST);
+                }
+                super.onMeasure(widthSpec, heightSpec);
+            }
+        };
         deckScroll.setFillViewport(false);
         deckScroll.setVerticalScrollBarEnabled(false);
         deckScroll.addView(content);
-        int screenHeight = getResources().getConfiguration().screenHeightDp;
-        int maxDeckHeight = Math.max(145, screenHeight - 215);
         FrameLayout.LayoutParams bottom = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
-                screenHeight < 540 ? dp(maxDeckHeight) : ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.BOTTOM);
         bottom.setMargins(dp(12), 0, dp(12), dp(8));
-        deck.addView(deckScroll);
+        LinearLayout deckColumn = new LinearLayout(this);
+        deckColumn.setOrientation(LinearLayout.VERTICAL);
+        deckColumn.addView(deckScroll, GoGoUi.matchWrap());
+        deckColumn.addView(actionBar, GoGoUi.matchWrap());
+        deck.addView(deckColumn);
         root.addView(deck, bottom);
+        root.addOnLayoutChangeListener((v, l, t, r, b, oldL, oldT, oldR, oldB) -> {
+            if (b - t != oldB - oldT || r - l != oldR - oldL) deckScroll.requestLayout();
+        });
+        deck.addOnLayoutChangeListener((v, l, t, r, b, oldL, oldT, oldR, oldB) -> {
+            if (map != null) {
+                // Keep the renderer/data attribution visible above the command card.
+                map.getUiSettings().setAttributionMargins(dp(12), 0, 0, b - t + dp(18));
+                map.getUiSettings().setLogoMargins(dp(12), 0, 0, b - t + dp(42));
+            }
+        });
 
         setContentView(root);
         TianwaitianBottomNav.attach(this, TianwaitianBottomNav.Tab.LOCATION);
 
         mapView.getMapAsync(mapLibreMap -> {
             map = mapLibreMap;
+            map.getUiSettings().setAttributionMargins(dp(12), 0, 0, deck.getHeight() + dp(18));
+            map.getUiSettings().setLogoMargins(dp(12), 0, 0, deck.getHeight() + dp(42));
             map.addOnMapClickListener(point -> {
                 selectPoint(point, "地图选点", false);
                 return true;
             });
             map.setCameraPosition(new CameraPosition.Builder()
                     .target(selectedPoint).zoom(12.2).build());
-            map.setStyle(MAP_STYLE, style -> {
-                styleReady = true;
-                updateMarker();
-            });
+            loadMapStyle();
+        });
+        mapView.addOnDidFailLoadingMapListener(error -> {
+            mapStatus.setText("地图暂未加载 · 点此重试，或先搜索地点");
+            mapStatus.setMinHeight(dp(48));
+            mapStatus.setVisibility(View.VISIBLE);
+            mapStatus.setClickable(true);
+            mapStatus.setFocusable(true);
+        });
+        mapView.addOnDidFinishLoadingMapListener(() -> mapStatus.setVisibility(View.GONE));
+    }
+
+    private void loadMapStyle() {
+        mapStatus.setText("地图加载中，可先搜索地点");
+        mapStatus.setClickable(false);
+        mapStatus.setVisibility(View.VISIBLE);
+        map.setStyle(MAP_STYLE, style -> {
+            styleReady = true;
+            updateMarker();
         });
     }
 
@@ -367,10 +425,10 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
     private void updateTargetText() {
         if (targetView != null && selectedPoint != null) {
             targetView.setText(String.format(Locale.US,
-                    "WGS-84  经度 %.6f  ·  纬度 %.6f",
+                    "经度 %.5f  /  纬度 %.5f  ·  WGS-84",
                     selectedPoint.getLongitude(), selectedPoint.getLatitude()));
         }
-        if (labelView != null) labelView.setText("已选目标 · " + selectedLabel);
+        if (labelView != null) labelView.setText(selectedLabel);
     }
 
     private void updateMarker() {
@@ -391,6 +449,16 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
         mapPicker.launch(intent);
     }
 
+    private void openMoreOptions() {
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+                .setTitle("定位选项")
+                .setItems(new String[] {"全球地点库", "系统模拟控制", "地图工具"}, (dialog, index) -> {
+                    if (index == 0) placePicker.launch(new Intent(this, LabPlacePickerActivity.class));
+                    else if (index == 1) openSimulationConsole();
+                    else openMapTools();
+                }).setNegativeButton("取消", null).show();
+    }
+
     private void openSimulationConsole() {
         Intent intent = new Intent(this, SimpleMockActivity.class);
         intent.putExtra(EXTRA_PREFILL_LONGITUDE, selectedPoint.getLongitude());
@@ -408,6 +476,11 @@ public final class TianwaitianHomeActivity extends AppCompatActivity {
         super.onResume();
         TianwaitianBottomNav.syncSelection(this, TianwaitianBottomNav.Tab.LOCATION);
         syncSelectedTarget();
+        if (previewButton != null) {
+            boolean available = TianwaitianContainerPreview.isAvailable(this);
+            previewButton.setVisibility(available ? View.VISIBLE : View.GONE);
+            consoleButton.setVisibility(available ? View.GONE : View.VISIBLE);
+        }
         if (mapView != null) mapView.onResume();
     }
 

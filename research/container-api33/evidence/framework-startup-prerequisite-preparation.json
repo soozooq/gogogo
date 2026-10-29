@@ -1,0 +1,162 @@
+{
+  "schema": "GOGOGO_FRAMEWORK_STARTUP_PREREQUISITE_PREPARATION_V1",
+  "scope": "BUILD_AND_CONTROLLED_DRIVER_CHECKS_NOT_CORRECTED_TARGET_RUNTIME",
+  "base_commit": "073c25dbd540068826ff85a0602b4c35237261b8",
+  "build": {
+    "passed": true,
+    "seconds": 13,
+    "scope": "CRITICAL_NATIVE_AND_ASYNC_CALLBACK_CANDIDATE_REBUILD"
+  },
+  "controlled_python_tests": {
+    "passed": true,
+    "count": 15,
+    "seconds": 0.068,
+    "post_ui_lifecycle_subcases": true
+  },
+  "own_guest_framework_runtime": "CI39_REAL_CROSS_PROCESS_CALL_FAILED_PLATFORM_UID_CHECK; REAL_HOST_ATTRIBUTION_CORRECTION_PENDING",
+  "corrected_wechat_startup": "CI35_AND_CI38_NATIVE_WELCOME_UI_PASS_NOT_LOCATION",
+  "douyin_post_ui_comparison": "CI38_ORDINARY_302.664S_AND_GUEST_301750MS_PID_STABLE; CI35_STRICT_PID_SET_FAILURE_PRESERVED",
+  "pending_intent_scope": "CREATION_AND_CANCEL_ONLY_NOT_DELIVERY",
+  "main_phone_code_or_version_changed": false,
+  "source_sha256": {
+    "CI_SOURCE_AND_RELINK.md": "225f80ea2d37fd357faaa9d2a4769f68cfc6e0efe230a71b8913873245f71990",
+    "THIRD_PARTY_NOTICES.md": "e0091fea88b89467eaa82986cabc1189e544d7a657e62a68c6552a610f0c99f8",
+    "cuttlefish-inputs.json": "c7b479f49cc567d65aee12c5aba8eb745ac9cd5ea0ec641af07dc6e9b78803ba",
+    "evidence/official-target-apk-readiness.json": "477eeb8da6afea0a2eef19e2670deffd8ee95d176658734048206e553aa7f2c9",
+    "licenses/Apache-2.0.txt": "50e6751797c50dedd75ef1b8a0d9e42f5f8472e9fbce91f34718e9f97b0c780a",
+    "licenses/Apache-Commons-Lang-NOTICE.txt": "8e9063e0b4e04d7711f7c2c473ec0f1237492028de87c7e71ba3045cfbd3a0e6",
+    "licenses/EPL-1.0-JUnit.txt": "9648bb2891b9813970bddb68d4be8a5e6ec8280d0180a53dfb29236b579c55bb",
+    "licenses/GPL-3.0.txt": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
+    "licenses/GPSTest-LICENSE.txt": "fd7c72bafdb07e5a926e9e2dbfc49b252841a3716f2472fa23c60b5ebb6b0b68",
+    "licenses/Hamcrest-LICENSE.txt": "1cde867cab5c8e842929da5391cef98b4017314822270e934e8e2eef3767c666",
+    "licenses/LGPL-3.0-LSPlant.txt": "09acdfb5bfb7aaed93d7d7fa5cebfc7350c555847d2ed07b5b9716da43670e04",
+    "licenses/ci-additional-provenance.json": "7fbc7c983596f006f2c3d239fcb72974433bf824aa74a9732ed8313f3c2fbe33",
+    "licenses/xCrash-LICENSE.txt": "bee83bba5b3f6502bb69700e20b024205fb6425740e054e63dda0c970d230790",
+    "patches/blackbox-api33-build.patch": "416e8dd4fd539ed1ac6b1011e50174e180b5c94bb5b12c90b8486af39c4055cc",
+    "probe-host/build.gradle": "cc00912130068cf7558c04df465ab3f1b97ea8de59806d9a526ea308348622c3",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ExternalGuestInstrumentedTest.java": "fdc0ed6a116ef2950eacae8664785584981608b23da8cddc5d97f7525f7386e4",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/GuestLocationInstrumentedTest.java": "148f61de68ef88379cd20f98e9f4daca332c21596a90727a1fddc0faea91517e",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/OfficialTargetStartupInstrumentedTest.java": "51b0befe91b84543f4f1127f23ee4ee089ed640688798404339ef6fde917300b",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/StartupFrameworkInstrumentedTest.java": "839d2c46b133f910632d8e8a7262718f8a62624a2263d9dabb3e09921e1406be",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ThirdPartyLocationInstrumentedTest.java": "d066b1d65eafbeaa1392c925d44003c234c3c5f2c477e8d260f01c214983e5b4",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java": "b36cd994d40fa173fcd3c0830d688a102e0f63bf24584e3e1b6aa2e723f36e54",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/RadioPrivacyContractInstrumentedTest.java": "555b1f125c80aabd5c56ecaaa906e5d141bf4ea01453a932dba06e83b2303408",
+    "probe-host/src/main/AndroidManifest.xml": "45c69238759399aa995a8413e6a967e94d717a9e8129a23fcc01536f5ea217ff",
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/GuestImport.java": "ce777203d7d6ec0c6d53361f682ad5a4561db2db60db304e2edf9e8670ef360b",
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/OriginalUiProbeInstrumentation.java": "e47af8d4c577924a9144159a0bc6c83fc20498cb92f6d4624aa716ded6dec169",
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeActivity.java": "0e5171d9b5a5f998afb29b6cbf7b80bc3ff109046fed25fcf0e91afa1b1875f0",
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeApplication.java": "bcaf641d21a388213fc43fe6536cff4263c6e9c8ef9c87036fc903c12613deac",
+    "probe-host/src/main/res/values/ids.xml": "e52c1ece7818e31634729e9e4813cce24035518a4d793234407c17e091670464",
+    "sources.json": "50a6b0a01003f5c2f0f3af8cc996f4cb3d02f6ec4b4728820b73add7188f8f82",
+    "tools/build-environment.init.gradle": "5d47c36a41ae28792b6c47d4cf1a464935bcfdcfbdd4334ae9f710789f056ab7",
+    "tools/ci_owned_apks.py": "3997810904fb1d9633678c3225a0663193926107baec06e16be5909e6196709b",
+    "tools/cuttlefish-tcg-qemu.py": "09383784ba253869bdb473578780449fb7a6aaea96709a068c67efc8ace1e737",
+    "tools/cuttlefish_target_baselines.py": "bf286fe892df67aa78965b7c9aef7b35e16b24b22b93d34f32110b96d37e6d85",
+    "tools/fetch-cuttlefish-inputs.py": "07f1de6779b11f87b2731c3216d16da5f92f2a47156e943a2ed71d2c55fc5667",
+    "tools/inspect-apk.py": "42697f2fcdd0972487b114d0cfa6d07d5e71e085289d5c52ce80ad97b7bc52d1",
+    "tools/inspect-cuttlefish-arm-host.py": "b467ecd31e82709ada236d222b8ca4e09dd67914754f2505e29c0053598280d9",
+    "tools/inspect-location-consumer.py": "ecca05b3505ab8d7dc9c4a8f5800d408c3a84e25f8b5a962e2c0193f92526c69",
+    "tools/inspect-third-party-apk.py": "71c8f791c5febeed03221355508ca081f50f1bdb8ec802683644376d8adfd73a",
+    "tools/license-inventory.py": "db7967954a98c7e041d7b4a53f81a46703b5069661b15ef9ddff002c2ea2b2ed",
+    "tools/prepare.py": "42d315726e798fea95c316efdfba893d8f57c89403b7ffe04b6a2bac2e782e95",
+    "tools/qualify-arm64-software-boot.py": "d3bbc2fbebcbc381dd73712f08ccc1a31815c64202471b29a17b03627bb30066",
+    "tools/run-arm-mac-software-checks.sh": "4cff7f26be72beb5200d3bea7bc253cdd7d7dc784f356de1bace3394dbb98c0a",
+    "tools/run-build.sh": "ba7a3e3d5b233ca4200ac1f7bb160c0be5eb3686323caa992826022cfac045ad",
+    "tools/run-cloud-check.py": "433666d2a1c1d81ea1cba13c1bbca16366ca4798630f3fb53a54b77538ebe58f",
+    "tools/run-cuttlefish-arm-boot.py": "687d5198b13e7f32ca70562454f970219b38f624f798827e870a1090a95951f8",
+    "tools/run-emulator-checks.sh": "b443d29c371db6146573802c7dd6fae931633ca9a0d762b9142bc644757ddd9d",
+    "tools/run-read-only-ui-check.py": "c625dd25b2ae7b6d574bd08dae944b39ab51ac201d9d7009ee4e410746428439",
+    "tools/run-target-emulator-checks.sh": "6fc1dc9fa307d20760b27db8afd8fe8bfc5f7c550db5c60f9d31301da3375cb0",
+    "tools/run-target-startup-check.py": "48749c39a262f7dd64b2c4a7b13d9d6366c1c6af14e594f2804fd20a17808193",
+    "tools/verify-ci-receipts.py": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
+    "location-consumer/build.gradle": "d97419bad7cae29a6f7aec8fa86413ae0f4150f01a6c38ffb2c7f7b009df3322",
+    "location-consumer/src/main/AndroidManifest.xml": "cafb311e901f3125ca686af954dcd1712432cce841d1b779204f937cf9c1f3bf",
+    "location-consumer/src/main/res/values/ids.xml": "d432b392a5beb2beffbc7a54cd0879df48a9aaf45c002b64cc81b30663d14c24",
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/LocationActivity.java": "81507dbca1d8b73b1d1164ed8233cb819fa43d5f1745535c9b592ce67df5fcb4",
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractService.java": "2c84ceab6539669ca86a21ad07eb866c6a3bdd4ad6221ba024097b138b805223",
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractActivity.java": "30bda83babbe59f6161c1180fac9ab67b22e6354d8d1dfa0083c5ad100f0806b",
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/ReadOnlyUiFixtureActivity.java": "36a0197ca1b56e3839c41039b3b5dfb9ee62ab2b6753ecb3374639f24368a184",
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/StartupContractProvider.java": "c8311359d441056512fe959f18815d0642511e3a3cc830273e64db5b8c70e87d",
+    "tools/cuttlefish_owned_location.py": "47c50c0052cf5cd05b5a90fc274cf58be2982d033644600e835cf32222d6ae06"
+  },
+  "test_source_sha256": {
+    "tests/test_cuttlefish_monitor.py": "f1110afb0f7e5182207055eb1fda393c38b56475767c2194498915d3777d46cb",
+    "tests/test_ci_owned_apks.py": "ba61776c29fd6e020ca156ee9d7e05077f420181018f08a3433c8104c4d76645",
+    "tests/test_cuttlefish_target_baselines.py": "3d88f05e24e5c2965abc1601bb16ab5f77e1d12f7fd8ba768d809590c2578a51",
+    "tests/test_public_artifact_inputs.py": "1cf0f11d469b059b0da8b9e723f3f10d1dc423d28108b1ddff668e6f41dff5f4",
+    "tests/test_receipt_preparation_failure.py": "dc0ec034efafd57939fe29273bf4dc68b1e6b29822f5b6715e1218a8dd0c3227",
+    "tests/test_cuttlefish_owned_location.py": "06760ca5f55436343e10b2a8e89317876b3877b49abcd43ff772cdfc93bd3e45"
+  },
+  "donor_patch_clean_index_application_verified": true,
+  "startup_cli_selection_verified": true,
+  "uid_test_correction_base_commit": "3f0087fbfad04b915e0b4c67a9b364d8aa544863",
+  "latest_runtime_record": "native-container-startup-pass-results.json",
+  "new_async_cell_callback_runtime": "CI34_TWO_ADDED_CONTROLLED_FRAMEWORK_WRAPPER_TESTS_ACTUALLY_PASS; SEVEN_RADIO_TESTS_TOTAL",
+  "workflow_source_sha256": {
+    ".github/workflows/container-research.yml": "ddafda585239e6fc13be2370e40667c460db7bd7a037a2ffb11467b4a7501cd2"
+  },
+  "driver_only_followup_base_commit": "2c50ca4929a1142c145733019dbe8516eb1c4174",
+  "driver_only_followup_tests": {
+    "count": 22,
+    "seconds": 0.444,
+    "passed": true
+  },
+  "latest_followup": {
+    "scope": "REAL_PROVIDER_ATTRIBUTION_AND_NATIVE_OWNED_LOCATION_PHASE",
+    "base_commit": "53c94bb65838637c80f2dc815cc44f88dde844f0",
+    "build_passed": true,
+    "build_seconds": 11,
+    "controlled_python_tests": 25,
+    "new_actual_runtime": "PENDING_NEXT_CI",
+    "results": [
+      "provider-attribution-failure-and-correction.json",
+      "native-owned-location-preparation.json"
+    ]
+  },
+  "caught_exception_observation_followup": {
+    "base_commit": "c5313dcb88ae9274eb635f0129e4e421ebe919f5",
+    "controlled_tests": {
+      "count": 22,
+      "seconds": 0.413,
+      "passed": true
+    },
+    "System.err_warning_capture_added": true,
+    "app_code_or_manifest_changed": false,
+    "target_runtime": "PENDING_NEXT_NATIVE"
+  },
+  "native_trigger_followup": {
+    "base_commit": "8060b5734160a3b6a15e2e5d4183b4c2f9b39303",
+    "first_followup_native": "CI37_SKIPPED_MISSING_COMMIT_OPT_IN_NOT_PASS",
+    "correction": "PUSH_WITH_BOTH_CUTTLEFISH_BOOT_AND_CONTAINER_MARKERS; EXPLICIT_MANUAL_CONTAINER_INPUT_ADDED",
+    "app_source_changed": false
+  },
+  "subsequent_actual_default_result": "provider-attribution-results.json",
+  "private_provider_query_followup": {
+    "base_commit": "fa68fd2f58bc9ee04c422db760ca5d8c995deb8a",
+    "scope": "OWN_PUBLIC_QUERY_CONTRACT_ONLY_NOT_ENGINE_CHANGE",
+    "actual_new_runtime": "PENDING_DEFAULT_ONLY_CI",
+    "native_ci40_unchanged": true
+  },
+  "subsequent_actual_query_result": "private-provider-query-results.json",
+  "latest_native_result": "native-pid-set-and-owned-stage-results.json",
+  "installed_import_and_native_main_followup": {
+    "base_commit": "cb1af8344e943814b8571d7de6b18359bd12ca29",
+    "build_passed": true,
+    "build_seconds": 13,
+    "controlled_python_tests": 25,
+    "candidate_runtime": "PENDING_NEXT_CI"
+  },
+  "map_prefill_followup": {
+    "base_commit": "96e925224b598432048f3cd72cee3009db582767",
+    "scope": "EXPLICIT_WGS84_UI_PREFILL_NOT_AUTO_MOCK_OR_GUEST_START",
+    "new_runtime": "PENDING_DEFAULT_ONLY_CI",
+    "active_native_42_unchanged": true,
+    "own_import_structured_report_transfer_required": true
+  },
+  "latest_actual_default_result": "network-callback-transport-results.json",
+  "latest_actual_native_result": "native-owned-location-stale-ui-results.json",
+  "stale_ui_read_followup": "stale-ui-location-read-preparation.json",
+  "network_callback_followup": "network-callback-transport-preparation.json",
+  "active_native_44_commit": "774c6e7a1cda900e2a919401014e076d728e0030",
+  "actual_network_callback_result": "network-callback-transport-results.json"
+}

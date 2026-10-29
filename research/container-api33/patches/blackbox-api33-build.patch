@@ -1,0 +1,1974 @@
+diff --git a/BCore/src/main/aidl/top/niunaijun/bcore/core/system/location/IBLocationManagerService.aidl b/BCore/src/main/aidl/top/niunaijun/bcore/core/system/location/IBLocationManagerService.aidl
+index 677e791..dc65701 100644
+--- a/BCore/src/main/aidl/top/niunaijun/bcore/core/system/location/IBLocationManagerService.aidl
++++ b/BCore/src/main/aidl/top/niunaijun/bcore/core/system/location/IBLocationManagerService.aidl
+@@ -3,6 +3,7 @@ package top.niunaijun.bcore.core.system.location;
+ 
+ import top.niunaijun.bcore.entity.location.BLocation;
+ import top.niunaijun.bcore.entity.location.BCell;
++import android.os.Bundle;
+ 
+ import java.util.List;
+ 
+@@ -40,5 +41,14 @@ interface IBLocationManagerService {
+ 
+     void requestLocationUpdates(in IBinder listener, String packageName, int userId);
+ 
++    void requestLocationUpdatesWithOptions(in IBinder listener, String packageName, int userId,
++        String provider, long intervalMillis, long durationMillis, int maxUpdates);
++
+     void removeUpdates(in IBinder listener);
+-}
+\ No newline at end of file
++
++    // Separate consumer reads from host configuration/status reads. Append new
++    // transactions so the previous method ordinals do not change.
++    BLocation getLocationForConsumer(int userId, String pkg, String provider, boolean current);
++
++    Bundle getConsumerDeliverySummary(int userId, String pkg);
++}
+diff --git a/BCore/src/main/aidl/top/niunaijun/bcore/entity/location/BLocationConfig.aidl b/BCore/src/main/aidl/top/niunaijun/bcore/entity/location/BLocationConfig.aidl
+index c8ffd80..742995f 100644
+--- a/BCore/src/main/aidl/top/niunaijun/bcore/entity/location/BLocationConfig.aidl
++++ b/BCore/src/main/aidl/top/niunaijun/bcore/entity/location/BLocationConfig.aidl
+@@ -1,3 +1,3 @@
+-package top.niunaijun.bcore.core.system.location;
++package top.niunaijun.bcore.entity.location;
+ 
+-parcelable BLocationConfig;
+\ No newline at end of file
++parcelable BLocationConfig;
+diff --git a/BCore/src/main/cpp/Hook/BinderHook.cpp b/BCore/src/main/cpp/Hook/BinderHook.cpp
+index 1dd21a3..46e0acf 100644
+--- a/BCore/src/main/cpp/Hook/BinderHook.cpp
++++ b/BCore/src/main/cpp/Hook/BinderHook.cpp
+@@ -10,6 +10,11 @@ HOOK_JNI(jint, getCallingUid, JNIEnv *env, jobject obj) {
+ }
+ 
+ void BinderHook::init(JNIEnv *env) {
++    // Android13 declares getCallingUid as CriticalNative. Its ABI has no
++    // JNIEnv/jclass and cannot safely re-enter Java or make a Binder query
++    // through the ordinary JNI bridge below. Preserve the OS caller identity;
++    // logical guest identities remain in the virtual process/package model.
++    if (BoxCore::getApiLevel() >= 33) return;
+     const char *clazz = "android/os/Binder";
+     JniHook::HookJniFun(env, clazz, "getCallingUid", "()I", (void *) new_getCallingUid, (void **) (&orig_getCallingUid), true);
+ }
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/app/BActivityThread.java b/BCore/src/main/java/top/niunaijun/bcore/app/BActivityThread.java
+index 925966c..af85cc7 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/app/BActivityThread.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/app/BActivityThread.java
+@@ -265,7 +265,8 @@ public class BActivityThread extends IBActivityThread.Stub {
+             CrashHandler.create();
+         } catch (Throwable ignored) { }
+ 
+-        PackageInfo packageInfo = BlackBoxCore.getBPackageManager().getPackageInfo(packageName, PackageManager.GET_PROVIDERS, BActivityThread.getUserId());
++        PackageInfo packageInfo = BlackBoxCore.getBPackageManager().getPackageInfo(packageName,
++                PackageManager.GET_PROVIDERS | PackageManager.GET_SHARED_LIBRARY_FILES, BActivityThread.getUserId());
+         ApplicationInfo applicationInfo = packageInfo.applicationInfo;
+         if (packageInfo.providers == null) {
+             packageInfo.providers = new ProviderInfo[]{};
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/BProcessManagerService.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/BProcessManagerService.java
+index 4779308..07d74d3 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/core/system/BProcessManagerService.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/core/system/BProcessManagerService.java
+@@ -222,13 +222,19 @@ public class BProcessManagerService implements ISystemService {
+ 
+     public void onProcessDie(ProcessRecord record) {
+         synchronized (mProcessLock) {
+-            killProcess(record);
+             Map<String, ProcessRecord> process = mProcessMap.get(record.bUID);
+-            if (process != null) {
+-                process.remove(record.processName);
+-                if (process.isEmpty()) {
+-                    mProcessMap.remove(record.bUID);
+-                }
++            // A stopped process can deliver its death callback after a replacement
++            // has reused the name or proxy slot. Only the exact registered record
++            // may retire that registration, its proc files and notifications.
++            if (process == null || process.get(record.processName) != record) {
++                mPidsSelfLocked.remove(record);
++                Slog.d(TAG, "Ignored retired process callback: " + record.processName + ", pid: " + record.pid);
++                return;
++            }
++            killProcess(record);
++            process.remove(record.processName);
++            if (process.isEmpty()) {
++                mProcessMap.remove(record.bUID);
+             }
+ 
+             mPidsSelfLocked.remove(record);
+@@ -260,6 +266,8 @@ public class BProcessManagerService implements ISystemService {
+                     if (appId == appId1) {
+                         mProcessMap.remove(processRecord.bUID);
+                         killProcess(processRecord);
++                        removeProc(processRecord);
++                        BNotificationManagerService.get().deletePackageNotification(processRecord.getPackageName(), processRecord.userId);
+                         tmp.remove(processRecord);
+                     }
+                 }
+@@ -280,8 +288,10 @@ public class BProcessManagerService implements ISystemService {
+             for (ProcessRecord value : process.values()) {
+                 killProcess(value);
+                 mPidsSelfLocked.remove(value);
++                removeProc(value);
+             }
+             mProcessMap.remove(bUID);
++            BNotificationManagerService.get().deletePackageNotification(packageName, userId);
+         }
+     }
+ 
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/accounts/BAccountManagerService.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/accounts/BAccountManagerService.java
+index d103d80..959b903 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/core/system/accounts/BAccountManagerService.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/core/system/accounts/BAccountManagerService.java
+@@ -1343,14 +1343,14 @@ public class BAccountManagerService extends IBAccountManagerService.Stub impleme
+     }
+ 
+     private static AuthenticatorDescription parseAuthenticatorDescription(Resources resources, String packageName, AttributeSet attributeSet) {
+-        TypedArray array = resources.obtainAttributes(attributeSet, ArrayUtils.toInt(black.com.android.internal.R.styleable.AccountAuthenticator.get()));
++        TypedArray array = resources.obtainAttributes(attributeSet, black.com.android.internal.InternalResources.styleable.AccountAuthenticator.get());
+         try {
+-            String accountType = array.getString(black.com.android.internal.R.styleable.AccountAuthenticator_accountType.get());
+-            int label = array.getResourceId(black.com.android.internal.R.styleable.AccountAuthenticator_label.get(), 0);
+-            int icon = array.getResourceId(black.com.android.internal.R.styleable.AccountAuthenticator_icon.get(), 0);
+-            int smallIcon = array.getResourceId(black.com.android.internal.R.styleable.AccountAuthenticator_smallIcon.get(), 0);
+-            int accountPreferences = array.getResourceId(black.com.android.internal.R.styleable.AccountAuthenticator_accountPreferences.get(), 0);
+-            boolean customTokens = array.getBoolean(black.com.android.internal.R.styleable.AccountAuthenticator_customTokens.get(), false);
++            String accountType = array.getString(black.com.android.internal.InternalResources.styleable.AccountAuthenticator_accountType.get());
++            int label = array.getResourceId(black.com.android.internal.InternalResources.styleable.AccountAuthenticator_label.get(), 0);
++            int icon = array.getResourceId(black.com.android.internal.InternalResources.styleable.AccountAuthenticator_icon.get(), 0);
++            int smallIcon = array.getResourceId(black.com.android.internal.InternalResources.styleable.AccountAuthenticator_smallIcon.get(), 0);
++            int accountPreferences = array.getResourceId(black.com.android.internal.InternalResources.styleable.AccountAuthenticator_accountPreferences.get(), 0);
++            boolean customTokens = array.getBoolean(black.com.android.internal.InternalResources.styleable.AccountAuthenticator_customTokens.get(), false);
+ 
+             if (TextUtils.isEmpty(accountType)) {
+                 return null;
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/am/ActivityStack.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/am/ActivityStack.java
+index f2bdc83..7ff2ad1 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/core/system/am/ActivityStack.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/core/system/am/ActivityStack.java
+@@ -308,8 +308,8 @@ public class ActivityStack {
+             }
+ 
+             assert resources != null;
+-            typedArray = resources.newTheme().obtainStyledAttributes(id, ArrayUtils.toInt(black.com.android.internal.R.styleable.Window.get()));
+-            boolean windowIsTranslucent = typedArray.getBoolean(black.com.android.internal.R.styleable.Window_windowIsTranslucent.get(), false);
++            typedArray = resources.newTheme().obtainStyledAttributes(id, black.com.android.internal.InternalResources.styleable.Window.get());
++            boolean windowIsTranslucent = typedArray.getBoolean(black.com.android.internal.InternalResources.styleable.Window_windowIsTranslucent.get(), false);
+             if (windowIsTranslucent) {
+                 shadow.setComponent(new ComponentName(BlackBoxCore.getHostPkg(), ProxyManifest.TransparentProxyActivity(vPID)));
+             } else {
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/location/BLocationManagerService.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/location/BLocationManagerService.java
+index 06e20a6..f60a381 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/core/system/location/BLocationManagerService.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/core/system/location/BLocationManagerService.java
+@@ -1,9 +1,15 @@
+ package top.niunaijun.bcore.core.system.location;
+ 
+ import android.os.IBinder;
++import android.os.Binder;
++import android.os.Bundle;
++import android.location.Location;
+ import android.os.IInterface;
+ import android.os.Parcel;
+ import android.os.RemoteException;
++import android.os.Handler;
++import android.os.Looper;
++import android.os.SystemClock;
+ import android.util.AtomicFile;
+ import android.util.SparseArray;
+ 
+@@ -14,8 +20,8 @@ import java.io.InputStream;
+ import java.util.HashMap;
+ import java.util.List;
+ import java.util.Map;
+-import java.util.concurrent.Executor;
+-import java.util.concurrent.Executors;
++import java.util.ArrayList;
++import java.util.Objects;
+ 
+ import black.android.location.ILocationListener;
+ import top.niunaijun.bcore.BlackBoxCore;
+@@ -28,6 +34,7 @@ import top.niunaijun.bcore.fake.frameworks.BLocationManager;
+ import top.niunaijun.bcore.utils.CloseUtils;
+ import top.niunaijun.bcore.utils.FileUtils;
+ import top.niunaijun.bcore.utils.Slog;
++import top.niunaijun.bcore.utils.compat.LocationCallbackCompat;
+ 
+ /**
+  * Fake location
+@@ -43,8 +50,9 @@ public class BLocationManagerService extends IBLocationManagerService.Stub imple
+     private static final BLocationManagerService sService = new BLocationManagerService();
+     private final SparseArray<HashMap<String, BLocationConfig>> mLocationConfigs = new SparseArray<>();
+     private final BLocationConfig mGlobalConfig = new BLocationConfig();
+-    private final Map<IBinder, LocationRecord> mLocationListeners = new HashMap<>();
+-    private final Executor mThreadPool = Executors.newCachedThreadPool();
++    private final Map<IBinder, Subscription> mLocationListeners = new HashMap<>();
++    private final Handler mLocationHandler = new Handler(Looper.getMainLooper());
++    private final ConsumerLocationStats mConsumerStats = new ConsumerLocationStats();
+ 
+     public static BLocationManagerService get() {
+         return sService;
+@@ -81,6 +89,15 @@ public class BLocationManagerService extends IBLocationManagerService.Stub imple
+             getOrCreateConfig(userId, pkg).pattern = pattern;
+             save();
+         }
++        if (pattern == BLocationManager.CLOSE_MODE) {
++            synchronized (mLocationListeners) {
++                for (Subscription record : new ArrayList<>(mLocationListeners.values())) {
++                    if (record.userId == userId && Objects.equals(record.packageName, pkg)) {
++                        removeSubscription(record);
++                    }
++                }
++            }
++        }
+     }
+ 
+     @Override
+@@ -195,6 +212,19 @@ public class BLocationManagerService extends IBLocationManagerService.Stub imple
+         }
+     }
+ 
++    @Override
++    public BLocation getLocationForConsumer(int userId, String pkg, String provider, boolean current) {
++        BLocation value = getLocation(userId, pkg);
++        mConsumerStats.prepared(userId, pkg, provider, current, value != null, Binder.getCallingPid());
++        return value;
++    }
++
++    @Override
++    public Bundle getConsumerDeliverySummary(int userId, String pkg) {
++        // Copying feedback observes counters only; it never reads or requests a fix.
++        return mConsumerStats.snapshot(userId, pkg);
++    }
++
+     @Override
+     public void setGlobalLocation(BLocation location) {
+         synchronized (mGlobalConfig) {
+@@ -212,63 +242,112 @@ public class BLocationManagerService extends IBLocationManagerService.Stub imple
+ 
+     @Override
+     public void requestLocationUpdates(IBinder listener, String packageName, int userId) throws RemoteException {
+-        if (listener == null || !listener.pingBinder()) {
+-            return;
+-        }
++        requestLocationUpdatesWithOptions(listener, packageName, userId, "gps", 1000,
++                Long.MAX_VALUE, Integer.MAX_VALUE);
++    }
+ 
+-        if (mLocationListeners.containsKey(listener)) {
+-            return;
++    @Override
++    public void requestLocationUpdatesWithOptions(IBinder listener, String packageName, int userId,
++            String provider, long intervalMillis, long durationMillis, int maxUpdates)
++            throws RemoteException {
++        if (listener == null || !listener.isBinderAlive()) return;
++        if (intervalMillis < 0 || durationMillis <= 0 || maxUpdates <= 0) {
++            throw new IllegalArgumentException("Invalid location request limits");
+         }
+-
+-        listener.linkToDeath(new DeathRecipient() {
+-            @Override
+-            public void binderDied() {
+-                listener.unlinkToDeath(this, 0);
++        Subscription record = new Subscription(listener, packageName, userId, provider,
++                intervalMillis, durationMillis, maxUpdates);
++        synchronized (mLocationListeners) {
++            Subscription previous = mLocationListeners.get(listener);
++            if (previous != null) removeSubscription(previous);
++            mLocationListeners.put(listener, record);
++            try {
++                listener.linkToDeath(record, 0);
++            } catch (RemoteException e) {
+                 mLocationListeners.remove(listener);
++                throw e;
+             }
+-        }, 0);
+-        LocationRecord record = new LocationRecord(packageName, userId);
+-        mLocationListeners.put(listener, record);
+-        addTask(listener);
++            if (!mLocationHandler.post(record)) removeSubscription(record);
++            else mConsumerStats.registered(userId, packageName, provider, record.receiverPid);
++        }
+     }
+ 
+     @Override
+     public void removeUpdates(IBinder listener) throws RemoteException {
+-        if (listener == null || !listener.pingBinder()) {
+-            return;
++        synchronized (mLocationListeners) {
++            Subscription record = mLocationListeners.get(listener);
++            if (record != null) removeSubscription(record);
+         }
+-        mLocationListeners.remove(listener);
+     }
+ 
+-    private void addTask(IBinder locationListener) {
+-        mThreadPool.execute(() -> {
+-            BLocation lastLocation = null;
+-            long l = System.currentTimeMillis();
++    private void removeSubscription(Subscription record) {
++        synchronized (mLocationListeners) {
++            if (mLocationListeners.get(record.listener) != record) return;
++            mLocationListeners.remove(record.listener);
++            mLocationHandler.removeCallbacks(record);
++            try { record.listener.unlinkToDeath(record, 0); }
++            catch (java.util.NoSuchElementException ignored) { }
++        }
++    }
+ 
+-            while (locationListener.pingBinder()) {
+-                IInterface iInterface = ILocationListener.Stub.asInterface.call(locationListener);
+-                LocationRecord locationRecord = mLocationListeners.get(locationListener);
+-                if (locationRecord == null) {
+-                    continue;
+-                }
++    private final class Subscription implements Runnable, IBinder.DeathRecipient {
++        final IBinder listener;
++        final String packageName;
++        final int userId;
++        final String provider;
++        final long intervalMillis;
++        final long deadline;
++        final int receiverPid;
++        int remaining;
++
++        Subscription(IBinder listener, String packageName, int userId, String provider,
++                long intervalMillis, long durationMillis, int maxUpdates) {
++            this.listener = listener;
++            this.packageName = packageName;
++            this.userId = userId;
++            this.provider = provider;
++            // Bound zero-interval requests without a per-listener worker or spin loop.
++            this.intervalMillis = Math.max(100, intervalMillis);
++            long now = SystemClock.elapsedRealtime();
++            this.deadline = durationMillis >= Long.MAX_VALUE - now
++                    ? Long.MAX_VALUE : now + durationMillis;
++            this.remaining = maxUpdates;
++            this.receiverPid = Binder.getCallingPid();
++        }
+ 
+-                BLocation location = getLocation(locationRecord.userId, locationRecord.packageName);
+-                if (location == null) {
+-                    continue;
+-                }
++        @Override public void binderDied() { removeSubscription(this); }
+ 
+-                if (location.equals(lastLocation) && (System.currentTimeMillis() - l) < 3000) {
+-                    try {
+-                        Thread.sleep(1000);
+-                    } catch (InterruptedException ignored) { }
+-                    continue;
++        @Override public void run() {
++            synchronized (mLocationListeners) {
++                if (mLocationListeners.get(listener) != this) return;
++            }
++            if (!listener.isBinderAlive() || SystemClock.elapsedRealtime() >= deadline) {
++                removeSubscription(this);
++                return;
++            }
++            BLocation location = getLocation(userId, packageName);
++            if (location != null) {
++                try {
++                    Location sample = location.convert2SystemLocation(provider, packageName);
++                    LocationCallbackCompat.deliverListener(listener, sample);
++                    mConsumerStats.sent(userId, packageName, provider, receiverPid, sample);
++                    remaining--;
++                } catch (Exception e) {
++                    mConsumerStats.failed(userId, packageName);
++                    android.util.Log.w(TAG, "Location listener failed; releasing subscription", e);
++                    removeSubscription(this);
++                    return;
+                 }
+-
+-                lastLocation = location;
+-                l = System.currentTimeMillis();
+-                BlackBoxCore.get().getHandler().post(() -> ILocationListener.onLocationChanged.call(iInterface, location.convert2SystemLocation()));
+             }
+-        });
++            synchronized (mLocationListeners) {
++                if (mLocationListeners.get(listener) != this) return;
++                long left = deadline - SystemClock.elapsedRealtime();
++                if (remaining <= 0 || left <= 0) {
++                    removeSubscription(this);
++                } else if (!mLocationHandler.postDelayed(this, Math.min(intervalMillis, left))) {
++                    removeSubscription(this);
++                }
++            }
++        }
+     }
+ 
+     public void save() {
+@@ -347,8 +426,6 @@ public class BLocationManagerService extends IBLocationManagerService.Stub imple
+     @Override
+     public void systemReady() {
+         loadConfig();
+-        for (IBinder iBinder : mLocationListeners.keySet()) {
+-            addTask(iBinder);
+-        }
++        // Subscriptions belong to live Binder clients; never resurrect old worker loops.
+     }
+ }
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/location/ConsumerLocationStats.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/location/ConsumerLocationStats.java
+new file mode 100644
+index 0000000..70dd316
+--- /dev/null
++++ b/BCore/src/main/java/top/niunaijun/bcore/core/system/location/ConsumerLocationStats.java
+@@ -0,0 +1,86 @@
++package top.niunaijun.bcore.core.system.location;
++
++import android.location.Location;
++import android.os.Bundle;
++import android.os.SystemClock;
++
++import java.util.LinkedHashMap;
++import java.util.Map;
++
++/** Bounded, volatile counters for virtual delivery only. No location objects are retained. */
++final class ConsumerLocationStats {
++    static final String SCOPE = "CORE_MEMORY_VIRTUAL_PREPARATION_AND_BINDER_SEND_NOT_SDK_ADOPTION";
++    private static final int LIMIT = 16;
++    private final Map<String, Bundle> records = new LinkedHashMap<>();
++
++    private static String key(int user, String pkg) {
++        return pkg == null || pkg.length() > 255 ? null : user + ":" + pkg;
++    }
++
++    private static String provider(String value) {
++        return "gps".equals(value) ? "gps" : "network".equals(value) ? "network"
++                : "passive".equals(value) ? "passive" : "other";
++    }
++
++    private Bundle record(int user, String pkg) {
++        String key = key(user, pkg);
++        if (key == null) return null;
++        Bundle value = records.get(key);
++        if (value == null) {
++            if (records.size() == LIMIT) records.remove(records.keySet().iterator().next());
++            value = new Bundle();
++            value.putLong("first_event_elapsed_ms", SystemClock.elapsedRealtime());
++            records.put(key, value);
++        }
++        return value;
++    }
++
++    private static void increment(Bundle value, String name) {
++        long previous = value.getLong(name);
++        value.putLong(name, previous == Long.MAX_VALUE ? previous : previous + 1);
++        value.putLong("last_event_elapsed_ms", SystemClock.elapsedRealtime());
++    }
++
++    synchronized void prepared(int user, String pkg, String provider, boolean current,
++                               boolean present, int callerPid) {
++        Bundle value = record(user, pkg);
++        if (value == null) return;
++        increment(value, present ? (current ? "current_" : "cache_") + provider(provider) + "_prepared"
++                : "missing_sample_count");
++        value.putInt("last_preparation_caller_pid", callerPid);
++    }
++
++    synchronized void registered(int user, String pkg, String provider, int receiverPid) {
++        Bundle value = record(user, pkg);
++        if (value == null) return;
++        increment(value, "stream_" + provider(provider) + "_registered");
++        value.putInt("last_stream_receiver_pid", receiverPid);
++    }
++
++    synchronized void sent(int user, String pkg, String provider, int receiverPid, Location sample) {
++        Bundle value = record(user, pkg);
++        if (value == null) return;
++        increment(value, "stream_" + provider(provider) + "_transaction_returned");
++        value.putInt("last_stream_receiver_pid", receiverPid);
++        value.putBoolean("last_stream_mock", sample.isFromMockProvider());
++        value.putBoolean("last_stream_synthetic", sample.getExtras() != null
++                && sample.getExtras().getBoolean("tianwaitian.synthetic"));
++    }
++
++    synchronized void failed(int user, String pkg) {
++        Bundle value = record(user, pkg);
++        if (value != null) increment(value, "stream_failure_count");
++    }
++
++    synchronized Bundle snapshot(int user, String pkg) {
++        String key = key(user, pkg);
++        Bundle value = key == null ? null : records.get(key);
++        Bundle copy = value == null ? new Bundle() : new Bundle(value);
++        copy.putString("scope", SCOPE);
++        copy.putBoolean("present", value != null);
++        copy.putLong("last_event_age_ms", value == null ? -1
++                : Math.max(0, SystemClock.elapsedRealtime() - value.getLong("last_event_elapsed_ms")));
++        copy.putInt("maximum_profiles", LIMIT);
++        return copy;
++    }
++}
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/core/system/pm/PackageManagerCompat.java b/BCore/src/main/java/top/niunaijun/bcore/core/system/pm/PackageManagerCompat.java
+index dc071ad..6056308 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/core/system/pm/PackageManagerCompat.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/core/system/pm/PackageManagerCompat.java
+@@ -12,16 +12,18 @@ import android.content.pm.PackageManager;
+ import android.content.pm.PermissionInfo;
+ import android.content.pm.ProviderInfo;
+ import android.content.pm.ServiceInfo;
++import android.content.pm.SharedLibraryInfo;
+ import android.content.res.AssetManager;
+ import android.content.res.Resources;
+ import android.os.Build;
+ 
+ import java.util.HashSet;
++import java.util.ArrayList;
++import java.util.List;
+ import java.util.Set;
+ 
+ import black.android.content.pm.ApplicationInfoL;
+ import black.android.content.pm.ApplicationInfoN;
+-import black.android.content.pm.SigningInfo;
+ import top.niunaijun.bcore.BlackBoxCore;
+ import top.niunaijun.bcore.core.env.AppSystemEnv;
+ import top.niunaijun.bcore.core.env.BEnvironment;
+@@ -42,7 +44,11 @@ public class PackageManagerCompat {
+             PackageInfo packageInfo = null;
+             try {
+                 packageInfo = generatePackageInfo(p, flags, 0, 0, state, userId);
+-            } catch (Throwable ignored) { }
++            } catch (Throwable error) {
++                // Retain a structural failure reason without APK paths or exception messages.
++                android.util.Log.w("PackageManagerCompat", "generatePackageInfo failed: "
++                        + error.getClass().getName());
++            }
+             return packageInfo;
+         }
+         return null;
+@@ -197,21 +203,21 @@ public class PackageManagerCompat {
+         }
+ 
+         if ((flags & PackageManager.GET_SIGNATURES) != 0) {
+-            if (base == null) {
+-                pi.signatures = p.mSignatures;
+-            } else {
+-                pi.signatures = base.signatures;
+-            }
++            // A separately system-installed version must not replace this guest's identity.
++            pi.signatures = p.mSignatures == null ? null : p.mSignatures.clone();
+         }
+ 
+         if (BuildCompat.isPie()) {
+             if ((flags & PackageManager.GET_SIGNING_CERTIFICATES) != 0) {
+-                if (base == null) {
+-                    black.android.content.pm.PackageParser.SigningDetails.signatures.set(null, p.mSigningDetails.signatures);
+-                    pi.signingInfo = SigningInfo._new.newInstance();
+-                } else {
+-                    pi.signingInfo = base.signingInfo;
++                // Some API33 framework builds collect certificates only when GET_SIGNATURES
++                // is present. Request both internally; expose only the caller's requested fields.
++                PackageInfo archive = BlackBoxCore.getPackageManager().getPackageArchiveInfo(
++                        p.baseCodePath, PackageManager.GET_SIGNING_CERTIFICATES | PackageManager.GET_SIGNATURES);
++                if (archive == null || !p.packageName.equals(archive.packageName)
++                        || archive.signingInfo == null) {
++                    throw new IllegalStateException("Original guest signing information unavailable");
+                 }
++                pi.signingInfo = archive.signingInfo;
+             }
+         }
+         return pi;
+@@ -293,7 +299,8 @@ public class PackageManagerCompat {
+ 
+         ApplicationInfo baseApplication;
+         try {
+-            baseApplication = BlackBoxCore.getPackageManager().getApplicationInfo(BlackBoxCore.getHostPkg(), flags);
++            baseApplication = BlackBoxCore.getPackageManager().getApplicationInfo(BlackBoxCore.getHostPkg(),
++                    flags | PackageManager.GET_SHARED_LIBRARY_FILES);
+         } catch (Exception e) {
+             return null;
+         }
+@@ -342,7 +349,7 @@ public class PackageManagerCompat {
+                 ApplicationInfoN.credentialProtectedDataDir.set(ai, ai.dataDir);
+             }
+         }
+-        fixJar(ai);
++        fixJar(ai, baseApplication, flags);
+         return ai;
+     }
+ 
+@@ -354,7 +361,7 @@ public class PackageManagerCompat {
+         return !state.installed || state.hidden;
+     }
+ 
+-    private static void fixJar(ApplicationInfo info) {
++    private static void fixJar(ApplicationInfo info, ApplicationInfo hostInfo, int flags) {
+         String APACHE_LEGACY_JAR = "/system/framework/org.apache.http.legacy.boot.jar";
+         String APACHE_LEGACY_JAR_Q = "/system/framework/org.apache.http.legacy.jar";
+         Set<String> sharedLibraryFileList = new HashSet<>();
+@@ -369,6 +376,36 @@ public class PackageManagerCompat {
+             sharedLibraryFileList.add(APACHE_LEGACY_JAR);
+         }
+         info.sharedLibraryFiles = sharedLibraryFileList.toArray(new String[]{});
++        if (Build.VERSION.SDK_INT >= 29 && (flags & PackageManager.GET_SHARED_LIBRARY_FILES) != 0) {
++            // API29+ resolves framework JARs through SharedLibraryInfo loaders, not
++            // the legacy string array. Use genuine framework metadata from the host's
++            // declared optional library; never construct a fake platform library record.
++            try {
++                java.lang.reflect.Field field = ApplicationInfo.class.getDeclaredField("sharedLibraryInfos");
++                field.setAccessible(true);
++                List<SharedLibraryInfo> hostLibraries = (List<SharedLibraryInfo>) field.get(hostInfo);
++                List<SharedLibraryInfo> guestLibraries = (List<SharedLibraryInfo>) field.get(info);
++                List<SharedLibraryInfo> merged = guestLibraries == null
++                        ? new ArrayList<>() : new ArrayList<>(guestLibraries);
++                boolean present = false;
++                for (SharedLibraryInfo library : merged) {
++                    if ("org.apache.http.legacy".equals(library.getName())) present = true;
++                }
++                if (!present && hostLibraries != null) {
++                    for (SharedLibraryInfo library : hostLibraries) {
++                        if ("org.apache.http.legacy".equals(library.getName())) {
++                            merged.add(library);
++                            present = true;
++                            break;
++                        }
++                    }
++                }
++                if (!present) throw new IllegalStateException("Framework HTTP legacy library metadata unavailable");
++                field.set(info, merged);
++            } catch (ReflectiveOperationException error) {
++                throw new IllegalStateException("Framework shared-library metadata unavailable", error);
++            }
++        }
+     }
+ 
+     public static Resources getResources(Context context, ApplicationInfo appInfo) {
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java b/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java
+index 3a16522..e787454 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/entity/location/BLocation.java
+@@ -5,6 +5,8 @@ import android.location.LocationManager;
+ import android.os.Bundle;
+ import android.os.Parcel;
+ import android.os.Parcelable;
++import android.os.Build;
++import android.os.SystemClock;
+ 
+ import androidx.annotation.NonNull;
+ 
+@@ -50,9 +52,9 @@ public class BLocation implements Parcelable {
+         this.mLatitude = in.readDouble();
+         this.mLongitude = in.readDouble();
+         this.mAltitude = in.readDouble();
+-        this.mAccuracy = in.readFloat();
+         this.mSpeed = in.readFloat();
+         this.mBearing = in.readFloat();
++        this.mAccuracy = in.readFloat();
+     }
+ 
+     public boolean isEmpty() {
+@@ -79,16 +81,47 @@ public class BLocation implements Parcelable {
+     }
+ 
+     public Location convert2SystemLocation() {
+-        Location location = new Location(LocationManager.GPS_PROVIDER);
++        return convert2SystemLocation(LocationManager.GPS_PROVIDER);
++    }
++
++    public Location convert2SystemLocation(String provider) {
++        return convert2SystemLocation(provider, null);
++    }
++
++    /** Presentation for the pinned original imported by this preview host. */
++    public static boolean exposesMockFlagForPackage(String packageName) {
++        // The bundled WeChat 8.0.79 SDK has unconditional mock early-return
++        // branches. This profile is limited to its virtual session; the source
++        // remains synthetic and is declared in extras and the preview report.
++        return !"com.tencent.mm".equals(packageName);
++    }
++
++    public Location convert2SystemLocation(String provider, String packageName) {
++        // A passive subscription forwards a source sample; "passive" is the
++        // request channel, not the sample's origin provider. This preview has
++        // a configured synthetic GPS source and never requests physical GNSS.
++        Location location = new Location(LocationManager.PASSIVE_PROVIDER.equals(provider)
++                ? LocationManager.GPS_PROVIDER : provider);
+         location.setLatitude(mLatitude);
+         location.setLongitude(mLongitude);
+         location.setSpeed(mSpeed);
+         location.setBearing(mBearing);
+         location.setAccuracy(40f);
+         location.setTime(System.currentTimeMillis());
++        location.setElapsedRealtimeNanos(SystemClock.elapsedRealtimeNanos());
++        // Generic clients keep the framework mock marker. The pinned WeChat
++        // preview uses a compatibility presentation, not physical GNSS data.
++        try {
++            Location.class.getMethod(Build.VERSION.SDK_INT >= 31 ? "setMock"
++                    : "setIsFromMockProvider", boolean.class).invoke(location,
++                    exposesMockFlagForPackage(packageName));
++        } catch (ReflectiveOperationException e) {
++            throw new IllegalStateException("Cannot set virtual location presentation", e);
++        }
+         Bundle extraBundle = new Bundle();
++        extraBundle.putBoolean("tianwaitian.synthetic", true);
+         // GPS satellite number
+-        int satelliteCount = 10;
++        int satelliteCount = 0; // Synthetic coordinates do not imply observed GNSS satellites.
+         extraBundle.putInt("satellites", satelliteCount);
+         extraBundle.putInt("satellitesvalue", satelliteCount);
+         location.setExtras(extraBundle);
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/frameworks/BLocationManager.java b/BCore/src/main/java/top/niunaijun/bcore/fake/frameworks/BLocationManager.java
+index 5053133..be82cff 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/fake/frameworks/BLocationManager.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/fake/frameworks/BLocationManager.java
+@@ -29,7 +29,17 @@ public class BLocationManager extends BlackManager<IBLocationManagerService> {
+     }
+ 
+     public static boolean isFakeLocationEnable() {
+-        return get().getPattern(BActivityThread.getUserId(), BActivityThread.getAppPackageName()) != CLOSE_MODE;
++        // Only an explicit, successful CLOSE read may enable physical-location
++        // delegation. The compatibility getter below returns CLOSE on Binder
++        // failure and must not decide the privacy policy of Guest hooks.
++        try {
++            IBLocationManagerService service = get().getService();
++            return service == null || service.getPattern(BActivityThread.getUserId(),
++                    BActivityThread.getAppPackageName()) != CLOSE_MODE;
++        } catch (RemoteException | RuntimeException unavailable) {
++            // Unavailable state is not proof that the user disabled the session.
++            return true;
++        }
+     }
+ 
+     public static void disableFakeLocation(int userId,String pkg) {
+@@ -97,6 +107,15 @@ public class BLocationManager extends BlackManager<IBLocationManagerService> {
+         return null;
+     }
+ 
++    public BLocation getLocationForConsumer(int userId, String pkg, String provider, boolean current) {
++        try {
++            IBLocationManagerService service = getService();
++            return service == null ? null : service.getLocationForConsumer(userId, pkg, provider, current);
++        } catch (RemoteException unavailable) {
++            return null; // Keep the existing protected null result; never query physical location.
++        }
++    }
++
+     public void requestLocationUpdates(IBinder listener) {
+         try {
+             getService().requestLocationUpdates(listener, BActivityThread.getAppPackageName(), BActivityThread.getUserId());
+@@ -112,4 +131,10 @@ public class BLocationManager extends BlackManager<IBLocationManagerService> {
+             e.printStackTrace();
+         }
+     }
++
++    public void requestLocationUpdates(IBinder listener, String provider, long intervalMillis,
++                                       long durationMillis, int maxUpdates) throws RemoteException {
++        getService().requestLocationUpdatesWithOptions(listener, BActivityThread.getAppPackageName(),
++                BActivityThread.getUserId(), provider, intervalMillis, durationMillis, maxUpdates);
++    }
+ }
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IActivityManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IActivityManagerProxy.java
+index 2985eb4..2dddb10 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IActivityManagerProxy.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IActivityManagerProxy.java
+@@ -26,6 +26,7 @@ import black.android.app.ActivityManagerOreo;
+ import black.android.app.IActivityManager;
+ import black.android.app.LoadedApk;
+ import black.android.content.ContentProviderNative;
++import black.android.content.ContentProviderHolderOreo;
+ import black.android.content.pm.UserInfo;
+ import black.android.util.Singleton;
+ import top.niunaijun.bcore.BlackBoxCore;
+@@ -43,6 +44,7 @@ import top.niunaijun.bcore.fake.frameworks.BPackageManager;
+ import top.niunaijun.bcore.fake.hook.ClassInvocationStub;
+ import top.niunaijun.bcore.fake.hook.MethodHook;
+ import top.niunaijun.bcore.fake.hook.ProxyMethod;
++import top.niunaijun.bcore.fake.hook.ProxyMethods;
+ import top.niunaijun.bcore.fake.hook.ScanClass;
+ import top.niunaijun.bcore.fake.service.base.PkgMethodProxy;
+ import top.niunaijun.bcore.fake.service.context.providers.ContentProviderStub;
+@@ -140,8 +142,17 @@ public class IActivityManagerProxy extends ClassInvocationStub {
+                     }
+ 
+                     content = method.invoke(who, args);
+-                    IActivityManager.ContentProviderHolder.info.set(content, providerInfo);
+-                    IActivityManager.ContentProviderHolder.provider.set(content, new ContentProviderStub().wrapper(ContentProviderNative.asInterface.call(providerBinder), BActivityThread.getAppPackageName()));
++                    if (content == null) return null;
++                    IInterface provider = new ContentProviderStub().wrapper(
++                            ContentProviderNative.asInterface.call(providerBinder),
++                            BActivityThread.getAppPackageName());
++                    if (BuildCompat.isOreo()) {
++                        ContentProviderHolderOreo.info.set(content, providerInfo);
++                        ContentProviderHolderOreo.provider.set(content, provider);
++                    } else {
++                        IActivityManager.ContentProviderHolder.info.set(content, providerInfo);
++                        IActivityManager.ContentProviderHolder.provider.set(content, provider);
++                    }
+                 }
+                 return content;
+             }
+@@ -315,7 +326,7 @@ public class IActivityManagerProxy extends ClassInvocationStub {
+         }
+     }
+ 
+-    @ProxyMethod("getIntentSender")
++    @ProxyMethods({"getIntentSender", "getIntentSenderWithFeature"})
+     public static class GetIntentSender extends MethodHook {
+ 
+         @Override
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IConnectivityManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IConnectivityManagerProxy.java
+index 0ff8a3c..3696087 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IConnectivityManagerProxy.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IConnectivityManagerProxy.java
+@@ -1,11 +1,30 @@
+ package top.niunaijun.bcore.fake.service;
+ 
+ import android.content.Context;
++import android.net.NetworkInfo;
++import android.net.NetworkCapabilities;
++import android.net.TransportInfo;
++import android.net.wifi.WifiInfo;
++import android.os.Build;
++import android.os.Bundle;
++import android.os.Handler;
++import android.os.HandlerThread;
++import android.os.Message;
++import android.os.Messenger;
++import android.os.Parcel;
++import android.os.RemoteException;
++import android.util.Log;
++import java.lang.reflect.Method;
++import java.lang.reflect.InvocationTargetException;
+ 
+ import black.android.net.IConnectivityManager;
+ import black.android.os.ServiceManager;
+ import top.niunaijun.bcore.fake.hook.BinderInvocationStub;
+-import top.niunaijun.bcore.fake.service.base.ValueMethodProxy;
++import top.niunaijun.bcore.fake.hook.MethodHook;
++import top.niunaijun.bcore.fake.hook.ProxyMethod;
++import top.niunaijun.bcore.fake.hook.ProxyMethods;
++import top.niunaijun.bcore.fake.frameworks.BLocationManager;
++import top.niunaijun.bcore.utils.MethodParameterUtils;
+ 
+ public class IConnectivityManagerProxy extends BinderInvocationStub {
+     public static final String TAG = "IConnectivityManagerProxy";
+@@ -24,11 +43,107 @@ public class IConnectivityManagerProxy extends BinderInvocationStub {
+         replaceSystemService(Context.CONNECTIVITY_SERVICE);
+     }
+ 
+-    @Override
+-    protected void onBindMethod() {
+-        super.onBindMethod();
+-        addMethodHook(new ValueMethodProxy("getAllNetworkInfo", null));
+-        addMethodHook(new ValueMethodProxy("getAllNetworks",null));
++    // Opaque Network handles are not coordinates. Leave getAllNetworks on the
++    // ordinary service path so Wi-Fi/cellular/VPN routing remains observable.
++    @ProxyMethod("getAllNetworkInfo")
++    public static class GetAllNetworkInfo extends MethodHook {
++        @Override
++        protected Object hook(Object who, Method method, Object[] args) throws Throwable {
++            NetworkInfo[] original = (NetworkInfo[]) method.invoke(who, args);
++            if (!BLocationManager.isFakeLocationEnable() || original == null) return original;
++            try {
++                Method clearExtra = NetworkInfo.class.getDeclaredMethod("setExtraInfo", String.class);
++                clearExtra.setAccessible(true);
++                NetworkInfo[] copies = new NetworkInfo[original.length];
++                for (int i = 0; i < original.length; i++) {
++                    if (original[i] == null) continue;
++                    Parcel parcel = Parcel.obtain();
++                    try {
++                        original[i].writeToParcel(parcel, 0); parcel.setDataPosition(0);
++                        copies[i] = NetworkInfo.CREATOR.createFromParcel(parcel);
++                    } finally { parcel.recycle(); }
++                    clearExtra.invoke(copies[i], new Object[] {null});
++                }
++                return copies;
++            } catch (ReflectiveOperationException | RuntimeException unavailable) {
++                // No raw extra-info fallback if this platform lacks the copy contract.
++                return new NetworkInfo[0];
++            }
++        }
++    }
++
++    @ProxyMethods({"requestNetwork", "listenForNetwork"})
++    public static class NetworkCallbacks extends MethodHook {
++        @Override
++        protected Object hook(Object who, Method method, Object[] args) throws Throwable {
++            if (Build.VERSION.SDK_INT != 33) return invokeBase(who, method, args);
++            Object[] outbound = args.clone();
++            MethodParameterUtils.replaceFirstAppPkg(outbound);
++            // Only the callback Messenger is relayed. Preserve the separate death
++            // token, request flags, capabilities, timeout and returned request ID.
++            for (int i = 0; i < outbound.length; i++) {
++                if (outbound[i] instanceof Messenger) {
++                    outbound[i] = callbackMessenger((Messenger) outbound[i]);
++                }
++            }
++            return invokeBase(who, method, outbound);
++        }
++    }
++
++    private static Object invokeBase(Object who, Method method, Object[] args) throws Throwable {
++        try { return method.invoke(who, args); }
++        catch (InvocationTargetException error) { throw error.getCause(); }
++    }
++
++    private static HandlerThread callbackThread;
++
++    private static synchronized Messenger callbackMessenger(Messenger destination) {
++        if (callbackThread == null) {
++            callbackThread = new HandlerThread("gogogo-network-callback");
++            callbackThread.start();
++        }
++        return new Messenger(new Handler(callbackThread.getLooper()) {
++            @Override public void handleMessage(Message input) {
++                Message output = Message.obtain(input);
++                try {
++                    // Check at delivery as an already-registered callback may
++                    // outlive a virtual-location mode change.
++                    if (BLocationManager.isFakeLocationEnable()) {
++                        Bundle data = output.peekData();
++                        if (data != null) {
++                            String key = NetworkCapabilities.class.getSimpleName();
++                            NetworkCapabilities original = data.getParcelable(key);
++                            if (original != null) data.putParcelable(key, redactedCapabilities(original));
++                        }
++                    }
++                    destination.send(output);
++                    // The destination Handler owns this message after send.
++                } catch (RemoteException | ReflectiveOperationException | RuntimeException unavailable) {
++                    output.recycle();
++                    // Never fall back to an unredacted payload on copy failure.
++                    Log.w(TAG, "Network callback delivery unavailable: " + unavailable.getClass().getSimpleName());
++                }
++            }
++        });
++    }
++
++    private static NetworkCapabilities redactedCapabilities(NetworkCapabilities original)
++            throws ReflectiveOperationException {
++        NetworkCapabilities copy = new NetworkCapabilities(original);
++        TransportInfo info = original.getTransportInfo();
++        TransportInfo redacted = null;
++        if (info instanceof WifiInfo) {
++            WifiInfo wifi = (WifiInfo) info;
++            redacted = wifi.makeCopy(wifi.getApplicableRedactions());
++        } else if (info != null) {
++            Method mask = TransportInfo.class.getDeclaredMethod("getApplicableRedactions");
++            Method makeCopy = TransportInfo.class.getDeclaredMethod("makeCopy", long.class);
++            mask.setAccessible(true); makeCopy.setAccessible(true);
++            redacted = (TransportInfo) makeCopy.invoke(info, ((Number) mask.invoke(info)).longValue());
++        }
++        Method setInfo = NetworkCapabilities.class.getDeclaredMethod("setTransportInfo", TransportInfo.class);
++        setInfo.setAccessible(true); setInfo.invoke(copy, redacted);
++        return copy;
+     }
+ 
+     @Override
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
+index bad5396..6fa9c21 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ILocationManagerProxy.java
+@@ -1,9 +1,10 @@
+ package top.niunaijun.bcore.fake.service;
+ 
+ import android.content.Context;
+-import android.location.ILocationListener;
+ import android.location.LocationManager;
++import android.location.Location;
+ import android.os.IInterface;
++import android.os.Build;
+ import android.util.Log;
+ 
+ import java.lang.reflect.Method;
+@@ -22,9 +23,12 @@ import top.niunaijun.bcore.fake.frameworks.BLocationManager;
+ import top.niunaijun.bcore.fake.hook.BinderInvocationStub;
+ import top.niunaijun.bcore.fake.hook.MethodHook;
+ import top.niunaijun.bcore.fake.hook.ProxyMethod;
+-import top.niunaijun.bcore.fake.service.context.LocationListenerProxy;
++import top.niunaijun.bcore.fake.hook.ProxyMethods;
+ import top.niunaijun.bcore.utils.MethodParameterUtils;
+ import top.niunaijun.bcore.utils.compat.BuildCompat;
++import top.niunaijun.bcore.utils.compat.LocationCallbackCompat;
++import top.niunaijun.bcore.utils.compat.VirtualGnssStatus;
++import top.niunaijun.bcore.BlackBoxCore;
+ 
+ public class ILocationManagerProxy extends BinderInvocationStub {
+     public static final String TAG = "ILocationManagerProxy";
+@@ -60,6 +64,13 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+         @Override
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             if (BLocationManager.isFakeLocationEnable()) {
++                if (Build.VERSION.SDK_INT >= 31) {
++                    IInterface callback = LocationCallbackCompat.findInterface(args,
++                            "android.location.IGnssStatusListener");
++                    VirtualGnssStatus.register(callback, BlackBoxCore.get().getHandler(),
++                            BLocationManager::isFakeLocationEnable);
++                    return method.getReturnType() == boolean.class ? true : null;
++                }
+                 Object transport = MethodParameterUtils.getFirstParam(args, black.android.location.LocationManager.GnssStatusListenerTransport.REF.getClazz());
+ 
+                 if (transport != null) {
+@@ -95,26 +106,72 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+         }
+     }
+ 
++    @ProxyMethod("unregisterGnssStatusCallback")
++    public static class UnregisterGnssStatusCallback extends MethodHook {
++        @Override protected Object hook(Object who, Method method, Object[] args) throws Throwable {
++            if (Build.VERSION.SDK_INT >= 31) {
++                IInterface callback = LocationCallbackCompat.findInterface(args,
++                        "android.location.IGnssStatusListener");
++                VirtualGnssStatus.remove(callback.asBinder());
++            }
++            return method.invoke(who, args);
++        }
++    }
++
++    @ProxyMethods({"registerGnssNmeaCallback", "unregisterGnssNmeaCallback",
++            "addGnssMeasurementsListener", "removeGnssMeasurementsListener",
++            "addGnssNavigationMessageListener", "removeGnssNavigationMessageListener",
++            "addGnssAntennaInfoListener", "removeGnssAntennaInfoListener"})
++    public static class UnavailableVirtualMeasurements extends MethodHook {
++        @Override protected Object hook(Object who, Method method, Object[] args) throws Throwable {
++            if (Build.VERSION.SDK_INT >= 31 && BLocationManager.isFakeLocationEnable()
++                    && (method.getName().startsWith("register") || method.getName().startsWith("add"))) {
++                // Do not forward physical GNSS signals or manufacture satellite measurements.
++                return method.getReturnType() == boolean.class ? true : null;
++            }
++            // Removal remains idempotently forwarded, including registrations made before virtual mode.
++            return method.invoke(who, args);
++        }
++    }
++
+     @ProxyMethod("registerLocationListener")
+     public static class RegisterLocationListener extends MethodHook {
+ 
+         @Override
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             if (BLocationManager.isFakeLocationEnable()) {
+-                Object listener = MethodParameterUtils.getFirstParamByInstance(args, ILocationListener.Stub.class);
+-                if (listener != null) {
+-                    try {
+-                        black.android.location.LocationManager.LocationListenerTransport.mListener.set(listener,
+-                                new LocationListenerProxy().wrapper(black.android.location.LocationManager.LocationListenerTransport.mListener.get()));
+-                    } catch (Exception e) {
+-                        e.printStackTrace();
+-                    }
+-                }
++                IInterface listener = LocationCallbackCompat.findInterface(args,
++                        "android.location.ILocationListener");
++                Object request = args[1];
++                BLocationManager.get().requestLocationUpdates(listener.asBinder(), (String) args[0],
++                        LocationCallbackCompat.requestLong(request, "getIntervalMillis", 1000),
++                        LocationCallbackCompat.requestLong(request, "getDurationMillis", Long.MAX_VALUE),
++                        (int) LocationCallbackCompat.requestLong(request, "getMaxUpdates", Integer.MAX_VALUE));
++                return null;
+             }
+             return method.invoke(who, args);
+         }
+     }
+ 
++    @ProxyMethod("unregisterLocationListener")
++    public static class UnregisterLocationListener extends MethodHook {
++        @Override protected Object hook(Object who, Method method, Object[] args) throws Throwable {
++            IInterface listener = LocationCallbackCompat.findInterface(args,
++                    "android.location.ILocationListener");
++            BLocationManager.get().removeUpdates(listener.asBinder());
++            return BLocationManager.isFakeLocationEnable() ? null : method.invoke(who, args);
++        }
++    }
++
++    private static Location virtualLocation(Object[] args, boolean current) {
++        String provider = args.length > 0 && args[0] instanceof String
++                ? (String) args[0] : LocationManager.GPS_PROVIDER;
++        BLocation location = BLocationManager.get().getLocationForConsumer(BActivityThread.getUserId(),
++                BActivityThread.getAppPackageName(), provider, current);
++        return location == null ? null : location.convert2SystemLocation(provider,
++                BActivityThread.getAppPackageName());
++    }
++
+     @ProxyMethod("getLastLocation")
+     public static class GetLastLocation extends MethodHook {
+ 
+@@ -122,7 +179,7 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             Log.d(TAG, "GetLastLocation");
+             if (BLocationManager.isFakeLocationEnable()) {
+-                return BLocationManager.get().getLocation(BActivityThread.getUserId(), BActivityThread.getAppPackageName()).convert2SystemLocation();
++                return virtualLocation(args, false);
+             }
+             return method.invoke(who, args);
+         }
+@@ -135,7 +192,7 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             Log.d(TAG, "GetLastKnownLocation");
+             if (BLocationManager.isFakeLocationEnable()) {
+-                return BLocationManager.get().getLocation(BActivityThread.getUserId(), BActivityThread.getAppPackageName()).convert2SystemLocation();
++                return virtualLocation(args, false);
+             }
+             return method.invoke(who, args);
+         }
+@@ -148,7 +205,10 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             Log.d(TAG, "GetCurrentLocation");
+             if (BLocationManager.isFakeLocationEnable()) {
+-                return BLocationManager.get().getLocation(BActivityThread.getUserId(), BActivityThread.getAppPackageName()).convert2SystemLocation();
++                IInterface callback = LocationCallbackCompat.findInterface(args,
++                        "android.location.ILocationCallback");
++                return LocationCallbackCompat.requestCurrent(callback, () -> virtualLocation(args, true),
++                        BlackBoxCore.get().getHandler());
+             }
+             return method.invoke(who, args);
+         }
+@@ -180,7 +240,7 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+             if (args[0] instanceof IInterface) {
+                 IInterface listener = (IInterface) args[0];
+                 BLocationManager.get().removeUpdates(listener.asBinder());
+-                return 0;
++                if (BLocationManager.isFakeLocationEnable()) return null;
+             }
+             return method.invoke(who, args);
+         }
+@@ -232,7 +292,10 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+ 
+         @Override
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+-            return Arrays.asList(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER);
++            return BLocationManager.isFakeLocationEnable()
++                    ? Arrays.asList(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER,
++                            LocationManager.PASSIVE_PROVIDER)
++                    : method.invoke(who, args);
+         }
+     }
+ 
+@@ -242,7 +305,11 @@ public class ILocationManagerProxy extends BinderInvocationStub {
+         @Override
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             String provider = (String) args[0];
+-            return Objects.equals(provider, LocationManager.GPS_PROVIDER);
++            return BLocationManager.isFakeLocationEnable()
++                    ? Objects.equals(provider, LocationManager.GPS_PROVIDER)
++                        || Objects.equals(provider, LocationManager.NETWORK_PROVIDER)
++                        || Objects.equals(provider, LocationManager.PASSIVE_PROVIDER)
++                    : method.invoke(who, args);
+         }
+     }
+ 
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyManagerProxy.java
+index 33686f0..2ff723a 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyManagerProxy.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyManagerProxy.java
+@@ -1,20 +1,33 @@
+ package top.niunaijun.bcore.fake.service;
+ 
+ import android.content.Context;
++import android.os.Build;
++import android.os.Bundle;
++import android.os.RemoteException;
++import android.telephony.ServiceState;
++import android.telephony.TelephonyManager;
+ import android.util.Log;
+ 
++import org.lsposed.hiddenapibypass.HiddenApiBypass;
++
+ import java.lang.reflect.Method;
++import java.lang.reflect.Field;
++import java.lang.reflect.InvocationTargetException;
++import java.util.ArrayList;
++import java.util.List;
+ 
+ import black.android.os.ServiceManager;
+ import black.com.android.internal.telephony.ITelephony;
+ import top.niunaijun.bcore.BlackBoxCore;
+ import top.niunaijun.bcore.app.BActivityThread;
+-import top.niunaijun.bcore.entity.location.BCell;
++import top.niunaijun.bcore.core.system.location.IBLocationManagerService;
+ import top.niunaijun.bcore.fake.frameworks.BLocationManager;
+ import top.niunaijun.bcore.fake.hook.BinderInvocationStub;
+ import top.niunaijun.bcore.fake.hook.MethodHook;
+ import top.niunaijun.bcore.fake.hook.ProxyMethod;
++import top.niunaijun.bcore.fake.hook.ProxyMethods;
+ import top.niunaijun.bcore.utils.Md5Utils;
++import top.niunaijun.bcore.utils.MethodParameterUtils;
+ 
+ public class ITelephonyManagerProxy extends BinderInvocationStub {
+     public static final String TAG = "ITelephonyManagerProxy";
+@@ -30,9 +43,72 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+ 
+     @Override
+     protected void inject(Object baseInvocation, Object proxyInvocation) {
++        if (Build.VERSION.SDK_INT == 33) replaceCachedTelephony(proxyInvocation);
+         replaceSystemService(Context.TELEPHONY_SERVICE);
+     }
+ 
++    static void replaceCachedTelephony(Object proxyInvocation) {
++        // Existing managers can retain the pre-hook interface. Enumerate through
++        // the already-used library instead of assuming private lookup visibility.
++        for (Object candidate : HiddenApiBypass.getStaticFields(TelephonyManager.class)) {
++            Field field = (Field) candidate;
++            if (!"sITelephony".equals(field.getName())) continue;
++            try {
++                field.setAccessible(true);
++                field.set(null, proxyInvocation);
++                return;
++            } catch (IllegalAccessException error) {
++                throw new IllegalStateException("API33 telephony cache unavailable", error);
++            }
++        }
++        throw new IllegalStateException("API33 telephony cache missing");
++    }
++
++    @ProxyMethod("getServiceStateForSubscriber")
++    public static class GetServiceState extends MethodHook {
++        @Override protected Object hook(Object who, Method method, Object[] args) throws Throwable {
++            if (Build.VERSION.SDK_INT != 33) return invokeBase(who, method, args);
++            boolean protect = true;
++            try {
++                IBLocationManagerService modes = BLocationManager.get().getService();
++                protect = modes == null || modes.getPattern(BActivityThread.getUserId(),
++                        BActivityThread.getAppPackageName()) != BLocationManager.CLOSE_MODE;
++            } catch (RemoteException | RuntimeException unavailable) {
++                // An unavailable mode must not expose the raw radio identity.
++                Log.w(TAG, "Service state mode unavailable: " + unavailable.getClass().getSimpleName());
++            }
++            Object[] outbound = args.clone();
++            MethodParameterUtils.replaceFirstAppPkg(outbound);
++            if (protect) {
++                Class<?>[] types = method.getParameterTypes();
++                if (types.length != 5 || types[0] != int.class || types[1] != boolean.class
++                        || types[2] != boolean.class || types[3] != String.class || types[4] != String.class
++                        || method.getReturnType() != ServiceState.class) {
++                    return null; // Public API allows unavailable service state.
++                }
++                outbound[1] = true; // Ask the platform to renounce fine and coarse location.
++                outbound[2] = true;
++            }
++            // Keep the platform's phone-state permission rejection, including its cause.
++            Object value = invokeBase(who, method, outbound);
++            if (!protect || value == null) return value;
++            try {
++                // Also sanitize the delivered copy: a base that ignores the renounce
++                // flags must not leak CellIdentity or the framework's coarse fields.
++                return HiddenApiBypass.getDeclaredMethod(ServiceState.class,
++                        "createLocationInfoSanitizedCopy", boolean.class).invoke(value, true);
++            } catch (ReflectiveOperationException | RuntimeException unavailable) {
++                Log.w(TAG, "Service state redaction unavailable: " + unavailable.getClass().getSimpleName());
++                return null;
++            }
++        }
++    }
++
++    private static Object invokeBase(Object who, Method method, Object[] args) throws Throwable {
++        try { return method.invoke(who, args); }
++        catch (InvocationTargetException error) { throw error.getCause(); }
++    }
++
+     @Override
+     public boolean isBadEnv() {
+         return false;
+@@ -108,11 +184,9 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             Log.d(TAG, "getCellLocation");
+             if (BLocationManager.isFakeLocationEnable()) {
+-                BCell cell = BLocationManager.get().getCell(BActivityThread.getUserId(), BActivityThread.getAppPackageName());
+-                if (cell != null) {
+-                    // TODO: Transfer BCell to CdmaCellLocation/GsmCellLocation
+-                    return null;
+-                }
++                // Missing virtual cell data must never fall back to real radio identity.
++                // Older framework interfaces returned a Bundle instead of CellIdentity.
++                return Bundle.class.isAssignableFrom(method.getReturnType()) ? new Bundle() : null;
+             }
+             return method.invoke(who, args);
+         }
+@@ -125,8 +199,8 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             Log.d(TAG, "GetAllCellInfo");
+             if (BLocationManager.isFakeLocationEnable()) {
+-                // TODO: Transfer BCell to CdmaCellLocation/GsmCellLocation
+-                return BLocationManager.get().getAllCell(BActivityThread.getUserId(), BActivityThread.getAppPackageName());
++                // Internal BCell objects are not framework CellInfo parcelables.
++                return new ArrayList<>();
+             }
+ 
+             try {
+@@ -137,6 +211,33 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+         }
+     }
+ 
++    @ProxyMethods({"requestCellInfoUpdate", "requestCellInfoUpdateWithWorkSource"})
++    public static class RequestCellInfoUpdate extends MethodHook {
++
++        @Override
++        protected Object hook(Object who, Method method, Object[] args) throws Throwable {
++            if (!BLocationManager.isFakeLocationEnable()) {
++                return method.invoke(who, args);
++            }
++            // The public TelephonyManager wrapper owns its executor and error handling.
++            // Complete its real callback with unavailable cell data; do not request a
++            // modem update or manufacture CellInfo from the internal BCell model.
++            Class<?>[] types = method.getParameterTypes();
++            for (int i = 0; i < types.length; i++) {
++                if ("android.telephony.ICellInfoCallback".equals(types[i].getName())) {
++                    if (args[i] == null) throw new IllegalArgumentException("Cell info callback required");
++                    try {
++                        types[i].getMethod("onCellInfo", List.class).invoke(args[i], new ArrayList<>());
++                    } catch (InvocationTargetException error) {
++                        throw error.getCause();
++                    }
++                    return null;
++                }
++            }
++            throw new UnsupportedOperationException("Unknown cell info callback contract");
++        }
++    }
++
+     @ProxyMethod("getNetworkOperator")
+     public static class GetNetworkOperator extends MethodHook {
+ 
+@@ -167,8 +268,7 @@ public class ITelephonyManagerProxy extends BinderInvocationStub {
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             Log.d(TAG, "getNeighboringCellInfo");
+             if (BLocationManager.isFakeLocationEnable()) {
+-                // TODO: Transfer BCell to CdmaCellLocation/GsmCellLocation
+-                return BLocationManager.get().getNeighboringCell(BActivityThread.getUserId(), BActivityThread.getAppPackageName());
++                return new ArrayList<>();
+             }
+             return method.invoke(who, args);
+         }
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyRegistryProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyRegistryProxy.java
+index 1faafb8..bf0e976 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyRegistryProxy.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/ITelephonyRegistryProxy.java
+@@ -1,15 +1,39 @@
+ package top.niunaijun.bcore.fake.service;
+ 
++import android.os.Binder;
++import android.os.Build;
++import android.os.IBinder;
++import android.os.IInterface;
++import android.os.Parcel;
++import android.os.RemoteException;
++import android.util.Log;
++
++import org.lsposed.hiddenapibypass.HiddenApiBypass;
++
++import java.lang.ref.WeakReference;
++import java.lang.reflect.Field;
++import java.lang.reflect.InvocationTargetException;
+ import java.lang.reflect.Method;
++import java.util.HashSet;
++import java.util.Map;
++import java.util.Set;
++import java.util.WeakHashMap;
+ 
+ import black.android.os.ServiceManager;
+ import black.com.android.internal.telephony.ITelephonyRegistry;
+ import top.niunaijun.bcore.fake.hook.BinderInvocationStub;
+ import top.niunaijun.bcore.fake.hook.MethodHook;
+ import top.niunaijun.bcore.fake.hook.ProxyMethod;
++import top.niunaijun.bcore.app.BActivityThread;
++import top.niunaijun.bcore.core.system.location.IBLocationManagerService;
++import top.niunaijun.bcore.fake.frameworks.BLocationManager;
+ import top.niunaijun.bcore.utils.MethodParameterUtils;
+ 
+ public class ITelephonyRegistryProxy extends BinderInvocationStub {
++    private static final String LISTENER = "com.android.internal.telephony.IPhoneStateListener";
++    // Weak values avoid retaining the listener through its own weak map key.
++    // A live system registration retains the local Binder and therefore its delegate.
++    private static final Map<IBinder, WeakReference<PhoneCallbackRelay>> CALLBACKS = new WeakHashMap<>();
+     public ITelephonyRegistryProxy() {
+         super(ServiceManager.getService.call("telephony.registry"));
+     }
+@@ -21,14 +45,120 @@ public class ITelephonyRegistryProxy extends BinderInvocationStub {
+ 
+     @Override
+     protected void inject(Object baseInvocation, Object proxyInvocation) {
++        if (Build.VERSION.SDK_INT == 33) replaceCachedRegistry(proxyInvocation);
+         replaceSystemService("telephony.registry");
+     }
+ 
++    static void replaceCachedRegistry(Object proxyInvocation) {
++        try {
++            // A manager created before Guest hook installation can retain the old
++            // service even after ServiceManager.sCache has been replaced.
++            Field cache = Class.forName("android.telephony.TelephonyRegistryManager").getDeclaredField("sRegistry");
++            cache.setAccessible(true);
++            cache.set(null, proxyInvocation);
++        } catch (ReflectiveOperationException unavailable) {
++            throw new IllegalStateException("API33 telephony registry cache unavailable", unavailable);
++        }
++    }
++
+     @Override
+     public boolean isBadEnv() {
+         return false;
+     }
+ 
++    @ProxyMethod("listenWithEventList")
++    public static class ListenWithEventList extends MethodHook {
++        @Override protected Object hook(Object who, Method method, Object[] args) throws Throwable {
++            if (Build.VERSION.SDK_INT != 33) return invokeBase(who, method, args);
++            Object[] outbound = args.clone();
++            MethodParameterUtils.replaceFirstAppPkg(outbound);
++            for (int i = 0; i < outbound.length; i++) {
++                if (method.getParameterTypes()[i].getName().equals(LISTENER) && outbound[i] != null) {
++                    IInterface listener = (IInterface) outbound[i];
++                    IBinder destination = listener.asBinder();
++                    // Public TelephonyCallback/PhoneStateListener create a local Stub.
++                    // A remote delegate would change the caller/death identity on forwarding.
++                    if (!(destination instanceof Binder)) {
++                        throw new IllegalArgumentException("API33 telephony callback must be local");
++                    }
++                    PhoneCallbackRelay relay;
++                    synchronized (CALLBACKS) {
++                        WeakReference<PhoneCallbackRelay> known = CALLBACKS.get(destination);
++                        relay = known == null ? null : known.get();
++                        if (relay == null) {
++                            relay = new PhoneCallbackRelay(destination);
++                            CALLBACKS.put(destination, new WeakReference<>(relay));
++                        }
++                    }
++                    Class<?> stub = Class.forName(LISTENER + "$Stub");
++                    outbound[i] = stub.getDeclaredMethod("asInterface", IBinder.class).invoke(null, relay);
++                }
++            }
++            // Preserve event arrays, renounce flags, subscription, feature tag and notifyNow.
++            // The same local Binder is used for updates and empty-event unregistration.
++            return invokeBase(who, method, outbound);
++        }
++    }
++
++    private static Object invokeBase(Object who, Method method, Object[] args) throws Throwable {
++        try { return method.invoke(who, args); }
++        catch (InvocationTargetException error) { throw error.getCause(); }
++    }
++
++    private static final class PhoneCallbackRelay extends Binder {
++        private final IBinder destination;
++        private final Set<Integer> protectedTransactions = new HashSet<>();
++
++        PhoneCallbackRelay(IBinder destination) throws ReflectiveOperationException {
++            this.destination = destination;
++            attachInterface(null, LISTENER);
++            Class<?> stub = Class.forName(LISTENER + "$Stub");
++            Set<String> names = new HashSet<>();
++            java.util.Collections.addAll(names, "onCellLocationChanged", "onCellInfoChanged",
++                    "onServiceStateChanged", "onBarringInfoChanged",
++                    "onPhysicalChannelConfigChanged", "onRegistrationFailed");
++            // Private TRANSACTION_* constants are not reflectively available in
++            // every API33 Guest. Resolve names from this runtime's generated AIDL
++            // instead, through the existing library without changing VM policy.
++            Method transactionName = HiddenApiBypass.getDeclaredMethod(stub,
++                    "getDefaultTransactionName", int.class);
++            Set<String> found = new HashSet<>();
++            for (int code = FIRST_CALL_TRANSACTION; code < FIRST_CALL_TRANSACTION + 256; code++) {
++                Object name = transactionName.invoke(null, code);
++                if (names.contains(name)) {
++                    if (!found.add((String) name)) {
++                        throw new IllegalStateException("Ambiguous API33 phone callback transaction map");
++                    }
++                    protectedTransactions.add(code);
++                }
++            }
++            if (!found.equals(names)) {
++                throw new IllegalStateException("Incomplete API33 phone callback transaction map");
++            }
++        }
++
++        @Override protected boolean onTransact(int code, Parcel data, Parcel reply, int flags)
++                throws RemoteException {
++            if (protectedTransactions.contains(code)) {
++                try {
++                    IBLocationManagerService modes = BLocationManager.get().getService();
++                    if (modes == null || modes.getPattern(BActivityThread.getUserId(),
++                            BActivityThread.getAppPackageName()) != BLocationManager.CLOSE_MODE) {
++                        return true;
++                    }
++                } catch (RemoteException | RuntimeException unavailable) {
++                    // Unknown mode must not deliver the raw location-bearing payload.
++                    Log.w("ITelephonyRegistryProxy", "Phone callback mode unavailable: "
++                            + unavailable.getClass().getSimpleName());
++                    return true;
++                }
++            }
++            // No parcel parsing/copying and no identity clearing. The local delegate
++            // receives the original transaction bytes/flags and original Binder caller.
++            return destination.transact(code, data, reply, flags);
++        }
++    }
++
+     @ProxyMethod("listenForSubscriber")
+     public static class ListenForSubscriber extends MethodHook {
+ 
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IWifiManagerProxy.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IWifiManagerProxy.java
+index 98e849a..71c6d32 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/IWifiManagerProxy.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/IWifiManagerProxy.java
+@@ -3,14 +3,15 @@ package top.niunaijun.bcore.fake.service;
+ import android.content.Context;
+ import android.net.wifi.ScanResult;
+ import android.net.wifi.WifiInfo;
++import android.os.Build;
+ import android.util.Log;
+ 
+ import java.lang.reflect.Method;
+ import java.util.ArrayList;
+ 
+ import black.android.net.wifi.IWifiManager;
+-import black.android.net.wifi.WifiSsid;
+ import black.android.os.ServiceManager;
++import top.niunaijun.bcore.fake.frameworks.BLocationManager;
+ import top.niunaijun.bcore.fake.hook.BinderInvocationStub;
+ import top.niunaijun.bcore.fake.hook.MethodHook;
+ import top.niunaijun.bcore.fake.hook.ProxyMethod;
+@@ -39,32 +40,31 @@ public class IWifiManagerProxy extends BinderInvocationStub {
+ 
+     @ProxyMethod("getConnectionInfo")
+     public static class GetConnectionInfo extends MethodHook {
+-        /*
+-         * It doesn't have public method to set BSSID and SSID fields in WifiInfo class,
+-         * So the reflection framework invocation appeared.
+-         * commented by BlackBoxing at 2022/03/08
+-         */
+         @Override
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             WifiInfo wifiInfo = (WifiInfo) method.invoke(who, args);
+-            black.android.net.wifi.WifiInfo.mBSSID.set(wifiInfo, "ac:62:5a:82:65:c4");
+-            black.android.net.wifi.WifiInfo.mMacAddress.set(wifiInfo, "ac:62:5a:82:65:c4");
+-            black.android.net.wifi.WifiInfo.mWifiSsid.set(wifiInfo, WifiSsid.createFromAsciiEncoded.call("BlackBox_Wifi"));
+-            return wifiInfo;
++            if (wifiInfo == null || !BLocationManager.isFakeLocationEnable()) {
++                return wifiInfo;
++            }
++            if (Build.VERSION.SDK_INT >= 31) {
++                // Use the framework's own redaction on a copy. Never mutate the
++                // base object or invent a router identity, even when disconnected.
++                return wifiInfo.makeCopy(wifiInfo.getApplicableRedactions());
++            }
++            // Older frameworks have no public copy/redaction contract.
++            return null;
+         }
+     }
+ 
+     @ProxyMethod("getScanResults")
+     public static class GetScanResults extends MethodHook {
+-        /*
+-         * It doesn't have public method to set BSSID and SSID fields in WifiInfo class,
+-         * So the reflection framework invocation appeared.
+-         * commented by BlackBoxing at 2022/03/08
+-         */
+         @Override
+         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+             Log.d(TAG, "GetScanResults");
+-            return new ArrayList<ScanResult>();
++            if (BLocationManager.isFakeLocationEnable()) {
++                return new ArrayList<ScanResult>();
++            }
++            return method.invoke(who, args);
+         }
+     }
+ }
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/fake/service/context/providers/ContentProviderStub.java b/BCore/src/main/java/top/niunaijun/bcore/fake/service/context/providers/ContentProviderStub.java
+index 72f7ca4..a56833c 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/fake/service/context/providers/ContentProviderStub.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/fake/service/context/providers/ContentProviderStub.java
+@@ -3,9 +3,10 @@ package top.niunaijun.bcore.fake.service.context.providers;
+ import android.os.IInterface;
+ 
+ import java.lang.reflect.Method;
++import java.lang.reflect.InvocationTargetException;
+ 
+ import black.android.content.AttributionSource;
+-import top.niunaijun.bcore.app.BActivityThread;
++import top.niunaijun.bcore.BlackBoxCore;
+ import top.niunaijun.bcore.fake.hook.ClassInvocationStub;
+ import top.niunaijun.bcore.utils.compat.ContextCompat;
+ 
+@@ -33,7 +34,7 @@ public class ContentProviderStub extends ClassInvocationStub implements BContent
+     @Override
+     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+         if ("asBinder".equals(method.getName())) {
+-            return method.invoke(mBase, args);
++            return invokeBase(method, args);
+         }
+ 
+         if (args != null && args.length > 0) {
+@@ -41,10 +42,19 @@ public class ContentProviderStub extends ClassInvocationStub implements BContent
+             if (arg instanceof String) {
+                 args[0] = mAppPkg;
+             } else if (arg.getClass().getName().equals(AttributionSource.REF.getClazz().getName())) {
+-                ContextCompat.fixAttributionSourceState(arg, BActivityThread.getBUid());
++                // The real Binder sender owns the host UID, not the internal virtual UID.
++                ContextCompat.fixAttributionSourceState(arg, BlackBoxCore.getHostUid());
+             }
+         }
+-        return method.invoke(mBase, args);
++        return invokeBase(method, args);
++    }
++
++    private Object invokeBase(Method method, Object[] args) throws Throwable {
++        try {
++            return method.invoke(mBase, args);
++        } catch (InvocationTargetException error) {
++            throw error.getCause();
++        }
+     }
+ 
+     @Override
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java
+index b2c7548..6873030 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ActivityCompat.java
+@@ -20,14 +20,14 @@ public class ActivityCompat {
+     public static void fix(Activity activity) {
+         Context baseContext = activity.getBaseContext();
+         try {
+-            TypedArray typedArray = activity.obtainStyledAttributes(ArrayUtils.toInt(black.com.android.internal.R.styleable.Window.get()));
++            TypedArray typedArray = activity.obtainStyledAttributes(black.com.android.internal.InternalResources.styleable.Window.get());
+             if (typedArray != null) {
+-                boolean isShowWallpaper = typedArray.getBoolean(black.com.android.internal.R.styleable.Window_windowShowWallpaper.get(), false);
++                boolean isShowWallpaper = typedArray.getBoolean(black.com.android.internal.InternalResources.styleable.Window_windowShowWallpaper.get(), false);
+                 if (isShowWallpaper) {
+                     activity.getWindow().setBackgroundDrawable(WallpaperManager.getInstance(activity).getDrawable());
+                 }
+ 
+-                boolean isFullscreen = typedArray.getBoolean(black.com.android.internal.R.styleable.Window_windowFullscreen.get(), false);
++                boolean isFullscreen = typedArray.getBoolean(black.com.android.internal.InternalResources.styleable.Window_windowFullscreen.get(), false);
+                 if (isFullscreen) {
+                     activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+                 }
+@@ -74,4 +74,4 @@ public class ActivityCompat {
+         ApplicationInfo applicationInfo = activity.getApplicationInfo();
+         return applicationInfo.loadIcon(packageManager);
+     }
+-}
+\ No newline at end of file
++}
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ContextCompat.java b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ContextCompat.java
+index 0057d3a..d07a4ba 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ContextCompat.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/ContextCompat.java
+@@ -48,7 +48,9 @@ public class ContextCompat {
+             ContentResolver.mPackageName.set(context.getContentResolver(), BlackBoxCore.getHostPkg());
+ 
+             if (BuildCompat.isS()) {
+-                fixAttributionSourceState(ContextImpl.getAttributionSource.call(context), BActivityThread.getBUid());
++                // Framework services validate this package against the actual Binder UID.
++                // Virtual package UIDs belong only to the internal package model.
++                fixAttributionSourceState(ContextImpl.getAttributionSource.call(context), BlackBoxCore.getHostUid());
+             }
+         } catch (Exception e) {
+             e.printStackTrace();
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/LocationCallbackCompat.java b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/LocationCallbackCompat.java
+new file mode 100644
+index 0000000..24b6704
+--- /dev/null
++++ b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/LocationCallbackCompat.java
+@@ -0,0 +1,116 @@
++package top.niunaijun.bcore.utils.compat;
++
++import android.location.Location;
++import android.os.Build;
++import android.os.CancellationSignal;
++import android.os.Handler;
++import android.os.IBinder;
++import android.os.IInterface;
++import android.os.RemoteException;
++
++import java.lang.reflect.InvocationTargetException;
++import java.lang.reflect.Method;
++import java.util.Collections;
++import java.util.concurrent.atomic.AtomicBoolean;
++
++/** Framework Binder contracts, without shipping replacement android.* interfaces. */
++public final class LocationCallbackCompat {
++    private LocationCallbackCompat() { }
++
++    public interface Source {
++        Location get();
++    }
++
++    public static IInterface findInterface(Object[] args, String name) throws Exception {
++        Class<?> type = Class.forName(name);
++        for (Object value : args) {
++            if (type.isInstance(value)) return (IInterface) value;
++        }
++        throw new IllegalArgumentException("Missing " + name);
++    }
++
++    public static long requestLong(Object request, String name, long fallback) {
++        if (request == null) return fallback;
++        try {
++            return ((Number) request.getClass().getMethod(name).invoke(request)).longValue();
++        } catch (ReflectiveOperationException e) {
++            return fallback;
++        }
++    }
++
++    public static void deliverListener(IBinder binder, Location location) throws Exception {
++        Class<?> listenerClass = Class.forName("android.location.ILocationListener");
++        Object listener = Class.forName("android.location.ILocationListener$Stub")
++                .getMethod("asInterface", IBinder.class).invoke(null, binder);
++        if (Build.VERSION.SDK_INT >= 31) {
++            invoke(listenerClass.getMethod("onLocationChanged", java.util.List.class,
++                    Class.forName("android.os.IRemoteCallback")), listener,
++                    Collections.singletonList(location), null);
++        } else {
++            invoke(listenerClass.getMethod("onLocationChanged", Location.class), listener, location);
++        }
++    }
++
++    /** Return the real framework ICancellationSignal, never a Location as a return value. */
++    public static Object requestCurrent(IInterface callback, Source source, Handler handler)
++            throws Exception {
++        Class<?> transportType = Class.forName("android.os.ICancellationSignal");
++        Object transport = CancellationSignal.class.getMethod("createTransport").invoke(null);
++        CancellationSignal cancellation = (CancellationSignal) CancellationSignal.class
++                .getMethod("fromTransport", transportType).invoke(null, transport);
++        CurrentRequest request = new CurrentRequest(callback, source, handler);
++        cancellation.setOnCancelListener(request::finish);
++        callback.asBinder().linkToDeath(request, 0);
++        if (!handler.post(request)) request.finish();
++        return transport;
++    }
++
++    private static void invoke(Method method, Object receiver, Object... args) throws Exception {
++        try {
++            method.invoke(receiver, args);
++        } catch (InvocationTargetException e) {
++            Throwable cause = e.getCause();
++            if (cause instanceof Exception) throw (Exception) cause;
++            throw e;
++        }
++    }
++
++    private static final class CurrentRequest implements Runnable, IBinder.DeathRecipient {
++        private final IInterface callback;
++        private final Source source;
++        private final Handler handler;
++        private final AtomicBoolean finished = new AtomicBoolean();
++
++        CurrentRequest(IInterface callback, Source source, Handler handler) {
++            this.callback = callback;
++            this.source = source;
++            this.handler = handler;
++        }
++
++        @Override public void run() {
++            if (!finished.compareAndSet(false, true)) return;
++            try {
++                invoke(Class.forName("android.location.ILocationCallback")
++                        .getMethod("onLocation", Location.class), callback, source.get());
++            } catch (Exception e) {
++                android.util.Log.w("BBLocation", "Single location callback failed", e);
++            } finally {
++                unlink();
++            }
++        }
++
++        void finish() {
++            if (finished.compareAndSet(false, true)) {
++                handler.removeCallbacks(this);
++                unlink();
++            }
++        }
++
++        private void unlink() {
++            try { callback.asBinder().unlinkToDeath(this, 0); }
++            catch (java.util.NoSuchElementException ignored) { }
++        }
++
++        @Override public void binderDied() { finish(); }
++    }
++}
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/PackageParserCompat.java b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/PackageParserCompat.java
+index 7af9fee..9ac2d40 100644
+--- a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/PackageParserCompat.java
++++ b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/PackageParserCompat.java
+@@ -54,7 +54,16 @@ public class PackageParserCompat {
+ 
+     public static void collectCertificates(PackageParser parser, Package p, int flags) {
+         if (BuildCompat.isPie()) {
+-            PackageParserPie.collectCertificates.call(p, true);
++            // false means verify the APK signatures; retain the original signer.
++            // The generic mirror swallows invocation errors; signing errors must abort import.
++            try {
++                java.lang.reflect.Method collect = PackageParser.class.getDeclaredMethod(
++                        "collectCertificates", Package.class, boolean.class);
++                collect.setAccessible(true);
++                collect.invoke(null, p, false);
++            } catch (ReflectiveOperationException e) {
++                throw new IllegalStateException("Guest certificate verification failed", e);
++            }
+         } else if (API_LEVEL >= N) {
+             PackageParserNougat.collectCertificates.call(p, flags);
+         } else if (API_LEVEL >= M) {
+@@ -63,7 +72,8 @@ public class PackageParserCompat {
+             PackageParserLollipop22.collectCertificates.call(parser, p, flags);
+         } else if (API_LEVEL >= LOLLIPOP) {
+             PackageParserLollipop.collectCertificates.call(parser, p, flags);
++        } else {
++            black.android.content.pm.PackageParser.collectCertificates.call(parser, p, flags);
+         }
+-        black.android.content.pm.PackageParser.collectCertificates.call(parser, p, flags);
+     }
+ }
+diff --git a/BCore/src/main/java/top/niunaijun/bcore/utils/compat/VirtualGnssStatus.java b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/VirtualGnssStatus.java
+new file mode 100644
+index 0000000..8286ed5
+--- /dev/null
++++ b/BCore/src/main/java/top/niunaijun/bcore/utils/compat/VirtualGnssStatus.java
+@@ -0,0 +1,85 @@
++package top.niunaijun.bcore.utils.compat;
++
++import android.location.GnssStatus;
++import android.os.Handler;
++import android.os.IBinder;
++import android.os.IInterface;
++import android.os.RemoteException;
++
++import java.util.HashMap;
++import java.util.Map;
++
++/** API31+ virtual-session status. No satellites, first-fix claim, NMEA, or raw measurements. */
++public final class VirtualGnssStatus {
++    private static final Map<IBinder, Registration> registrations = new HashMap<>();
++
++    public interface Mode { boolean enabled(); }
++
++    private VirtualGnssStatus() { }
++
++    public static void register(IInterface callback, Handler handler, Mode mode) throws RemoteException {
++        Registration record = new Registration(callback, handler, mode);
++        synchronized (registrations) {
++            remove(callback.asBinder());
++            callback.asBinder().linkToDeath(record, 0);
++            registrations.put(callback.asBinder(), record);
++            if (!handler.post(record)) remove(callback.asBinder());
++        }
++    }
++
++    public static boolean remove(IBinder binder) {
++        synchronized (registrations) {
++            Registration record = registrations.remove(binder);
++            if (record == null) return false;
++            record.handler.removeCallbacks(record);
++            try { binder.unlinkToDeath(record, 0); }
++            catch (java.util.NoSuchElementException ignored) { }
++            return true;
++        }
++    }
++
++    private static final class Registration implements Runnable, IBinder.DeathRecipient {
++        final IInterface callback;
++        final Handler handler;
++        final Mode mode;
++        boolean started;
++
++        Registration(IInterface callback, Handler handler, Mode mode) {
++            this.callback = callback;
++            this.handler = handler;
++            this.mode = mode;
++        }
++
++        @Override public void binderDied() { remove(callback.asBinder()); }
++
++        @Override public void run() {
++            synchronized (registrations) {
++                if (registrations.get(callback.asBinder()) != this) return;
++            }
++            try {
++                Class<?> contract = Class.forName("android.location.IGnssStatusListener");
++                if (!mode.enabled() || !callback.asBinder().isBinderAlive()) {
++                    if (started && callback.asBinder().isBinderAlive()) {
++                        contract.getMethod("onGnssStopped").invoke(callback);
++                    }
++                    remove(callback.asBinder());
++                    return;
++                }
++                if (!started) {
++                    contract.getMethod("onGnssStarted").invoke(callback);
++                    started = true;
++                }
++                // Zero satellites is intentional: location samples are synthetic, not GNSS fixes.
++                contract.getMethod("onSvStatusChanged", GnssStatus.class)
++                        .invoke(callback, new GnssStatus.Builder().build());
++                synchronized (registrations) {
++                    if (registrations.get(callback.asBinder()) == this
++                            && !handler.postDelayed(this, 1000)) remove(callback.asBinder());
++                }
++            } catch (Exception error) {
++                android.util.Log.w("BBLocation", "Virtual GNSS status callback failed", error);
++                remove(callback.asBinder());
++            }
++        }
++    }
++}
+diff --git a/android-mirror/src/main/java/black/android/content/ContentProviderHolderOreo.java b/android-mirror/src/main/java/black/android/content/ContentProviderHolderOreo.java
+index 27db306..382632f 100644
+--- a/android-mirror/src/main/java/black/android/content/ContentProviderHolderOreo.java
++++ b/android-mirror/src/main/java/black/android/content/ContentProviderHolderOreo.java
+@@ -1,6 +1,7 @@
+ package black.android.content;
+ 
+ import android.os.IInterface;
++import android.content.pm.ProviderInfo;
+ 
+ import black.Reflector;
+ 
+@@ -8,4 +9,5 @@ public class ContentProviderHolderOreo {
+     public static final Reflector REF = Reflector.on("android.app.ContentProviderHolder");
+ 
+     public static Reflector.FieldWrapper<IInterface> provider = REF.field("provider");
++    public static Reflector.FieldWrapper<ProviderInfo> info = REF.field("info");
+ }
+diff --git a/android-mirror/src/main/java/black/com/android/internal/InternalResources.java b/android-mirror/src/main/java/black/com/android/internal/InternalResources.java
+new file mode 100644
+index 0000000..7495bb1
+--- /dev/null
++++ b/android-mirror/src/main/java/black/com/android/internal/InternalResources.java
+@@ -0,0 +1,22 @@
++package black.com.android.internal;
++
++import black.Reflector;
++
++// Keep this reflection mirror out of AGP's generated-R class filtering.
++public class InternalResources {
++    public static class styleable {
++        public static final Reflector REF = Reflector.on("com.android.internal.R$styleable");
++
++        public static Reflector.FieldWrapper<int[]> AccountAuthenticator = REF.field("AccountAuthenticator");
++        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_accountPreferences = REF.field("AccountAuthenticator_accountPreferences");
++        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_accountType = REF.field("AccountAuthenticator_accountType");
++        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_customTokens = REF.field("AccountAuthenticator_customTokens");
++        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_icon = REF.field("AccountAuthenticator_icon");
++        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_label = REF.field("AccountAuthenticator_label");
++        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_smallIcon = REF.field("AccountAuthenticator_smallIcon");
++        public static Reflector.FieldWrapper<int[]> Window = REF.field("Window");
++        public static Reflector.FieldWrapper<Integer> Window_windowFullscreen = REF.field("Window_windowFullscreen");
++        public static Reflector.FieldWrapper<Integer> Window_windowIsTranslucent = REF.field("Window_windowIsTranslucent");
++        public static Reflector.FieldWrapper<Integer> Window_windowShowWallpaper = REF.field("Window_windowShowWallpaper");
++    }
++}
+diff --git a/android-mirror/src/main/java/black/com/android/internal/R.java b/android-mirror/src/main/java/black/com/android/internal/R.java
+deleted file mode 100644
+index 79d2e2c..0000000
+--- a/android-mirror/src/main/java/black/com/android/internal/R.java
++++ /dev/null
+@@ -1,21 +0,0 @@
+-package black.com.android.internal;
+-
+-import black.Reflector;
+-
+-public class R {
+-    public static class styleable {
+-        public static final Reflector REF = Reflector.on("com.android.internal.R$styleable");
+-
+-        public static Reflector.FieldWrapper<Integer[]> AccountAuthenticator = REF.field("AccountAuthenticator");
+-        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_accountPreferences = REF.field("AccountAuthenticator_accountPreferences");
+-        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_accountType = REF.field("AccountAuthenticator_accountType");
+-        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_customTokens = REF.field("AccountAuthenticator_customTokens");
+-        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_icon = REF.field("AccountAuthenticator_icon");
+-        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_label = REF.field("AccountAuthenticator_label");
+-        public static Reflector.FieldWrapper<Integer> AccountAuthenticator_smallIcon = REF.field("AccountAuthenticator_smallIcon");
+-        public static Reflector.FieldWrapper<Integer[]> Window = REF.field("Window");
+-        public static Reflector.FieldWrapper<Integer> Window_windowFullscreen = REF.field("Window_windowFullscreen");
+-        public static Reflector.FieldWrapper<Integer> Window_windowIsTranslucent = REF.field("Window_windowIsTranslucent");
+-        public static Reflector.FieldWrapper<Integer> Window_windowShowWallpaper = REF.field("Window_windowShowWallpaper");
+-    }
+-}

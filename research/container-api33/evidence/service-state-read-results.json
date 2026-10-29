@@ -1,0 +1,137 @@
+{
+  "schema": "GOGOGO_SERVICE_STATE_ACTUAL_DEFAULT_RESULTS_V1",
+  "scope": "ACTUAL_DEFAULT_SERVICE_STATE_WITH_MATCHED_NATIVE_IN_SEPARATE_RECEIPT_NOT_TARGET_LOCATION_OR_PHONE",
+  "run_id": 40420346275,
+  "commit": "1441f2fa8b0c0b268c4fc49054275d0da5120909",
+  "tree": "649b2438edfbbdfaf11957e5546ecdf16fc1aa58",
+  "default_checks_conclusion": "success",
+  "artifacts": {
+    "own": {
+      "id": 12697548800,
+      "sha256": "6eb5b544b856fd31e4e1e7aa08eef783fb2d7a71a09aa49b2d8cdb5dd2cebc91",
+      "verified": true
+    },
+    "mac": {
+      "id": 12696848024,
+      "sha256": "fb8b180320bbc3d7b86752b38bc9b3a1bcd1c51752d99d274de9f55b42217fec",
+      "verified": true
+    },
+    "linux": {
+      "id": 12696628813,
+      "sha256": "520dcb53c825df7e7fc25fa15bd899c14ef00ffc37dbadc655bc9d0955bac030",
+      "verified": true
+    }
+  },
+  "all_three_api_digests_fixed_commit_sources_and_own_apks_verified": true,
+  "case_junit": {
+    "x86_64-startup-framework": {
+      "seconds": 0.893,
+      "junit_summary": "OK (1 test)",
+      "passed": true,
+      "cleanup_passed": true
+    },
+    "x86_64-radio-privacy": {
+      "seconds": 0.225,
+      "junit_summary": "OK (18 tests)",
+      "passed": true,
+      "cleanup_passed": true
+    },
+    "x86_64-owned-location": {
+      "seconds": 3.573,
+      "junit_summary": "OK (1 test)",
+      "passed": true,
+      "cleanup_passed": true
+    },
+    "x86_64-ordinary-entry": {
+      "seconds": 13.326,
+      "junit_summary": "OK (1 test)",
+      "passed": true,
+      "cleanup_passed": true
+    },
+    "x86_64-installed-import": {
+      "seconds": 8.034,
+      "junit_summary": "OK (1 test)",
+      "passed": true,
+      "cleanup_passed": true
+    },
+    "x86_64-calculator": {
+      "seconds": 6.493,
+      "junit_summary": "OK (1 test)",
+      "passed": true,
+      "cleanup_passed": true
+    }
+  },
+  "source_inputs_per_case_verified": 58,
+  "moving_ui_source_inputs_verified": 59,
+  "feedback_main_key_inputs_verified": 7,
+  "controlled_radio_test_count": 18,
+  "new_methods_actually_passed": [
+    "publicServiceStateReplacesOldCacheAndRedactsWithoutMutatingBase",
+    "serviceStatePreservesNullAndDenialAndProtectsUnknownMode"
+  ],
+  "controlled_radio_scope": "REAL_PUBLIC_TELEPHONY_WRAPPER_SYNTHETIC_SERVICE_STATE_AND_CONTROLLED_BASE_NOT_REAL_MODEM_OR_TARGET_SDK",
+  "own_guest": {
+    "scope": "OWNED_GUEST_REAL_PROCESS_NOT_THIRD_PARTY_OR_WECHAT",
+    "report_source": "OWN_GUEST_ATOMIC_PRIVATE_FILE",
+    "passed": true,
+    "stages": [
+      "TARGET_A",
+      "TARGET_B",
+      "UNREGISTERED_STABLE",
+      "CURRENT_CANCELLED"
+    ],
+    "host_pid": 2820,
+    "guest_pid": 2886
+  },
+  "own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4539420,
+        "sha256": "28bd7479a744b74ea61c3c3a539d74d62f55dd91d0ab2fc5ebfd428f7b8bcc59"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 522522,
+        "sha256": "26ae165c7525ede4f60e803f56d91d9969667a0d0d15de6465965eeebc065c12"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 74158,
+        "sha256": "c064124f70225d2874860edaf6b92925b1a1e5898ee4dd5e5034703c729b645c"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "matching_native": {
+    "run_id": 40420346275,
+    "job_id": 121915882210,
+    "commit": "1441f2fa8b0c0b268c4fc49054275d0da5120909",
+    "status": "completed",
+    "conclusion": "success",
+    "passed": true,
+    "result": "native-service-state-virtual-startup-pass-results.json",
+    "both_closed_and_own_phases_actually_verified": true
+  },
+  "new_preview_feedback_ui": "SUBSEQUENT_WORKTREE_CHANGE_NOT_TESTED_BY_THIS_RUN",
+  "published_2_4_32_assets_changed": false,
+  "phone_experiments_requested": false,
+  "wechat_send_live_douyin_wireless_overseas_and_vivo": "NOT_VERIFIED",
+  "no_terms_login_or_messages": true,
+  "verifier": {
+    "sha256": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
+    "inputs_manifest_sha256": "c3e84eece461487759e2e739f7e45149463c49f9d6f6cc76906934753706ae9f"
+  }
+}

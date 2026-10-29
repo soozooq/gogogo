@@ -1,0 +1,196 @@
+{
+  "schema": "GOGOGO_NATIVE_OWNED_LOCATION_STALE_UI_FAILURE_V1",
+  "scope": "ACTUAL_NATIVE_ANONYMOUS_UI_AND_OWN_FRAMEWORK_PASS_LOCATION_CASE_FAILED_NOT_TARGET_BUSINESS",
+  "run_id": 40248613788,
+  "commit": "96e925224b598432048f3cd72cee3009db582767",
+  "job_id": 121337102085,
+  "conclusion": "failure",
+  "artifacts": {
+    "linux": {
+      "id": 12620206867,
+      "sha256": "fe6d94e9c467bd9adfb7869496f044c677362238b1d89f002fa986e18852b7d4",
+      "verified": true
+    },
+    "mac": {
+      "id": 12620061836,
+      "sha256": "e4c7aa3e26153e578a00ab08e5a89a99abdaa6e3e4310cd73197730797b1f81c",
+      "verified": true
+    },
+    "own": {
+      "id": 12619282983,
+      "sha256": "2510612c10d2aa6cd496811e0a8fa255d5534cb70d74233ebc49ebd73a5510e8",
+      "verified": true
+    },
+    "native": {
+      "id": 12621977980,
+      "sha256": "e653778541829709b1781dfb782f2a913d1138f9f0556f6ffb360cd36ff27326",
+      "verified": true
+    }
+  },
+  "all_four_api_digests_fixed_commit_sources_and_three_own_apks_verified": true,
+  "native_source_count_verified": 9,
+  "same_run_own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4534140,
+        "sha256": "b68d87a3bbb81cf9aa87e9d9def6a31888af80e7b9236d60898182ad5bce77b4"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 503242,
+        "sha256": "4d4d22bcd71bf1bc49d680b34286bf45b2b28d85e7cc4282c4a831cbb64cc126"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 72818,
+        "sha256": "a04d8246ca72392cd8079d2ab434a603186f78dcc5ad444d37765c0f7b789426"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "qualified_environment": {
+    "api": 33,
+    "build_id": "16596636",
+    "native_abi": "arm64-v8a",
+    "kernel": "aarch64",
+    "bridge": "0",
+    "shell_uid": 2000,
+    "selinux": "Enforcing",
+    "guest_cpu_online": "0-3",
+    "hw_timeout_multiplier": 50,
+    "system_server_pid_before_and_after": 651,
+    "system_process_crash_pids": []
+  },
+  "ordinary_originals": {
+    "both_passed": true,
+    "wechat": "WELCOME_WITHOUT_LOGIN",
+    "douyin": "PRIVACY_WITHOUT_ACCEPTANCE",
+    "douyin_hold_seconds": 304.205,
+    "douyin_pid": 7062,
+    "both_original_packages_removed": true
+  },
+  "container_targets": {
+    "wechat": {
+      "passed": true,
+      "stage": "WELCOME_WITHOUT_LOGIN",
+      "pid": 5841,
+      "junit_seconds": 434.643,
+      "png_available": false
+    },
+    "douyin": {
+      "passed": true,
+      "stage": "PRIVACY_WITHOUT_ACCEPTANCE",
+      "junit_seconds": 779.543,
+      "post_ui_observation": {
+        "requested_seconds": 300,
+        "observed_ms": 301832,
+        "initial_target_pid": "9406",
+        "last_target_pid": "9406",
+        "identity_basis": "CORE_REGISTERED_MAIN_PROCESS_AND_ACTUAL_ACTIVITY_MANAGER_PID_UID",
+        "main_pid": 9406,
+        "main_uid": 10102,
+        "initial_registered_processes": [
+          {
+            "pid": 9406,
+            "uid": 10102,
+            "process_name": "com.ss.android.ugc.aweme"
+          }
+        ],
+        "last_registered_processes": [
+          {
+            "pid": 9406,
+            "uid": 10102,
+            "process_name": "com.ss.android.ugc.aweme"
+          }
+        ],
+        "same_name_pid_set_changed": false,
+        "passed": true
+      },
+      "post_hold_privacy_ui_visible": true,
+      "png_available": false
+    }
+  },
+  "owned_framework": {
+    "passed": true,
+    "junit_seconds": 15.548,
+    "observed": {
+      "scope": "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION",
+      "passed": true,
+      "pending_intents_sent": false,
+      "location_requested": false,
+      "startup_contract_run_id": "a27de0f2-193b-422c-beef-d72135f045a2",
+      "framework_http_legacy_class_resolved": true,
+      "expected_real_host_uid": 10104,
+      "process_api_uid": 10001,
+      "binder_self_uid": 10104,
+      "binder_self_pid": 11428,
+      "process_api_pid": 11428,
+      "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
+      "binder_self_uid_matches_real_host": true,
+      "activity_attribution_uid": 10104,
+      "application_attribution_uid": 10104,
+      "activity_attribution_uid_matches_real_host": true,
+      "application_attribution_uid_matches_real_host": true,
+      "activity_attribution_package": "com.soozooq.tianwaitian.containerresearch",
+      "pending_activity_created": true,
+      "pending_service_created": true,
+      "provider_call_nonce_matches": true,
+      "provider_pid": 11460,
+      "provider_caller_pid": 11428,
+      "provider_process_separate": true,
+      "provider_process_api_uid": 10001,
+      "provider_caller_binder_uid": 10104,
+      "provider_query_nonce_matches": true,
+      "provider_query_pid": 11460
+    },
+    "environment_after": {
+      "uid": "2000",
+      "selinux": "Enforcing",
+      "boot": "1",
+      "api": "33",
+      "abi": "arm64-v8a",
+      "bridge": "0",
+      "system_pid": "651"
+    },
+    "scope_limit": "HTTP_AND_PENDING_INTENT_CREATION_AND_FUNCTIONAL_PROVIDER_CALL_QUERY_NOT_DELIVERY_PERMISSION_DENIAL_OR_UID_ISOLATION"
+  },
+  "owned_location": {
+    "executed": true,
+    "passed": false,
+    "junit_seconds": 145.73,
+    "failure_class": "androidx.test.uiautomator.StaleObjectException",
+    "stack": [
+      "UiObject2.getText",
+      "GuestLocationInstrumentedTest.current:191",
+      "GuestLocationInstrumentedTest.await:200",
+      "publicLocationApisInUninstalledGuestFollowTargetAndStop:129"
+    ],
+    "failure_position": "WAITING_FOR_TARGET_B_AFTER_PRIOR_TARGET_A_ASSERTIONS",
+    "result_json_available": false,
+    "partial_stage_file_not_emitted_by_fixed_CI42_version": true,
+    "last_saved_text_only_target_A": true,
+    "final_after_failure_png_viewed": true,
+    "final_png_observation": "Six B coordinate values and mock=true are visible in the own consumer after failure; not a passed freshness/stop/cancel assertion. XML was captured earlier and contains no status node.",
+    "target_b_stop_and_cancel_full_contract_passed": false,
+    "scope_limit": "AUTOMATION_READ_RACE_IS_OBSERVED; NOT_PROOF_OF_LOCATION_ENGINE_OR_TARGET_SDK_FAILURE"
+  },
+  "owned_phase_cleanup": {
+    "consumer_system_installed": false,
+    "staging_removed": true,
+    "packages": {
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true
+    }
+  },
+  "qemu_process_stopped": true,
+  "whole_probe_seconds_not_startup_time": 4265.017,
+  "new_fix": "stale-ui-location-read-preparation.json",
+  "target_location_business_tested": false,
+  "terms_accepted": false,
+  "login_attempted": false,
+  "messages_sent": false,
+  "phone_update_distributed": false
+}

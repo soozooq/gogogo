@@ -1,0 +1,111 @@
+{
+  "schema": "GOGOGO_MATCHED_ORIGINAL_AND_CONTAINER_BLACK_SCREEN_RESULTS_V1",
+  "scope": "ACTUAL_NATIVE_ARM64_API33_ANONYMOUS_STARTUP_NOT_LOCATION_OR_PHYSICAL_PHONE",
+  "run_id": 40197335425,
+  "commit": "073c25dbd540068826ff85a0602b4c35237261b8",
+  "artifact": {
+    "id": 12602123821,
+    "sha256": "37af4726abae25a03243e60f8800f5866408c20045873dd1ed8a4b5e456d2d44",
+    "verified": true
+  },
+  "all_eight_source_hashes_verified": true,
+  "system": {
+    "build_id": "16596636",
+    "api": 33,
+    "arm64_kernel_and_primary_abi": true,
+    "native_bridge": "0",
+    "shell_uid": 2000,
+    "selinux": "Enforcing",
+    "cpu_online": "0-3",
+    "timeout_multiplier": "50",
+    "system_server_pid_stable": 653,
+    "qemu_stopped": true
+  },
+  "ordinary_originals": {
+    "wechat": {
+      "passed": true,
+      "state": "WELCOME_WITHOUT_LOGIN",
+      "target_pid_at_ui": "6120",
+      "owned_ui_package_cleanup": {
+        "com.soozooq.tianwaitian.containerresearch.test": true,
+        "com.soozooq.tianwaitian.containerresearch": true
+      },
+      "owned_package_removed": true
+    },
+    "douyin": {
+      "passed": true,
+      "state": "PRIVACY_WITHOUT_ACCEPTANCE",
+      "target_pid_at_ui": "8340",
+      "post_ui_observation": {
+        "requested_seconds": 300,
+        "first_ui_stage": "PRIVACY_WITHOUT_ACCEPTANCE",
+        "initial_target_pid": "8340",
+        "passed": true,
+        "last_target_pid": "8340",
+        "observed_seconds": 305.978
+      },
+      "owned_ui_package_cleanup": {
+        "com.soozooq.tianwaitian.containerresearch.test": true,
+        "com.soozooq.tianwaitian.containerresearch": true
+      },
+      "owned_package_removed": true
+    }
+  },
+  "container_targets": {
+    "wechat": {
+      "passed": false,
+      "import_success": true,
+      "package_info_present": true,
+      "signing_info_present": true,
+      "original_signer": true,
+      "last_completed_stage": "TARGET_LAUNCH_REQUESTED",
+      "stage": "NOT_REACHED",
+      "guest_pid_string_not_main_thread_proof": "7306 7577",
+      "visible_text": [],
+      "visual_inspection_of_archived_screenshot": "BLACK_CONTENT_WITH_SYSTEM_STATUS_AND_NAVIGATION_BARS",
+      "screenshot_sha256": "0fc391a4da49ed7715ad74369070adddf0628902765ff79369c4e049595cf8a2",
+      "junit_time_seconds": 606.335,
+      "owned_package_cleanup": {
+        "com.soozooq.tianwaitian.containerresearch.test": true,
+        "com.soozooq.tianwaitian.containerresearch": true
+      },
+      "location_enabled": false,
+      "crash_buffer": "NO_FATAL_MARKER_CAPTURED_NOT_PROOF_OF_NO_STARTUP_ERROR"
+    },
+    "douyin": {
+      "passed": false,
+      "import_success": true,
+      "package_info_present": true,
+      "signing_info_present": true,
+      "original_signer": true,
+      "last_completed_stage": "TARGET_LAUNCH_REQUESTED",
+      "stage": "NOT_REACHED",
+      "guest_pid_string_not_main_thread_proof": "10717 11281",
+      "visible_text": [],
+      "visual_inspection_of_archived_screenshot": "BLACK_CONTENT_WITH_SYSTEM_STATUS_AND_NAVIGATION_BARS",
+      "screenshot_sha256": "45966f725b4de6a207e9d54408cb28d6702bc81d0493b628f63c905a628d9a3f",
+      "junit_time_seconds": 649.825,
+      "owned_package_cleanup": {
+        "com.soozooq.tianwaitian.containerresearch.test": true,
+        "com.soozooq.tianwaitian.containerresearch": true
+      },
+      "location_enabled": false,
+      "crash_buffer": {
+        "type": "SIGSEGV",
+        "code": "SEGV_ACCERR",
+        "thread": "Jit thread pool",
+        "pid": 10717,
+        "tid": 10725,
+        "fault_address": "0x7508a4c230",
+        "full_backtrace_present": false,
+        "same_root_cause_as_ci31": "UNKNOWN"
+      }
+    }
+  },
+  "whole_probe_seconds_not_boot_time": 4198.597,
+  "wechat_send_and_live_location": "UNFULFILLED",
+  "douyin_wireless_and_overseas": "UNFULFILLED",
+  "critical_native_guard_in_this_tested_commit": false,
+  "phone_update_distributed": false,
+  "interpretation": "The ordinary Douyin original remained on its privacy UI with a stable PID for 305.978s; this container still failed before anonymous UI. A specific failing hook or SDK is not established by the available crash buffer."
+}

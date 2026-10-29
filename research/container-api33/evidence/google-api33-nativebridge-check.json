@@ -1,0 +1,73 @@
+{
+  "scope": "ACTUAL_GOOGLE_API33_IMAGE_PROPERTIES_NOT_TARGET_APP_RUNTIME",
+  "package": "system-images;android-33;google_apis;x86_64",
+  "revision": 17,
+  "properties": {
+    "sys.boot_completed": "1",
+    "ro.product.cpu.abilist": "x86_64",
+    "ro.product.cpu.abilist64": "x86_64",
+    "ro.dalvik.vm.native.bridge": "0",
+    "ro.dalvik.vm.isa.arm64": "",
+    "ro.build.fingerprint": "google/sdk_gphone64_x86_64/emu64x:13/TE1A.240213.009/12342917:userdebug/dev-keys",
+    "ro.build.version.sdk": "33",
+    "ro.kernel.qemu": "1"
+  },
+  "checks": {
+    "shell_uid": "2000",
+    "selinux": "Enforcing",
+    "ndk_translation_system": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "ls: /system/lib64/libndk_translation.so: No such file or directory"
+    },
+    "ndk_translation_vendor": {
+      "exit": 1,
+      "stdout": "",
+      "stderr": "ls: /vendor/lib64/libndk_translation.so: No such file or directory"
+    }
+  },
+  "native_arm64_advertised": false,
+  "native_bridge_enabled": false,
+  "system_image_modified": false,
+  "external_translator_installed": false,
+  "wechat_douyin": "NOT_RUN",
+  "metadata_only_other_images": [
+    {
+      "package": "system-images;android-33;google_apis_playstore;x86_64",
+      "revision": "<revision>\n      <major>9</major>\n    </revision>\n    ",
+      "archive": "x86_64-33_r09.zip",
+      "size": 1670173438,
+      "checksum": "2ce85ed6dcabd321442059c1267cc5376e22e046",
+      "base": "https://dl.google.com/android/repository/sys-img/google_apis_playstore/",
+      "probe": "RANGE_ENTRY_CRC_VERIFIED_NOT_FULL_ARCHIVE_VERIFIED",
+      "entry": "x86_64/build.prop",
+      "properties": {
+        "ro.system.product.cpu.abilist": "x86_64",
+        "ro.system.product.cpu.abilist32": "",
+        "ro.system.product.cpu.abilist64": "x86_64",
+        "ro.system.build.fingerprint": "google/sdk_gphone64_x86_64/emu64x:13/TE1A.240213.009/12342917:user/dev-keys",
+        "ro.build.version.preview_sdk_fingerprint": "REL",
+        "ro.product.cpu.abi": "x86_64",
+        "ro.dalvik.vm.native.bridge": "0"
+      }
+    },
+    {
+      "package": "system-images;android-30;google_apis;x86_64",
+      "revision": "<revision>\n      <major>16</major>\n    </revision>\n    ",
+      "archive": "x86_64-30_r16.zip",
+      "size": 1438186618,
+      "checksum": "6ae21030eaadc041078444d3798e4b399f3e787d",
+      "base": "https://dl.google.com/android/repository/sys-img/google_apis/",
+      "probe": "RANGE_ENTRY_CRC_VERIFIED_NOT_FULL_ARCHIVE_VERIFIED",
+      "entry": "x86_64/build.prop",
+      "properties": {
+        "ro.system.build.fingerprint": "google/sdk_gphone_x86_64/generic_x86_64_arm64:11/RSR1.240422.006/12134477:userdebug/dev-keys",
+        "ro.build.version.preview_sdk_fingerprint": "REL",
+        "ro.product.cpu.abi": "x86_64",
+        "ro.product.cpu.abilist": "x86_64,x86,arm64-v8a,armeabi-v7a,armeabi",
+        "ro.product.cpu.abilist32": "x86,armeabi-v7a,armeabi",
+        "ro.product.cpu.abilist64": "x86_64,arm64-v8a"
+      }
+    }
+  ]
+}

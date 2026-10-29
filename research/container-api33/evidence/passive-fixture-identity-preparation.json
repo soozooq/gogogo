@@ -1,0 +1,39 @@
+{
+  "schema": "GOGOGO_PASSIVE_GENERIC_FIXTURE_IDENTITY_PREPARATION_V1",
+  "scope": "TEST_VIRTUAL_PACKAGE_ATTRIBUTION_FIX_NOT_PRODUCT_OR_NEW_RUNTIME_PASS",
+  "base_research_commit": "e903212b24f55608402a85d3e86b105e77276dd1",
+  "failed_result": "passive-fixture-attribution-failure-results.json",
+  "production_engine_patch_sha256": "420b83998686b0f25cf323bfd47bd5391245d9f323736e41473d4a3216b9f408",
+  "production_host_main_consumer_and_provider_behavior_unchanged": true,
+  "change": "Explicitly bind com.soozooq.tianwaitian.passivefixture under the existing config lock, assert virtual identity and Binder caller/receiver PIDs, retain every exact passive counter and origin assertion, and restore prior state in nested finally.",
+  "null_package_production_guard_unchanged": true,
+  "assertions_removed": false,
+  "contract_methods_unchanged": 7,
+  "nine_path_guest_checks_unchanged": true,
+  "local_final_build_seconds": 15,
+  "local_final_build_passed": true,
+  "new_source_cloud_execution": "PENDING_NOT_PASS",
+  "versions_retained": {
+    "main": "2.4.35 / 2400103",
+    "host": "0.4 / 4"
+  },
+  "new_phone_steps_or_experiments": false,
+  "old_6625_draft_held": true,
+  "source_sha256": {
+    "research/container-api33/probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java": "ab35af6297082e4ae65a35e88ae3f4feab18b2315d3a3a33a5c79fb460b62e74"
+  },
+  "requires_new_matched_default_and_native": true,
+  "runtime_or_sdk_adoption_claimed": false,
+  "actual_ci56_linux_followup": {
+    "commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",
+    "run_id": 40555343592,
+    "conclusion": "success",
+    "result": "passive-provider-linux-results.json",
+    "methods": 7,
+    "real_guest_paths": 9,
+    "feedback_characters": 1381,
+    "mac": "ci56-mac-capacity-results.json",
+    "native": "IN_PROGRESS_NOT_PASS",
+    "earlier_pending_fields_are_pre_execution_snapshot": true
+  }
+}

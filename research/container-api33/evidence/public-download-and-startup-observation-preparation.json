@@ -1,0 +1,71 @@
+{
+  "schema": "GOGOGO_PUBLIC_DOWNLOAD_AND_STARTUP_OBSERVATION_PREPARATION_V1",
+  "scope": "DRIVER_FIXTURES_AND_HISTORICAL_RECEIPT_VERIFICATION_NOT_NEW_TARGET_RUNTIME",
+  "base_commit": "2c50ca4929a1142c145733019dbe8516eb1c4174",
+  "app_java_native_or_manifest_changed": false,
+  "apk_rebuild_needed_for_python_only_changes": false,
+  "controlled_tests": {
+    "count": 22,
+    "seconds": 0.444,
+    "passed": true
+  },
+  "public_viewer_metadata_only_live_check": {
+    "scope": "PUBLIC_VIEWER_METADATA_ONLY_NO_LARGE_ARTIFACT_REDOWNLOAD",
+    "results": [
+      {
+        "artifact": "cvd-host_package.tar.gz",
+        "https": true,
+        "expected_public_gcs_host": true,
+        "filename_matches": true,
+        "download_bytes_requested": false
+      },
+      {
+        "artifact": "aosp_cf_arm64_phone-img-16596636.zip",
+        "https": true,
+        "expected_public_gcs_host": true,
+        "filename_matches": true,
+        "download_bytes_requested": false
+      },
+      {
+        "artifact": "manifest_16596636.xml",
+        "https": true,
+        "expected_public_gcs_host": true,
+        "filename_matches": true,
+        "download_bytes_requested": false
+      }
+    ]
+  },
+  "download_policy": {
+    "same_public_page_maximum_reads": 3,
+    "every_build_branch_target_and_public_access_check_retained": true,
+    "only_existing_https_gcs_host_and_exact_artifact_name_allowed": true,
+    "pinned_size_and_sha256_unchanged": true,
+    "http_retry_after_sleep_max_seconds": 30,
+    "auth_401_403_or_login_identity_rejection_is_final": true,
+    "credentials_tls_or_routes_changed": false,
+    "signed_urls_not_logged": true
+  },
+  "receipt_verifier": {
+    "ci33_all_four_archives_and_eight_native_sources_verified": true,
+    "ci34_all_four_archives_and_eight_native_sources_verified": true,
+    "early_preparation_failure_keeps_pass_false_and_cleanup_unknown": true,
+    "synthetic_success_boot_launch_scope_errors_rejected": true
+  },
+  "startup_observation": {
+    "read_only_activity_window_process_and_scoped_framework_log_capture": true,
+    "maximum_bytes_per_read": 2097152,
+    "maximum_seconds_per_read": 30,
+    "urls_redacted": true,
+    "unavailable_diagnostics_do_not_change_ui_verdict": true,
+    "actual_new_capture": "PENDING_NEXT_NATIVE_RUN"
+  },
+  "source_sha256": {
+    "tools/fetch-cuttlefish-inputs.py": "07f1de6779b11f87b2731c3216d16da5f92f2a47156e943a2ed71d2c55fc5667",
+    "tools/cuttlefish_target_baselines.py": "4ac94c0af6fe0cf875f73fd614fd1a25fad628fff21132ba81584d6c41e39f2d",
+    "tools/verify-ci-receipts.py": "a56ef524e37e3fc8f10e53d1cea5cc9aa2ba5c44b767e4375b3fb9d913072dc2",
+    "tests/test_public_artifact_inputs.py": "1cf0f11d469b059b0da8b9e723f3f10d1dc423d28108b1ddff668e6f41dff5f4",
+    "tests/test_receipt_preparation_failure.py": "dc0ec034efafd57939fe29273bf4dc68b1e6b29822f5b6715e1218a8dd0c3227",
+    "tests/test_cuttlefish_target_baselines.py": "de7db38129d519827b42052449f320fb23c10040ff58fb08424d13342824192f"
+  },
+  "phone_update_distributed": false
+}

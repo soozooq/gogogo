@@ -1,0 +1,55 @@
+{
+  "scope": "ACTUAL_CI_FAILURE_NOT_TARGET_LOCATION_OR_VISUAL_ACCEPTANCE",
+  "commit": "0b3348f39e25d997e4ff5a576d3752bdd0307beb",
+  "run_id": 40635200017,
+  "linux_job_id": 122640452868,
+  "linux_conclusion": "FAILURE",
+  "mac_job_id": 122640453103,
+  "mac_conclusion": "SUCCESS_BUILD_ONLY",
+  "archives": {
+    "linux": {
+      "id": 12793034236,
+      "sha256": "d0a872d4f49f8325b49df48bd7958cde789969a707adc4ad41f1bb557ccf0626",
+      "verified": true
+    },
+    "own": {
+      "id": 12793581514,
+      "sha256": "dd3531216d04892e2e80165f237b5abbd480d97aa0cab60a48d2a3ab0203b945",
+      "verified": true
+    },
+    "mac": {
+      "id": 12793621204,
+      "sha256": "1a033cc58f5c9c3d9ad379564affa2000ee9e7696616f4d3544a2b73c20d2484",
+      "verified": true
+    }
+  },
+  "own_sources_verified": 73,
+  "notice_materials_per_apk": 11,
+  "same_ci_signatures_verified": true,
+  "ordinary_entry": {
+    "feedback_success_text_assertion_passed": true,
+    "feedback_content_and_under_1800_assertions_passed": true,
+    "copy_preserved_guest_pid_and_mode_assertions_passed": true,
+    "stop_pid_absence_after_10s": "FAILED_PID_3443_STILL_PRESENT",
+    "guest_only_killed_in_final_cleanup": true,
+    "clipboard_systemui_overlay_in_logs": true,
+    "overlay_as_failure_cause": "NOT_PROVEN_NO_FAILURE_TIME_SCREENSHOT"
+  },
+  "visual_suite": {
+    "runner_invoked": true,
+    "ui_test_executed": false,
+    "screenshots": 0,
+    "failure": "pm path absent-package exit1 treated as command failure before installation"
+  },
+  "repairs": {
+    "known_android13_clipboard_overlay_before_stop_only": true,
+    "stop_10s_pid_and_close_assertions_unchanged": true,
+    "bounded_failure_screen_capture": true,
+    "absent_package_empty_exit1_is_normal": true,
+    "other_presence_probe_errors_rejected": true,
+    "local_host_driver_build": "PASS_14_SECONDS"
+  },
+  "candidate_distributed": false,
+  "engine_changed": false,
+  "new_native_run": false
+}

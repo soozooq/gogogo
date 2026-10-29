@@ -1,0 +1,84 @@
+{
+  "schema": "GOGOGO_NATIVE_OWNED_LOCATION_PREPARATION_V1",
+  "scope": "BUILD_CONTROLLED_DRIVER_AND_ARCHIVE_COMPATIBILITY_NOT_NEW_NATIVE_LOCATION_RUNTIME",
+  "base_commit": "53c94bb65838637c80f2dc815cc44f88dde844f0",
+  "new_phase": "After the same qualified owned native ARM64 VM and ordinary original controls pass, run own framework/provider and six-path location contracts independently of target container UI outcome. Overall success still requires every requested stage.",
+  "consumer_does_not_receive_expected_coordinates": true,
+  "consumer_only_virtually_imported_not_system_installed": true,
+  "third_party_sdk_location_or_business_tested": false,
+  "input_transport": {
+    "new_scope": "CI_SELF_OWNED_HOST_DRIVER_CONSUMER_NOT_ORIGINAL_TARGET_APKS_OR_PHONE_RELEASE",
+    "exact_roles": [
+      "host",
+      "driver",
+      "consumer"
+    ],
+    "consumer_source_inventory_required": true,
+    "old_two_apk_scope_still_supported": true,
+    "all_three_materials_and_same_signer_locally_verified": true,
+    "actual_new_ci_transport": "CI40_THREE_APKS_59_SOURCES_3_SIGNERS_11_MATERIALS_VERIFIED"
+  },
+  "runtime_guards": {
+    "qualified_same_live_qemu_required": true,
+    "native_api33_arm64_uid2000_enforcing_no_bridge_and_same_system_pid": true,
+    "preexisting_packages_or_staging_preserved": true,
+    "only_requested_own_packages_cleaned": true,
+    "cleanup_failure_fails_phase": true,
+    "maximum_seconds_per_adb_read": 30,
+    "maximum_seconds_per_instrumentation": 1200,
+    "optional_diagnostics_unavailable_do_not_change_case_verdict": true,
+    "diagnostics_post_instrumentation_cleanup_phase_explicit": true,
+    "urls_redacted": true,
+    "scoped_DatabaseUtils_errors_added_from_actual_CI39_failure": true
+  },
+  "build": {
+    "passed": true,
+    "seconds": 11,
+    "consumer_only_previous_seconds": 9
+  },
+  "static_host_and_consumer_inspection_passed": true,
+  "controlled_python_tests": {
+    "count": 25,
+    "seconds": 0.462,
+    "passed": true
+  },
+  "actual_workflow_expression_selection_matrix": {
+    "cases": 8,
+    "passed": true,
+    "scope": "LOCAL_EVALUATION_NOT_MANUAL_GITHUB_RUNTIME"
+  },
+  "old_receipts_reverified_with_new_tool": {
+    "ci38_four_archives_eight_native_sources_and_two_apk_source_inventory": true,
+    "ci39_three_archives_and_actual_failed_case_preserved": true
+  },
+  "donor_patch_clean_index_replay_verified": true,
+  "new_actual_arm64_owned_location": "CI42_FAILED_STALE_UI_READ_AT_TARGET_B_WAIT; NEXT_FIX_PENDING",
+  "planned_native_source_input_count": 9,
+  "source_sha256": {
+    "tools/cuttlefish_owned_location.py": "47c50c0052cf5cd05b5a90fc274cf58be2982d033644600e835cf32222d6ae06",
+    "tools/cuttlefish_target_baselines.py": "bf286fe892df67aa78965b7c9aef7b35e16b24b22b93d34f32110b96d37e6d85",
+    "tools/ci_owned_apks.py": "3997810904fb1d9633678c3225a0663193926107baec06e16be5909e6196709b",
+    "tools/run-cuttlefish-arm-boot.py": "687d5198b13e7f32ca70562454f970219b38f624f798827e870a1090a95951f8",
+    "tools/verify-ci-receipts.py": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
+    "tests/test_cuttlefish_owned_location.py": "06760ca5f55436343e10b2a8e89317876b3877b49abcd43ff772cdfc93bd3e45",
+    "tests/test_ci_owned_apks.py": "ba61776c29fd6e020ca156ee9d7e05077f420181018f08a3433c8104c4d76645",
+    "tests/test_cuttlefish_target_baselines.py": "3d88f05e24e5c2965abc1601bb16ab5f77e1d12f7fd8ba768d809590c2578a51",
+    "location-consumer/build.gradle": "d97419bad7cae29a6f7aec8fa86413ae0f4150f01a6c38ffb2c7f7b009df3322",
+    "CI_SOURCE_AND_RELINK.md": "225f80ea2d37fd357faaa9d2a4769f68cfc6e0efe230a71b8913873245f71990",
+    "patches/blackbox-api33-build.patch": "416e8dd4fd539ed1ac6b1011e50174e180b5c94bb5b12c90b8486af39c4055cc"
+  },
+  "workflow_source_sha256": {
+    ".github/workflows/container-research.yml": "ddafda585239e6fc13be2370e40667c460db7bd7a037a2ffb11467b4a7501cd2"
+  },
+  "phone_update_distributed": false,
+  "subsequent_actual_default_result": "provider-attribution-results.json",
+  "actual_ci40_result": "native-pid-set-and-owned-stage-results.json",
+  "active_native_42_commit": "96e925224b598432048f3cd72cee3009db582767",
+  "source_map_scope": "CURRENT_CANDIDATE_NOT_REPLACEMENT_FOR_FIXED_NATIVE_CI44",
+  "latest_actual_native_result": "native-owned-location-stale-ui-results.json",
+  "latest_actual_default_result": "network-callback-transport-results.json",
+  "stale_ui_read_followup": "stale-ui-location-read-preparation.json",
+  "network_callback_followup": "network-callback-transport-preparation.json",
+  "active_native_44_commit": "774c6e7a1cda900e2a919401014e076d728e0030",
+  "active_native_45_commit": "ccd6d3e23d48c0432e0ea9324dcfb04d62a0fd25"
+}

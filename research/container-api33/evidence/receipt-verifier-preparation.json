@@ -1,0 +1,61 @@
+{
+  "schema": "GOGOGO_CI_RECEIPT_VERIFIER_PREPARATION_V1",
+  "scope": "ARCHIVE_SOURCE_SIGNATURE_AND_REPORTED_RUNTIME_VERIFICATION_NOT_TARGET_LOCATION",
+  "verifier_sha256": "e9acf12734cf91ebe8c4beb83d751561218dc0c20caf9ee1a182604a60972a12",
+  "actual_witnesses": [
+    {
+      "run_id": 40149216340,
+      "commit": "7a2eaf518367e579c5813fe14d9601a1a38103c8",
+      "archive_roles": [
+        "linux",
+        "mac",
+        "own",
+        "native"
+      ],
+      "integrity_verified": true,
+      "native_passed": false,
+      "ordinary_wechat_raw_passed": false,
+      "douyin_container_imported_but_startup_unconfirmed": true
+    },
+    {
+      "run_id": 40174550024,
+      "commit": "ff1a21eeacf2ce9efb0aa1718332af2823dd9df1",
+      "archive_roles": [
+        "linux",
+        "mac",
+        "own"
+      ],
+      "integrity_verified": true,
+      "self_owned_moving_ui_passed": true,
+      "original_target_native_result": "NOT_SUPPLIED_NOT_PASS"
+    },
+    {
+      "run_id": 40174550024,
+      "commit": "ff1a21eeacf2ce9efb0aa1718332af2823dd9df1",
+      "archive_roles": [
+        "linux",
+        "mac",
+        "own",
+        "native"
+      ],
+      "integrity_verified": true,
+      "both_original_ui_and_signers_passed": true,
+      "native_passed": false,
+      "guest_startup_crashes_preserved": true
+    }
+  ],
+  "negative_boundaries": {
+    "wrong_commit": "REJECTED_WITHOUT_SUCCESS_RECEIPT",
+    "wrong_digest": "REJECTED_WITHOUT_SUCCESS_RECEIPT",
+    "omitted_source": "REJECTED_WITHOUT_SUCCESS_RECEIPT",
+    "unsafe_zip": "REJECTED_WITHOUT_SUCCESS_RECEIPT",
+    "existing_evidence": "PRESERVED_WITHOUT_OVERWRITE",
+    "unsupported_role": "REJECTED_WITHOUT_SUCCESS_RECEIPT"
+  },
+  "read_only_inputs": true,
+  "apk_installations_or_phone_experiments": false,
+  "expected_source_inventory_from_pinned_git_commit_not_worktree": true,
+  "expected_archive_digest_source": "Caller-provided trusted GitHub artifact API manifest; not independently attested",
+  "existing_output_preserved": true,
+  "all_phone_business_goals": "UNFULFILLED"
+}

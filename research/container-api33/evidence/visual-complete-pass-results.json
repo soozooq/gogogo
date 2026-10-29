@@ -1,0 +1,101 @@
+{
+  "scope": "ACTUAL_OWN_UI_AND_DEFAULT_REGRESSION_PASS_NATIVE_STILL_PENDING",
+  "commit": "20ff7a0ef8fec5fc0caca788f98095f5eba2701f",
+  "run_id": 40870835491,
+  "linux_job_id": 123437152191,
+  "linux_conclusion": "SUCCESS",
+  "mac_job_id": 123437152360,
+  "mac_conclusion": "SUCCESS_BUILD_ONLY",
+  "native_job_id": 123441209819,
+  "native_state_at_capture": "IN_PROGRESS_NOT_PASS",
+  "archives": {
+    "own": {
+      "id": 12896231660,
+      "sha256": "86b819bb01d4314091b304c5f45cf93861f79543ff2c4e921b7324e3164f9899",
+      "verified": true
+    },
+    "mac": {
+      "id": 12896386274,
+      "sha256": "b4656ba2834d80ccff0bbb5c8258f59d3368615eb78663537ba98d2609b4876f",
+      "verified": true
+    },
+    "linux": {
+      "id": 12896601324,
+      "sha256": "455075358064f69d2dd14a344a3dc92c40814e174fa9d684ff22386ecf063b68",
+      "verified": true
+    }
+  },
+  "own_transport": {
+    "source_count_verified": 73,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4558083,
+        "sha256": "85026bb171b032f9a5ec26854530e3a706d0c39052da18f56731129949d350e5"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 542150,
+        "sha256": "8f23a1242a6408092db0f5f54f0e37fa9cf8b8ea284a04e8419ee2f2a0f440c5"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 75094,
+        "sha256": "12dfc4e2eb445e6965982de7c632286aeff181f0513f032135f84fcf70540787"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "default_cases": {
+    "x86_64-startup-framework": true,
+    "x86_64-radio-privacy": true,
+    "x86_64-owned-location": true,
+    "x86_64-ordinary-entry": true,
+    "x86_64-location-contract": true,
+    "x86_64-installed-import": true,
+    "x86_64-calculator": true,
+    "read-only-ui-capture": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "visual": {
+    "instrumented_method_passed": true,
+    "wrapper_passed": true,
+    "junit_seconds": 48.433,
+    "normal_stage_count": 20,
+    "issues": [],
+    "minimum_visible_target_dp": 48,
+    "both_coordinate_edits_with_actual_ime": true,
+    "source_bound_new_phone_visual_gate_replay_passed": true,
+    "owned_cleanup": {
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true,
+      "com.soozooq.gogogo.test": true
+    },
+    "display_settings_restored": true,
+    "system_server_before_and_after": "553",
+    "system_server_stable": true
+  },
+  "installed_import_before_cleanup": {
+    "scope": "OWN_IMPORT_UI_STATE_BEFORE_VIRTUAL_UNINSTALL_NOT_LOCATION",
+    "accessibility_open_enabled": true,
+    "virtual_installed": true,
+    "view_open_enabled": true,
+    "view_feedback_enabled": true,
+    "view_spinner_enabled": true,
+    "status_indicates_imported": true
+  },
+  "previous_65_66_failures_retained": true,
+  "engine_changed": false,
+  "candidate_distributed": false,
+  "wechat_douyin_vivo_location_verified": false
+}

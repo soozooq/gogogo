@@ -1,0 +1,55 @@
+{
+  "schema": "GOGOGO_A26D14A5_PHONE_DRAFT_DELIVERY_PREPARATION_V1",
+  "scope": "VERIFIED_DEFAULT_AND_PRIVATE_SIGNING_DRAFT_ONLY_MATCHED_NATIVE_PENDING_NOT_PHONE_SUCCESS",
+  "source_commit": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
+  "source_run": 40466246255,
+  "source_owned_artifact_id": 12717020802,
+  "source_owned_archive_sha256": "c97e3904f013804ad25b4e0c7529101845ca03ba06831569564ddefbcaec308f",
+  "host": {
+    "package": "com.soozooq.tianwaitian.containerresearch",
+    "version_name": "0.3-preview",
+    "version_code": 3,
+    "bytes": 4585987,
+    "sha256": "1f271efa6cba4b2a763cbf212d7a68f3fe9ffa65ce5cc3bdb79775ea16da8dc9",
+    "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+    "signature_and_alignment_verified": true,
+    "debuggable": true
+  },
+  "host_base_sha256": "9b6b87ffd2d9e41cad4d79b0d8e9e72f5600fbadd429c64545685a04af39dc7a",
+  "host_ci_non_signature_entries_equal": 415,
+  "public_recipe": {
+    "file": "ci/phone-preview/host-signature-a26d14a5.json",
+    "target_sha256": "1f271efa6cba4b2a763cbf212d7a68f3fe9ffa65ce5cc3bdb79775ea16da8dc9",
+    "non_signature_payload_bytes_copied": 4467816,
+    "operations": 831,
+    "restored_byte_for_byte_verified": true,
+    "private_key_included": false
+  },
+  "main_profile": {
+    "path": "docs/build-profiles/main-preview-2.4.34.init.gradle",
+    "sha256": "cd1e4bc4adbd90ca30ec92c0341ddc1ba0f9fc19b9dbd9cb0586fbfe893a5947",
+    "version_name": "2.4.34-container-preview",
+    "version_code": 2400102
+  },
+  "draft": {
+    "id": 425148666,
+    "tag": "preview-2.4.34-container-a26d14a5",
+    "target_commitish": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
+    "draft": true,
+    "assets_at_preparation": [],
+    "published": false
+  },
+  "draft_lookup_scope": "The authenticated release-by-id and CLI both confirm the logical draft; REST tag lookup returned 404 before tag creation and is not a publication result.",
+  "same_source_native_job": {
+    "id": 122064299151,
+    "status": "in_progress",
+    "result": "PENDING_NOT_PASS"
+  },
+  "public_release_guard": "Independent same-source native proof, actual delivery APK bytes/signatures/checks and draft/source/assets must be verified before publishing.",
+  "old_public_releases_untouched": true,
+  "original_target_apk_and_embedded_component_distributed": false,
+  "phone_tests_added": false,
+  "target_business_and_vivo": "NOT_VERIFIED",
+  "followup_current_publication": "phone-a26d14a5-published-delivery-results.json",
+  "preparation_draft_fields_are_historical_snapshot": true
+}

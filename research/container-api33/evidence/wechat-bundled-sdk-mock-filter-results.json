@@ -1,0 +1,161 @@
+{
+  "schema": "GOGOGO_WECHAT_BUNDLED_LOCATION_SDK_MOCK_FILTER_STATIC_RESULTS_V1",
+  "scope": "ACTUAL_PINNED_BUNDLED_COMPONENT_DECODE_AND_STATIC_BRANCHES_NOT_PHONE_RUNTIME_OR_ADOPTION",
+  "original_apk_sha256": "f2a725bc04302ad218a563533ae79356e66b64aa711b275bc919a8d432f7e15d",
+  "component": {
+    "scope": "OFFLINE_DECODE_OF_ORIGINAL_BUNDLED_COMPONENT_NO_APP_OR_SDK_CLASS_EXECUTION",
+    "original_apk_sha256": "f2a725bc04302ad218a563533ae79356e66b64aa711b275bc919a8d432f7e15d",
+    "source_asset": "assets/TencentLocationComp_sapp/1",
+    "source_size": 258320,
+    "source_sha256": "a317226ad20f17432ddb7e8dcb9ae3e2849599cae636fca40018d5c5519593cc",
+    "format": "PINNED_LOADER_AES_CBC_PKCS5_THEN_GZIP",
+    "transient_bundled_format_constant_not_exported": true,
+    "api_credentials_account_keys_or_phone_private_data_used": false,
+    "decoded_kind": "DEX",
+    "decoded_size": 537976,
+    "decoded_sha256": "1d795a12500f3e68bf9ab0e840aca214715e8d9df55b9168424ca1c3478382d9",
+    "zip_entries": [],
+    "dex_size": 537976,
+    "dex_sha256": "1d795a12500f3e68bf9ab0e840aca214715e8d9df55b9168424ca1c3478382d9",
+    "dex_header_length_sha1_adler32_valid": true,
+    "maximum_expanded_bytes": 8388608,
+    "original_apk_modified": false,
+    "sdk_class_or_native_code_executed": false,
+    "network_location_or_privacy_state_changed": false,
+    "decoder_sha256": "dce614ca7147021c154b7699a06d2f63276d1f6bf312e1321bf168fd925de5ac"
+  },
+  "selected_static_decode": {
+    "defined_classes": 421,
+    "method_bodies_scanned": 2510,
+    "unparsed_method_bodies": 0,
+    "framework_invoke_sites": 565
+  },
+  "mock_reader_sites": [
+    {
+      "caller": {
+        "class": "Lc/t/m/sapp/g/aa$2;",
+        "name": "onLocationChanged",
+        "parameters": [
+          "Landroid/location/Location;"
+        ],
+        "return": "V"
+      },
+      "offset_code_units": 25,
+      "target": {
+        "class": "Landroid/location/Location;",
+        "name": "isFromMockProvider",
+        "parameters": [],
+        "return": "Z"
+      }
+    },
+    {
+      "caller": {
+        "class": "Lc/t/m/sapp/g/b;",
+        "name": "a",
+        "parameters": [
+          "Landroid/location/Location;"
+        ],
+        "return": "V"
+      },
+      "offset_code_units": 38,
+      "target": {
+        "class": "Landroid/location/Location;",
+        "name": "isFromMockProvider",
+        "parameters": [],
+        "return": "Z"
+      }
+    },
+    {
+      "caller": {
+        "class": "Lc/t/m/sapp/g/dz;",
+        "name": "c",
+        "parameters": [
+          "Landroid/location/Location;"
+        ],
+        "return": "Z"
+      },
+      "offset_code_units": 29,
+      "target": {
+        "class": "Landroid/location/Location;",
+        "name": "isFromMockProvider",
+        "parameters": [],
+        "return": "Z"
+      }
+    },
+    {
+      "caller": {
+        "class": "Lc/t/m/sapp/g/g;",
+        "name": "a",
+        "parameters": [
+          "Landroid/location/Location;"
+        ],
+        "return": "V"
+      },
+      "offset_code_units": 71,
+      "target": {
+        "class": "Landroid/location/Location;",
+        "name": "isFromMockProvider",
+        "parameters": [],
+        "return": "Z"
+      }
+    }
+  ],
+  "independent_apkanalyzer_all_four_calls_confirmed": true,
+  "branches": [
+    {
+      "class": "c.t.m.sapp.g.b",
+      "method": "a(android.location.Location):void",
+      "condition": "After normal prechecks, Android SDK >= 18 and Location.isFromMockProvider() == true",
+      "effect": "Exit synchronized block and return before the downstream location-processing call.",
+      "runtime_reached": "UNKNOWN"
+    },
+    {
+      "class": "c.t.m.sapp.g.g",
+      "method": "a(android.location.Location):void",
+      "condition": "After normal prechecks, Android SDK >= 18 and Location.isFromMockProvider() == true",
+      "effect": "Exit synchronized block and return before later sample processing.",
+      "runtime_reached": "UNKNOWN"
+    },
+    {
+      "class": "c.t.m.sapp.g.aa$2",
+      "method": "onLocationChanged(android.location.Location):void",
+      "condition": "Flag c.t.m.sapp.g.af.a is false, API >= 18 and mock flag is true",
+      "effect": "Return before accepting the new sample; other provider/throttle checks also exist.",
+      "runtime_flag_value": "UNKNOWN"
+    },
+    {
+      "class": "c.t.m.sapp.g.dz",
+      "method": "c(android.location.Location):boolean",
+      "condition": "TencentExtraKeysProxy.MOCK_LOCATION_FILTER enabled and either expected provider unavailable or API >= 18 and mock flag true",
+      "effect": "Return filtering boolean; otherwise false.",
+      "runtime_flag_value_and_caller_effect": "UNKNOWN"
+    }
+  ],
+  "design_incompatibility": "Always exposing mock=true conflicts with the two described early-return branches if those bundled handlers receive the sample.",
+  "candidate_response": "WeChat virtual session only: compatibility presentation without the framework mock bit; synthetic origin remains explicit in location extras and preview feedback. Generic clients continue marked; no physical GNSS is claimed.",
+  "private_symbol_and_sanitized_branch_receipt_sha256": {
+    "wechat-sdk-component-loader-stage1.json": "f9465dde351fb012c3c89f8b7a7675530b9846d3f4f7523518e14cb3d9be8537",
+    "wechat-sdk-component-loader-stage2.json": "a394df3aa36b181f5d87f29709497c6d8a7ca536a2443b89728273d6b658cccb",
+    "wechat-embedded-sdk-framework-invokes.json": "8827f9a4032e8c3389f94bcc2af8c50f6a17bba70f676ccb7c4ea3813123bad2",
+    "wechat-embedded-sdk-mock-branches.json": "9b760ce739f3bcf79890702a754e96471214b46c5c9662d1cc25c9d273874498"
+  },
+  "original_apk_modified": false,
+  "class_or_native_sdk_code_executed": false,
+  "api_keys_account_values_or_phone_private_data_used": false,
+  "privacy_terms_login_or_network_changed": false,
+  "real_original_app_business_location": "NOT_VERIFIED",
+  "limits": [
+    "Static bundled code does not prove which version or branch is active on the user phone.",
+    "Unmarked presentation only avoids these specific checks; remaining source, quality, network, account and server decisions are unverified.",
+    "A location marked synthetic in our diagnostics remains generated data; it is not a change in satellite, cell or physical position.",
+    "The original APK and decoded proprietary component stay outside the public repository and are not shipped in own APKs."
+  ],
+  "loader_class_definition_match": {
+    "scope": "LOADER_CLASS_LITERAL_TO_DECODED_COMPONENT_CLASS_DEFINITION_MATCH_ONLY",
+    "matched_loader_class_names": [
+      "com.tencent.map.geolocation.sapp.proxy.TencentLocationManagerProxy"
+    ],
+    "no_nonclass_literals_exported": true,
+    "sdk_executed": false
+  }
+}

@@ -1,0 +1,91 @@
+{
+  "schema": "GOGOGO_ROOTLESS_CONTAINER_FEASIBILITY_V1",
+  "date_utc": "2026-10-23",
+  "production": {
+    "commit": "2620b741dd6a971143577737c64ebc4496120d77",
+    "version": "2.4.31-simple-support",
+    "version_code": 2400099,
+    "runtime_source_changed": false,
+    "last_user_wechat_result": "FAILED_SEND_AND_LIVE"
+  },
+  "build": {
+    "blackbox": "PASS_WITH_REVIEWED_PATCH_AND_PINNED_TOOLCHAIN",
+    "virtualapp": "PASS_WITH_PINNED_TOOLCHAIN",
+    "arm64": "BUILD_ONLY_RUNTIME_NOT_TESTED",
+    "toolchain": {
+      "jdk": "17.0.20.1",
+      "gradle_blackbox": "7.3.3",
+      "gradle_virtualapp": "7.5",
+      "ndk": "25.1.8937393",
+      "build_tools": "33.0.2",
+      "cmake": "3.22.1"
+    }
+  },
+  "cloud_runtime": {
+    "hardware_acceleration": false,
+    "cases": {
+      "portable-installed-control": {
+        "inputs": {
+          "started_at_utc": "2026-10-23T10:49:19.159640+00:00",
+          "scope": "CLOUD_EMULATOR_ONLY_NOT_VIVO_OR_WECHAT",
+          "case": "system_installed_control",
+          "serial": "emulator-5580",
+          "api": 33,
+          "abi": "x86_64",
+          "shell_uid": "2000",
+          "selinux": "Enforcing",
+          "artifacts": {
+            "probe-host-build/outputs/apk/debug/probeHost-debug.apk": "09d9db2a121136ca7be0f525e8f4f8848f96be07d808506ea702d5a6cc6c7cf7",
+            "probe-host-build/outputs/apk/androidTest/debug/probeHost-debug-androidTest.apk": "9f2591d964996618c1e605ddc0221d1da4c323b806b7af3379b70218fc0741f4",
+            "guest/calculator-10-foss-release.apk": "7c5443c22d6d62c67dfe80df33ea9161ff0fa440f92590bcb45d7008b57613ed"
+          }
+        },
+        "result": {
+          "passed": true,
+          "control_removed": true,
+          "guest_system_installed_after_cleanup": false,
+          "wechat_result": "NOT_TESTED",
+          "location_replacement": "DISABLED"
+        },
+        "ui_test_seconds": 16.21,
+        "ui_result": "1+2=3; result retained after Home and reopen"
+      },
+      "portable-container": {
+        "inputs": {
+          "started_at_utc": "2026-10-23T10:51:51.066108+00:00",
+          "scope": "CLOUD_EMULATOR_ONLY_NOT_VIVO_OR_WECHAT",
+          "case": "container_uninstalled_guest",
+          "serial": "emulator-5580",
+          "api": 33,
+          "abi": "x86_64",
+          "shell_uid": "2000",
+          "selinux": "Enforcing",
+          "artifacts": {
+            "probe-host-build/outputs/apk/debug/probeHost-debug.apk": "09d9db2a121136ca7be0f525e8f4f8848f96be07d808506ea702d5a6cc6c7cf7",
+            "probe-host-build/outputs/apk/androidTest/debug/probeHost-debug-androidTest.apk": "9f2591d964996618c1e605ddc0221d1da4c323b806b7af3379b70218fc0741f4",
+            "guest/calculator-10-foss-release.apk": "7c5443c22d6d62c67dfe80df33ea9161ff0fa440f92590bcb45d7008b57613ed"
+          }
+        },
+        "result": {
+          "passed": true,
+          "control_removed": true,
+          "guest_system_installed_after_cleanup": false,
+          "wechat_result": "NOT_TESTED",
+          "location_replacement": "DISABLED"
+        },
+        "ui_test_seconds": 22.859,
+        "ui_result": "1+2=3; result retained after Home and reopen"
+      }
+    },
+    "guest_system_installation_in_container_case": false,
+    "guest_shares_host_linux_uid": true
+  },
+  "target_goals": {
+    "wechat_send_location": "NOT_TESTED_IN_CONTAINER",
+    "wechat_live_location": "NOT_TESTED_IN_CONTAINER",
+    "douyin_wireless_location": "NOT_TESTED",
+    "overseas_location": "NOT_TESTED",
+    "virtual_location_path": "DISABLED_IN_THIS_RESEARCH"
+  },
+  "screenshot_sha256": "a254563520570318be96f49ed81e52fdbe973f3d35d7c1fd7b929f3f7cab44f2"
+}

@@ -1,0 +1,25 @@
+{
+  "scope": "OFFICIAL_THIRD_PARTY_INPUT_IDENTITY_NOT_RUNTIME_SUCCESS",
+  "package": "com.android.gpstest.osmdroid",
+  "version_code": 24100,
+  "sha256": "897b91fe6a1ea0c3a7f6e2b041d5ace0d582941f67cf454fb7778f031d89ce41",
+  "size": 3457918,
+  "source": "https://github.com/barbeau/gpstest/tree/ffcf2a974e3c6b34cc3aac1c7086f467d24b8439",
+  "certificate_sha256": "67e04383a96a83476426adcbdd95c4c75d78028a5c4ada75c00334b1c7a5d706",
+  "signature_verified": true,
+  "min_sdk": "24",
+  "target_sdk": "36",
+  "declared_permissions": [
+    "android.permission.ACCESS_COARSE_LOCATION",
+    "android.permission.ACCESS_FINE_LOCATION",
+    "android.permission.ACCESS_LOCATION_EXTRA_COMMANDS",
+    "android.permission.ACCESS_NETWORK_STATE",
+    "android.permission.FOREGROUND_SERVICE",
+    "android.permission.FOREGROUND_SERVICE_LOCATION",
+    "android.permission.INTERNET",
+    "android.permission.POST_NOTIFICATIONS",
+    "com.android.gpstest.osmdroid.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+  ],
+  "native_libraries": [],
+  "unmodified_release_digest_match": true
+}

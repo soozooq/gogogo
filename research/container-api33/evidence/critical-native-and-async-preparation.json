@@ -1,0 +1,66 @@
+{
+  "schema": "GOGOGO_CRITICAL_NATIVE_AND_ASYNC_PREPARATION_V1",
+  "scope": "SOURCE_ABI_CORRECTION_AND_BUILD_NOT_NEW_RUNTIME_OR_TARGET_LOCATION_SUCCESS",
+  "base_commit": "073c25dbd540068826ff85a0602b4c35237261b8",
+  "critical_native_reference": {
+    "frameworks_base_commit": "e554ee0e1b19758e7023950731581a314a74cb7d",
+    "libcore_commit": "0d83ddd53700fd274a05d25f5b23b73a9eba1131",
+    "Binder_getCallingUid_source": "https://android.googlesource.com/platform/frameworks/base/+/e554ee0e1b19758e7023950731581a314a74cb7d/core/java/android/os/Binder.java#339",
+    "CriticalNative_ABI_source": "https://android.googlesource.com/platform/libcore/+/0d83ddd53700fd274a05d25f5b23b73a9eba1131/dalvik/src/main/java/dalvik/annotation/optimization/CriticalNative.java",
+    "Binder_java_sha256": "b19230597e7da5c490de0887dfcb704aa82ceed2c6e2be2ecca0a3ec43443343",
+    "CriticalNative_java_sha256": "39b1b5b4987cf13d27449aa2b8506bf17768c73087765003318c11031c80423b"
+  },
+  "candidate": {
+    "api_33_and_newer": "Do not replace CriticalNative Binder.getCallingUid with a regular JNI bridge that re-enters Java and a synchronous Binder service. Keep OS Binder caller identity; virtual process/package identifiers remain internal.",
+    "older_api_path": "UNCHANGED_UNVERIFIED",
+    "own_identity_check": "Activity main thread outside incoming transaction compares Binder selfUID to real host UID and selfPID to Process PID; per-launch nonce and pre-launch stale-receipt removal.",
+    "async_cell_update": "Both ITelephony callback forms complete with an empty framework CellInfo list in virtual mode without querying the modem; closed mode delegates unchanged.",
+    "async_test_boundary": "Two added checks use the actual TelephonyManager wrapper, private Binder callback and caller Executor, with a controlled process-local service cache restored in finally. Not a real Guest hook or target SDK proof.",
+    "radio_expected_tests": 7
+  },
+  "build": {
+    "passed": true,
+    "seconds": 13,
+    "scope": "CRITICAL_NATIVE_AND_ASYNC_CALLBACK_CANDIDATE_REBUILD"
+  },
+  "controlled_python_tests": {
+    "passed": true,
+    "count": 15,
+    "seconds": 0.068,
+    "post_ui_lifecycle_subcases": true
+  },
+  "static_apk_inspections_passed": true,
+  "donor_patch_clean_index_application_verified": true,
+  "workflow": {
+    "same_group_as_previous_workflow_lock": "container-research-${{ github.ref }}",
+    "lock_moved_to_native_job": true,
+    "cancel_in_progress": false,
+    "default_jobs_can_validate_while_old_native_run_finishes": true,
+    "native_requires_successful_build": true,
+    "official_contract": "https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency"
+  },
+  "local_runtime_attempts": [
+    {
+      "label": "api33-async-cell-radio-01",
+      "condition": "FRESH_SOFTWARE_AVD",
+      "test_methods_executed": 0,
+      "passed": false,
+      "cause_observed": "System and own ContentProvider publish timeouts; host null Bundle before test methods."
+    },
+    {
+      "label": "api33-async-cell-radio-warm-02",
+      "condition": "SAME_OWN_AVD_AFTER_FIRST_BOOT",
+      "test_methods_executed": 0,
+      "passed": false,
+      "cause_observed": "Same host initialization prerequisite failure; no new contract methods executed."
+    }
+  ],
+  "local_vm_stopped": true,
+  "platform_images_timeouts_art_jit_or_mock_flags_changed": false,
+  "new_binder_self_identity_runtime": "NOT_RUN_LOCAL_HOST_PREREQUISITE_FAILED; PENDING_NEW_CI",
+  "new_async_callback_runtime": "NOT_RUN_LOCAL_HOST_PREREQUISITE_FAILED; PENDING_NEW_CI",
+  "douyin_crash_causal_attribution": "NOT_ESTABLISHED",
+  "original_target_apks_or_certificates_changed": false,
+  "phone_update_distributed": false,
+  "source_manifest": "framework-startup-prerequisite-preparation.json"
+}

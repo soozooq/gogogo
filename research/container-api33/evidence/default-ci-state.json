@@ -1,0 +1,161 @@
+{
+  "schema": "GOGOGO_RESEARCH_DEFAULT_CI_STATE_V1",
+  "scope": "CI57_ALL_FOUR_VERIFIED_PHONE10_QUALIFIED_ARTIFACT_DELIVERED_NOT_PUBLIC_RELEASE",
+  "status": "completed",
+  "conclusion": "success",
+  "commit": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+  "run_id": 40595256036,
+  "engine_patch_sha256": "1644067914092e72d27cddaf652173ecb9e05cef83efb509953d1424ebb7776e",
+  "preparation": "retired-process-owner-preparation.json",
+  "default_checks_conclusion": "LINUX_MAC_AND_MATCHED_NATIVE_SUCCESS_VERIFIED",
+  "default_result": "retired-process-owner-linux-results.json",
+  "native": {
+    "passed": true,
+    "job_id": 122512447262,
+    "status": "completed",
+    "conclusion": "success",
+    "result": "native-retired-process-owner-pass-results.json"
+  },
+  "mac": {
+    "job_id": 122509448125,
+    "status": "completed",
+    "conclusion": "success",
+    "scope": "BUILD_ONLY_NOT_ANDROID_RUNTIME",
+    "retry_posted": false
+  },
+  "phone_controller_preparation": "phone-c8052d31-delivery-preparation.json",
+  "phone_delivery_run_id": 40626531080,
+  "phone_new_draft_release_id": null,
+  "phone_new_tag": "preview-2.4.35-container-c8052d31",
+  "publication": "QUALIFIED_ARTIFACT_DELIVERED_RELEASE_CREATION_REFUSED_HTTP403",
+  "previous_passive_candidate_failure": {
+    "commit": "e903212b24f55608402a85d3e86b105e77276dd1",
+    "run_id": 40553001338,
+    "linux_job_id": 122361471084,
+    "result": "passive-fixture-attribution-failure-results.json",
+    "native_job_id": 122365729584,
+    "native_conclusion": "skipped"
+  },
+  "previous_driver_qualification": {
+    "commit": "66a293fa2b36cc04e7c2e7986ce5588f8d0a134f",
+    "run_id": 40547400219,
+    "conclusion": "success",
+    "default_result": "original-main-identity-default-results.json",
+    "native_result": "native-original-main-identity-pass-results.json",
+    "covers_passive_fix": false
+  },
+  "old_phone_draft_candidate": {
+    "result": "phone-66258d1d-verified-draft-delivery-results.json",
+    "runtime_source": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+    "delivery_commit": "da2d9135845e6825c5eb40e012bfbfac65ca3656",
+    "run_id": 40527332462,
+    "job_id": 122270354238,
+    "conclusion": "success",
+    "apks": {
+      "main": {
+        "package": "com.soozooq.gogogo.test",
+        "version_name": "2.4.35-container-preview",
+        "version_code": 2400103,
+        "bytes": 40408206,
+        "sha256": "94019ea62938f0fb74d08a823bd97d15d6fa79dbfba0a9edc1810aeee903b0b2",
+        "certificate_sha256": "6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081",
+        "signature_and_alignment_verified": true,
+        "debuggable": true,
+        "file": "Tianwaitian-2.4.35-container-preview-arm64.apk",
+        "asset_id": 681948474,
+        "server_digest_verified": true
+      },
+      "host": {
+        "package": "com.soozooq.tianwaitian.containerresearch",
+        "version_name": "0.4-preview",
+        "version_code": 4,
+        "bytes": 4590083,
+        "sha256": "a85bf3535c3ada5e561eac0b68a0fbf938ea6b700bacc5b92a89fcb0ec9140c5",
+        "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+        "signature_and_alignment_verified": true,
+        "debuggable": true,
+        "file": "Tianwaitian-Original-Preview-66258d1d.apk",
+        "asset_id": 681948470,
+        "server_digest_verified": true
+      }
+    },
+    "published": false,
+    "qualification_driver_source": "66a293fa2b36cc04e7c2e7986ce5588f8d0a134f",
+    "new_driver_native_gate_pending": false,
+    "host_all_415_non_signature_entries_match_ci54": true,
+    "mac_gate_passed": true,
+    "native_gate_passed": true,
+    "contains_passive_provider_fix": false,
+    "held_not_new_delivery": true,
+    "earlier_reuse_publication_preparation_obsolete": true,
+    "held_reason": "DOES_NOT_CONTAIN_NEW_PASSIVE_FIX_NOT_CURRENT_DELIVERY"
+  },
+  "current_published_2_4_34": {
+    "source": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
+    "run_id": 40466246255,
+    "delivery_commit": "d606261bf05d315698eb3392a9afa60eaf935303",
+    "delivery_run_id": 40491596045,
+    "release": "preview-2.4.34-container-a26d14a5",
+    "result": "phone-a26d14a5-published-delivery-results.json",
+    "includes_unreadable_mode_fix": true,
+    "includes_wechat_compatibility_presentation": true,
+    "user_phone_version": "UNKNOWN",
+    "target_business_location": "NOT_VERIFIED",
+    "does_not_include_passive_consumer_counters": true,
+    "does_not_include_passive_provider_fix": true
+  },
+  "previous_native_failure": {
+    "run_id": 40523604093,
+    "commit": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+    "result": "native-original-pidof-set-failure-results.json",
+    "linux_result": "consumer-delivery-linux-results.json"
+  },
+  "candidate_versions_retained": {
+    "main": "2.4.35 / 2400103",
+    "host": "0.4-preview / 4"
+  },
+  "new_runtime_published": false,
+  "target_sdk_and_vivo": "NOT_VERIFIED",
+  "current_preparation": "retired-process-owner-preparation.json",
+  "current_candidate_source": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+  "current_engine_patch_sha256": "1644067914092e72d27cddaf652173ecb9e05cef83efb509953d1424ebb7776e",
+  "phone_delivery_result": "phone10-qualified-artifact-verified-delivery-results.json",
+  "publish_enabled": true,
+  "previous_ci56_native_failure": {
+    "commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",
+    "run_id": 40555343592,
+    "native_job_id": 122374016460,
+    "result": "native-passive-wechat-restart-failure-results.json",
+    "phone7_run_id": 40564477274,
+    "phone7_result": "phone-99940ea2-build-and-release-api-failure-results.json",
+    "mac56": "NO_RUNNER_NOT_COMPILED_NO_RETRY"
+  },
+  "phone_stage_job_id": 122612703019,
+  "phone_stage_conclusion": "skipped",
+  "phone_draft_attachment": "FAILED_OPTIONAL_HTTP403_RESOURCE_NOT_ACCESSIBLE_BY_INTEGRATION",
+  "publisher_job_id": 122612702022,
+  "publisher_status": "completed",
+  "qualified_phone_artifact": {
+    "id": 12789442894,
+    "url": "https://github.com/soozooq/gogogo/actions/runs/40626531080/artifacts/12789442894",
+    "sha256": "43c8b4c96c3ede01e6a1c15079b01d5fd6a2022ffe39d1c2be9f2ff9a44262e4",
+    "expires_at": "2026-11-11T03:25:33Z"
+  },
+  "controller_commit": "beab6368d0e35b4abc12fa89b293c37583b06f1d",
+  "publisher_conclusion": "success",
+  "controller_recovery_preparation": "phone9-download-recovery-preparation.json",
+  "controller_recovery_run_id": 40626531080,
+  "package_build_run_id": 40596941748,
+  "package_build_commit": "4de425d27de2fa14fb3764ce1f463a4f9e8440bf",
+  "controller_stage_rebuild": "skipped",
+  "release_published": false,
+  "phone9_failed_execution": {
+    "run_id": 40596941748,
+    "job_id": 122516449530,
+    "conclusion": "failure",
+    "http_status": 415,
+    "result": "phone9-publication-download-failure-results.json"
+  },
+  "package_build_stage_job_id": 122515194094,
+  "package_build_stage_conclusion": "success"
+}

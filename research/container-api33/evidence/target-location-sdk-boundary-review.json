@@ -1,0 +1,327 @@
+{
+  "schema": "GOGOGO_TARGET_LOCATION_SDK_BOUNDARY_REVIEW_V1",
+  "scope": "PUBLIC_DOCUMENTATION_AND_PINNED_ORIGINAL_DEX_IDENTIFIERS_NOT_RUNTIME_OR_PHONE",
+  "original_targets_source": "official-target-apk-readiness.json",
+  "original_apks_modified_or_executed_for_this_review": false,
+  "private_or_account_data_read": false,
+  "own_public_sdk": {
+    "scope": "PUBLIC_API_SURFACE_INSPECTION_ONLY_NO_SDK_INITIALIZATION_OR_NETWORK_REQUEST",
+    "artifact": "com.tencent.map.geolocation:TencentLocationSdk-openplatform:7.6.1.12",
+    "aar_sha256": "73e36e92faf076778a5739f8d5b213e29f7ccba500a787685767c8281dbc63d9",
+    "public_api_sha256": "e6f0fb52ae017845c91983dd6e52f1fda1ab0772b46521370011b5d81d31a4b7",
+    "public_mock_named_methods": [
+      "public void setMockEnable(boolean);",
+      "public boolean isEnableAntiMock();",
+      "public com.tencent.map.geolocation.TencentLocationRequest setEnableAntiMock(boolean);"
+    ],
+    "wechat_same_sdk_version_verified": false,
+    "target_app_adoption_verified": false,
+    "privacy_consent_changed": false
+  },
+  "official_public_sdk_changelog": {
+    "url": "https://lbs.qq.com/mobile/androidLocationSDK/androidGeoDownload",
+    "section_date": "2024-06-06",
+    "maven_version_in_section": "7.5.4.8",
+    "quote": "\u65b0\u589e\u5b9a\u4f4d\u53cd\u4f5c\u5f0a\u5916\u90e8\u63a7\u5236\u63a5\u53e3\uff0c\u9ed8\u8ba4\u5173\u95ed\u3002 \u53ef\u5728\u6784\u5efaTencentLocationRequest\u5bf9\u8c61\u65f6\u589e\u52a0setEnableAntiMock(true)\u6253\u5f00\u5b9a\u4f4d\u53cd\u4f5c\u5f0a\u6a21\u5757\uff0c\u8fd4\u56de\u7ed3\u679c\u4ecd\u7136\u901a\u8fc7TencentLocation\u5bf9\u8c61\u7684getFakeReason\u548cgetFakeProbability\u63a5\u53e3\u83b7\u53d6",
+    "retrieval_cache_at": "2026-10-25T08:46:08.511Z",
+    "does_not_prove_later_or_wechat_defaults": true
+  },
+  "wechat": {
+    "location_sdk_class_descriptors": [
+      "Lcom/tencent/map/geolocation/sapp/R;",
+      "Lcom/tencent/map/geolocation/sapp/TencentLocation;",
+      "Lcom/tencent/map/geolocation/sapp/TencentLocationListener;",
+      "Lcom/tencent/map/geolocation/sapp/TencentLocationManager;",
+      "Lcom/tencent/map/geolocation/sapp/TencentLocationManagerOptions;",
+      "Lcom/tencent/map/geolocation/sapp/TencentLocationRequest;",
+      "Lcom/tencent/map/geolocation/sapp/TencentLocationUtils;",
+      "Lcom/tencent/map/geolocation/sapp/TencentPoi;",
+      "Lcom/tencent/map/geolocation/sapp/databus/DataBusJni;",
+      "Lcom/tencent/map/geolocation/sapp/databus/DataBusNativeInterface;",
+      "Lcom/tencent/map/geolocation/sapp/internal/LocationLogCallback;",
+      "Lcom/tencent/map/geolocation/sapp/internal/TencentExtraKeys;"
+    ],
+    "native_location_libraries": [
+      {
+        "path": "lib/arm64-v8a/libtencentlocsapp.so",
+        "sha256": "d8f8c70b5871ae0fccd40b0fec4b117f7cc97ed4be41c615a412f89c0a55b16e"
+      }
+    ],
+    "same_public_sdk_artifact_version_verified": false,
+    "package": "com.tencent.mm",
+    "version": "8.0.79",
+    "apk_sha256": "f2a725bc04302ad218a563533ae79356e66b64aa711b275bc919a8d432f7e15d",
+    "runtime_configuration": "UNKNOWN",
+    "conclusion": "Fixed original contains the sapp namespace and libtencentlocsapp.so; public SDK method/switch documentation cannot be treated as its active settings."
+  },
+  "douyin": {
+    "location_sdk_class_descriptors": [],
+    "native_location_libraries": [],
+    "same_public_sdk_artifact_version_verified": false,
+    "package": "com.ss.android.ugc.aweme",
+    "version": "40.8.0",
+    "apk_sha256": "9fc10c40b81b8244e515f9588d381f43e6ed870e6d9bebf14754a5e309ba380a",
+    "method_identifiers": [
+      {
+        "dex": "classes.dex",
+        "class": "Lcom/bytedance/android/shopping/verse/api/bean/ABSettingsInfo;",
+        "method": "setMockEnable",
+        "declaring_class_defined_in_this_dex": true
+      },
+      {
+        "dex": "classes48.dex",
+        "class": "Landroid/location/Location;",
+        "method": "isFromMockProvider",
+        "declaring_class_defined_in_this_dex": false
+      },
+      {
+        "dex": "classes48.dex",
+        "class": "Lcom/amap/api/location/AMapLocation;",
+        "method": "isMock",
+        "declaring_class_defined_in_this_dex": true
+      },
+      {
+        "dex": "classes48.dex",
+        "class": "Lcom/amap/api/location/AMapLocationClientOption;",
+        "method": "setMockEnable",
+        "declaring_class_defined_in_this_dex": true
+      },
+      {
+        "dex": "classes48.dex",
+        "class": "Lcom/autonavi/amap/mapcore2d/Inner_3dMap_locationOption;",
+        "method": "setMockEnable",
+        "declaring_class_defined_in_this_dex": true
+      },
+      {
+        "dex": "classes48.dex",
+        "class": "Lcom/bytedance/bdlocation/BDLocation;",
+        "method": "isMock",
+        "declaring_class_defined_in_this_dex": true
+      }
+    ],
+    "runtime_configuration_or_active_provider": "UNKNOWN",
+    "conclusion": "AMap/BDLocation and platform mock identifiers are present; identifiers alone do not establish the active path or switch values. The shopping ABSettingsInfo method is not classified as location evidence."
+  },
+  "android_location_mock_definition": {
+    "url": "https://developer.android.com/reference/android/location/Location#isMock()",
+    "api_level_added": 31,
+    "quote": "Returns true if this location is marked as a mock location. If this location comes from the Android framework, this indicates that the location was provided by a test location provider, and thus may not be related to the actual location of the device.",
+    "wechat_rejection_proven": false
+  },
+  "decision": "Do not present an own Tencent SDK option, platform cache success or a matching method name as changing WeChat/Douyin runtime behavior; preserve mock flags and verify actual target adoption separately.",
+  "user_experiment_requested": false,
+  "target_business": "UNVERIFIED",
+  "additional_original_public_api_review": {
+    "scope": "PINNED_ORIGINAL_PUBLIC_DECLARATIONS_PARENT_TYPES_AND_SIGNATURES_ONLY_NOT_RUNTIME_CONFIGURATION_OR_ADOPTION",
+    "wechat": {
+      "apk_sha256": "f2a725bc04302ad218a563533ae79356e66b64aa711b275bc919a8d432f7e15d",
+      "dex": "classes16.dex",
+      "selected_types": [
+        {
+          "class": "Lcom/tencent/map/geolocation/sapp/TencentLocationListener;",
+          "superclass": "Ljava/lang/Object;",
+          "interfaces": [],
+          "public_declared_method_count": 2
+        },
+        {
+          "class": "Lcom/tencent/map/geolocation/sapp/TencentLocationManager;",
+          "superclass": "Ljava/lang/Object;",
+          "interfaces": [],
+          "public_declared_method_count": 16
+        },
+        {
+          "class": "Lcom/tencent/map/geolocation/sapp/TencentLocationManagerOptions;",
+          "superclass": "Ljava/lang/Object;",
+          "interfaces": [],
+          "public_declared_method_count": 5
+        },
+        {
+          "class": "Lcom/tencent/map/geolocation/sapp/TencentLocationRequest;",
+          "superclass": "Ljava/lang/Object;",
+          "interfaces": [],
+          "public_declared_method_count": 29
+        }
+      ],
+      "total_public_declarations_checked": 52,
+      "mock_named_public_declarations_in_selected_types": [],
+      "get_instance_signatures": [
+        "getInstance(Context)",
+        "getInstance(Context, android.util.Pair)"
+      ],
+      "request_entry_signatures": [
+        "requestLocationUpdates(TencentLocationRequest,TencentLocationListener)",
+        "requestLocationUpdates(TencentLocationRequest,TencentLocationListener,Looper)",
+        "requestSingleFreshLocation(TencentLocationRequest,TencentLocationListener,Looper)",
+        "requestSingleFreshLocation(TencentLocationRequest,TencentLocationListener,Looper,boolean)"
+      ],
+      "options_set_key_and_request_identifier_setter_names_exist_but_values_not_extracted": true,
+      "does_not_prove_no_internal_or_obfuscated_mock_controls": true,
+      "does_not_prove_mock_rejection_or_active_configuration": true
+    },
+    "douyin": {
+      "apk_sha256": "9fc10c40b81b8244e515f9588d381f43e6ed870e6d9bebf14754a5e309ba380a",
+      "dex": "classes48.dex",
+      "selected_types": [
+        {
+          "class": "Lcom/amap/api/location/AMapLocationClient;",
+          "public_declared_method_count": 22
+        },
+        {
+          "class": "Lcom/amap/api/location/AMapLocationClientOption;",
+          "public_declared_method_count": 69
+        }
+      ],
+      "client_privacy_declarations": [
+        "updatePrivacyAgree(Context,boolean)",
+        "updatePrivacyShow(Context,boolean,boolean)"
+      ],
+      "option_mock_declarations": [
+        "isMockEnable()",
+        "setMockEnable(boolean)"
+      ],
+      "privacy_call_presence_does_not_prove_current_consent_or_constructor_gating": true,
+      "does_not_establish_active_provider_switch_value_or_target_adoption": true
+    },
+    "method_structure_local_receipt_sha256": "2ec409abedf3e32bb592fbd329face16eb58239d61f045cd66e9723bc7fa79f3",
+    "original_apks_modified": false,
+    "sdk_initialized_or_executed": false,
+    "new_location_or_network_request_started": false,
+    "key_or_identifier_values_extracted_or_published": false,
+    "private_app_or_account_data_read": false,
+    "privacy_or_permission_state_changed": false,
+    "phone_experiments_added": false,
+    "next_validation_boundary": "An independently initialized SDK with custom options is not the original app active configuration; use original app authorized location flow evidence without changing consent, keys or mock flags.",
+    "universal_no_root_impossibility_claimed": false
+  },
+  "additional_direct_framework_invoke_review": {
+    "scope": "STATIC_DIRECT_DALVIK_FRAMEWORK_INVOKES_IN_SELECTED_ORIGINAL_SDK_NAMESPACES_NO_CLASS_OR_NATIVE_EXECUTION",
+    "private_evidence_sha256": {
+      "target-sdk-framework-invoke-sites.json": "5f351f1638f3fa98bed2c6fd54bd03d52ee01f26e90cec7b03e433c38292a3bb",
+      "target-sdk-framework-invoke-crosscheck.json": "0f1c50d8f2e57877bef877b86681727d9043ede5fe9e8e07c23f7fa8eb340ec6",
+      "wechat-sdk-manager-delegation-invokes.json": "08671947bfe4ef73be085aa2ed545afdc15903b7e68ae2fff08f083df2262e34"
+    },
+    "targets": {
+      "wechat": {
+        "original_apk_sha256": "f2a725bc04302ad218a563533ae79356e66b64aa711b275bc919a8d432f7e15d",
+        "selected_namespaces": [
+          "Lcom/tencent/map/geolocation/sapp/",
+          "Lc/t/m/sapp/"
+        ],
+        "selected_classes_with_code": 27,
+        "method_bodies_decoded": 233,
+        "unparsed_method_bodies": 0,
+        "direct_framework_invoke_sites": 6,
+        "dex_files": [
+          "classes.dex",
+          "classes13.dex",
+          "classes16.dex",
+          "classes4.dex",
+          "classes7.dex"
+        ],
+        "wrapper_delegation": {
+          "constructor_references": [
+            "Lcom/tencent/cso/CsoLoader;->f(Ljava/lang/String;)V",
+            "Lcom/tencent/map/geolocation/sapp/databus/DataBusNativeInterface;->init(Landroid/content/Context;)V"
+          ],
+          "requestLocationUpdates_references": [
+            "Ljava/lang/Class;->getDeclaredMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;",
+            "Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;"
+          ],
+          "actual_loaded_implementation_and_reachability": "UNKNOWN_STATIC_ONLY"
+        }
+      },
+      "douyin": {
+        "original_apk_sha256": "9fc10c40b81b8244e515f9588d381f43e6ed870e6d9bebf14754a5e309ba380a",
+        "selected_namespaces": [
+          "Lcom/amap/api/location/",
+          "Lcom/loc/",
+          "Lcom/autonavi/",
+          "Lcom/bytedance/bdlocation/"
+        ],
+        "selected_classes_with_code": 342,
+        "method_bodies_decoded": 3181,
+        "unparsed_method_bodies": 0,
+        "direct_framework_invoke_sites": 398,
+        "dex_files": [
+          "classes16.dex",
+          "classes17.dex",
+          "classes21.dex",
+          "classes32.dex",
+          "classes37.dex",
+          "classes41.dex",
+          "classes43.dex",
+          "classes44.dex",
+          "classes48.dex",
+          "classes51.dex",
+          "classes54.dex",
+          "classes55.dex"
+        ],
+        "mock_flag_call_sites": [
+          {
+            "dex": "classes48.dex",
+            "caller": {
+              "class": "Lcom/loc/eu$b;",
+              "name": "b",
+              "parameters": [],
+              "return": "V"
+            },
+            "instruction_offset_code_units": 138,
+            "target": {
+              "class": "Landroid/location/Location;",
+              "name": "isFromMockProvider",
+              "parameters": [],
+              "return": "Z"
+            }
+          },
+          {
+            "dex": "classes48.dex",
+            "caller": {
+              "class": "Lcom/loc/gd;",
+              "name": "a",
+              "parameters": [
+                "Landroid/location/Location;",
+                "I"
+              ],
+              "return": "Z"
+            },
+            "instruction_offset_code_units": 1,
+            "target": {
+              "class": "Landroid/location/Location;",
+              "name": "isFromMockProvider",
+              "parameters": [],
+              "return": "Z"
+            }
+          }
+        ]
+      }
+    },
+    "independent_apkanalyzer_crosscheck": {
+      "all_exit_zero": true,
+      "douyin_both_mock_calls_confirmed": true,
+      "wechat_constructor_and_request_reflection_confirmed": true
+    },
+    "class_or_native_execution": false,
+    "original_apk_or_mock_flag_modified": false,
+    "constant_key_account_identifier_values_extracted": false,
+    "phone_experiments_or_new_sdk_instance_started": false,
+    "limits": [
+      "Direct instruction references do not establish runtime reachability, active provider, options or location adoption.",
+      "Selected namespaces may exclude obfuscated helper code elsewhere.",
+      "Reflective/native calls and saved SDK caches are not resolved.",
+      "No absence claim for unselected or native code.",
+      "Reading a mock flag in a bundled SDK is not proof that the active app rejects the sample.",
+      "The WeChat wrapper uses reflection and mentions native initialization; low direct-call counts cannot establish absence of Android location queries or mock detection.",
+      "Only the application own authorized runtime flow can establish its active delegate, configuration and actual adoption."
+    ]
+  },
+  "bundled_component_followup": {
+    "result": "wechat-bundled-sdk-mock-filter-results.json",
+    "scope": "ADDITIONAL_OFFLINE_DECODE_OF_ACTUAL_BUNDLED_MODULE_NOT_RUNTIME_ADOPTION",
+    "corrects_prior_inspection_boundary": "Prior 233-method scan covered only top-level selected SDK DEX namespaces, not the separately bundled component.",
+    "component_dex_sha256": "1d795a12500f3e68bf9ab0e840aca214715e8d9df55b9168424ca1c3478382d9",
+    "four_mock_readers_confirmed": true,
+    "two_early_return_branches_confirmed": true,
+    "actual_phone_active_component_and_failure_cause": "UNKNOWN",
+    "compatibility_candidate": "wechat-compatibility-presentation-preparation.json"
+  }
+}

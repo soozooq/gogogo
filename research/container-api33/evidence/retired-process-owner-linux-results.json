@@ -1,0 +1,196 @@
+{
+  "schema": "GOGOGO_CONSUMER_DELIVERY_ACTUAL_LINUX_RESULTS_V1",
+  "scope": "ACTUAL_X86_64_RETIRED_PROCESS_REGISTRY_FIXTURE_AND_SEPARATE_NINE_PATH_GUEST_NOT_WECHAT_OR_PHONE",
+  "run_id": 40595256036,
+  "commit": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+  "engine_patch_sha256": "1644067914092e72d27cddaf652173ecb9e05cef83efb509953d1424ebb7776e",
+  "linux_job_id": 122509447972,
+  "linux_conclusion": "success",
+  "artifacts": {
+    "own": {
+      "id": 12775788117,
+      "sha256": "64da4721716e2d6c41e6fe5d6d56f57555d529b5b098280eadfa0d7534692bef",
+      "verified": true
+    },
+    "linux": {
+      "id": 12777325224,
+      "sha256": "51c63df80f37491ea68819da43eafc859fce8b6df58536a3a3c8821dcec0324d",
+      "verified": true
+    },
+    "mac": {
+      "id": 12776161879,
+      "sha256": "6c906651cbe6ef767df7506e97cc9035e6c3162244d6f8f007cf71325b483c1b",
+      "verified": true
+    }
+  },
+  "both_api_archive_digests_fixed_sources_signatures_materials_verified": true,
+  "case_junit": {
+    "x86_64-startup-framework": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 0.591,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-location-contract": {
+      "passed": true,
+      "junit_tests": 7,
+      "junit_seconds": 4.563,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-radio-privacy": {
+      "passed": true,
+      "junit_tests": 19,
+      "junit_seconds": 0.241,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-owned-location": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 3.621,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-ordinary-entry": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 15.162,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-installed-import": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 8.565,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-calculator": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 6.122,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    }
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4547952,
+        "sha256": "4d7d37758aa1d2565cc026d346fc8083101c50d8613c5bbe9867175ae1422a37"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 534258,
+        "sha256": "0afb10f11dbd9149645ecd2b13538a0a343d5eb8cf859178e104fd65a70f480a"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 75094,
+        "sha256": "c6bed773eb4b5406f9b0eba6e472053443921ca075c613817c5a7fc73eee2972"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "controlled_wechat_context": {
+    "junit_methods": 7,
+    "real_wechat_or_sdk": false,
+    "source_bound_assertions": [
+      "Both providers cache/current prepare counts match requests; each stream has two returned sends.",
+      "Actual Binder caller/receiver PID matches the fixture client.",
+      "Detached summary mutation and host configuration reads do not change Core consumer counters.",
+      "WeChat both mock aliases false and synthetic extra true; generic flag preserved after restoration."
+    ]
+  },
+  "real_separate_owned_guest": {
+    "host_pid": 2954,
+    "guest_pid": 3020,
+    "actual_consumer_delivery": {
+      "last_preparation_caller_pid": 3020,
+      "cache_gps_prepared": 2,
+      "cache_passive_prepared": 2,
+      "current_network_prepared": 2,
+      "stream_gps_transaction_returned": 3,
+      "last_event_age_ms": 1985,
+      "stream_network_registered": 1,
+      "current_passive_prepared": 2,
+      "stream_network_transaction_returned": 3,
+      "maximum_profiles": 16,
+      "stream_passive_transaction_returned": 3,
+      "present": true,
+      "last_stream_mock": true,
+      "scope": "CORE_MEMORY_VIRTUAL_PREPARATION_AND_BINDER_SEND_NOT_SDK_ADOPTION",
+      "stream_passive_registered": 1,
+      "current_gps_prepared": 2,
+      "stream_gps_registered": 1,
+      "first_event_elapsed_ms": 61914,
+      "last_stream_synthetic": true,
+      "last_event_elapsed_ms": 62527,
+      "last_stream_receiver_pid": 3020,
+      "cache_network_prepared": 2
+    },
+    "maximum_sample_age_ms": 326.567741,
+    "generic_all_nine_paths_mock_marked": true,
+    "cancelled_callbacks": 0,
+    "report_source": "OWN_GUEST_ATOMIC_PRIVATE_FILE"
+  },
+  "passive_samples_source_gps_and_synthetic": true,
+  "previous_ci55_failure_retained_not_reclassified": true,
+  "actual_normal_feedback": {
+    "stage": "COMPACT_FEEDBACK_READ_ONLY",
+    "characters": 1380,
+    "guest_pid_preserved": true,
+    "mock_mode_preserved": true,
+    "coordinates_not_recorded": true
+  },
+  "new_phone_experiment": false,
+  "arm_mac_build": {
+    "job_id": 122509448125,
+    "status": "completed",
+    "conclusion": "success",
+    "scope": "BUILD_ONLY_NOT_ANDROID_RUNTIME",
+    "artifact_id": 12776161879,
+    "api_digest_source_checked": true
+  },
+  "matched_native": {
+    "job_id": 122512447262,
+    "status": "in_progress",
+    "result": "PENDING_NOT_PASS"
+  },
+  "new_phone_apk_published": false,
+  "current_public_2_4_34_has_passive_counters": false,
+  "target_sdk_wechat_send_live_douyin_wireless_overseas_vivo": "NOT_VERIFIED",
+  "scope_limits": [
+    "Prepared samples and returned one-way Binder transactions do not prove SDK acceptance.",
+    "Counters are bounded volatile Core history, not a current application session or UI-correlated observation.",
+    "A missing record can mean no use, restart, or eviction; it is not SDK rejection proof.",
+    "Mac is an actual build-only pass; same-source native remains pending and older source cannot substitute."
+  ],
+  "verifier_sha256": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
+  "inputs_manifest_sha256": "5c418f72240e29001c01336fa9250ae4e90ef5b2c475cb84c2b598a371d4f30a",
+  "controlled_retired_process_registry": {
+    "scope": "CONTROLLED_HOST_REGISTRY_NOT_REAL_GUEST_DEATH",
+    "replacement_same_name_preserved": true,
+    "replacement_slot_files_preserved": true,
+    "absent_old_registration_is_inert": true,
+    "passed": true
+  },
+  "previous_ci56_native_failure_retained_not_reclassified": true,
+  "wechat_native_restart_fixed": "NOT_YET_VERIFIED",
+  "all_three_api_archives_verified": true
+}

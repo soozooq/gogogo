@@ -83,11 +83,11 @@ public final class LabQuickCheckReport {
         } else if (s.systemLocation == Signal.UNKNOWN
                 || s.finePermission == Signal.UNKNOWN
                 || s.mockAppOp == Signal.UNKNOWN) {
-            out.append("有基础状态无法确认，请到实验仪表盘查看详细诊断。");
+            out.append("有基础状态无法确认，可在「诊断与反馈」一键复制反馈，无需逐项实验。");
         } else if (s.localServiceFlag) {
-            out.append("可打开 Consumer Matrix 验证各定位消费者实际获得的值。");
+            out.append("基础条件没有明确阻断项；目标应用效果仍以实际页面为准。遇到问题可一键复制反馈，无需逐项实验。");
         } else {
-            out.append("基础条件具备；如需测试，请回到首页手动启动模拟，再检查 Consumer Matrix。");
+            out.append("基础条件具备；需要使用时在首页启动模拟即可。遇到问题可一键复制反馈，无需逐项实验。");
         }
         out.append("\n\n");
         out.append("说明：RUNNING 只是当前进程的标记；AppOps ALLOWED 仅表示应用获准使用模拟位置。");

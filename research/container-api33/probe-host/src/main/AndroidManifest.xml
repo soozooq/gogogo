@@ -1,0 +1,43 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.soozooq.tianwaitian.containerresearch">
+    <!-- Targets the own test APK's plain Application, without starting ProbeApplication. -->
+    <instrumentation android:name=".OriginalUiProbeInstrumentation"
+        android:targetPackage="com.soozooq.tianwaitian.containerresearch.test"
+        android:handleProfiling="false" android:functionalTest="false" />
+    <!-- No broad permission inheritance from the reference engine. -->
+    <uses-permission tools:node="removeAll" />
+    <uses-permission-sdk-23 tools:node="removeAll" />
+    <uses-feature tools:node="removeAll" />
+    <permission android:name="${applicationId}.INTERNAL" android:protectionLevel="signature" />
+    <uses-permission android:name="${applicationId}.INTERNAL" tools:node="replace" />
+    <!-- Required by the engine to bring its own virtual activity task forward. -->
+    <uses-permission android:name="android.permission.REORDER_TASKS" tools:node="replace" />
+    <!-- Normal host capabilities used by the pinned third-party location/service client. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" tools:node="replace" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" tools:node="replace" />
+    <uses-permission android:name="android.permission.INTERNET" tools:node="replace" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="replace" />
+    <!-- WifiP2pManager.initialize enforces both normal permissions on API33. -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" tools:node="replace" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" tools:node="replace" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="replace" />
+    <queries>
+        <package android:name="org.fossify.math" />
+        <package android:name="com.android.gpstest.osmdroid" />
+        <package android:name="com.tencent.mm" />
+        <package android:name="com.ss.android.ugc.aweme" />
+    </queries>
+    <application android:name=".ProbeApplication" android:label="天外天 · 原版应用预览"
+        android:allowBackup="false" android:extractNativeLibs="true"
+        android:permission="${applicationId}.INTERNAL"
+        android:theme="@style/PreviewTheme">
+        <uses-library android:name="org.apache.http.legacy" android:required="false" />
+        <activity android:name=".ProbeActivity" android:exported="true" android:permission="">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

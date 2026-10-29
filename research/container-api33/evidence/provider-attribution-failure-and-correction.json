@@ -1,0 +1,116 @@
+{
+  "schema": "GOGOGO_PROVIDER_ATTRIBUTION_FAILURE_AND_CORRECTION_V1",
+  "scope": "ACTUAL_API33_X86_64_OWN_PRIVATE_PROVIDER_FAILURE_AND_UNRUN_CORRECTION_NOT_TARGET_LOCATION",
+  "run_id": 40240477216,
+  "commit": "53c94bb65838637c80f2dc815cc44f88dde844f0",
+  "tree": "1bb025ce19648f827f058a7524bc38916bfb8caa",
+  "default_checks_conclusion": "failure",
+  "artifacts": {
+    "linux": {
+      "id": 12615978150,
+      "sha256": "0bb3f2b5b06ff7b144b3842e4ae9d9618acf0b48ada286408023c9182c2f05e8",
+      "verified": true
+    },
+    "own": {
+      "id": 12616272407,
+      "sha256": "7ca08ddfb14d9ea5f4a322855ee5176ca2216b51e6fbac28dbe918ec5f43902c",
+      "verified": true
+    },
+    "mac": {
+      "id": 12616852648,
+      "sha256": "9e40a526d3982576752db29d98a72f3febc39eae3f90688c0b1c77581576b3b5",
+      "verified": true
+    }
+  },
+  "framework_job_id": 121311002346,
+  "framework_source_inputs_verified": 56,
+  "framework_junit": [
+    "Time: 0.528",
+    "FAILURES!!!",
+    "Tests run: 1,  Failures: 1"
+  ],
+  "observed": {
+    "scope": "OWN_GUEST_FRAMEWORK_STARTUP_ONLY_NOT_TARGET_APP_OR_LOCATION",
+    "passed": false,
+    "pending_intents_sent": false,
+    "location_requested": false,
+    "startup_contract_run_id": "d76cf7e8-7121-44dc-99df-aa46f980f1a4",
+    "framework_http_legacy_class_resolved": true,
+    "expected_real_host_uid": 10129,
+    "process_api_uid": 10001,
+    "binder_self_uid": 10129,
+    "binder_self_pid": 2589,
+    "process_api_pid": 2589,
+    "binder_self_identity_scope": "ACTIVITY_ON_CREATE_OUTSIDE_INCOMING_BINDER_TRANSACTION",
+    "binder_self_uid_matches_real_host": true,
+    "activity_attribution_uid": 10129,
+    "application_attribution_uid": 10129,
+    "activity_attribution_uid_matches_real_host": true,
+    "application_attribution_uid_matches_real_host": true,
+    "activity_attribution_package": "com.soozooq.tianwaitian.containerresearch",
+    "pending_activity_created": true,
+    "pending_service_created": true,
+    "error_class": "java.lang.reflect.UndeclaredThrowableException"
+  },
+  "actual_cause": {
+    "type": "SecurityException",
+    "message": "Calling uid: 10129 doesn't match source uid: 10001",
+    "source": "android.content.AttributionSource.enforceCallingUid:283; ContentProviderNative.onTransact",
+    "caller_pid": 2589,
+    "provider_pid": 2614,
+    "real_host_uid": 10129,
+    "incorrect_attribution_uid": 10001,
+    "public_provider_call_failed": true,
+    "not_target_or_location_failure": true
+  },
+  "other_default_results": {
+    "mac_build": "success",
+    "moving_ui_source_inputs_verified": 58,
+    "moving_ui_passed": true,
+    "feedback_main": {
+      "junit": {
+        "tests": 447,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "lint_error_fatal_count": 0,
+      "passed": true
+    },
+    "own_transport": {
+      "source_count_verified": 50,
+      "apks": {
+        "host": {
+          "name": "probeHost-debug.apk",
+          "size": 4531920,
+          "sha256": "cb68cc3cb29963f67175b31ebc46959f0bed3858a5ecdb8d31917ebe116cc956"
+        },
+        "driver": {
+          "name": "probeHost-debug-androidTest.apk",
+          "size": 500226,
+          "sha256": "f8138f8563c5097ecc59c0c1d840275dcf2f871d976803359d5f0cf70aba3736"
+        }
+      },
+      "notice_materials_per_apk": 11,
+      "signatures_verified_and_same": true
+    },
+    "radio_calculator_and_ordinary_entry": "NOT_RUN_AFTER_FRAMEWORK_FAILURE"
+  },
+  "native_job": {
+    "id": 121312369364,
+    "conclusion": "skipped",
+    "reason": "BUILD_PREREQUISITE_FAILED",
+    "passed": false
+  },
+  "candidate": "ContentProviderStub now uses the real host UID for AttributionSource, matching the real Binder sender and existing SystemProviderStub rule. InvocationTargetException is unwrapped to preserve the original platform rejection.",
+  "provider_exported_permissions_or_system_uid_checks_disabled": false,
+  "modern_holder_fix_retained": true,
+  "new_actual_runtime": "PENDING_NEXT_CI",
+  "new_native_runtime": "PENDING_NEXT_CI",
+  "latest_actual_native_baseline": "native-container-startup-pass-results.json",
+  "source_sha256": {
+    "patches/blackbox-api33-build.patch": "258c75a90e2fdf89e83d88a80a3f2ed01dbd1094bd5a4ae55d6fd9a2d7daa9b5"
+  },
+  "phone_update_distributed": false,
+  "subsequent_actual_default_result": "provider-attribution-results.json"
+}

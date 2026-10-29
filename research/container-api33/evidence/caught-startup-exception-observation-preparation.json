@@ -1,0 +1,23 @@
+{
+  "schema": "GOGOGO_CAUGHT_STARTUP_EXCEPTION_OBSERVATION_PREPARATION_V1",
+  "scope": "BOUNDED_READ_ONLY_DIAGNOSTIC_FILTER_NOT_NEW_TARGET_RUNTIME",
+  "base_commit": "c5313dcb88ae9274eb635f0129e4e421ebe919f5",
+  "source_observation": "BActivityThread and HCallbackProxy catch startup exceptions with printStackTrace; scoped framework log selection omitted System.err.",
+  "candidate": "Include System.err:W in existing scoped main/system capture; preserve URL redaction, 30 second per read bound and 2 MiB output limit; diagnostic availability does not alter UI verdict.",
+  "controlled_tests": {
+    "count": 22,
+    "seconds": 0.413,
+    "passed": true
+  },
+  "apk_rebuild_needed_for_python_only_change": false,
+  "app_java_native_manifest_or_permissions_changed": false,
+  "new_native_capture": "PENDING_NEXT_NATIVE",
+  "source_sha256": {
+    "tools/cuttlefish_target_baselines.py": "d7eaff2f28330b8543e162e22c65b7b7421332012fc99be6009a23459296a1bc",
+    "tests/test_cuttlefish_target_baselines.py": "786fd12b046eca27b3df2843aa44ea51a3efcd27b0a49e9c763b2478175f2999"
+  },
+  "actual_ci36_default_result": "connectivity-array-contract-results.json",
+  "phone_update_distributed": false,
+  "first_followup_native_result": "CI37_SKIPPED_MISSING_COMMIT_OPT_IN_NOT_PASS",
+  "trigger_correction": "native-trigger-correction-preparation.json"
+}

@@ -1,0 +1,53 @@
+{
+  "scope": "PARTIAL_OFFICIAL_ARCHIVE_METADATA_NOT_BOOT_OR_APP_SUCCESS",
+  "whole_archive_checksum_verified": false,
+  "rows": [
+    {
+      "package": "system-images;android-31;google_apis;x86_64",
+      "revision": "14",
+      "archive": "x86_64-31_r14.zip",
+      "size": 1470822277,
+      "checksum": "9aedd3e85cad7a479146f6858f4a94840c2a3f29",
+      "base": "https://dl.google.com/android/repository/sys-img/google_apis/",
+      "probe": "RANGE_ENTRY_CRC_VERIFIED_NOT_FULL_ARCHIVE_VERIFIED",
+      "entry": "x86_64/build.prop",
+      "properties": {
+        "ro.system.product.cpu.abilist": "x86_64,arm64-v8a",
+        "ro.system.product.cpu.abilist32": "",
+        "ro.system.product.cpu.abilist64": "x86_64,arm64-v8a",
+        "ro.system.build.fingerprint": "google/sdk_gphone64_x86_64/emulator64_x86_64_arm64:12/SE1A.220826.008/10564458:userdebug/dev-keys",
+        "ro.build.version.preview_sdk_fingerprint": "REL",
+        "ro.product.cpu.abi": "x86_64",
+        "ro.dalvik.vm.native.bridge": "0",
+        "ro.dalvik.vm.isa.arm64": "x86_64",
+        "ro.dalvik.vm.isa.arm": "x86",
+        "ro.enable.native.bridge.exec": "1",
+        "ro.ndk_translation.version": "0.2.3"
+      }
+    },
+    {
+      "package": "system-images;android-32;google_apis;x86_64",
+      "revision": "8",
+      "archive": "x86_64-32_r08.zip",
+      "size": 1538792859,
+      "checksum": "1b52794699c6889a2fd155bf235b67a592eb8f1d",
+      "base": "https://dl.google.com/android/repository/sys-img/google_apis/",
+      "probe": "RANGE_ENTRY_CRC_VERIFIED_NOT_FULL_ARCHIVE_VERIFIED",
+      "entry": "x86_64/build.prop",
+      "properties": {
+        "ro.system.product.cpu.abilist": "x86_64,arm64-v8a",
+        "ro.system.product.cpu.abilist32": "",
+        "ro.system.product.cpu.abilist64": "x86_64,arm64-v8a",
+        "ro.system.build.fingerprint": "google/sdk_gphone64_x86_64/emulator64_x86_64_arm64:12/SE1B.240122.005/11418786:userdebug/dev-keys",
+        "ro.build.version.preview_sdk_fingerprint": "REL",
+        "ro.product.cpu.abi": "x86_64",
+        "ro.dalvik.vm.native.bridge": "0",
+        "ro.dalvik.vm.isa.arm64": "x86_64",
+        "ro.dalvik.vm.isa.arm": "x86",
+        "ro.enable.native.bridge.exec": "1",
+        "ro.ndk_translation.version": "0.2.3",
+        "ro.ndk_translation.flags": "accurate-sigsegv"
+      }
+    }
+  ]
+}

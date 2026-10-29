@@ -1,0 +1,16 @@
+{
+  "scope": "OWNED_CONSUMER_STATIC_INPUT_NOT_LOCATION_SUCCESS",
+  "package": "com.soozooq.tianwaitian.locationconsumer",
+  "sha256": "5bb078da4a2793e8ca9e1b1423ec626107e177ae524a92a759588121d4c8bc69",
+  "size": 33193,
+  "uses_permissions": [
+    "android.permission.ACCESS_COARSE_LOCATION",
+    "android.permission.ACCESS_FINE_LOCATION"
+  ],
+  "only_own_class_definitions": true,
+  "engine_host_or_reflection_references": false,
+  "expected_target_coordinates_embedded_by_design": false,
+  "native_libraries_or_embedded_apks": false,
+  "public_android_location_methods_present": true,
+  "certificate_sha256": "81b7350f2e056029168a8a3ad6d29f1c6c0a7132a2f6db9296c5a26bd135e728"
+}

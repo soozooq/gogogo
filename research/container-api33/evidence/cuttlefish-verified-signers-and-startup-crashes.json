@@ -1,0 +1,246 @@
+{
+  "schema": "GOGOGO_CUTTLEFISH_VERIFIED_SIGNERS_AND_STARTUP_CRASHES_V1",
+  "scope": "ARM64_ANONYMOUS_STARTUP_ONLY_NOT_LOCATION_BUSINESS_OR_PHYSICAL_VIVO",
+  "run_id": 40174550024,
+  "job_id": 121113567517,
+  "commit": "ff1a21eeacf2ce9efb0aa1718332af2823dd9df1",
+  "artifact": {
+    "id": 12593024545,
+    "sha256": "55925f41fa9bb2f82c1c578b6516124c1e1f7bae8655b1761862ef508da52ece",
+    "digest_verified": true,
+    "all_report_source_hashes_verified": 8
+  },
+  "system": {
+    "qualified": true,
+    "properties": {
+      "ro.build.version.sdk": "33",
+      "ro.build.version.incremental": "16596636",
+      "ro.build.fingerprint": "generic/aosp_cf_arm64_phone/vsoc_arm64:13/TP1A.220624.019/16596636:userdebug/test-keys",
+      "ro.product.name": "aosp_cf_arm64_phone",
+      "ro.hardware": "cutf_cvm",
+      "ro.product.cpu.abi": "arm64-v8a",
+      "ro.product.cpu.abilist": "arm64-v8a,armeabi-v7a,armeabi",
+      "ro.dalvik.vm.native.bridge": "0",
+      "ro.hw_timeout_multiplier": "50",
+      "sys.boot_completed": "1"
+    },
+    "kernel": "aarch64",
+    "uid": "2000",
+    "selinux": "Enforcing",
+    "actual_cpu_online": "0-3",
+    "system_server_pid_during_all_controls": "653",
+    "qemu_stopped": true,
+    "whole_run_seconds_not_boot_time": 3422.769
+  },
+  "ordinary_originals": {
+    "wechat": {
+      "state": "WELCOME_WITHOUT_LOGIN",
+      "passed": true,
+      "target_pid_at_ui": "5192",
+      "owned_package_removed": true,
+      "owned_ui_package_cleanup": {
+        "com.soozooq.tianwaitian.containerresearch.test": true,
+        "com.soozooq.tianwaitian.containerresearch": true
+      },
+      "system_process_checkpoints": {
+        "BEFORE_INSTALL": "653",
+        "AFTER_INSTALL": "653",
+        "AFTER_UI_CAPTURE": "653"
+      },
+      "install_commit_seconds": 343.939,
+      "ui_capture": {
+        "capture_method": "UI_AUTOMATION_WITHOUT_IDLE_WAIT",
+        "root_package": "com.tencent.mm",
+        "stage": "WELCOME_WITHOUT_LOGIN",
+        "elapsed_ms": 58526,
+        "own_driver_targeting": true,
+        "plain_application": true,
+        "passed": true
+      }
+    },
+    "douyin": {
+      "state": "PRIVACY_WITHOUT_ACCEPTANCE",
+      "passed": true,
+      "target_pid_at_ui": "7947",
+      "owned_package_removed": true,
+      "owned_ui_package_cleanup": {
+        "com.soozooq.tianwaitian.containerresearch.test": true,
+        "com.soozooq.tianwaitian.containerresearch": true
+      },
+      "system_process_checkpoints": {
+        "BEFORE_INSTALL": "653",
+        "AFTER_INSTALL": "653",
+        "AFTER_UI_CAPTURE": "653"
+      },
+      "install_commit_seconds": 423.342,
+      "ui_capture": {
+        "capture_method": "UI_AUTOMATION_WITHOUT_IDLE_WAIT",
+        "root_package": "com.ss.android.ugc.aweme",
+        "stage": "PRIVACY_WITHOUT_ACCEPTANCE",
+        "elapsed_ms": 70850,
+        "own_driver_targeting": true,
+        "plain_application": true,
+        "passed": true
+      }
+    }
+  },
+  "container_targets": {
+    "wechat": {
+      "scope": "CVD_ARM64_ANONYMOUS_CONTAINER_STARTUP_ONLY_NOT_LOCATION_OR_VIVO",
+      "target": "wechat",
+      "passed": false,
+      "state": "CONTAINER_STARTUP_NOT_CONFIRMED_SEE_EVIDENCE",
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "location_enabled": false,
+      "environment_before_container": {
+        "uid": "2000",
+        "selinux": "Enforcing",
+        "boot": "1",
+        "system_pid": "653"
+      },
+      "environment_after_container": {
+        "system_pid": "653",
+        "boot": "1"
+      },
+      "observed": {
+        "scope": "CVD_ARM64_CONTAINER_STARTUP_ONLY_NOT_LOCATION_OR_PHYSICAL_VIVO",
+        "runtime": "cuttlefish-arm64",
+        "target": "wechat",
+        "package": "com.tencent.mm",
+        "sha256": "f2a725bc04302ad218a563533ae79356e66b64aa711b275bc919a8d432f7e15d",
+        "api": "33",
+        "location_enabled": false,
+        "terms_accepted": false,
+        "login_attempted": false,
+        "passed": false,
+        "last_completed_stage": "TARGET_LAUNCH_REQUESTED",
+        "import_success": true,
+        "package_info_present": true,
+        "signing_info_present": true,
+        "original_signer": true,
+        "visible_text": [],
+        "guest_pid": "",
+        "stage": "NOT_REACHED",
+        "error_class": "java.lang.AssertionError"
+      },
+      "owned_package_cleanup": {
+        "com.soozooq.tianwaitian.containerresearch.test": true,
+        "com.soozooq.tianwaitian.containerresearch": true
+      }
+    },
+    "douyin": {
+      "scope": "CVD_ARM64_ANONYMOUS_CONTAINER_STARTUP_ONLY_NOT_LOCATION_OR_VIVO",
+      "target": "douyin",
+      "passed": false,
+      "state": "CONTAINER_STARTUP_NOT_CONFIRMED_SEE_EVIDENCE",
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "location_enabled": false,
+      "environment_before_container": {
+        "uid": "2000",
+        "selinux": "Enforcing",
+        "boot": "1",
+        "system_pid": "653"
+      },
+      "environment_after_container": {
+        "system_pid": "653",
+        "boot": "1"
+      },
+      "observed": {
+        "scope": "CVD_ARM64_CONTAINER_STARTUP_ONLY_NOT_LOCATION_OR_PHYSICAL_VIVO",
+        "runtime": "cuttlefish-arm64",
+        "target": "douyin",
+        "package": "com.ss.android.ugc.aweme",
+        "sha256": "9fc10c40b81b8244e515f9588d381f43e6ed870e6d9bebf14754a5e309ba380a",
+        "api": "33",
+        "location_enabled": false,
+        "terms_accepted": false,
+        "login_attempted": false,
+        "passed": false,
+        "last_completed_stage": "TARGET_LAUNCH_REQUESTED",
+        "import_success": true,
+        "package_info_present": true,
+        "signing_info_present": true,
+        "original_signer": true,
+        "visible_text": [],
+        "guest_pid": "",
+        "stage": "NOT_REACHED",
+        "error_class": "java.lang.AssertionError"
+      },
+      "owned_package_cleanup": {
+        "com.soozooq.tianwaitian.containerresearch.test": true,
+        "com.soozooq.tianwaitian.containerresearch": true
+      }
+    }
+  },
+  "guest_failures": {
+    "wechat": [
+      {
+        "scope": "GUEST_PROCESS_NOT_SYSTEM_SERVER",
+        "kind": "JAVA_FATAL",
+        "thread": "wc_srvinit_10",
+        "cause": "WifiP2pService missing android.permission.ACCESS_WIFI_STATE"
+      },
+      {
+        "scope": "GUEST_PROCESS_NOT_SYSTEM_SERVER",
+        "kind": "JAVA_FATAL",
+        "thread": "[GT]ColdPool#8",
+        "cause": "NoClassDefFoundError org/apache/http/impl/client/DefaultHttpClient"
+      },
+      {
+        "scope": "GUEST_PUSH_PROCESS_NOT_SYSTEM_SERVER",
+        "kind": "JAVA_FATAL",
+        "cause": "CoreService PendingIntent getIntentSender attribution denied: virtual package is not the real host UID package"
+      }
+    ],
+    "douyin": {
+      "scope": "GUEST_PROCESS_NOT_SYSTEM_SERVER",
+      "kind": "NATIVE_SIGSEGV",
+      "thread": "Jit thread pool",
+      "top_frames": [
+        "art::FindOatMethodFor +156",
+        "art::ArtMethod::GetOatQuickMethodHeader +328",
+        "art::StackVisitor::WalkStack +408",
+        "art::jit::MarkCodeClosure::Run +172"
+      ],
+      "specific_component_cause_established": false,
+      "ordinary_post_ui_duration_matched_this_run": false,
+      "global_jit_or_watchdog_changed": false,
+      "xposed_config_default_enabled": false
+    }
+  },
+  "previous_fixes_actually_confirmed": {
+    "nonidle_original_wechat_welcome": true,
+    "both_original_signers_and_package_info": true
+  },
+  "terms_accepted": false,
+  "login_attempted": false,
+  "messages_sent": false,
+  "location_business_tested": false,
+  "wechat_send_and_live_location": "UNFULFILLED",
+  "douyin_wireless_and_overseas": "UNFULFILLED",
+  "fixed_framework_sources": {
+    "WifiP2pServiceImpl.java": {
+      "sha256": "d394b3031667107e8828aeba27c04b048337a362ec4b72cdaf86bb889c60eca7",
+      "url": "https://android.googlesource.com/platform/packages/modules/Wifi/+/b349d0e7ae0534c90425bbcba8a608aacdba17a4/service/java/com/android/server/wifi/p2p/WifiP2pServiceImpl.java"
+    },
+    "LoadedApk.java": {
+      "sha256": "393346bd31b2c2325eb726994aa38beaf2bbe1f34fd6309dcf87c83e67765382",
+      "url": "https://android.googlesource.com/platform/frameworks/base/+/e554ee0e1b19758e7023950731581a314a74cb7d/core/java/android/app/LoadedApk.java"
+    }
+  },
+  "next_candidate": {
+    "host_normal_permissions": [
+      "ACCESS_WIFI_STATE",
+      "CHANGE_WIFI_STATE"
+    ],
+    "http_legacy": "Declare optional framework library, preserve genuine SharedLibraryInfo and request it when binding the guest",
+    "pending_intent": "Cover getIntentSenderWithFeature with existing host-attributed handler",
+    "framework_attribution": "Use real host UID with host package, keep virtual UIDs inside the internal package model",
+    "own_guest_control": "Class loading and PendingIntent creation only, no send or location",
+    "douyin_observation": "Add bounded 300-second post-UI observation to both ordinary control and container; no component cause claim"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schema": "GOGOGO_OWNED_PRIVATE_SNAPSHOT_PREPARATION_V1",
+  "scope": "BUILD_AND_DRIVER_CHECKS_NOT_NEW_NATIVE_RUNTIME_OR_TARGET_BUSINESS",
+  "base_commit": "c5f3c76994ea344295546236db7ac977a44aad73",
+  "observed_failure": "native-owned-location-freshness-results.json",
+  "transport": "OWN_GUEST_ATOMIC_PRIVATE_FILE",
+  "change": "The independent owned consumer coalesces each main-loop turn into an AtomicFile snapshot and displays the same JSON. The controller reads only that owned guest file while real UI buttons still control public Android API calls.",
+  "no_expected_coordinates_sent_to_consumer": true,
+  "public_location_api_calls_unchanged": true,
+  "engine_patch_unchanged": true,
+  "new_permissions_or_dependencies": false,
+  "nonce_old_file_cleanup_sequence_and_monotonic_report_age_checked": true,
+  "report_and_original_six_sample_freshness_limit_seconds": 30,
+  "wait_limit_seconds_unchanged": 120,
+  "api_json_identity_mock_provider_a_b_stop_gnss_and_cancel_assertions_retained": true,
+  "partial_stages_are_not_final_success": true,
+  "drivers_reject_old_report_source_even_with_green_junit": true,
+  "consumer_static_checks_passed": true,
+  "host_static_checks_passed": true,
+  "build": {
+    "passed": true,
+    "seconds": 15
+  },
+  "controlled_python_tests": {
+    "count": 25,
+    "seconds": 0.429,
+    "passed": true
+  },
+  "corrected_runtime": "CI46_X86_64_FULL_A_B_STOP_CANCEL_PASS_3.309S; NATIVE_IN_PROGRESS",
+  "phone_experiment_or_update_requested": false,
+  "source_sha256": {
+    "location-consumer/src/main/java/com/soozooq/tianwaitian/locationconsumer/LocationActivity.java": "5a0a92ce0f26aaefc014666e04a18c57f0f695e951cc939200dedbc6b9ada6f6",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/GuestLocationInstrumentedTest.java": "26d6f92f7d392d73c74fb3e87fb7ac9ee152256535501cc13ec91ba5816ef80d",
+    "tools/cuttlefish_owned_location.py": "da46240330ce800ce48663b00aa84d57b34aaf9bf6e9d22cc8e8f5f449607581",
+    "tools/run-cloud-check.py": "43ea6fbde51428ebed64313813e4b97ca99b9831ffb8de2d2e19b13cbc5792bb",
+    "tests/test_cuttlefish_owned_location.py": "66548d74b1773fa895a5983e5bc8bada40fc6c35c105afa17017543abd81e153",
+    "patches/blackbox-api33-build.patch": "416e8dd4fd539ed1ac6b1011e50174e180b5c94bb5b12c90b8486af39c4055cc"
+  },
+  "subsequent_actual_result": "owned-private-snapshot-results.json"
+}

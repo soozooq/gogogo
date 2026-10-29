@@ -1,0 +1,190 @@
+{
+  "scope": "NATIVE_ARM_SYSTEM_AND_ORIGINAL_INSTALL_START_REQUEST_ONLY_NOT_CONTAINER_LOCATION_OR_VIVO",
+  "run_id": 40143188975,
+  "job_id": 121019810765,
+  "commit": "5e878412edf642401450dcf2698ca1d1d84944d8",
+  "tree": "d6d58111c846008245e6a553f0fb89b53278db50",
+  "artifact": {
+    "id": 12581307557,
+    "zip_sha256": "5d2ed07c3a8cbe86e571f311c1fd7eb882db645b8aba9942284d3c6aff0ab3dc",
+    "digest_verified": true,
+    "every_report_source_verified_against_commit": true,
+    "report_source_count": 7,
+    "additional_host_probe_source_verified": true
+  },
+  "system_boot_passed": true,
+  "properties": {
+    "ro.build.version.sdk": "33",
+    "ro.build.version.incremental": "16596636",
+    "ro.build.fingerprint": "generic/aosp_cf_arm64_phone/vsoc_arm64:13/TP1A.220624.019/16596636:userdebug/test-keys",
+    "ro.product.name": "aosp_cf_arm64_phone",
+    "ro.hardware": "cutf_cvm",
+    "ro.product.cpu.abi": "arm64-v8a",
+    "ro.product.cpu.abilist": "arm64-v8a,armeabi-v7a,armeabi",
+    "ro.dalvik.vm.native.bridge": "0",
+    "ro.hw_timeout_multiplier": "50",
+    "sys.boot_completed": "1"
+  },
+  "shell_uid": "2000",
+  "selinux": "Enforcing",
+  "qemu": {
+    "pid": 3373,
+    "binary": "/usr/bin/qemu-system-aarch64",
+    "sha256": "e19e11bd054ccf0f3cfcea8e0acdcc4288de6abd2ed6c30f743092c362eb2673",
+    "arguments_match_launch_record": true
+  },
+  "actual_assembly_cpu_flag": "--cpus=2",
+  "actual_assembly_memory_flag": "--memory_mb=3072",
+  "overall_passed": false,
+  "originals": {
+    "wechat": {
+      "scope": "ORIGINAL_INSTALLED_ANONYMOUS_UI_ONLY_NOT_CONTAINER_LOCATION_OR_VIVO",
+      "target": "wechat",
+      "package": "com.tencent.mm",
+      "apk_sha256": "f2a725bc04302ad218a563533ae79356e66b64aa711b275bc919a8d432f7e15d",
+      "passed": false,
+      "state": "STARTUP_UI_NOT_REACHED_WITHIN_BOUND_UNKNOWN_CAUSE",
+      "launch_requested": true,
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "location_business_tested": false,
+      "container_tested": false,
+      "user_storage_state_before_install": "RUNNING_UNLOCKED",
+      "installation": {
+        "phases": {
+          "STAGING_DIRECTORY": {
+            "seconds": 1.903,
+            "returncode": 0
+          },
+          "TRANSFER": {
+            "seconds": 74.827,
+            "returncode": 0
+          },
+          "REMOTE_SHA256": {
+            "seconds": 19.94,
+            "returncode": 0
+          },
+          "SESSION_CREATE": {
+            "seconds": 2.59,
+            "returncode": 0
+          },
+          "SESSION_WRITE": {
+            "seconds": 80.928,
+            "returncode": 0
+          },
+          "SESSION_COMMIT": {
+            "seconds": 757.125,
+            "returncode": 0
+          }
+        },
+        "commit_requested": true,
+        "commit_confirmed": true,
+        "phase": "SESSION_COMMIT",
+        "owned_session_id": "150436874",
+        "owned_staging_remove_returned": true
+      },
+      "owned_package_removed": true
+    },
+    "douyin": {
+      "scope": "ORIGINAL_INSTALLED_ANONYMOUS_UI_ONLY_NOT_CONTAINER_LOCATION_OR_VIVO",
+      "target": "douyin",
+      "package": "com.ss.android.ugc.aweme",
+      "apk_sha256": "9fc10c40b81b8244e515f9588d381f43e6ed870e6d9bebf14754a5e309ba380a",
+      "passed": false,
+      "state": "STARTUP_UI_NOT_REACHED_WITHIN_BOUND_UNKNOWN_CAUSE",
+      "launch_requested": true,
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "location_business_tested": false,
+      "container_tested": false,
+      "user_storage_state_before_install": "RUNNING_UNLOCKED",
+      "installation": {
+        "phases": {
+          "STAGING_DIRECTORY": {
+            "seconds": 0.786,
+            "returncode": 0
+          },
+          "TRANSFER": {
+            "seconds": 42.887,
+            "returncode": 0
+          },
+          "REMOTE_SHA256": {
+            "seconds": 17.309,
+            "returncode": 0
+          },
+          "SESSION_CREATE": {
+            "seconds": 1.294,
+            "returncode": 0
+          },
+          "SESSION_WRITE": {
+            "seconds": 20.507,
+            "returncode": 0
+          },
+          "SESSION_COMMIT": {
+            "seconds": 680.084,
+            "returncode": 0
+          }
+        },
+        "commit_requested": true,
+        "commit_confirmed": true,
+        "phase": "SESSION_COMMIT",
+        "owned_session_id": "1845231786",
+        "owned_staging_remove_returned": true
+      },
+      "owned_package_removed": false
+    }
+  },
+  "observations": {
+    "wechat": {
+      "ui_confirmed": false,
+      "observed_screen": "Black application area with Android status/navigation bars",
+      "uiautomator": "ERROR: null root node returned by UiTestAutomationBridge.",
+      "launcher_start_log_time": "10-25 00:14:27.818",
+      "welcome_activity_start_log_time": "10-25 00:16:38.703",
+      "welcome_activity_component": "com.tencent.mm/.plugin.account.ui.WelcomeActivity",
+      "activity_intent_is_not_rendered_ui_or_login_proof": true,
+      "old_observation_limit_seconds": 120
+    },
+    "douyin": {
+      "ui_confirmed": false,
+      "observed_screen": "Android boot animation",
+      "system_process_java_fatal_time": "10-25 00:30:51.661",
+      "fatal_thread": "FinalizerWatchdogDaemon",
+      "exception": "java.util.concurrent.TimeoutException: android.content.res.ApkAssets.finalize() timed out after 10 seconds",
+      "cleanup_receipt": "cmd: Can't find service: package",
+      "package_cleanup_not_confirmed": true,
+      "dex2oat_exit_signal_or_status": 9,
+      "dex2oat_failure_cause_not_established": true
+    }
+  },
+  "retained_reference_sources_sha256": {
+    "Daemons.java": "b8d1ae8f290ae852056adf0ab7bad5f5dd811d26785bdfe6ae204d73bb1dbdea",
+    "parsed_options.cc": "52f81136f05364c5122711762f92aa5a0bb2961c86f3ca977e90e57e0e224c20",
+    "runtime_options.def": "0df718be3700f67d31b492e20ae538e54387d5083899cdf05940799eb77279c6",
+    "AndroidRuntime.cpp": "e85c36ebe4f13dc0747d430f3d35755a77ba82be206b75776cbac8dec512c858"
+  },
+  "reference_source_revisions": {
+    "platform/libcore": "0d83ddd53700fd274a05d25f5b23b73a9eba1131",
+    "platform/art": "92edb112e6bfc60a846f752f70ce5ada4934be16",
+    "platform/frameworks/base": "e554ee0e1b19758e7023950731581a314a74cb7d"
+  },
+  "qemu_process_stopped": true,
+  "observed_whole_run_seconds": 3301.68,
+  "whole_run_seconds_is_not_boot_time": true,
+  "next_attempt_prepared_not_executed": {
+    "guest_cpus": 4,
+    "requires_measured_host_and_affinity_cpus": 4,
+    "memory_mb": 3072,
+    "original_and_cvd_ui_limit_seconds": 300,
+    "per_target_original_then_container_order": true,
+    "detect_system_process_fatal_or_pid_change": true,
+    "watchdogs_or_art_runtime_properties_changed": false
+  },
+  "container_arm64_runtime_passed": false,
+  "location_business_tested": false,
+  "terms_accepted": false,
+  "accounts_used": false,
+  "phone_candidate": false
+}

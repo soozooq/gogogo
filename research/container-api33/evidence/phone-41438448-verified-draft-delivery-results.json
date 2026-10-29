@@ -1,0 +1,91 @@
+{
+  "schema": "GOGOGO_PHONE_DELIVERY4_VERIFIED_DRAFT_V1",
+  "scope": "ACTUAL_CLOUD_DRAFT_DELIVERY_VERIFIED_NOT_PUBLICATION_OR_NATIVE_OR_TARGET_BUSINESS",
+  "delivery_run_id": 40425812277,
+  "delivery_job_id": 121931162683,
+  "delivery_commit": "bd8b3e429dc4aaf747c530a9489fb12bc7661ad9",
+  "runtime_commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
+  "conclusion": "success",
+  "artifacts": {
+    "phone": {
+      "id": 12699886415,
+      "sha256": "b21c3e9ede90e1fed8035e92a1a5219c9b54b83cab7108f1fa44895bc8eab33b"
+    },
+    "diagnostics": {
+      "id": 12700071077,
+      "sha256": "e89c1f4e80fa8f87252e82cd3c2a6a29e5c7b7614c093e34110406ae0d92e2e4"
+    }
+  },
+  "apks": {
+    "main": {
+      "package": "com.soozooq.gogogo.test",
+      "version_name": "2.4.33-container-preview",
+      "version_code": 2400101,
+      "bytes": 40408206,
+      "sha256": "9242b55ae66920d1e332abc2ca1f6869969c098a2355d32dd4072f914325854d",
+      "certificate_sha256": "6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081",
+      "signature_and_alignment_verified": true,
+      "debuggable": true,
+      "file": "Tianwaitian-2.4.33-container-preview-arm64.apk",
+      "asset_id": 679932149,
+      "server_digest_verified": true
+    },
+    "host": {
+      "package": "com.soozooq.tianwaitian.containerresearch",
+      "version_name": "0.2-preview",
+      "version_code": 2,
+      "bytes": 4585987,
+      "sha256": "513f8f98c73149043f553a6353e1d9af9eeabbcf0a48652c1763c27d73a19312",
+      "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+      "signature_and_alignment_verified": true,
+      "debuggable": true,
+      "file": "Tianwaitian-Original-Preview-41438448.apk",
+      "asset_id": 679932155,
+      "server_digest_verified": true
+    }
+  },
+  "main_checks": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0
+  },
+  "own_source_count": 59,
+  "same_own_signatures_and_11_materials_per_apk_verified": true,
+  "profile_matches_fixed_source": true,
+  "host_415_ci_non_signature_entries_equal": true,
+  "recipe_exact_bytes_recovered": true,
+  "flat_file_count": 6,
+  "draft": {
+    "id": 424904119,
+    "tag": "preview-2.4.33-container-41438448",
+    "target_commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
+    "draft": true,
+    "prerelease": true,
+    "assets_count": 2
+  },
+  "published": false,
+  "matching_native50": "PENDING_NOT_PASS",
+  "previous_native49": "STILL_RUNNING_NOT_CANCELLED",
+  "published_2_4_32_changed": false,
+  "private_key_uploaded": false,
+  "original_target_apks_distributed": false,
+  "phone_installed": "UNKNOWN",
+  "wechat_send_live_douyin_wireless_overseas_vivo": "NOT_VERIFIED",
+  "published_2_4_32_server_snapshot_verified": {
+    "id": 423917608,
+    "tag": "preview-2.4.32-container-e0811cf4",
+    "draft": false,
+    "target_commit": "e0811cf46726e3bae9fcb839312b9efb6b92ce9e",
+    "asset_digests": {
+      "Tianwaitian-2.4.32-container-preview-arm64.apk": "sha256:3ddd90ae7fcec31a00e61adfc6a9ca0e320a541d3b6e046ebcd70745aba2d87c",
+      "Tianwaitian-Original-Preview-e0811cf4.apk": "sha256:14cdb415150c540c465a7db4033c02f71059f5b03be1759deb7a87114f93422f"
+    }
+  },
+  "record_scope": "DELIVERY_TIME_DRAFT_SNAPSHOT_NOT_CURRENT_PUBLICATION_STATUS",
+  "current_publication_result": "phone-41438448-published-delivery-results.json",
+  "subsequent_matching_native_result": "native-preview-feedback-virtual-startup-pass-results.json"
+}

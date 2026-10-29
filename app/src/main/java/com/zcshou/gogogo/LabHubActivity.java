@@ -79,7 +79,7 @@ public final class LabHubActivity extends AppCompatActivity {
         resumed = true;
         if (readyReport != null && SystemClock.elapsedRealtime() - readyReportElapsed > 60_000L) {
             readyReport = null;
-            copyLogButton.setText("一键复制完整日志");
+            copyLogButton.setText("一键复制反馈");
             copyStatus.setText("点击会重新汇总当前状态，不用先运行实验。");
         }
         TianwaitianBottomNav.syncSelection(this, TianwaitianBottomNav.Tab.DIAGNOSTICS);
@@ -127,9 +127,9 @@ public final class LabHubActivity extends AppCompatActivity {
         feedback.addView(feedbackBody);
         feedbackBody.addView(GoGoUi.sectionTitle(this, "只需复制一次"), GoGoUi.matchWrap());
         feedbackBody.addView(GoGoUi.muted(this,
-                "自动汇总当前状态和已有记录。无需先做快检、选实验或填写表格。"), GoGoUi.matchWrap());
+                "自动整理当前状态，旧实验只保留存档索引。无需先做快检、选实验或填写表格。"), GoGoUi.matchWrap());
         feedbackBody.addView(GoGoUi.gap(this, 12));
-        copyLogButton = GoGoUi.primaryButton(this, "一键复制完整日志", v -> copyFeedbackLog());
+        copyLogButton = GoGoUi.primaryButton(this, "一键复制反馈", v -> copyFeedbackLog());
         feedbackBody.addView(copyLogButton, GoGoUi.matchWrap());
         feedbackBody.addView(GoGoUi.gap(this, 8));
         copyStatus = GoGoUi.muted(this, "复制后直接粘贴到对话。没有旧实验记录也可以使用。");
@@ -287,7 +287,7 @@ public final class LabHubActivity extends AppCompatActivity {
                     exporting = false;
                     copyLogButton.setEnabled(true);
                     if (result == null) {
-                        copyLogButton.setText("一键复制完整日志");
+                        copyLogButton.setText("一键复制反馈");
                         copyStatus.setText("整理未完成，请再点一次（" + error + "）");
                         return;
                     }
@@ -303,7 +303,7 @@ public final class LabHubActivity extends AppCompatActivity {
         } catch (RuntimeException rejected) {
             exporting = false;
             copyLogButton.setEnabled(true);
-            copyLogButton.setText("一键复制完整日志");
+            copyLogButton.setText("一键复制反馈");
             copyStatus.setText("暂时无法整理，请再点一次。");
         }
     }
@@ -312,7 +312,7 @@ public final class LabHubActivity extends AppCompatActivity {
         if (!resumed || !hasWindowFocus()) return;
         if (LabSupportLog.copyPrepared(this, readyReport)) {
             readyReport = null;
-            copyLogButton.setText("一键复制完整日志");
+            copyLogButton.setText("一键复制反馈");
             copyStatus.setText("已复制。直接粘贴到对话即可，不用再复制其他实验日志。");
         } else {
             copyLogButton.setText("重试复制已整理的日志");

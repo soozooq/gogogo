@@ -1,0 +1,11 @@
+// Reproducible candidate metadata override; run against the recorded source commit.
+gradle.beforeProject { project ->
+    if (project.path == ':app') {
+        project.pluginManager.withPlugin('com.android.application') {
+            project.extensions.getByName('androidComponents').finalizeDsl { android ->
+                android.defaultConfig.versionCode = 2400100
+                android.defaultConfig.versionName = '2.4.32-container-preview'
+            }
+        }
+    }
+}

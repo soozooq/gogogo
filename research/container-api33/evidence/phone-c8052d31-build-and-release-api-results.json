@@ -1,0 +1,82 @@
+{
+  "schema": "GOGOGO_PHONE9_ACTUAL_PACKAGES_VERIFIED_RELEASE_API403_NATIVE_PENDING_V1",
+  "scope": "ACTUAL_PHONE_PACKAGING_AND_OPTIONAL_DRAFT_FAILURE_NOT_NATIVE_OR_TARGET_SUCCESS",
+  "runtime_commit": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+  "delivery_commit": "4de425d27de2fa14fb3764ce1f463a4f9e8440bf",
+  "delivery_run_id": 40596941748,
+  "staging_job_id": 122515194094,
+  "staging_conclusion": "success",
+  "draft_attachment": "FAILED_OPTIONAL_HTTP403_RESOURCE_NOT_ACCESSIBLE_BY_INTEGRATION",
+  "api_failure": {
+    "operation": "stage",
+    "error": "CalledProcessError: Command '['gh', 'api', '--method', 'POST', 'repos/soozooq/gogogo/releases', '--input', '-']' returned non-zero exit status 1.",
+    "published_not_assumed": true,
+    "runtime_commit": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+    "qualification_run_id": 40595256036,
+    "api_details": [
+      "GitHub API POST releases: {\"message\":\"Resource not accessible by integration\",\"documentation_url\":\"https://docs.github.com/rest/releases/releases#create-a-release\",\"status\":\"403\"}\ngh: Resource not accessible by integration (HTTP 403)\n"
+    ]
+  },
+  "artifacts": {
+    "phone": {
+      "id": 12776327526,
+      "bytes": 26831512,
+      "sha256": "1a3f41bba0322c8c9009ac892e1a5a580e0139bb9e9fcca783d896ac88d7bbcf"
+    },
+    "diagnostics": {
+      "id": 12776882079,
+      "bytes": 2257,
+      "sha256": "2797e44f95ae5815c6686841d5a7580eb7a011990e09c27cf2478a2ff08aa472"
+    }
+  },
+  "apks": {
+    "main": {
+      "package": "com.soozooq.gogogo.test",
+      "version_name": "2.4.35-container-preview",
+      "version_code": 2400103,
+      "bytes": 40408202,
+      "sha256": "f17967946b8c2095d577f4469e32af72a3958b757073007c7186b085d9187ce4",
+      "certificate_sha256": "6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081",
+      "signature_and_alignment_verified": true,
+      "debuggable": true,
+      "file": "Tianwaitian-2.4.35-container-preview-arm64.apk"
+    },
+    "host": {
+      "package": "com.soozooq.tianwaitian.containerresearch",
+      "version_name": "0.4-preview",
+      "version_code": 4,
+      "bytes": 4594179,
+      "sha256": "4d1f072585c69e446bfb72f5cefa57ee6a221f557f5a44ed1e903576b1470b95",
+      "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+      "signature_and_alignment_verified": true,
+      "debuggable": true,
+      "file": "Tianwaitian-Original-Preview-c8052d31.apk"
+    }
+  },
+  "main_checks": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0
+  },
+  "profile_matches_runtime": true,
+  "host_415_non_signature_entries_match_same_run_ci": true,
+  "flat_files": 6,
+  "new_draft_release_exists": false,
+  "published": false,
+  "publisher_job_id": 122516449530,
+  "publisher_status": "IN_PROGRESS_WAITING_MATCHED_NATIVE_NOT_PASS",
+  "qualification_run_id": 40595256036,
+  "native_job_id": 122512447262,
+  "native_status": "IN_PROGRESS_NOT_PASS",
+  "mac_build": "SUCCESS_VERIFIED",
+  "linux_default": "SUCCESS_VERIFIED",
+  "conditional_qualified_download": "ONLY_CREATED_IF_ALL_FOUR_ARCHIVE_NATIVE_AND_PHONE_CHECKS_PASS_NOT_PRESENT_YET",
+  "future_qualified_artifact_name": "qualified-phone-preview-2.4.35-c8052d31-40596941748",
+  "old_public34_and_6625draft_assets_unchanged": true,
+  "private_key_included": false,
+  "target_phone_sdk_adoption": "NOT_VERIFIED"
+}

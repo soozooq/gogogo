@@ -87,29 +87,31 @@ public final class TianwaitianSearchActivity extends AppCompatActivity {
 
         LinearLayout heading = GoGoUi.row(this);
         heading.setGravity(Gravity.CENTER_VERTICAL);
-        MaterialButton back = GoGoUi.textButton(this, "‹", v -> finish());
-        back.setTextSize(23);
-        back.setContentDescription("返回地图首页");
+        MaterialButton back = GoGoUi.iconButton(this, R.drawable.ic_gogogo_back,
+                "返回地图首页", v -> finish());
         heading.addView(back, new LinearLayout.LayoutParams(
-                dp(43), ViewGroup.LayoutParams.WRAP_CONTENT));
+                dp(48), ViewGroup.LayoutParams.WRAP_CONTENT));
         LinearLayout headingText = new LinearLayout(this);
         headingText.setOrientation(LinearLayout.VERTICAL);
-        headingText.addView(GoGoUi.heroTitle(this, "搜索地点"), GoGoUi.matchWrap());
-        TextView subtitle = GoGoUi.muted(this, "离线城市 · 全球地名 · WGS-84 坐标");
+        TextView headingTitle = GoGoUi.heroTitle(this, "搜索地点");
+        headingTitle.setTextSize(24);
+        headingText.addView(headingTitle, GoGoUi.matchWrap());
+        TextView subtitle = GoGoUi.muted(this, "全球地点与坐标");
         subtitle.setTextSize(12);
         headingText.addView(subtitle, GoGoUi.matchWrap());
         heading.addView(headingText, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        MaterialButton service = GoGoUi.textButton(this, "服务", v -> serviceOptions());
-        service.setContentDescription("在线搜索服务设置及缓存");
+        MaterialButton service = GoGoUi.iconButton(this, R.drawable.twt_more,
+                "在线搜索服务设置及缓存", v -> serviceOptions());
         heading.addView(service, new LinearLayout.LayoutParams(
-                dp(69), ViewGroup.LayoutParams.WRAP_CONTENT));
+                dp(48), ViewGroup.LayoutParams.WRAP_CONTENT));
         root.addView(heading, GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 12));
 
         LinearLayout inputRow = GoGoUi.row(this);
         inputRow.setGravity(Gravity.CENTER_VERTICAL);
         queryField = new EditText(this);
+        queryField.setId(R.id.twt_search_query);
         queryField.setSingleLine(true);
         queryField.setTextSize(15);
         queryField.setHint("城市、街道、建筑或 98.5,16.7");
@@ -119,10 +121,10 @@ public final class TianwaitianSearchActivity extends AppCompatActivity {
         GoGoUi.styleInput(queryField);
         inputRow.addView(queryField, GoGoUi.weighted());
         GoGoUi.addHorizontalGap(this, inputRow, 5);
-        MaterialButton clear = GoGoUi.textButton(this, "×", v -> queryField.setText(""));
-        clear.setContentDescription("清空搜索词");
+        MaterialButton clear = GoGoUi.iconButton(this, R.drawable.ic_close,
+                "清空搜索词", v -> queryField.setText(""));
         inputRow.addView(clear, new LinearLayout.LayoutParams(
-                dp(46), ViewGroup.LayoutParams.WRAP_CONTENT));
+                dp(48), ViewGroup.LayoutParams.WRAP_CONTENT));
         root.addView(inputRow, GoGoUi.matchWrap());
 
         root.addView(GoGoUi.gap(this, 8));
@@ -132,7 +134,7 @@ public final class TianwaitianSearchActivity extends AppCompatActivity {
         root.addView(onlineButton, GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 6));
         TextView note = GoGoUi.muted(this,
-                "离线结果即时筛选；联网查询仅在点击按钮后发送关键词，不自动补全。");
+                "离线即时筛选，联网搜索由你发起。");
         note.setTextSize(11);
         root.addView(note, GoGoUi.matchWrap());
         root.addView(GoGoUi.gap(this, 8));
@@ -166,13 +168,13 @@ public final class TianwaitianSearchActivity extends AppCompatActivity {
 
         root.addView(GoGoUi.gap(this, 6));
         TextView attribution = GoGoUi.muted(this,
-                "搜索数据 © OpenStreetMap contributors · ODbL · 查看署名与许可");
+                "© OpenStreetMap 贡献者 · ODbL");
         attribution.setTextSize(11);
         attribution.setTextColor(GoGoUi.color(this, R.color.gogogo_primary_dark));
         attribution.setGravity(Gravity.CENTER);
         attribution.setOnClickListener(v -> startActivity(new Intent(
                 Intent.ACTION_VIEW, Uri.parse("https://www.openstreetmap.org/copyright"))));
-        attribution.setContentDescription("查看 OpenStreetMap 数据署名与许可");
+        attribution.setContentDescription("© OpenStreetMap contributors · ODbL，查看数据署名与许可");
         root.addView(attribution, GoGoUi.matchWrap());
         setContentView(root);
 
@@ -246,7 +248,7 @@ public final class TianwaitianSearchActivity extends AppCompatActivity {
                 shown++;
             }
         }
-        offlineLabel.setText("离线预设 · 匹配 " + total + " 个地点");
+        offlineLabel.setText("离线地点 · " + total);
         if (total == 0) {
             offlineResults.addView(GoGoUi.muted(this,
                     "本地预设中没有这个地点，可点击上方按钮联网搜索。"),

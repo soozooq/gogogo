@@ -1,0 +1,36 @@
+{
+  "schema": "GOGOGO_DOUYIN_INTERNAL_SAMPLE_BRANCH_REVIEW_V1",
+  "scope": "STATIC_BUNDLED_COM_LOC_SAMPLE_PROCESSING_NOT_TARGET_UI_OR_RUNTIME_ADOPTION",
+  "apk_sha256": "9fc10c40b81b8244e515f9588d381f43e6ed870e6d9bebf14754a5e309ba380a",
+  "independent_tool": "Android SDK apkanalyzer, selected two method bodies only",
+  "sdk_or_native_executed": false,
+  "reviewed_methods": [
+    {
+      "class": "com.loc.gd",
+      "method": "a(Landroid/location/Location;I)Z",
+      "mock_true_returns_filter_boolean": true,
+      "unmarked_sample_can_still_return_filter_true": true,
+      "additional_checks": [
+        "An extras integer must be positive to reach the later branch.",
+        "With zero integer argument, zero altitude/bearing/speed can also produce the filter boolean."
+      ],
+      "no_literals_exported": true
+    },
+    {
+      "class": "com.loc.eu$b",
+      "method": "b()V",
+      "helper_true_returns_before_later_sample_packaging": true,
+      "remaining_mock_read_is_written_to_internal_sample_field": true
+    }
+  ],
+  "raw_sanitized_analysis_sha256": "6a625d899aff06dce5e8ac8de3f4ff848f3d5a7f841c6f67c756d81810820766",
+  "changing_douyin_mock_presentation_or_quality_fields_in_this_change": false,
+  "new_phone_experiment_required": false,
+  "limits": [
+    "The caller is one internal sample-processing path, not proven to be the user-facing location-result path.",
+    "Runtime reachability, active provider and app options remain unknown.",
+    "This is not a proof that the user old failure was caused by this helper.",
+    "No satellite or motion values are invented as a workaround; current sample origin remains explicit.",
+    "Static analysis and new passive consumer counters do not establish SDK acceptance."
+  ]
+}

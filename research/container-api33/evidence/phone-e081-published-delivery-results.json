@@ -1,0 +1,148 @@
+{
+  "schema": "GOGOGO_PHONE_DELIVERY3_VERIFIED_RESULTS_V1",
+  "scope": "ACTUAL_CI_DELIVERY_AND_TWO_OWN_APK_INTEGRITY_NOT_PHYSICAL_PHONE_OR_TARGET_LOCATION_BUSINESS",
+  "delivery_run_id": 40360448252,
+  "delivery_commit": "ecdec310a71e9c2fdc634b15fa7a9d97bae18120",
+  "runtime_source_commit": "e0811cf46726e3bae9fcb839312b9efb6b92ce9e",
+  "artifact_api_digests": {
+    "phone": {
+      "id": 12668286048,
+      "sha256": "15d6cefac917e9327ab422fee32f521b93a843e69efd9b4c22de1c0360298f57"
+    },
+    "diagnostics": {
+      "id": 12668945022,
+      "sha256": "1b4891df0999bc883bffb6f58a19fa9f4f2600888830ea90d7f1b0676b2128d3"
+    }
+  },
+  "both_api_archive_digests_safe_zip_and_six_file_flat_set_verified": true,
+  "manifest": {
+    "schema": "GOGOGO_CI_PHONE_PREVIEW_STAGING_V1",
+    "source_commit": "e0811cf46726e3bae9fcb839312b9efb6b92ce9e",
+    "delivery_run_id": 40360448252,
+    "apks": {
+      "main": {
+        "package": "com.soozooq.gogogo.test",
+        "version_name": "2.4.32-container-preview",
+        "version_code": 2400100,
+        "bytes": 40408202,
+        "sha256": "3ddd90ae7fcec31a00e61adfc6a9ca0e320a541d3b6e046ebcd70745aba2d87c",
+        "certificate_sha256": "6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081",
+        "signature_and_alignment_verified": true,
+        "debuggable": true,
+        "file": "Tianwaitian-2.4.32-container-preview-arm64.apk"
+      },
+      "host": {
+        "package": "com.soozooq.tianwaitian.containerresearch",
+        "version_name": "0.1-research",
+        "version_code": 1,
+        "bytes": 4581891,
+        "sha256": "14cdb415150c540c465a7db4033c02f71059f5b03be1759deb7a87114f93422f",
+        "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+        "signature_and_alignment_verified": true,
+        "debuggable": true,
+        "file": "Tianwaitian-Original-Preview-e0811cf4.apk"
+      }
+    },
+    "metadata_profile_sha256": "00ee9ae07b12d9c7acc42c9b2952982d7ae439aeb9e174ccf0ba7395d3d27ca8",
+    "main_checks": {
+      "junit": {
+        "tests": 447,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "lint_error_fatal_count": 0
+    },
+    "host_original_ci_run": 40320078192,
+    "host_ci_non_signature_entries_equal": 415,
+    "private_key_used_or_included": false,
+    "original_target_apks_included": false,
+    "native_gate": "NOT_CHECKED_BY_THIS_DELIVERY_JOB",
+    "phone_and_target_business": "NOT_VERIFIED",
+    "published": false
+  },
+  "release_id": 423917608,
+  "release_tag": "preview-2.4.32-container-e0811cf4",
+  "release_assets": {
+    "main": {
+      "asset_id": 678778440,
+      "server_digest": "sha256:3ddd90ae7fcec31a00e61adfc6a9ca0e320a541d3b6e046ebcd70745aba2d87c",
+      "package": "com.soozooq.gogogo.test",
+      "version_name": "2.4.32-container-preview",
+      "version_code": 2400100,
+      "bytes": 40408202,
+      "sha256": "3ddd90ae7fcec31a00e61adfc6a9ca0e320a541d3b6e046ebcd70745aba2d87c",
+      "certificate_sha256": "6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081",
+      "signature_and_alignment_verified": true,
+      "debuggable": true
+    },
+    "host": {
+      "asset_id": 678778439,
+      "server_digest": "sha256:14cdb415150c540c465a7db4033c02f71059f5b03be1759deb7a87114f93422f",
+      "package": "com.soozooq.tianwaitian.containerresearch",
+      "version_name": "0.1-research",
+      "version_code": 1,
+      "bytes": 4581891,
+      "sha256": "14cdb415150c540c465a7db4033c02f71059f5b03be1759deb7a87114f93422f",
+      "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+      "signature_and_alignment_verified": true,
+      "debuggable": true
+    }
+  },
+  "actual_server_asset_digests_equal_verified_archive_apks": true,
+  "local_signature_alignment_package_version_independently_verified": true,
+  "all_415_ci_host_non_signature_entries_equal": true,
+  "matching_native48_four_archives_and_fixed_source_verified_passed": true,
+  "matching_native_result": "native-phone-transaction-name-pass-results.json",
+  "private_signing_key_not_used_by_ci_or_transferred": true,
+  "original_target_apks_not_included": true,
+  "release_is_draft_at_verification": true,
+  "published": true,
+  "wechat_douyin_and_phone": "UNVERIFIED",
+  "publication": {
+    "id": 423917608,
+    "tag_name": "preview-2.4.32-container-e0811cf4",
+    "target_commitish": "e0811cf46726e3bae9fcb839312b9efb6b92ce9e",
+    "draft": false,
+    "prerelease": true,
+    "published_at": "2026-10-26T16:47:07Z",
+    "html_url": "https://github.com/soozooq/gogogo/releases/tag/preview-2.4.32-container-e0811cf4",
+    "tag_resolves_to_runtime_source_commit": true,
+    "repository_public": true,
+    "release_body_sha256": "bff4e3a12b02283fb52331ab9a49a60a3aea0d0ee2420dd8670264c618c3840d",
+    "assets": [
+      {
+        "id": 678778440,
+        "name": "Tianwaitian-2.4.32-container-preview-arm64.apk",
+        "size": 40408202,
+        "digest": "sha256:3ddd90ae7fcec31a00e61adfc6a9ca0e320a541d3b6e046ebcd70745aba2d87c",
+        "state": "uploaded",
+        "browser_download_url": "https://github.com/soozooq/gogogo/releases/download/preview-2.4.32-container-e0811cf4/Tianwaitian-2.4.32-container-preview-arm64.apk"
+      },
+      {
+        "id": 678778439,
+        "name": "Tianwaitian-Original-Preview-e0811cf4.apk",
+        "size": 4581891,
+        "digest": "sha256:14cdb415150c540c465a7db4033c02f71059f5b03be1759deb7a87114f93422f",
+        "state": "uploaded",
+        "browser_download_url": "https://github.com/soozooq/gogogo/releases/download/preview-2.4.32-container-e0811cf4/Tianwaitian-Original-Preview-e0811cf4.apk"
+      }
+    ]
+  },
+  "staging_manifest_scope": "HISTORICAL_STAGING_SNAPSHOT_BEFORE_PUBLICATION",
+  "public_download_checks": {
+    "main": {
+      "http_status": 200,
+      "content_type": "application/vnd.android.package-archive",
+      "anonymous_head_redirects_followed": true
+    },
+    "host": {
+      "http_status": 200,
+      "content_type": "application/vnd.android.package-archive",
+      "anonymous_head_redirects_followed": true
+    }
+  },
+  "publication_recorded_at_utc": "2026-10-26T16:52:47.201131+00:00",
+  "phone_installed_version": "UNKNOWN_NOT_READ_FROM_USER_PHONE",
+  "target_location_business": "UNVERIFIED_USER_REPORTED_FAILURE_NOT_CLOSED"
+}

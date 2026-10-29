@@ -1,0 +1,211 @@
+{
+  "schema": "GOGOGO_CUTTLEFISH_ORIGINAL_UI_AND_PACKAGE_IDENTITY_LIMIT_V1",
+  "scope": "ARM64_ANONYMOUS_STARTUP_ONLY_NOT_LOCATION_BUSINESS_OR_PHYSICAL_VIVO",
+  "run_id": 40149216340,
+  "job_id": 121038270558,
+  "commit": "7a2eaf518367e579c5813fe14d9601a1a38103c8",
+  "artifact": {
+    "id": 12582758401,
+    "sha256": "c7dac1eb7a49bff2812c599fc7063a1cbf2f07212221aac3482bcd863611df16",
+    "digest_verified": true,
+    "all_report_sources_verified_against_commit": 8
+  },
+  "system": {
+    "qualified": true,
+    "properties": {
+      "ro.build.version.sdk": "33",
+      "ro.build.version.incremental": "16596636",
+      "ro.build.fingerprint": "generic/aosp_cf_arm64_phone/vsoc_arm64:13/TP1A.220624.019/16596636:userdebug/test-keys",
+      "ro.product.name": "aosp_cf_arm64_phone",
+      "ro.hardware": "cutf_cvm",
+      "ro.product.cpu.abi": "arm64-v8a",
+      "ro.product.cpu.abilist": "arm64-v8a,armeabi-v7a,armeabi",
+      "ro.dalvik.vm.native.bridge": "0",
+      "ro.hw_timeout_multiplier": "50",
+      "sys.boot_completed": "1"
+    },
+    "kernel": "aarch64",
+    "uid": "2000",
+    "selinux": "Enforcing",
+    "actual_cpu_online": "0-3",
+    "system_server_pid_during_all_controls": "651",
+    "qemu_live_identity_verified": true,
+    "qemu_stopped": true,
+    "whole_run_seconds_not_boot_time": 2847.564,
+    "previous_finalizer_failure_observed_this_run": false,
+    "capacity_change_proven_causal_fix": false
+  },
+  "ordinary_originals": {
+    "wechat": {
+      "raw_state": "STARTUP_UI_NOT_REACHED_WITHIN_BOUND_UNKNOWN_CAUSE",
+      "raw_passed": false,
+      "installation_phases": {
+        "STAGING_DIRECTORY": {
+          "seconds": 1.394,
+          "returncode": 0
+        },
+        "TRANSFER": {
+          "seconds": 53.331,
+          "returncode": 0
+        },
+        "REMOTE_SHA256": {
+          "seconds": 10.386,
+          "returncode": 0
+        },
+        "SESSION_CREATE": {
+          "seconds": 2.029,
+          "returncode": 0
+        },
+        "SESSION_WRITE": {
+          "seconds": 49.106,
+          "returncode": 0
+        },
+        "SESSION_COMMIT": {
+          "seconds": 391.443,
+          "returncode": 0
+        }
+      },
+      "cleanup_confirmed": true,
+      "system_process_checkpoints": {
+        "BEFORE_INSTALL": "651",
+        "AFTER_INSTALL": "651",
+        "DURING_UI_WAIT": "651"
+      },
+      "screen_sha256": "0705df46c43f1a3d431b09f2c75cc853f5258c1a674e6618ac3f04d83f77bc5d",
+      "visible_text": [],
+      "visual_review": {
+        "welcome_visible": true,
+        "visible_labels": [
+          "Log In",
+          "Sign Up"
+        ],
+        "method": "ASSISTANT_VISUAL_INSPECTION_OF_RETAINED_SCREENSHOT",
+        "raw_text_gate_rewritten": false
+      },
+      "cli_error": "ERROR: could not get idle state."
+    },
+    "douyin": {
+      "raw_state": "PRIVACY_WITHOUT_ACCEPTANCE",
+      "raw_passed": true,
+      "installation_phases": {
+        "STAGING_DIRECTORY": {
+          "seconds": 0.745,
+          "returncode": 0
+        },
+        "TRANSFER": {
+          "seconds": 36.509,
+          "returncode": 0
+        },
+        "REMOTE_SHA256": {
+          "seconds": 9.519,
+          "returncode": 0
+        },
+        "SESSION_CREATE": {
+          "seconds": 1.097,
+          "returncode": 0
+        },
+        "SESSION_WRITE": {
+          "seconds": 14.213,
+          "returncode": 0
+        },
+        "SESSION_COMMIT": {
+          "seconds": 480.764,
+          "returncode": 0
+        }
+      },
+      "cleanup_confirmed": true,
+      "system_process_checkpoints": {
+        "BEFORE_INSTALL": "651",
+        "AFTER_INSTALL": "651",
+        "DURING_UI_WAIT": "651",
+        "AFTER_UI": "651"
+      },
+      "screen_sha256": "837b0e4b57cd051a8ec554d8d6ee94227ae2cd7b4eebfbf83ee5ff1d3c5dd295",
+      "visible_text": [
+        "个人信息保护指引",
+        "欢迎使用抖音！我们将通过《用户服务协议》与《基础服务数据处理规则》帮助你了解我们为你提供的基础服务，及保障该服务正常运行所必需的信息。\n根据《常见类型移动互联网应用程序必要个人信息范围规定》，抖音为短视频类App，基本功能为“不超过一定时长的视频搜索、播放”。我们在该基本功能基础上结合用户日常使用情况，提供“基础服务”，点击下方“同意”按钮仅代表你同意使用本产品的基础服务，并同意我们基于提供该等服务收集、处理必要的个人信息及数据。\n为了向你提供更丰富优质的服务，我们在基础服务之外为你提供购买商品和服务等扩展服务。针对扩展服务所需的个人信息收集及处理，我们会在你使用具体服务时获取你的相应同意；如果你拒绝提供，你可能无法使用相应的扩展服务，但不影响你使用我们的基础服务。我们通过《隐私政策》帮助你全面了解我们的服务及收集、处理个人信息的详细情况。",
+        "不同意",
+        "同意"
+      ]
+    }
+  },
+  "container_targets": {
+    "wechat": {
+      "passed": false,
+      "state": "SKIPPED_ORIGINAL_SYSTEM_CONTROL_NOT_CONFIRMED"
+    },
+    "douyin": {
+      "scope": "CVD_ARM64_ANONYMOUS_CONTAINER_STARTUP_ONLY_NOT_LOCATION_OR_VIVO",
+      "target": "douyin",
+      "passed": false,
+      "state": "CONTAINER_STARTUP_NOT_CONFIRMED_SEE_EVIDENCE",
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "location_enabled": false,
+      "environment_before_container": {
+        "uid": "2000",
+        "selinux": "Enforcing",
+        "boot": "1",
+        "system_pid": "651"
+      },
+      "environment_after_container": {
+        "system_pid": "651",
+        "boot": "1"
+      },
+      "observed": {
+        "scope": "CVD_ARM64_CONTAINER_STARTUP_ONLY_NOT_LOCATION_OR_PHYSICAL_VIVO",
+        "runtime": "cuttlefish-arm64",
+        "target": "douyin",
+        "package": "com.ss.android.ugc.aweme",
+        "sha256": "9fc10c40b81b8244e515f9588d381f43e6ed870e6d9bebf14754a5e309ba380a",
+        "api": "33",
+        "location_enabled": false,
+        "terms_accepted": false,
+        "login_attempted": false,
+        "passed": false,
+        "import_success": true,
+        "visible_text": []
+      },
+      "owned_package_cleanup": {
+        "com.soozooq.tianwaitian.containerresearch.test": true,
+        "com.soozooq.tianwaitian.containerresearch": true
+      }
+    }
+  },
+  "package_identity_failure": {
+    "target": "douyin",
+    "virtual_import_succeeded": true,
+    "junit_seconds": 310.816,
+    "assertion_file": "OfficialTargetStartupInstrumentedTest.java",
+    "assertion_line": 135,
+    "raw_assertion_distinguishes_package_info_from_signing_info_null": false,
+    "target_launch_reached": false,
+    "target_app_crash_proven": false,
+    "fixed_build_framework_source": {
+      "PackageManager": {
+        "url": "https://android.googlesource.com/platform/frameworks/base/+/e554ee0e1b19758e7023950731581a314a74cb7d/core/java/android/content/pm/PackageManager.java",
+        "sha256": "6296a6b26bd545bea9490ad31758b671254879d36727ff1314e5f4e9e7112ce2"
+      },
+      "PackageParser": {
+        "url": "https://android.googlesource.com/platform/frameworks/base/+/e554ee0e1b19758e7023950731581a314a74cb7d/core/java/android/content/pm/PackageParser.java",
+        "sha256": "a29b98edbb43f45da9de2046bb44f7aa83c8813f6a4652c407916db2945b24e8"
+      }
+    },
+    "source_finding": "This pinned PackageManager archive method collects certificates only for GET_SIGNATURES. PackageParser returns null SigningInfo while signing details are UNKNOWN.",
+    "candidate_change": "Request GET_SIGNATURES together with GET_SIGNING_CERTIFICATES internally, with verification enabled. Keep outward fields dependent on caller flags; log exception type; record stage and null fields separately.",
+    "fixed_arm64_runtime_result": "NOT_YET_RUN"
+  },
+  "next_ui_capture": {
+    "candidate": "Read current Accessibility nodes without waiting for idle, with own instrumentation targeting the own test APK plain Application. Verify target package, scope, transcript and visible stage; uninstall both own packages before container control.",
+    "old_cli_fallback_preserved_when_no_own_pair": true
+  },
+  "raw_overall_state": "ORIGINAL_OR_CONTAINER_STARTUP_NOT_CONFIRMED",
+  "raw_overall_passed": false,
+  "terms_accepted": false,
+  "login_attempted": false,
+  "messages_sent": false,
+  "location_business_tested": false,
+  "wechat_send_and_live_location": "UNFULFILLED",
+  "douyin_wireless_and_overseas": "UNFULFILLED"
+}

@@ -1,0 +1,182 @@
+{
+  "schema": "GOGOGO_NATIVE56_WECHAT_VIRTUAL_RESTART_FAILURE_V1",
+  "scope": "ACTUAL_FAILED_NATIVE_TARGET_STARTUP_WITH_SEPARATE_PASSED_OWN_CONTRACTS_NOT_TARGET_LOCATION_OR_PHONE",
+  "commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",
+  "run_id": 40555343592,
+  "job_id": 122374016460,
+  "conclusion": "failure",
+  "engine_patch_sha256": "420b83998686b0f25cf323bfd47bd5391245d9f323736e41473d4a3216b9f408",
+  "artifacts": {
+    "own": {
+      "id": 12757735984,
+      "sha256": "a1fbfa61b7a0d6c4c017effca410e51d0288c33918e1b7c22efcc09502b57f4c",
+      "verified": true
+    },
+    "linux": {
+      "id": 12757666580,
+      "sha256": "dc4aaa6f8a71a7b2b01dcf0dcefba3edcf7c3a97431136661220d1b43c1d49c0",
+      "verified": true
+    },
+    "native": {
+      "id": 12767035081,
+      "sha256": "87b939d7301b570118c5c4f73e13489e4fba2554502691f10befafee49d96952",
+      "verified": true
+    }
+  },
+  "three_api_archives_sources_signatures_materials_verified": true,
+  "mac_archive_available": false,
+  "native_source_count_verified": 9,
+  "own_source_count_verified": 59,
+  "wechat": {
+    "passed": false,
+    "junit_seconds": 734.287,
+    "closed_anonymous_ui": {
+      "passed": true,
+      "stage": "WELCOME_WITHOUT_LOGIN",
+      "guest_pid": "5931",
+      "input_pattern": 0
+    },
+    "virtual_startup": {
+      "passed": false,
+      "synthetic_input_only": true,
+      "target_location_business_tested": false,
+      "previous_main_pid": 5931,
+      "returned_to_host_before_stop": true,
+      "previous_main_absent": true,
+      "input_pattern": 2,
+      "stage": "NOT_REACHED",
+      "main_pid": 0,
+      "main_uid": 10097
+    },
+    "last_completed_stage": "VIRTUAL_TARGET_LAUNCH_REQUESTED",
+    "failure_assertion": "Anonymous UI must also work with synthetic input; not SDK location adoption",
+    "final_visible_screen": "OWN_PREVIEW_DEFAULT_GPSTEST_PAGE",
+    "captured_crash_log_bytes": 0,
+    "framework_dead_object_warnings_observed": true,
+    "before_cleanup_process_snapshot": "NOT_RECORDED_OLD_DIAGNOSTICS_ONLY_AFTER_CLEANUP",
+    "cause": "NOT_PROVEN_NO_LATE_CALLBACK_TRACE_OR_PRE_CLEANUP_ROLE_SNAPSHOT"
+  },
+  "douyin": {
+    "passed": true,
+    "closed_main_pid": 9841,
+    "virtual_main_pid": 11986,
+    "real_uid": 10102,
+    "closed_300s_observation": {
+      "requested_seconds": 300,
+      "observed_ms": 300635,
+      "initial_target_pid": "9841 10504",
+      "last_target_pid": "9841",
+      "identity_basis": "CORE_REGISTERED_MAIN_PROCESS_AND_ACTUAL_ACTIVITY_MANAGER_PID_UID",
+      "main_pid": 9841,
+      "main_uid": 10102,
+      "initial_registered_processes": [
+        {
+          "pid": 9841,
+          "uid": 10102,
+          "process_name": "com.ss.android.ugc.aweme"
+        }
+      ],
+      "last_registered_processes": [
+        {
+          "pid": 9841,
+          "uid": 10102,
+          "process_name": "com.ss.android.ugc.aweme"
+        }
+      ],
+      "same_name_pid_set_changed": true,
+      "passed": true
+    },
+    "location_business_tested": false
+  },
+  "ordinary_baselines": {
+    "wechat": {
+      "passed": true,
+      "state": "WELCOME_WITHOUT_LOGIN",
+      "main_identity_observation": null
+    },
+    "douyin": {
+      "passed": true,
+      "state": "PRIVACY_WITHOUT_ACCEPTANCE",
+      "main_identity_observation": {
+        "requested_seconds": 300,
+        "first_ui_stage": "PRIVACY_WITHOUT_ACCEPTANCE",
+        "initial_target_pid": "7440",
+        "passed": true,
+        "observed_seconds": 304.187,
+        "identity_scope": "AMS_REGISTERED_MAIN_AND_KERNEL_PID_UID_NOT_PIDOF_SET",
+        "initial_main_identity": {
+          "phase": "AT_UI",
+          "expected_uid": 10099,
+          "identity_scope": "AMS_REGISTERED_MAIN_AND_KERNEL_PID_UID_NOT_PIDOF_SET",
+          "pidof_candidates": [
+            7440
+          ],
+          "ams_record_headers": [
+            "*APP* UID 10099 ProcessRecord{1e75cc7 7440:com.ss.android.ugc.aweme/u0a99}"
+          ],
+          "pid": 7440,
+          "uid": 10099,
+          "confirmed": true
+        },
+        "initial_target_uid": 10099,
+        "last_target_pid": "7440",
+        "last_target_uid": 10099
+      }
+    }
+  },
+  "owned_contracts": {
+    "all_three_cases_passed": true,
+    "framework_seconds": 14.453,
+    "location_seconds": 45.871,
+    "seven_methods_seconds": 6.429,
+    "seven_successful_method_names": [
+      "continuousFrameworkBatchCallbacksStopAtMaxUpdatesAndUnregister",
+      "unreadableModeDoesNotDelegateLastOrCurrentAndClosedModeRecovers",
+      "lastAndCurrentUseFrameworkCallbackAndFreshMarkedSamples",
+      "passiveRequestsForwardSyntheticGpsOriginAndKeepSeparateCounters",
+      "durationAndDisablingStopFutureDeliveries",
+      "wechatPresentationKeepsSyntheticOriginAcrossLastCurrentAndStreams",
+      "cancellationBeforeQueuedDeliverySuppressesCallback"
+    ],
+    "real_guest_nine_paths_passed": true,
+    "host_pid": 12874,
+    "guest_pid": 12948,
+    "maximum_sample_age_ms": 1742.187696,
+    "passive_source_gps_generic_mock_and_synthetic_preserved": true,
+    "consumer_delivery": {
+      "last_preparation_caller_pid": 12948,
+      "cache_gps_prepared": 2,
+      "cache_passive_prepared": 2,
+      "current_network_prepared": 2,
+      "stream_gps_transaction_returned": 21,
+      "last_event_age_ms": 4843,
+      "stream_network_registered": 1,
+      "current_passive_prepared": 2,
+      "stream_network_transaction_returned": 22,
+      "maximum_profiles": 16,
+      "stream_passive_transaction_returned": 22,
+      "present": true,
+      "last_stream_mock": true,
+      "scope": "CORE_MEMORY_VIRTUAL_PREPARATION_AND_BINDER_SEND_NOT_SDK_ADOPTION",
+      "stream_passive_registered": 1,
+      "current_gps_prepared": 2,
+      "stream_gps_registered": 1,
+      "first_event_elapsed_ms": 4241085,
+      "last_stream_synthetic": true,
+      "last_event_elapsed_ms": 4247845,
+      "last_stream_receiver_pid": 12948,
+      "cache_network_prepared": 2
+    },
+    "cancelled_callbacks": 0
+  },
+  "system_server_pid_before_and_after": "643",
+  "vm_stopped": true,
+  "owned_cleanup_passed": true,
+  "whole_observed_seconds_not_startup_time": 4498.523,
+  "mac_retry_posted": false,
+  "phone_release_allowed": false,
+  "old_public34_and_draft_unchanged": true,
+  "phone_and_target_sdk_adoption": "NOT_VERIFIED",
+  "verifier_sha256": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
+  "inputs_manifest_sha256": "58823bb7434ca9375207de3deff34b068e702217328eaaccfcfa062d8c22b196"
+}

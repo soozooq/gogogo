@@ -1,0 +1,52 @@
+{
+  "schema": "GOGOGO_PHONE9_REUSE_AND_DOWNLOAD_MEDIA_RECOVERY_PREPARATION_V1",
+  "scope": "CONTROLLER_ONLY_REPAIR_AND_LOCAL_RECORDED_API_REPLAY_NOT_NEW_CLOUD_DELIVERY",
+  "base_commit": "77d7abbb481018cac2e8cbe407f0c51a3811c15e",
+  "runtime_commit": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+  "native57_actual_result": "native-retired-process-owner-pass-results.json",
+  "failed_phone9_result": "phone9-publication-download-failure-results.json",
+  "download_fix": "Use the normal GitHub API media type for Actions artifact ZIP redirects; octet-stream only for release asset download.",
+  "reuse_phone_build": {
+    "runtime_commit": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+    "run_id": 40596941748,
+    "commit": "4de425d27de2fa14fb3764ce1f463a4f9e8440bf",
+    "stage_job_id": 122515194094,
+    "artifact_id": 12776327526,
+    "artifact_bytes": 26831512,
+    "artifact_sha256": "1a3f41bba0322c8c9009ac892e1a5a580e0139bb9e9fcca783d896ac88d7bbcf"
+  },
+  "all_four_actual_archives_frozen": true,
+  "new_apk_build_needed": false,
+  "new_native_run_needed": false,
+  "all_source_archive_signature_native_and_phone_gates_retained": true,
+  "fallback": "Only an exact HTTP403 Resource not accessible by integration from release-creation POST may end successfully with an already fully qualified artifact; published remains false.",
+  "other_failures_not_promoted_to_publication_or_qualification": true,
+  "qualification_and_execution_provenance_separate": true,
+  "unit_and_signature_checks": 17,
+  "actual_workflow_policy_snippet_executed": true,
+  "local_replay": {
+    "schema": "GOGOGO_LOCAL_RECORDED_API_DELIVERY_REPLAY_V1",
+    "scope": "LOCAL_RECORDED_API_WITH_REAL_FOUR_ARCHIVE_SIGNATURE_NATIVE_AND_PHONE_CHECKS_NOT_REMOTE_PUBLICATION",
+    "runtime_commit": "c8052d318bed3cf9c0e37ddc864abea4cc74c816",
+    "qualification_run_id": 40595256036,
+    "package_build_run_id": 40596941748,
+    "simulated_release_post_count": 1,
+    "all_actual_archives_native7_nine_paths_and_phone_checks_executed": true,
+    "qualified_files_local": 8,
+    "release_refusal_from_actual_phone9_record": true,
+    "remote_mutations": false,
+    "cloud_recovery_workflow_executed": false,
+    "published": false
+  },
+  "cloud_recovery_job": "NOT_STARTED_AT_PREPARATION",
+  "new_public_release": false,
+  "new_qualified_server_artifact": "NOT_CREATED_AT_PREPARATION",
+  "new_phone_experiments_or_permissions": false,
+  "actual_target_sdk_account_location_or_vivo": "NOT_VERIFIED",
+  "source_sha256": {
+    ".github/workflows/phone-preview-draft.yml": "b4fe8e758d038955f1d7856c4024bac5996b3cbb4ceb934b00ecf63aca8456b8",
+    "ci/preview_release.py": "36e2c4dd5de5d5bc687696789af223714242927c3d54a40c0e2a3a6461de48ca",
+    "ci/test_preview_release.py": "9b5ed7d335291dcce563ac84053e88416dcf150f850fbf9d35cc3f3f28f3ff4a",
+    "ci/release-qualifications/2.4.35.json": "434473559d98bb456d66a51a6d36aa51399f34d1a149cf990207d1f6ffc96cfa"
+  }
+}

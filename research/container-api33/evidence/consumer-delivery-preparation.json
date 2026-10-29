@@ -1,0 +1,150 @@
+{
+  "schema": "GOGOGO_PASSIVE_CONSUMER_DELIVERY_PREPARATION_V1",
+  "scope": "IMPLEMENTED_FIXED_CI53_LINUX_VERIFIED_MAC_AND_MATCHED_NATIVE_PENDING_NOT_SDK_ADOPTION",
+  "base_research_commit": "48d94be04aef0188d856c73e35a82c564b833054",
+  "prior_published_runtime": "a26d14a5b9e2b7dcfe1dc98874f07440be4b9113",
+  "prior_public_release": "preview-2.4.34-container-a26d14a5",
+  "published_2_4_34_unchanged": true,
+  "motivation": "Configured presentation is not evidence that a target consumer requested or was sent any sample. Observe existing virtual API usage without new phone experiments.",
+  "counter_semantics": {
+    "cache": "Virtual sample prepared for an actual consumer read, not a host configuration read.",
+    "current": "Virtual sample prepared for a non-cancelled queued current request, not callback acceptance.",
+    "stream_registered": "Virtual listener accepted for scheduling.",
+    "stream_returned": "The framework listener Binder call returned; this may be a queued one-way transaction, not SDK acceptance.",
+    "missing_or_failed": "Separate counts; missing samples and Binder failures do not become successful deliveries.",
+    "timestamps": "Monotonic time and age in current Core memory.",
+    "process_identity": "Actual Binder caller/receiver PID checked internally; not copied into phone feedback.",
+    "not_a_current_app_session": "Records may predate the current launch. Mode-close does not erase history; Core restart or bounded eviction may remove it."
+  },
+  "storage": {
+    "maximum_profiles": 16,
+    "persistent_storage": false,
+    "coordinates_or_location_objects_retained": false,
+    "ip_ssid_cell_phone_ids_keys_or_sdk_stacks": false
+  },
+  "copy_feedback": {
+    "existing_button_only": true,
+    "no_extra_dialog_or_experiment": true,
+    "no_active_fix_requested": true,
+    "no_mock_or_app_start_stop": true,
+    "existing_1500ms_deadline_and_late_result_guard_retained": true,
+    "unknown_on_unavailable_or_timeout": true,
+    "no_record_is_not_sdk_failure_proof": true,
+    "existing_1800_character_runtime_limit_retained": true
+  },
+  "compatibility_policy_changed": false,
+  "wechat_mock_aliases_still_false_and_synthetic_extra_true": true,
+  "generic_mock_marked_preserved": true,
+  "new_aidl_transactions_appended_without_reordering_old_methods": true,
+  "candidate_metadata": {
+    "host_version_name": "0.4-preview",
+    "host_version_code": 4,
+    "main_profile_version_name": "2.4.35-container-preview",
+    "main_profile_version_code": 2400103,
+    "profile_path": "docs/build-profiles/main-preview-2.4.35.init.gradle",
+    "profile_sha256": "67f15d335ae34ac7245dec166806773eaf83f772df0ae2b5fe7c7a9851c41ed4",
+    "new_phone_apk_published": false
+  },
+  "local_builds": [
+    {
+      "passed": true,
+      "recorded_exit": 0,
+      "seconds": 28
+    },
+    {
+      "passed": true,
+      "recorded_exit": 0,
+      "seconds": 16
+    }
+  ],
+  "initial_preparation_guard": {
+    "passed": false,
+    "gradle_started": false,
+    "reason": "Patch serialization initially used rename detection; prepare.py requires --no-renames. Corrected before successful builds; guard was not weakened."
+  },
+  "host_static_validation": {
+    "passed": true,
+    "size": 4572098,
+    "sha256": "422dbc160f1c1492ccdc9f6ac42f857c6b491c3d33a15342c5b940d784def4b8",
+    "no_embedded_originals": true,
+    "no_new_permissions": true
+  },
+  "full_clean_index_patch_replay_passed": true,
+  "python_driver_tests": {
+    "passed": true,
+    "methods": 25,
+    "seconds": 0.527
+  },
+  "local_vm_started": false,
+  "controlled_contract": {
+    "expected_methods": 6,
+    "enhanced_existing_wechat_method": [
+      "GPS/NETWORK last/current counts match the fixture requests.",
+      "Two stream sends per provider, unmarked presentation with explicit synthetic source.",
+      "Summary is detached and configuration reads do not add consumer calls.",
+      "Actual Binder PIDs match the controlled client process; physical delegation remains zero."
+    ],
+    "enhanced_existing_real_owned_guest": [
+      "Real separate Guest PID must match prepared-read and stream-receiver counters.",
+      "Both providers show cached/current/stream usage; marked generic samples preserved."
+    ],
+    "enhanced_ordinary_feedback": [
+      "Existing normal clipboard flow contains passive counters and volatile-history scope without exceeding the unchanged 1800-character limit."
+    ],
+    "runtime_passed": true,
+    "runtime_scope": "ACTUAL_X86_64_ONLY_NOT_MATCHED_ARM64_OR_REAL_WECHAT"
+  },
+  "source_sha256": {
+    "patches/blackbox-api33-build.patch": "839947fae2ffcb1379ff328b9a6c757f8253114a12ec4a20854670c53aed14e8",
+    "sources.json": "e2ed1c2bbd922e10d5ca9c084994b33add2225008a555d1bf093527002f49e43",
+    "probe-host/build.gradle": "a64e88ab759421b9761b6c83ccfed869a47dc67f1cc68061f32acd8f6fa1075e",
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeActivity.java": "4425800488c47d2d5e9809e4e1c0e05f1a7f98ef3ae4f9d1bfb4d4cb529fd5f3",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/LocationContractInstrumentedTest.java": "48f266270162f97c8b58b5c09ffc7b25f241dd2f46ee79d7f0422fc403e8c284",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/GuestLocationInstrumentedTest.java": "2e392c3ecd0d079451a985156d37c18bba9b337191c84154ea0ede0a2d2a9fb8",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ThirdPartyLocationInstrumentedTest.java": "f9d53687bbbf1da71ebb6b34c41af3efcbb55303d6fb7f1598305279645e1ef8"
+  },
+  "engine_patch_sha256": "839947fae2ffcb1379ff328b9a6c757f8253114a12ec4a20854670c53aed14e8",
+  "fixed_commit_default_runtime": {
+    "commit": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+    "run_id": 40523604093,
+    "status": "in_progress",
+    "result": "consumer-delivery-linux-results.json",
+    "linux_passed": true,
+    "all_default_jobs_passed": false
+  },
+  "fixed_commit_native_runtime": {
+    "commit": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+    "run_id": 40523604093,
+    "job_id": 122261508507,
+    "status": "completed",
+    "result": "native-original-pidof-set-failure-results.json",
+    "conclusion": "failure"
+  },
+  "phone_and_actual_sdk_acceptance": "NOT_VERIFIED",
+  "new_permissions_dependencies_jni_or_phone_experiments": false,
+  "same_run_own_transport_verified": {
+    "artifact": {
+      "id": 12741609554,
+      "sha256": "7f01d573c1bfadfb68ad7d1d6cc0d1e2b68b6bc7d1ff7981a1a08448f81a753a",
+      "verified": true
+    },
+    "source_count": 59,
+    "same_certificate": true,
+    "notice_materials_per_apk": 11
+  },
+  "arm_mac_build": {
+    "job_id": 122257025243,
+    "status": "completed",
+    "result": "NO_RUNNER_EXECUTION_NOT_PASS",
+    "conclusion": "cancelled",
+    "failure_record": "ci53-mac-runner-capacity-results.json"
+  },
+  "actual_phone_draft_delivery": {
+    "result": "phone-66258d1d-verified-draft-delivery-results.json",
+    "delivery_run_id": 40527332462,
+    "delivery_commit": "da2d9135845e6825c5eb40e012bfbfac65ca3656",
+    "verified": true,
+    "published": false
+  },
+  "qualification_followup": "original-main-identity-preparation.json"
+}

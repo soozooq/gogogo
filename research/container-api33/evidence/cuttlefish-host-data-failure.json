@@ -1,0 +1,41 @@
+{
+  "scope": "NATIVE_ARM_HOST_TOOL_ASSEMBLY_FAILURE_BEFORE_VM_NOT_ANDROID_OR_APP_FAILURE",
+  "commit": "bd579dc69347fbb4d9a5727477d4303aeecc8993",
+  "run_id": 40084763578,
+  "job_id": 120845373019,
+  "artifact_id": 12557175107,
+  "artifact_sha256": "5e99a7ab111b8a59e8fe7801f0d99033e9159e402e3f8e56d02b8e5a314dedd9",
+  "artifact_digest_verified": true,
+  "source_sha256_verified_against_commit": {
+    "tools/run-cuttlefish-arm-boot.py": "d410309608b06090e9349859f7e485b16caf14568f7c36627ad5975213810b6a",
+    "tools/cuttlefish-tcg-qemu.py": "811b279bbc2543bc7af88a4d2e1279c8d14206cd43d321185e880a64dabe3826",
+    "tools/fetch-cuttlefish-inputs.py": "c73b6bec3171125521e8b37d30fb1c99559ceecf2fe31eb4d57744bc1dd78423",
+    "cuttlefish-inputs.json": "de3ce6525d72d3c44932a48594364d8922fcad71dc1f9a150ec3f1520e9787fe"
+  },
+  "host_prerequisites_present": true,
+  "official_artifacts_downloaded_and_verified": [
+    {
+      "name": "cvd-host_package.tar.gz",
+      "size": 258736639,
+      "sha256": "c171a0fa444963208c31cc2ccf1e0175b409ebd892749097d3eb75df041e0286"
+    },
+    {
+      "name": "aosp_cf_arm64_phone-img-16596636.zip",
+      "size": 942258504,
+      "sha256": "c42414324e0f44c9db7182bb73717bb900df131951f5f1b4e79aca008997453e"
+    },
+    {
+      "name": "manifest_16596636.xml",
+      "size": 168184,
+      "sha256": "5ed8ab51a4f1c1e9ce7911de15bf630bce960230cb71dcc36490eb53917e8206"
+    }
+  ],
+  "native_host_binaries_verified": true,
+  "official_host_helper_installed": true,
+  "dedicated_tap_devices_created": true,
+  "assembly_exit": -6,
+  "failure": "GeneratePersistentBootconfig / append hash footer: make_path: ANDROID_DATA not set!; subprocess signal 6",
+  "vm_started": false,
+  "apps_tested": false,
+  "followup": "Provide the native host tools with their normal dedicated ANDROID_DATA runtime/cache directory; preserve HOME and proxy/CA. Generated runtime disks and guest userdata are expected to change during normal assembly/boot."
+}

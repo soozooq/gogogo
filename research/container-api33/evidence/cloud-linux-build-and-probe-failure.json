@@ -1,0 +1,109 @@
+{
+  "scope": "FRESH_GITHUB_BUILD_AND_STATIC_CHECKS_NOT_RUNTIME_SUCCESS",
+  "run_id": 39982534103,
+  "job_id": 120513612172,
+  "commit": "c91af76e6010dc0e3e286e8228e291263445a9bd",
+  "source_prepare_patch_apply_and_build": "PASS",
+  "host_static": {
+    "scope": "COMPILED_RESEARCH_HOST_NOT_WECHAT_COMPATIBILITY",
+    "package": "com.soozooq.tianwaitian.containerresearch",
+    "sha256": "9ddef6f54af347cbc40be955394816b524616d4bd38e4e81f23297173715455b",
+    "size": 4484607,
+    "native_abis": [
+      "arm64-v8a",
+      "x86_64"
+    ],
+    "uses_permissions": [
+      "android.permission.ACCESS_COARSE_LOCATION",
+      "android.permission.ACCESS_FINE_LOCATION",
+      "android.permission.ACCESS_NETWORK_STATE",
+      "android.permission.FOREGROUND_SERVICE",
+      "android.permission.INTERNET",
+      "android.permission.REORDER_TASKS",
+      "com.soozooq.tianwaitian.containerresearch.INTERNAL"
+    ],
+    "default_component_permission": "com.soozooq.tianwaitian.containerresearch.INTERNAL",
+    "resource_mirror_defined": true,
+    "embedded_guest_apks": [],
+    "embedded_guest_class_definitions": [],
+    "signature_verified": true,
+    "pinned_guest_catalog": [
+      {
+        "label": "Fossify \u8ba1\u7b97\u5668",
+        "location": false,
+        "package": "org.fossify.math",
+        "sha256": "7c5443c22d6d62c67dfe80df33ea9161ff0fa440f92590bcb45d7008b57613ed",
+        "size": 7047681,
+        "version_code": 10,
+        "version_name": "1.4.0",
+        "certificate_sha256": "affdb124d3f4720c2f98dbca9eacba0514fba4306e20a2786c861c3c0d6ff292",
+        "url": "https://github.com/FossifyOrg/Calculator/releases/download/1.4.0/calculator-10-foss-release.apk"
+      },
+      {
+        "label": "GPSTest \u5b9a\u4f4d",
+        "location": true,
+        "package": "com.android.gpstest.osmdroid",
+        "sha256": "897b91fe6a1ea0c3a7f6e2b041d5ace0d582941f67cf454fb7778f031d89ce41",
+        "size": 3457918,
+        "version_code": 24100,
+        "version_name": "3.10.6",
+        "certificate_sha256": "67e04383a96a83476426adcbdd95c4c75d78028a5c4ada75c00334b1c7a5d706",
+        "url": "https://github.com/barbeau/gpstest/releases/download/v3.10.6/osmdroidRelease-v3.10.6.apk"
+      }
+    ],
+    "certificate_sha256": "22931342c303fc96344e06a674bc3b5d80b427d92388d7e8f66255923f24bd6a"
+  },
+  "consumer_static": {
+    "scope": "OWNED_CONSUMER_STATIC_INPUT_NOT_LOCATION_SUCCESS",
+    "package": "com.soozooq.tianwaitian.locationconsumer",
+    "sha256": "4f20be5620caa221fce13da1dbc84594ecb8c208ffe89bf3264db487595c89ce",
+    "size": 22065,
+    "uses_permissions": [
+      "android.permission.ACCESS_COARSE_LOCATION",
+      "android.permission.ACCESS_FINE_LOCATION"
+    ],
+    "only_own_class_definitions": true,
+    "engine_host_or_reflection_references": false,
+    "expected_target_coordinates_embedded_by_design": false,
+    "native_libraries_or_embedded_apks": false,
+    "public_android_location_methods_present": true,
+    "certificate_sha256": "22931342c303fc96344e06a674bc3b5d80b427d92388d7e8f66255923f24bd6a"
+  },
+  "official_gpstest_static": {
+    "scope": "OFFICIAL_THIRD_PARTY_INPUT_IDENTITY_NOT_RUNTIME_SUCCESS",
+    "package": "com.android.gpstest.osmdroid",
+    "version_code": 24100,
+    "sha256": "897b91fe6a1ea0c3a7f6e2b041d5ace0d582941f67cf454fb7778f031d89ce41",
+    "size": 3457918,
+    "source": "https://github.com/barbeau/gpstest/tree/ffcf2a974e3c6b34cc3aac1c7086f467d24b8439",
+    "certificate_sha256": "67e04383a96a83476426adcbdd95c4c75d78028a5c4ada75c00334b1c7a5d706",
+    "signature_verified": true,
+    "min_sdk": "24",
+    "target_sdk": "36",
+    "declared_permissions": [
+      "android.permission.ACCESS_COARSE_LOCATION",
+      "android.permission.ACCESS_FINE_LOCATION",
+      "android.permission.ACCESS_LOCATION_EXTRA_COMMANDS",
+      "android.permission.ACCESS_NETWORK_STATE",
+      "android.permission.FOREGROUND_SERVICE",
+      "android.permission.FOREGROUND_SERVICE_LOCATION",
+      "android.permission.INTERNET",
+      "android.permission.POST_NOTIFICATIONS",
+      "com.android.gpstest.osmdroid.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+    ],
+    "native_libraries": [],
+    "unmodified_release_digest_match": true
+  },
+  "runtime_license_declaration_nodes": 53,
+  "unresolved_license_declarations": [],
+  "runtime_attempt": "BLOCKED_BEFORE_BOOT_BY_GUI_VERSION_PROBE",
+  "failure_exit": 127,
+  "failure_output": "/usr/local/lib/android/sdk/emulator/qemu/linux-x86_64/qemu-system-x86_64: error while loading shared libraries: libpulse.so.0: cannot open shared object file: No such file or directory\n",
+  "cause": "Plain emulator -version selects the GUI QEMU binary requiring libpulse; actual no-window binary does not link libpulse. The script exited before attempting a boot.",
+  "fix": "Use no-window/no-audio for version metadata and record its exit code without treating an informational probe as the runtime result. Actual boot and UI checks still determine success.",
+  "artifacts_contain_apks": false,
+  "cloud_artifact_id": 12514965085,
+  "cloud_artifact_sha256": "4a1fd78e4813926dd394a920d4369756ae13dbe2632b327dd4b1c846d7815b3f",
+  "arm64_runtime": "NOT_TESTED_WAITING_MAC_JOB",
+  "wechat_douyin": "NOT_TESTED"
+}

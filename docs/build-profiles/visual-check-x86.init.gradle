@@ -1,0 +1,11 @@
+// Rendering-only build for the cloud x86_64 emulator. Never distribute to phones.
+gradle.beforeProject { project ->
+    if (project.path == ':app') {
+        project.pluginManager.withPlugin('com.android.application') {
+            project.extensions.getByName('androidComponents').finalizeDsl { android ->
+                android.defaultConfig.ndk.abiFilters.clear()
+                android.defaultConfig.ndk.abiFilters.add('x86_64')
+            }
+        }
+    }
+}

@@ -1,0 +1,27 @@
+{
+  "scope": "PUBLIC_ARTIFACT_DOWNLOAD_FAILURE_BEFORE_VM_PREPARATION_NOT_ANDROID_OR_APP_FAILURE",
+  "commit": "d362768a30de0ddd5e5014b076c5e2902e78a049",
+  "run_id": 40084535325,
+  "job_id": 120844634964,
+  "artifact_id": 12556666953,
+  "artifact_sha256": "f468c3926d654c6f56f20463ca43354d54920f816f2283b86c76ad3a10cce694",
+  "artifact_digest_verified": true,
+  "source_sha256_verified_against_commit": {
+    "tools/run-cuttlefish-arm-boot.py": "d410309608b06090e9349859f7e485b16caf14568f7c36627ad5975213810b6a",
+    "tools/cuttlefish-tcg-qemu.py": "811b279bbc2543bc7af88a4d2e1279c8d14206cd43d321185e880a64dabe3826",
+    "tools/fetch-cuttlefish-inputs.py": "3024b9b22e952efdb9727eb3afa4ffd7e11080741a6e430327c9b61d848f3a2b",
+    "cuttlefish-inputs.json": "de3ce6525d72d3c44932a48594364d8922fcad71dc1f9a150ec3f1520e9787fe"
+  },
+  "state": "PREPARATION_OR_PROBE_ERROR",
+  "host_prerequisites_present": true,
+  "download_stage": {
+    "matching_host_archive": "DOWNLOADED_SIZE_SHA_VERIFIED",
+    "guest_image_public_viewer": "HTTP_503_SERVICE_UNAVAILABLE",
+    "previous_retry_count": 0
+  },
+  "vm_started": false,
+  "boot_tested": false,
+  "apps_tested": false,
+  "terms_accepted": false,
+  "next_change": "Bounded retry for HTTP429/500/502/503/504 only; authentication/access rejection remains final. No route, identity, API key or TLS changes."
+}

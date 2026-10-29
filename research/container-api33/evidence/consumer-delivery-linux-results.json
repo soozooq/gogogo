@@ -1,0 +1,176 @@
+{
+  "schema": "GOGOGO_CONSUMER_DELIVERY_ACTUAL_LINUX_RESULTS_V1",
+  "scope": "ACTUAL_X86_64_CONTROLLED_AND_SEPARATE_OWN_GUEST_PASSIVE_COUNTERS_NOT_WECHAT_SDK_OR_PHONE_ADOPTION",
+  "run_id": 40523604093,
+  "commit": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+  "engine_patch_sha256": "839947fae2ffcb1379ff328b9a6c757f8253114a12ec4a20854670c53aed14e8",
+  "linux_job_id": 122257025735,
+  "linux_conclusion": "success",
+  "artifacts": {
+    "own": {
+      "id": 12741609554,
+      "sha256": "7f01d573c1bfadfb68ad7d1d6cc0d1e2b68b6bc7d1ff7981a1a08448f81a753a",
+      "verified": true
+    },
+    "linux": {
+      "id": 12743058330,
+      "sha256": "d07681cb796d6099e5690058208de713097694447e6c1a0092879be4a5e8cb84",
+      "verified": true
+    }
+  },
+  "both_api_archive_digests_fixed_sources_signatures_materials_verified": true,
+  "case_junit": {
+    "x86_64-startup-framework": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 0.927,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-location-contract": {
+      "passed": true,
+      "junit_tests": 6,
+      "junit_seconds": 4.265,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-radio-privacy": {
+      "passed": true,
+      "junit_tests": 19,
+      "junit_seconds": 0.234,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-owned-location": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 4.283,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-ordinary-entry": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 14.779,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-installed-import": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 7.948,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-calculator": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 6.041,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    }
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4547692,
+        "sha256": "e96a50a9147ef414338ffdbdc5434d48ccafdf63c6836c3565c74287b15f47f1"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 530330,
+        "sha256": "b5ef7c2a2bc4870fec63fda413d53e846614b0bfb38502ae5ff6e4b0ce477788"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 74158,
+        "sha256": "3fdad990b6df4681727654d8ad56b52dea4019d7e13af873f6a71020fe854d57"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "controlled_wechat_context": {
+    "junit_methods": 6,
+    "real_wechat_or_sdk": false,
+    "source_bound_assertions": [
+      "Both providers cache/current prepare counts match requests; each stream has two returned sends.",
+      "Actual Binder caller/receiver PID matches the fixture client.",
+      "Detached summary mutation and host configuration reads do not change Core consumer counters.",
+      "WeChat both mock aliases false and synthetic extra true; generic flag preserved after restoration."
+    ]
+  },
+  "real_separate_owned_guest": {
+    "host_pid": 2965,
+    "guest_pid": 3031,
+    "actual_consumer_delivery": {
+      "last_preparation_caller_pid": 3031,
+      "cache_gps_prepared": 2,
+      "current_network_prepared": 2,
+      "stream_gps_transaction_returned": 3,
+      "last_event_age_ms": 2025,
+      "stream_network_registered": 1,
+      "stream_network_transaction_returned": 3,
+      "maximum_profiles": 16,
+      "present": true,
+      "last_stream_mock": true,
+      "scope": "CORE_MEMORY_VIRTUAL_PREPARATION_AND_BINDER_SEND_NOT_SDK_ADOPTION",
+      "current_gps_prepared": 2,
+      "stream_gps_registered": 1,
+      "first_event_elapsed_ms": 66177,
+      "last_stream_synthetic": true,
+      "last_event_elapsed_ms": 66784,
+      "last_stream_receiver_pid": 3031,
+      "cache_network_prepared": 2
+    },
+    "maximum_sample_age_ms": 306.05424,
+    "generic_all_six_paths_mock_marked": true,
+    "cancelled_callbacks": 0,
+    "report_source": "OWN_GUEST_ATOMIC_PRIVATE_FILE"
+  },
+  "actual_normal_feedback": {
+    "stage": "COMPACT_FEEDBACK_READ_ONLY",
+    "characters": 1322,
+    "guest_pid_preserved": true,
+    "mock_mode_preserved": true,
+    "coordinates_not_recorded": true
+  },
+  "new_phone_experiment": false,
+  "arm_mac_build": {
+    "job_id": 122257025243,
+    "status": "completed",
+    "result": "NO_RUNNER_EXECUTION_NOT_PASS",
+    "conclusion": "cancelled",
+    "failure_record": "ci53-mac-runner-capacity-results.json"
+  },
+  "matched_native": {
+    "job_id": 122261508507,
+    "status": "completed",
+    "result": "native-original-pidof-set-failure-results.json",
+    "conclusion": "failure"
+  },
+  "new_phone_apk_published": false,
+  "current_public_2_4_34_has_passive_counters": false,
+  "target_sdk_wechat_send_live_douyin_wireless_overseas_vivo": "NOT_VERIFIED",
+  "scope_limits": [
+    "Prepared samples and returned one-way Binder transactions do not prove SDK acceptance.",
+    "Counters are bounded volatile Core history, not a current application session or UI-correlated observation.",
+    "A missing record can mean no use, restart, or eviction; it is not SDK rejection proof.",
+    "Mac build and same-source native results are independently pending; CI52 cannot substitute."
+  ],
+  "verifier_sha256": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
+  "inputs_manifest_sha256": "da8874156f394b140953d78d7a5267d3713f9dcc75910f764b77f1aa56dea89f",
+  "qualification_followup": "original-main-identity-preparation.json"
+}

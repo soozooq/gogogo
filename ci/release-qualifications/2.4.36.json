@@ -1,0 +1,71 @@
+{
+  "schema": "GOGOGO_MATCHED_PREVIEW_DELIVERY_POLICY_V1",
+  "publish_enabled": true,
+  "repository": "soozooq/gogogo",
+  "branch": "research/container-api33-20261023",
+  "runtime_commit": "20ff7a0ef8fec5fc0caca788f98095f5eba2701f",
+  "qualification_run_id": 40870835491,
+  "qualification_round": 67,
+  "qualification_job_ids": {
+    "linux": 123437152191,
+    "native": 123441209819
+  },
+  "mac_initial_job_id": 123437152360,
+  "mac_job_name": "Build and inspect (ARM Mac)",
+  "qualification_artifacts": {
+    "own": {
+      "name": "ci-owned-container-apks-20ff7a0ef8fec5fc0caca788f98095f5eba2701f",
+      "id": 12896231660,
+      "bytes": 4872906,
+      "sha256": "86b819bb01d4314091b304c5f45cf93861f79543ff2c4e921b7324e3164f9899"
+    },
+    "linux": {
+      "name": "container-research-linux-evidence-67",
+      "id": 12896601324,
+      "bytes": 3231357,
+      "sha256": "455075358064f69d2dd14a344a3dc92c40814e174fa9d684ff22386ecf063b68"
+    },
+    "mac": {
+      "name": "container-research-arm-mac-build-evidence-67",
+      "id": 12896386274,
+      "bytes": 1947,
+      "sha256": "b4656ba2834d80ccff0bbb5c8258f59d3368615eb78663537ba98d2609b4876f"
+    },
+    "native": {
+      "name": "cuttlefish-arm-host-67"
+    }
+  },
+  "tag": "preview-2.4.36-container-20ff7a0e",
+  "title": "天外天2.4.36 · 界面与坐标输入预览",
+  "delivery_artifact_name": "tianwaitian-phone-preview-2.4.36-20ff7a0e",
+  "notes_path": "ci/release-qualifications/2.4.36-notes.md",
+  "live_config_path": "ci/release-qualifications/2.4.36.json",
+  "wait_seconds": 9000,
+  "poll_seconds": 45,
+  "mac_no_runner_retries": 1,
+  "profile_sha256": "6a2c0c8ec700b830be25b93d10ba065e9091bcd92a59b94a0abad956da9b0b13",
+  "metadata_profile_path": "docs/build-profiles/main-preview-2.4.36.init.gradle",
+  "host_ci_non_signature_entries": 423,
+  "expected_own_source_count": 73,
+  "required_visual_page_count": 20,
+  "expected_apks": {
+    "main": {
+      "file": "Tianwaitian-2.4.36-container-preview-arm64.apk",
+      "package": "com.soozooq.gogogo.test",
+      "version_name": "2.4.36-container-preview",
+      "version_code": 2400104,
+      "certificate_sha256": "6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081"
+    },
+    "host": {
+      "file": "Tianwaitian-Original-Preview-20ff7a0e.apk",
+      "package": "com.soozooq.tianwaitian.containerresearch",
+      "version_name": "0.5-preview",
+      "version_code": 5,
+      "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+      "sha256": "2198b7d60ec64753c40da5978a3655b306d2232b06223d9755ca9f99d05aeb02",
+      "bytes": 4603006
+    }
+  },
+  "requires_retired_process_fixture": true,
+  "delivery_generation": 2
+}

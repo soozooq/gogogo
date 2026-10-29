@@ -1,0 +1,508 @@
+{
+  "schema": "GOGOGO_STALE_UI_LOCATION_READ_RESULTS_V1",
+  "scope": "ACTUAL_X86_64_OWNED_LOCATION_AND_DEFAULT_REGRESSION_NOT_CORRECTED_NATIVE_OR_TARGET_BUSINESS",
+  "run_id": 40271080579,
+  "commit": "774c6e7a1cda900e2a919401014e076d728e0030",
+  "tree": "d87f0a94a96a1294bce81455ca80405825a6a2d0",
+  "default_checks_conclusion": "success",
+  "artifacts": {
+    "mac": {
+      "id": 12628886701,
+      "sha256": "4a847a67b2b99c0aa2a5a89199a41eaaa25ba6901bc3c0ffbc85f70bdd9ab973",
+      "verified": true
+    },
+    "linux": {
+      "id": 12628767411,
+      "sha256": "32e2fe0711e241dfa4bea73928cb2c17daf32451ff0a6269f2b8abe2e02f399c",
+      "verified": true
+    },
+    "own": {
+      "id": 12628696282,
+      "sha256": "572f702f92ce15e830e2536099ce9900b413df525f3a9621257eba6d23abb366",
+      "verified": true
+    }
+  },
+  "all_three_api_archive_digests_and_fixed_commit_sources_verified": true,
+  "source_count_verified_per_case": 58,
+  "case_junit": {
+    "x86_64-calculator": {
+      "seconds": 6.004,
+      "result": "OK (1 test)",
+      "passed": true
+    },
+    "x86_64-installed-import": {
+      "seconds": 7.738,
+      "result": "OK (1 test)",
+      "passed": true
+    },
+    "x86_64-ordinary-entry": {
+      "seconds": 12.555,
+      "result": "OK (1 test)",
+      "passed": true
+    },
+    "x86_64-owned-location": {
+      "seconds": 3.298,
+      "result": "OK (1 test)",
+      "passed": true
+    },
+    "x86_64-radio-privacy": {
+      "seconds": 0.069,
+      "result": "OK (9 tests)",
+      "passed": true
+    },
+    "x86_64-startup-framework": {
+      "seconds": 0.57,
+      "result": "OK (1 test)",
+      "passed": true
+    }
+  },
+  "owned_location": {
+    "passed": true,
+    "junit_seconds": 3.298,
+    "junit_result": "OK (1 test)",
+    "source_count": 58,
+    "observed": {
+      "scope": "OWNED_GUEST_REAL_PROCESS_NOT_THIRD_PARTY_OR_WECHAT",
+      "host_pid": 2763,
+      "guest_pid": 2829,
+      "kernel_process": "PID   UID NAME                       \n 2829 10129 com.soozooq.tianwaitian.locationconsumer",
+      "consumer_sha256": "bfd3aebb6c4c080d664e1b33e7d2e173048071856657219dbcc3796f43ee809d",
+      "nonce": "d7442cc2-94d7-49ee-9f02-09da44db69d4",
+      "stages": [
+        {
+          "name": "TARGET_A",
+          "guest_report": {
+            "scope": "OWNED_GUEST_PUBLIC_ANDROID_API_NOT_WECHAT",
+            "nonce": "d7442cc2-94d7-49ee-9f02-09da44db69d4",
+            "package": "com.soozooq.tianwaitian.locationconsumer",
+            "pid": 2829,
+            "process": "com.soozooq.tianwaitian.locationconsumer",
+            "created_elapsed_ms": 48291,
+            "listening": true,
+            "gps_count": 2,
+            "network_count": 2,
+            "batch_count": 4,
+            "cancelled_callbacks": 0,
+            "read_sequence": 1,
+            "gnss_started": 1,
+            "gnss_status_count": 1,
+            "gnss_satellite_count": 0,
+            "gnss_first_fix_count": 0,
+            "last_gps": {
+              "present": true,
+              "provider": "gps",
+              "lat": 38,
+              "lon": -121,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 48700466565,
+              "callback_elapsed_ns": 48700593964,
+              "age_ms": 0
+            },
+            "last_network": {
+              "present": true,
+              "provider": "network",
+              "lat": 38,
+              "lon": -121,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 48705392432,
+              "callback_elapsed_ns": 48705438020,
+              "age_ms": 0
+            },
+            "stream_gps": {
+              "present": true,
+              "provider": "gps",
+              "lat": 38,
+              "lon": -121,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49013036080,
+              "callback_elapsed_ns": 49016939590,
+              "age_ms": 3
+            },
+            "stream_network": {
+              "present": true,
+              "provider": "network",
+              "lat": 38,
+              "lon": -121,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49014336048,
+              "callback_elapsed_ns": 49025324519,
+              "age_ms": 10
+            },
+            "current_gps": {
+              "present": true,
+              "provider": "gps",
+              "lat": 38,
+              "lon": -121,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 48791147627,
+              "callback_elapsed_ns": 48809295699,
+              "age_ms": 18
+            },
+            "current_network": {
+              "present": true,
+              "provider": "network",
+              "lat": 38,
+              "lon": -121,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 48791959121,
+              "callback_elapsed_ns": 48813192910,
+              "age_ms": 21
+            }
+          }
+        },
+        {
+          "name": "TARGET_B",
+          "guest_report": {
+            "scope": "OWNED_GUEST_PUBLIC_ANDROID_API_NOT_WECHAT",
+            "nonce": "d7442cc2-94d7-49ee-9f02-09da44db69d4",
+            "package": "com.soozooq.tianwaitian.locationconsumer",
+            "pid": 2829,
+            "process": "com.soozooq.tianwaitian.locationconsumer",
+            "created_elapsed_ms": 48291,
+            "listening": true,
+            "gps_count": 3,
+            "network_count": 3,
+            "batch_count": 6,
+            "cancelled_callbacks": 0,
+            "read_sequence": 2,
+            "gnss_started": 1,
+            "gnss_status_count": 1,
+            "gnss_satellite_count": 0,
+            "gnss_first_fix_count": 0,
+            "last_gps": {
+              "present": true,
+              "provider": "gps",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49078947046,
+              "callback_elapsed_ns": 49078995438,
+              "age_ms": 0
+            },
+            "last_network": {
+              "present": true,
+              "provider": "network",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49082600065,
+              "callback_elapsed_ns": 49082632563,
+              "age_ms": 0
+            },
+            "stream_gps": {
+              "present": true,
+              "provider": "gps",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49313281492,
+              "callback_elapsed_ns": 49317070373,
+              "age_ms": 3
+            },
+            "stream_network": {
+              "present": true,
+              "provider": "network",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49314572298,
+              "callback_elapsed_ns": 49325267142,
+              "age_ms": 10
+            },
+            "current_gps": {
+              "present": true,
+              "provider": "gps",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49091803708,
+              "callback_elapsed_ns": 49106391759,
+              "age_ms": 14
+            },
+            "current_network": {
+              "present": true,
+              "provider": "network",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49092181369,
+              "callback_elapsed_ns": 49110474746,
+              "age_ms": 18
+            }
+          }
+        },
+        {
+          "name": "UNREGISTERED_STABLE",
+          "guest_report": {
+            "scope": "OWNED_GUEST_PUBLIC_ANDROID_API_NOT_WECHAT",
+            "nonce": "d7442cc2-94d7-49ee-9f02-09da44db69d4",
+            "package": "com.soozooq.tianwaitian.locationconsumer",
+            "pid": 2829,
+            "process": "com.soozooq.tianwaitian.locationconsumer",
+            "created_elapsed_ms": 48291,
+            "listening": false,
+            "gps_count": 3,
+            "network_count": 3,
+            "batch_count": 6,
+            "cancelled_callbacks": 0,
+            "read_sequence": 2,
+            "gnss_started": 1,
+            "gnss_status_count": 1,
+            "gnss_satellite_count": 0,
+            "gnss_first_fix_count": 0,
+            "last_gps": {
+              "present": true,
+              "provider": "gps",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49078947046,
+              "callback_elapsed_ns": 49078995438,
+              "age_ms": 0
+            },
+            "last_network": {
+              "present": true,
+              "provider": "network",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49082600065,
+              "callback_elapsed_ns": 49082632563,
+              "age_ms": 0
+            },
+            "stream_gps": {
+              "present": true,
+              "provider": "gps",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49313281492,
+              "callback_elapsed_ns": 49317070373,
+              "age_ms": 3
+            },
+            "stream_network": {
+              "present": true,
+              "provider": "network",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49314572298,
+              "callback_elapsed_ns": 49325267142,
+              "age_ms": 10
+            },
+            "current_gps": {
+              "present": true,
+              "provider": "gps",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49091803708,
+              "callback_elapsed_ns": 49106391759,
+              "age_ms": 14
+            },
+            "current_network": {
+              "present": true,
+              "provider": "network",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49092181369,
+              "callback_elapsed_ns": 49110474746,
+              "age_ms": 18
+            }
+          }
+        },
+        {
+          "name": "CURRENT_CANCELLED",
+          "guest_report": {
+            "scope": "OWNED_GUEST_PUBLIC_ANDROID_API_NOT_WECHAT",
+            "nonce": "d7442cc2-94d7-49ee-9f02-09da44db69d4",
+            "package": "com.soozooq.tianwaitian.locationconsumer",
+            "pid": 2829,
+            "process": "com.soozooq.tianwaitian.locationconsumer",
+            "created_elapsed_ms": 48291,
+            "listening": false,
+            "gps_count": 3,
+            "network_count": 3,
+            "batch_count": 6,
+            "cancelled_callbacks": 0,
+            "read_sequence": 2,
+            "gnss_started": 1,
+            "gnss_status_count": 1,
+            "gnss_satellite_count": 0,
+            "gnss_first_fix_count": 0,
+            "last_gps": {
+              "present": true,
+              "provider": "gps",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49078947046,
+              "callback_elapsed_ns": 49078995438,
+              "age_ms": 0
+            },
+            "last_network": {
+              "present": true,
+              "provider": "network",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49082600065,
+              "callback_elapsed_ns": 49082632563,
+              "age_ms": 0
+            },
+            "stream_gps": {
+              "present": true,
+              "provider": "gps",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49313281492,
+              "callback_elapsed_ns": 49317070373,
+              "age_ms": 3
+            },
+            "stream_network": {
+              "present": true,
+              "provider": "network",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49314572298,
+              "callback_elapsed_ns": 49325267142,
+              "age_ms": 10
+            },
+            "current_gps": {
+              "present": true,
+              "provider": "gps",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49091803708,
+              "callback_elapsed_ns": 49106391759,
+              "age_ms": 14
+            },
+            "current_network": {
+              "present": true,
+              "provider": "network",
+              "lat": -33.86,
+              "lon": 151.2,
+              "mock": true,
+              "extra_satellites": 0,
+              "elapsed_ns": 49092181369,
+              "callback_elapsed_ns": 49110474746,
+              "age_ms": 18
+            },
+            "cancel_attempts": 1
+          }
+        }
+      ],
+      "stale_ui_reads_retried": 0,
+      "passed": true
+    }
+  },
+  "partial_stage_file_is_not_a_final_success_receipt": true,
+  "same_run_own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4534984,
+        "sha256": "8b2bd76291147d9f4f1fabefa2f012e45ac140948081c0af9ac155453f9b8691"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 504846,
+        "sha256": "96a1b95bc40b53d73de061ecbbd23a3c3ddefba398f82ddaef301d4df87af72f"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 72818,
+        "sha256": "bfd3aebb6c4c080d664e1b33e7d2e173048071856657219dbcc3796f43ee809d"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "feedback_main_key_sources_verified": 7,
+  "read_only_ui_capture": {
+    "source_count_verified": 59,
+    "passed": true,
+    "scope": "SELF_OWNED_MOVING_UI_ONLY_NOT_TARGET_STARTUP_OR_LOCATION",
+    "old_cli": {
+      "returncode": 0,
+      "idle_error_observed": true
+    },
+    "observed": {
+      "scope": "SELF_OWNED_UI_CAPTURE_ONLY_NOT_TARGET_STARTUP",
+      "target": "owned-fixture",
+      "package": "com.soozooq.tianwaitian.locationconsumer",
+      "api": 33,
+      "capture_method": "UI_AUTOMATION_WITHOUT_IDLE_WAIT",
+      "own_driver_targeting": true,
+      "plain_application": true,
+      "passed": true,
+      "terms_accepted": false,
+      "login_attempted": false,
+      "messages_sent": false,
+      "input_events_sent": false,
+      "root_package": "com.soozooq.tianwaitian.locationconsumer",
+      "visible_text": [
+        "Read-only moving fixture 118"
+      ],
+      "stage": "OWN_UI_VISIBLE",
+      "elapsed_ms": 527
+    },
+    "cleanup": {
+      "com.soozooq.tianwaitian.locationconsumer": true,
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true
+    },
+    "host_engine_process_absent": true
+  },
+  "native_job": {
+    "run_id": 40271080579,
+    "commit": "774c6e7a1cda900e2a919401014e076d728e0030",
+    "job_id": 121405382190,
+    "status": "completed",
+    "conclusion": "failure",
+    "result": "native-owned-location-freshness-results.json"
+  },
+  "previous_actual_native_failure": "native-owned-location-stale-ui-results.json",
+  "new_network_callback_candidate_not_in_this_fixed_commit": true,
+  "wechat_send_and_live_location": "UNFULFILLED",
+  "douyin_wireless_and_overseas": "UNFULFILLED",
+  "phone_update_distributed": false
+}

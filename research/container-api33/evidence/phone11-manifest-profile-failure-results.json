@@ -1,0 +1,52 @@
+{
+  "scope": "ACTUAL_PHONE11_APK_BYTES_VERIFIED_WITH_MANIFEST_PROFILE_FAILURE",
+  "delivery_commit": "c7516460fa2168a46249a3f4c482571468d68f55",
+  "run_id": 40873968594,
+  "stage_job_id": 123447962397,
+  "stage_job_conclusion": "SUCCESS_WITH_OPTIONAL_DRAFT_STEP_FAILURE",
+  "runtime_commit": "20ff7a0ef8fec5fc0caca788f98095f5eba2701f",
+  "archive": {
+    "id": 12898110436,
+    "bytes": 26841197,
+    "sha256": "cc5a554362431e1d1eb1b82a75babff449451f7f7fdff8c3cf2a4d160c1a4669"
+  },
+  "apks": {
+    "main": {
+      "package": "com.soozooq.gogogo.test",
+      "version_name": "2.4.36-container-preview",
+      "version_code": 2400104,
+      "bytes": 40409001,
+      "sha256": "bff006e1adf6e27bd7a8a624390546bda828dd6335f312d94b7ef3979f229938",
+      "certificate_sha256": "6eec4ddd865b85482bd5a97ef4ceaa14dded5c3a6cdcbffd4eccb78c54eff081",
+      "signature_and_alignment_verified": true,
+      "debuggable": true,
+      "file": "Tianwaitian-2.4.36-container-preview-arm64.apk"
+    },
+    "host": {
+      "package": "com.soozooq.tianwaitian.containerresearch",
+      "version_name": "0.5-preview",
+      "version_code": 5,
+      "bytes": 4603006,
+      "sha256": "2198b7d60ec64753c40da5978a3655b306d2232b06223d9755ca9f99d05aeb02",
+      "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+      "signature_and_alignment_verified": true,
+      "debuggable": true,
+      "file": "Tianwaitian-Original-Preview-20ff7a0e.apk"
+    }
+  },
+  "apks_versions_signatures_alignment_and_arm64_main_independently_verified": true,
+  "host_all_423_non_signature_contents_equal_to_same_ci67_apk": true,
+  "actual_profile_sha256": "6a2c0c8ec700b830be25b93d10ba065e9091bcd92a59b94a0abad956da9b0b13",
+  "wrong_manifest_profile_sha256": "67f15d335ae34ac7245dec166806773eaf83f772df0ae2b5fe7c7a9851c41ed4",
+  "actual_profile_matches_fixed_runtime": true,
+  "exact_failure": "Phone profile differs",
+  "failure_cause": "Staging receipt retained legacy PROFILE_SHA while checking and copying the correct new profile",
+  "release_post_attempted": false,
+  "publisher_at_capture": "WAITING_NATIVE_NOT_COMPLETE",
+  "qualified_download_ready": false,
+  "generation2_rejects_this_manifest": true,
+  "correction": "Derive receipt hash from actual copied profile, add structural end-to-end regression and generation2 live policy",
+  "native67_not_cancelled_or_rerun": true,
+  "new_phone_tests_started": false,
+  "new_corrected_cloud_build": "NOT_STARTED_AT_CAPTURE"
+}

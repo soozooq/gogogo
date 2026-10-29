@@ -102,8 +102,9 @@ for cls, tab in [
     src = (base / (cls + ".java")).read_text(encoding="utf-8")
     check("TianwaitianBottomNav.syncSelection(this, TianwaitianBottomNav.Tab." + tab + ")" in src,
           cls + " must refresh its active tab when resumed")
-check("stackTianwaitianLauncherActions" in home,
-      "compact map launcher must use its own short-action sizing policy")
+check("deckColumn.addView(actionBar" in home and "actionSlot.addView(previewButton)" in home
+      and "openMoreOptions()" in home,
+      "map primary action must stay outside the scrolling target with alternate controls reachable")
 for activity in activities:
     if activity.get(ANDROID + "name") == ".SettingsActivity":
         check(activity.get(ANDROID + "theme") == "@style/AppTheme.NoActionBar",

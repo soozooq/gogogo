@@ -1,0 +1,68 @@
+{
+  "schema": "GOGOGO_PHONE_TRANSACTION_NAME_PREPARATION_V1",
+  "scope": "FIX_NATIVE47_RECORDED_WECHAT_CALLBACK_REGISTRATION_CRASH_NOT_TARGET_LOCATION_SUCCESS",
+  "base_research_commit": "e133bae2e1434f5b91ca2bd477b8182fc3daec00",
+  "failed_runtime_commit": "ff12e8d3cf2dde2884333bd78515727d17c284b3",
+  "failure_result": "native-phone-callback-field-failure-results.json",
+  "change": "Resolve six protected callback IDs by generated runtime AIDL getDefaultTransactionName using the existing HiddenApiBypass library; no private TRANSACTION_* field lookup.",
+  "runtime_mapping_bounded_codes": 256,
+  "missing_or_ambiguous_names_rejected_no_raw_fallback": true,
+  "production_global_hidden_api_policy_changed": false,
+  "new_permissions_dependencies_or_jni_changes": false,
+  "callback_delivery_mode_checks_original_parcels_identity_and_unregister_unchanged": true,
+  "mock_flags_kept": true,
+  "build": {
+    "passed": true,
+    "seconds": 30
+  },
+  "host_static_passed": true,
+  "full_patch_clean_index_replay_passed": true,
+  "driver_checks": {
+    "passed": true,
+    "tests": 25,
+    "seconds": 0.835
+  },
+  "controlled_radio_regression": {
+    "status": "COMPLETED_PASS_OWN_SOFTWARE_API33",
+    "expected_test_count": 16,
+    "new_method": "publicPhoneCallbackWorksWhenPrivateTransactionConstantsAreDenied",
+    "regression_condition": "Private transaction constant lookup must actually throw before the real public TelephonyManager/TelephonyCallback controlled registry flow is exercised.",
+    "own_test_process_policy_restored_in_finally": true,
+    "real_radio_queried": false,
+    "passed": true,
+    "test_count": 16,
+    "seconds": 3.298,
+    "private_field_unavailable_precondition_actually_executed": true,
+    "public_framework_controlled_registry_close_own_close_and_same_binder_unregister_passed": true
+  },
+  "matching_native_result": "CI48_COMPLETED_PASS_FIXED_E081_SOURCE",
+  "old_phone_draft": "KEEP_UNPUBLISHED_NATIVE47_FAILED",
+  "wechat_douyin_and_phone": "UNVERIFIED",
+  "source_sha256": {
+    "patches/blackbox-api33-build.patch": "d6b29e92e5224190248ebb6580f5f020581405e85968d9d4020866afe1f89b9f",
+    "probe-host/src/androidTest/java/top/niunaijun/bcore/fake/service/RadioPrivacyContractInstrumentedTest.java": "08cf58fdc89221143ca899c94228f4a60197f217a219718e967bcff0bf75c6f3",
+    "tools/run-cloud-check.py": "d005982052c24477d4665d1f1fa71332ce8906ec95e83b393a4a33533ddffe64"
+  },
+  "initial_own_software_initialization_failure": {
+    "passed": false,
+    "label": "api33-phone-name-fix-01",
+    "executed_test_methods": 0,
+    "failure": "Own black process killed repeatedly for timeout publishing content providers; ProbeApplication then received a null service Bundle. Instrumentation crashed before any test method.",
+    "new_callback_contract_executed": false,
+    "same_apks_retained_for_warm_attempt": true,
+    "platform_image_or_timeout_changed": false
+  },
+  "local_six_path_regression": "NOT_RERUN_LOCALLY_SAME_SOURCE_DEFAULT_AND_NATIVE_CI_REQUIRED",
+  "completed_own_software_window": {
+    "scope": "SELF_OWNED_API33_SOFTWARE_CHECKS_NOT_PHONE",
+    "reused_own_userdata_after_first_boot": true,
+    "platform_image_and_timeout_settings_changed": false,
+    "maximum_seconds": 1800,
+    "stopped": true,
+    "pid": 31158,
+    "stop_reason": "MAXIMUM_WINDOW",
+    "elapsed_seconds": 1801.17
+  },
+  "subsequent_actual_default_result": "phone-transaction-name-results.json",
+  "subsequent_actual_native_result": "native-phone-transaction-name-pass-results.json"
+}

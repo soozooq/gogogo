@@ -1,0 +1,11 @@
+<resources>
+    <item name="guest_choice" type="id" />
+    <item name="import_guest" type="id" />
+    <item name="import_installed_guest" type="id" />
+    <item name="target_latitude" type="id" />
+    <item name="target_longitude" type="id" />
+    <item name="open_guest" type="id" />
+    <item name="stop_guest" type="id" />
+    <item name="copy_preview_feedback" type="id" />
+    <item name="import_status" type="id" />
+</resources>

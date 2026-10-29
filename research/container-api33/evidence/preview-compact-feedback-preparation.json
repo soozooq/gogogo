@@ -1,0 +1,81 @@
+{
+  "schema": "GOGOGO_PREVIEW_COMPACT_FEEDBACK_PREPARATION_V1",
+  "scope": "OWN_PREVIEW_CLIPBOARD_ACTUALLY_PASSED_DEFAULT50_SAME_SOURCE_NATIVE_STARTUP_AND_OWN_LOCATION_PASSED",
+  "base_commit": "1441f2fa8b0c0b268c4fc49054275d0da5120909",
+  "host_version_name": "0.2-preview",
+  "host_version_code": 2,
+  "interaction": "ONE_COPY_BUTTON_THEN_SELECT_THE_ALREADY_OBSERVED_ENTRY_AND_RESULT_NO_NEW_EXPERIMENT",
+  "wechat_entries": [
+    "SEND_LOCATION",
+    "LIVE_LOCATION",
+    "NOT_VIEWED"
+  ],
+  "other_entries": "LOCATION_PAGE_NOT_IP_PROFILE",
+  "visual_results": [
+    "SELECTED_REGION",
+    "REAL_REGION",
+    "NO_LOCATION",
+    "NOT_VIEWED"
+  ],
+  "report_scope": "USER_REPORTED_OBSERVATION_AND_SEQUENTIAL_OWN_CORE_SNAPSHOT_AT_COPY_TIME_NOT_EXTERNAL_UI_OR_SDK_PROOF",
+  "read_only_fields": [
+    "OWN_BUILD_VERSION",
+    "ANDROID_API",
+    "KNOWN_SELECTED_APP_AND_EXPECTED_VERSION",
+    "SUPPORTED_ABI_BOOLEAN",
+    "OWN_PRECISE_PERMISSION",
+    "INPUT_VALIDITY_NOT_COORDINATES",
+    "USER_ENTRY_RESULT",
+    "VIRTUAL_IMPORT_PRESENT",
+    "DIRECT_CORE_MODE_OR_UNKNOWN",
+    "REGISTERED_MAIN_SEEN_WITH_REAL_AM_INTERSECTION_NO_PID_UID_EXPORTED"
+  ],
+  "core_read_timeout_ms": 1500,
+  "timeout_fallback": "LOCAL_FIELDS_PLUS_UNKNOWN_CORE_SNAPSHOT",
+  "late_or_destroyed_activity_may_replace_clipboard": false,
+  "active_location_radio_wifi_ip_reads": false,
+  "mock_start_stop_or_guest_launch_in_feedback": false,
+  "raw_coordinates_keys_or_phone_identifiers": false,
+  "build": {
+    "gradle_reported_success": true,
+    "seconds": 16,
+    "tasks": 169,
+    "recorded_shell_exit": "NOT_AVAILABLE_RESUMED_COMPLETED_LOG",
+    "host_static_passed": true,
+    "local_host_sha256": "6fef46db29b607d752db429c893e98ba7acb68c6c3a6659a7214a69f53f2570d",
+    "local_host_size": 4562796
+  },
+  "same_core_patch_sha256": "cf4dffbb4194276f6cce94f6cb9106ff8cfc79f5111886e8018076f0dca12e15",
+  "new_permissions_dependencies_or_mock_flag_changes": false,
+  "junit_methods_added": 0,
+  "actual_clipboard_runtime": {
+    "run_id": 40424038227,
+    "commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
+    "characters": 780,
+    "guest_pid_and_mode_preserved": true,
+    "no_coordinates_recorded": true,
+    "result": "preview-compact-feedback-results.json"
+  },
+  "published_2_4_32_apks_unchanged": true,
+  "new_candidate_distributed": true,
+  "phone_experiments_requested": false,
+  "target_sdk_and_wechat_douyin_business": "NOT_VERIFIED",
+  "source_sha256": {
+    "probe-host/src/main/java/com/soozooq/tianwaitian/containerresearch/ProbeActivity.java": "381630d699c51d299311928216b369bdc519a8a7d0af51e8c88b384f8d6575fb",
+    "probe-host/src/main/res/values/ids.xml": "1672020131f39c10ecc351b87500a60cf025b57ddfd52312e85339d1503addba",
+    "probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/ThirdPartyLocationInstrumentedTest.java": "566bcc1615b9cca93b71a73c6f41ed82cf4872ed05bf063333963d54abcc2b57"
+  },
+  "matching_native": {
+    "run_id": 40424038227,
+    "commit": "414384487b22a576aa1c6a29fca1df6a167ebd47",
+    "job_id": 121928002415,
+    "result": "native-preview-feedback-virtual-startup-pass-results.json",
+    "status": "completed",
+    "conclusion": "success",
+    "passed": true,
+    "owned_location_passed": true,
+    "both_targets_closed_and_own_startups_passed": true
+  },
+  "publication_result": "phone-41438448-published-delivery-results.json",
+  "planned_regression": "EXISTING_ORDINARY_GPSTEST_IMPORT_A_TO_B_THEN_ACTUAL_CLIPBOARD_LESS_THAN1800_CHARS_NO_COORDINATES_SAME_GUEST_PID_SAME_OWN_MODE_THEN_EXISTING_STOP_CLEANUP"
+}

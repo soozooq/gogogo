@@ -1,0 +1,16 @@
+{
+  "scope": "FRESH_CLOUD_BOOT_AND_HOST_INSTALL_PASS_SHARED_STORAGE_PRECONDITION_FAILED",
+  "run_id": 39984563578,
+  "job_id": 120520265383,
+  "commit": "1629addbd83b64cef72e747000c54c6dd49c6aed",
+  "boot_completed": true,
+  "ordinary_shell_uid": "2000",
+  "host_and_test_install": "PASS",
+  "failure": "adb: error: stat failed when trying to push to /sdcard/Download/GPSTest-3.10.6.apk: Permission denied",
+  "ui_instrumentation_started": false,
+  "exact_initial_storage_state": "UNKNOWN",
+  "fix": "Wake/dismiss ordinary keyguard before shared-storage push, create and wait for writable Download directory with bounded timeout. Do not alter storage permissions.",
+  "acceleration_change": "Use real emulator acceleration check; enable available KVM on dedicated GitHub Linux runner, otherwise retain software fallback. App and adb shell remain unprivileged.",
+  "production_changed": false,
+  "next_run": "PENDING_PUSH"
+}

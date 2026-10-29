@@ -1,0 +1,52 @@
+{
+  "schema": "GOGOGO_RETIRED_PROCESS_OWNER_AND_DELIVERY_HOLD_PREPARATION_V1",
+  "scope": "PRODUCTION_LIFECYCLE_FIX_AND_CLOUD_ONLY_CHECKS_NOT_VERIFIED_WECHAT_CAUSE_OR_RUNTIME_SUCCESS",
+  "base_research_commit": "37a15f6bcac1a66ec0d0eb35e1300df6af01287a",
+  "failed_runtime_commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",
+  "failure_result": "native-passive-wechat-restart-failure-results.json",
+  "engine_patch_sha256": "1644067914092e72d27cddaf652173ecb9e05cef83efb509953d1424ebb7776e",
+  "source_review_finding": "onProcessDie removed the registered process by name without checking record identity; a late retired callback could remove a replacement and its reused proxy-slot files/notifications. This race is source-proven but not proven to have caused CI56.",
+  "production_fix": "Only exact current record may perform death cleanup; explicit stop cleans proc files and notifications while still owning the registration. Retired callback may remove only its own stale list entry.",
+  "controlled_framework_fixture": {
+    "same_name_replacement_and_slot_canary_assertions_added": true,
+    "absent_old_registration_is_inert_assertion_added": true,
+    "scope": "HOST_SINGLETON_REGISTRY_FIXTURE_NOT_ACTUAL_GUEST_DEATH",
+    "cloud_execution": "PENDING_NOT_PASS"
+  },
+  "diagnostic_change": "Record a bounded live AMS/Core process snapshot before stop/uninstall, and include BProcessManager/ActivityStack tags in bounded post-run logs.",
+  "local_checks": {
+    "android_compile_passed": true,
+    "android_compile_seconds": 20,
+    "full_engine_patch_clean_upstream_index_replay": true,
+    "python_driver_tests": 27,
+    "publication_boundary_and_signature_tests": 12,
+    "python_and_yaml_parse": true
+  },
+  "delivery_hold": {
+    "publish_enabled": false,
+    "preflight_skips_build_and_publication": true,
+    "old_native56_not_retried": true,
+    "mac_retry_not_allowed_after_native_failure": true,
+    "release_error_bounded_server_detail_preserved_next_attempt": true,
+    "only_draft_attachment_nonblocking_other_gates_mandatory": true,
+    "qualified_download_directory_created_only_after_full_matched_checks": true,
+    "qualification_curator_and_policy_still_bound_to_failed56_not_for_new_source": true
+  },
+  "versions_unchanged": {
+    "main": "2.4.35 / 2400103",
+    "host": "0.4 / 4"
+  },
+  "new_phone_steps_permissions_or_experiments": false,
+  "source_sha256": {
+    "research/container-api33/patches/blackbox-api33-build.patch": "1644067914092e72d27cddaf652173ecb9e05cef83efb509953d1424ebb7776e",
+    "research/container-api33/probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/StartupFrameworkInstrumentedTest.java": "58cc1832a189d119fc0be86565bce6cbbe19e2785ae32a082d1d7158bd9c4d06",
+    "research/container-api33/probe-host/src/androidTest/java/com/soozooq/tianwaitian/containerresearch/OfficialTargetStartupInstrumentedTest.java": "e890293a87c366a02432981dd1b3932363ce1c681ce93d73471dbf7c5a32243a",
+    "research/container-api33/tools/cuttlefish_target_baselines.py": "ed4b610bd700e776f05509a6de7f8ce68c238f804e0a72b73135a7f198d9071b",
+    ".github/workflows/phone-preview-draft.yml": "ccabca1beac712b365d12633b528d07bec0390af3b38cb3c6c6047de20f02527",
+    "ci/preview_release.py": "6067a38cf87f2349a611c56073bd20d135e0336daf22cb201886102dfc163d3d",
+    "ci/test_preview_release.py": "afa2b3e08a7cc5b616054bb86be96c42bc841058c8a7ea027af0a200a8ddf2c6",
+    "ci/release-qualifications/2.4.35.json": "96f6acac37d40dbeef3425d7b9534e7c30de492efb2c142eebfcf296311f9c65"
+  },
+  "new_same_source_linux_native_mac_required": true,
+  "target_location_business_or_vivo_verified": false
+}

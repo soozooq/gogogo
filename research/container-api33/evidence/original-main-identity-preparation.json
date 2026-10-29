@@ -1,0 +1,60 @@
+{
+  "schema": "GOGOGO_ORIGINAL_MAIN_PROCESS_IDENTITY_PREPARATION_V1",
+  "scope": "FIXED_DRIVER_MAIN_ROLE_IDENTITY_NOT_APP_LOCATION_OR_NEW_NATIVE_PASS",
+  "base_research_commit": "0797ef192c53eb0f6ed575efc4a64d134b122e65",
+  "failed_native_result": "native-original-pidof-set-failure-results.json",
+  "android_java_aidl_manifest_engine_and_main_profile_unchanged_from": "66258d1d9559789bd1247117d1eb780e24e58ad2",
+  "engine_patch_sha256": "839947fae2ffcb1379ff328b9a6c757f8253114a12ec4a20854670c53aed14e8",
+  "candidate_versions_retained": {
+    "main": "2.4.35 / 2400103",
+    "host": "0.4 / 4"
+  },
+  "change": "Use exact package-manager UID in user0, unique AMS registered main role and live kernel PID/UID. pidof lists are auxiliary diagnostics.",
+  "retained_gates": [
+    "Full 300-second ordinary Douyin observation.",
+    "Main PID and real UID unchanged throughout observation.",
+    "Target and system fatal logs still fail the control.",
+    "Unknown/ambiguous/missing AMS or kernel identity fails.",
+    "System-server stability, ordinary shell/enforcing boot identity, ownership and cleanup checks retained."
+  ],
+  "additional_same_name_children_or_order_changes_are_not_main_changes": true,
+  "main_replacement_with_old_pid_still_listed_still_fails": true,
+  "diagnostics": {
+    "main_identity_snapshots_max_records": 256,
+    "raw_ams_dump_saved": false,
+    "only_selected_headers_pid_uid": true
+  },
+  "reference": {
+    "url": "https://android.googlesource.com/platform/frameworks/base/+/refs/heads/android13-release/services/core/java/com/android/server/am/ProcessList.java",
+    "official_android13_source_quote": [
+      "pw.print(r.isPersistent()?\" *PERS*\":\" *APP*\");",
+      "pw.print(\" UID \"); pw.print(procs.keyAt(ia));",
+      "pw.print(\" \"); pw.println(r);"
+    ],
+    "scope": "Reference dump format, not proof of the historical target main identity or the exact OEM source."
+  },
+  "local_driver_tests": {
+    "passed": true,
+    "methods": 27,
+    "seconds": 0.666,
+    "new_parser_tests": 2,
+    "enhanced_hold_cases": [
+      "same-name helper added",
+      "pidof ordering changes",
+      "main replaced while old PID still listed",
+      "package UID missing",
+      "AMS main missing or ambiguous",
+      "AMS UID changed",
+      "kernel UID mismatch"
+    ]
+  },
+  "actual_new_native_runtime": "PENDING_NOT_PASS",
+  "apk_versions_bumped": false,
+  "new_phone_experiments_permissions_dependencies_or_jni": false,
+  "source_sha256": {
+    "tools/cuttlefish_target_baselines.py": "4173332c7a4a790c9fdddcb84b706dc86d48305d39cb2fc6fa3fc1c162e2d944",
+    "tests/test_cuttlefish_target_baselines.py": "cb6d6f98d9cdad5b14b16fec7e17ac9c3c0a25fa28a7f776317f97b8dabf10be"
+  },
+  "published_2_4_34_unchanged": true,
+  "current_2_4_35_draft_held": true
+}

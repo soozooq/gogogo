@@ -1,0 +1,182 @@
+{
+  "schema": "GOGOGO_CONSUMER_DELIVERY_ACTUAL_LINUX_RESULTS_V1",
+  "scope": "ACTUAL_X86_64_CONTROLLED_AND_SEPARATE_OWN_GUEST_PASSIVE_COUNTERS_NOT_WECHAT_SDK_OR_PHONE_ADOPTION",
+  "run_id": 40555343592,
+  "commit": "99940ea20ef4e7bee27a65fe759a810bf0942672",
+  "engine_patch_sha256": "420b83998686b0f25cf323bfd47bd5391245d9f323736e41473d4a3216b9f408",
+  "linux_job_id": 122369802855,
+  "linux_conclusion": "success",
+  "artifacts": {
+    "own": {
+      "id": 12757735984,
+      "sha256": "a1fbfa61b7a0d6c4c017effca410e51d0288c33918e1b7c22efcc09502b57f4c",
+      "verified": true
+    },
+    "linux": {
+      "id": 12757666580,
+      "sha256": "dc4aaa6f8a71a7b2b01dcf0dcefba3edcf7c3a97431136661220d1b43c1d49c0",
+      "verified": true
+    }
+  },
+  "both_api_archive_digests_fixed_sources_signatures_materials_verified": true,
+  "case_junit": {
+    "x86_64-startup-framework": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 0.889,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-location-contract": {
+      "passed": true,
+      "junit_tests": 7,
+      "junit_seconds": 4.574,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-radio-privacy": {
+      "passed": true,
+      "junit_tests": 19,
+      "junit_seconds": 0.243,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-owned-location": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 4.278,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-ordinary-entry": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 15.251,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-installed-import": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 7.885,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    },
+    "x86_64-calculator": {
+      "passed": true,
+      "junit_tests": 1,
+      "junit_seconds": 6.048,
+      "source_count_verified": 58,
+      "cleanup_passed": true
+    }
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "own_transport": {
+    "source_count_verified": 59,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4547824,
+        "sha256": "67d9972be8f7151813dfb3084e6f673eaee0f0cb0e73feade8f929fffa95a472"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 532202,
+        "sha256": "38c83687c8a7daf0395efa9998108ebbf1778c161682c046e86e2f21c147b13c"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 75094,
+        "sha256": "3a33e6f10122f97c06803fbfeee5cda90fbc777c1823f907b38deb030ba601fb"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "controlled_wechat_context": {
+    "junit_methods": 7,
+    "real_wechat_or_sdk": false,
+    "source_bound_assertions": [
+      "All three request channels cache/current prepare counts match requests; each stream has two returned sends.",
+      "Actual Binder caller/receiver PID matches the fixture client.",
+      "Detached summary mutation and host configuration reads do not change Core consumer counters.",
+      "WeChat both mock aliases false and synthetic extra true; generic flag preserved after restoration."
+    ]
+  },
+  "real_separate_owned_guest": {
+    "host_pid": 2967,
+    "guest_pid": 3034,
+    "actual_consumer_delivery": {
+      "last_preparation_caller_pid": 3034,
+      "cache_gps_prepared": 2,
+      "cache_passive_prepared": 2,
+      "current_network_prepared": 2,
+      "stream_gps_transaction_returned": 3,
+      "last_event_age_ms": 2008,
+      "stream_network_registered": 1,
+      "current_passive_prepared": 2,
+      "stream_network_transaction_returned": 3,
+      "maximum_profiles": 16,
+      "stream_passive_transaction_returned": 3,
+      "present": true,
+      "last_stream_mock": true,
+      "scope": "CORE_MEMORY_VIRTUAL_PREPARATION_AND_BINDER_SEND_NOT_SDK_ADOPTION",
+      "stream_passive_registered": 1,
+      "current_gps_prepared": 2,
+      "stream_gps_registered": 1,
+      "first_event_elapsed_ms": 62771,
+      "last_stream_synthetic": true,
+      "last_event_elapsed_ms": 63392,
+      "last_stream_receiver_pid": 3034,
+      "cache_network_prepared": 2
+    },
+    "maximum_sample_age_ms": 326.831001,
+    "generic_all_nine_paths_mock_marked": true,
+    "cancelled_callbacks": 0,
+    "report_source": "OWN_GUEST_ATOMIC_PRIVATE_FILE"
+  },
+  "passive_samples_source_gps_and_synthetic": true,
+  "previous_ci55_failure_retained_not_reclassified": true,
+  "actual_normal_feedback": {
+    "stage": "COMPACT_FEEDBACK_READ_ONLY",
+    "characters": 1381,
+    "guest_pid_preserved": true,
+    "mock_mode_preserved": true,
+    "coordinates_not_recorded": true
+  },
+  "new_phone_experiment": false,
+  "arm_mac_build": {
+    "job_id": 122369802713,
+    "status": "completed",
+    "result": "NO_RUNNER_NO_STEPS_CAPACITY_NOT_A_BUILD_PASS",
+    "conclusion": "cancelled",
+    "detail": "ci56-mac-capacity-results.json"
+  },
+  "matched_native": {
+    "job_id": 122374016460,
+    "status": "in_progress",
+    "result": "PENDING_NOT_PASS"
+  },
+  "new_phone_apk_published": false,
+  "current_public_2_4_34_has_passive_counters": false,
+  "target_sdk_wechat_send_live_douyin_wireless_overseas_vivo": "NOT_VERIFIED",
+  "scope_limits": [
+    "Prepared samples and returned one-way Binder transactions do not prove SDK acceptance.",
+    "Counters are bounded volatile Core history, not a current application session or UI-correlated observation.",
+    "A missing record can mean no use, restart, or eviction; it is not SDK rejection proof.",
+    "Mac build and same-source native results are independently pending; CI52 cannot substitute."
+  ],
+  "verifier_sha256": "cedbe7410b8c21b1c7949465ae2c0dedd8d15fcbf2b79b234980663206cfd528",
+  "inputs_manifest_sha256": "4e716ff85f20eb756cdae581fdd373fb37bddce16e13fde1c2c9ae69adcf74cc",
+  "separate_old_native54_result": "native-original-main-identity-pass-results.json",
+  "old_native54_does_not_cover_passive_provider_fix": true
+}
