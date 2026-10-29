@@ -17,6 +17,7 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.provider.DocumentsContract;
 import android.view.View;
+import android.view.accessibility.AccessibilityEvent;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.WindowInsets;
@@ -193,6 +194,11 @@ public final class ProbeActivity extends Activity {
         status.setText(!supported ? "所选原版仅支持原生 ARM64 设备。" : imported ? "已导入 " + entry
                 + (entry.location ? "。确认坐标后应用并打开；以后可直接修改坐标。" : "。可直接打开。")
                 : "先导入 " + entry + " 的官方原版 APK。");
+        // Publish the whole batch after all controls and the status agree. A
+        // repeated status string alone need not invalidate cached button nodes.
+        AccessibilityEvent changed = AccessibilityEvent.obtain(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED);
+        changed.setContentChangeTypes(AccessibilityEvent.CONTENT_CHANGE_TYPE_SUBTREE);
+        findViewById(R.id.preview_root).sendAccessibilityEventUnchecked(changed);
     }
 
     @Override protected void onResume() { super.onResume(); if (!busy) refresh(); }

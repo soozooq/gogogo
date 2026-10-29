@@ -11,6 +11,11 @@ import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.os.Process;
 import android.os.SystemClock;
+import android.app.Activity;
+import android.widget.TextView;
+import android.view.accessibility.AccessibilityNodeInfo;
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry;
+import androidx.test.runner.lifecycle.Stage;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.uiautomator.By;
@@ -91,8 +96,10 @@ public final class ExternalGuestInstrumentedTest {
                     "import_installed_guest").enabled(true)), 30000);
             assertNotNull("Ordinary installed-version import button", importButton);
             importButton.click();
-            assertNotNull("Public installed APK imported through the ordinary UI", device.wait(
-                    Until.findObject(By.res(context.getPackageName(), "open_guest").enabled(true)), 60000));
+            UiObject2 importedOpen = waitForImportedOpen(context);
+            JSONObject importUi = saveInstalledImportUiState(context, evidence, importedOpen != null);
+            assertNotNull("Public installed APK imported through the ordinary UI", importedOpen);
+            assertTrue("Actual own View is enabled after import", importUi.optBoolean("view_open_enabled"));
             assertTrue(BlackBoxCore.get().isInstalled(GuestImport.PACKAGE, 0));
             assertOriginalGuestSignatures(true);
             assertNotNull(device.findObject(By.res(context.getPackageName(), "import_installed_guest").enabled(false)));
@@ -115,6 +122,48 @@ public final class ExternalGuestInstrumentedTest {
         try (FileOutputStream output = new FileOutputStream(new File(evidence, "installed-import.json"))) {
             output.write(report.toString(2).getBytes(StandardCharsets.UTF_8));
         }
+    }
+
+    private UiObject2 waitForImportedOpen(Context context) {
+        long deadline = SystemClock.elapsedRealtime() + 60000;
+        while (SystemClock.elapsedRealtime() < deadline) {
+            AccessibilityNodeInfo root = InstrumentationRegistry.getInstrumentation().getUiAutomation().getRootInActiveWindow();
+            if (root != null) {
+                // Public refresh re-reads this own control instead of trusting a
+                // cached disabled node from the asynchronous import transition.
+                for (AccessibilityNodeInfo node : root.findAccessibilityNodeInfosByViewId(
+                        context.getPackageName() + ":id/open_guest")) {
+                    node.refresh(); node.recycle();
+                }
+                root.recycle();
+            }
+            UiObject2 button = device.findObject(By.res(context.getPackageName(), "open_guest").enabled(true));
+            if (button != null) return button;
+            SystemClock.sleep(100);
+        }
+        return null;
+    }
+
+    private JSONObject saveInstalledImportUiState(Context context, File evidence, boolean accessibilityEnabled) throws Exception {
+        JSONObject state = new JSONObject().put("scope", "OWN_IMPORT_UI_STATE_BEFORE_VIRTUAL_UNINSTALL_NOT_LOCATION")
+                .put("accessibility_open_enabled", accessibilityEnabled)
+                .put("virtual_installed", BlackBoxCore.get().isInstalled(GuestImport.PACKAGE, 0));
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+            for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED)) {
+                if (!(activity instanceof ProbeActivity)) continue;
+                try {
+                    state.put("view_open_enabled", activity.findViewById(R.id.open_guest).isEnabled())
+                            .put("view_feedback_enabled", activity.findViewById(R.id.copy_preview_feedback).isEnabled())
+                            .put("view_spinner_enabled", activity.findViewById(R.id.guest_choice).isEnabled())
+                            .put("status_indicates_imported", ((TextView) activity.findViewById(R.id.import_status))
+                                    .getText().toString().startsWith("已导入 "));
+                } catch (Exception unavailable) { /* Missing diagnostics cannot turn a failure into a pass. */ }
+            }
+        });
+        try (FileOutputStream output = new FileOutputStream(new File(evidence, "installed-import-ui-state.json"))) {
+            output.write(state.toString(2).getBytes(StandardCharsets.UTF_8));
+        }
+        return state;
     }
 
     private void startInstalledCalculator() throws Exception {

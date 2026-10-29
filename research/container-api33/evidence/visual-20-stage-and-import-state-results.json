@@ -1,0 +1,119 @@
+{
+  "scope": "ACTUAL_20_STAGE_OWN_UI_PASS_WITH_INSTALLED_IMPORT_REGRESSION_FAILURE",
+  "commit": "87d5188f32cf6b816a9f0f29696dd328b6e230b5",
+  "run_id": 40866391127,
+  "linux_job_id": 123422128558,
+  "linux_conclusion": "FAILURE",
+  "mac_job_id": 123422128936,
+  "mac_conclusion": "SUCCESS_BUILD_ONLY",
+  "native_job_id": 123426358630,
+  "native_conclusion": "SKIPPED_NOT_PASS",
+  "archives": {
+    "own": {
+      "id": 12893109466,
+      "sha256": "90d21f5d26970ab530117b28eecde77d80d848960e9ca07a8d678fb031f92a50",
+      "verified": true
+    },
+    "mac": {
+      "id": 12893937975,
+      "sha256": "5d24897f117f9883f9dbb1373f054bfdc18ac523683ecbb7b957df15a10bb217",
+      "verified": true
+    },
+    "linux": {
+      "id": 12893424362,
+      "sha256": "7240ba1d55eb94a323b52657863f21ff67eb5adc1d7b2f0cb2df20c0d5e1d0b2",
+      "verified": true
+    }
+  },
+  "own_transport": {
+    "source_count_verified": 73,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4557931,
+        "sha256": "75eca4bf3dc1c3928dca97a448467f7dd95547dfe3b015d3174338b957dd9860"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 541378,
+        "sha256": "a1e3d6b73057b48c33e08786ba206a92f6284c7c12a774d2ce1e561a130c927b"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 75094,
+        "sha256": "79054e7694405ded480849a9c99431a1e5e4f36c03bf4254cc4f5828d60a5ac4"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "default_cases": {
+    "x86_64-startup-framework": true,
+    "x86_64-owned-location": true,
+    "x86_64-ordinary-entry": true,
+    "x86_64-location-contract": true,
+    "x86_64-installed-import": false,
+    "read-only-ui-capture": true
+  },
+  "unexecuted_runtime_cases": [
+    "x86_64-radio-privacy",
+    "x86_64-calculator"
+  ],
+  "visual": {
+    "passed": true,
+    "junit_seconds": 50.935,
+    "expected_page_count": 20,
+    "actual_stage_count": 20,
+    "issues": [],
+    "both_coordinates_edited_with_actual_ime": true,
+    "minimum_visible_target_dp": 48,
+    "system_server_stable": true,
+    "owned_cleanup": {
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true,
+      "com.soozooq.gogogo.test": true
+    },
+    "settings_restored": true,
+    "manual_original_images_reviewed": [
+      "light-large-320-keyboard",
+      "light-large-320-keyboard-longitude",
+      "light-360-map"
+    ],
+    "no_images_edited": true,
+    "map_pixels_observed": "ROAD_AND_RIVER_GEOMETRY_VISIBLE_IN_LIGHT_360_FRAME_NOT_MAP_SELECTION_OR_PHONE_LOCATION_ACCEPTANCE"
+  },
+  "installed_import_failure": {
+    "junit_seconds": 67.004,
+    "failed_assertion": "Public installed APK imported through the ordinary UI: enabled open control not found within original 60 seconds",
+    "virtual_package_install_finished_logged_ms": 165,
+    "failure_time_own_status": "已导入 Fossify 计算器 1.4.0。可直接打开。",
+    "failure_time_accessibility_open_enabled": false,
+    "failure_time_accessibility_feedback_enabled": false,
+    "failure_png_reviewed": true,
+    "failure_png_open_uses_enabled_primary_colors": true,
+    "native_view_enabled_state_was_not_captured": "UNKNOWN_DO_NOT_ASSERT_CACHE_CAUSE_PROVEN",
+    "original_control_removed": true,
+    "screenshot_sha256": "b9906b34feb254bca5aca528a1aa199411b3ab6cf90d7652a9a0c4fc4ddb6cc4"
+  },
+  "next_correction": {
+    "publish_subtree_accessibility_event_after_complete_control_batch": true,
+    "explicit_public_accessibility_node_refresh_without_bypassing_ui_click_or_enabled_assertion": true,
+    "original_60_second_deadline_kept": true,
+    "capture_native_and_accessibility_enabled_states_before_cleanup": true
+  },
+  "candidate_distributed": false,
+  "new_phone_workflow_started": false,
+  "native_qualified": false,
+  "engine_changed": false,
+  "target_sdk_or_vivo_business_verified": false
+}

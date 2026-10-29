@@ -233,7 +233,7 @@ for relative in (() if contract_case else
         ('window.xml', 'screen.png', 'entry.png', 'result.json', 'last-visible-text.json',
          'failure-window.xml', 'failure-screen.png') if args.third_party_location else
         ('window.xml', 'screen.png', 'result.json', 'stages.json', 'last-guest-report.json') if args.guest_location
-        else ('window.xml', 'screen.png', 'installed-import.json') if args.installed_baseline
+        else ('window.xml', 'screen.png', 'installed-import.json', 'installed-import-ui-state.json') if args.installed_baseline
         else ('window.xml', 'screen.png')):
     exists = run(['shell', 'run-as', 'com.soozooq.tianwaitian.containerresearch',
         'test', '-f', 'files/' + folder + '/' + relative], check=False).returncode == 0
