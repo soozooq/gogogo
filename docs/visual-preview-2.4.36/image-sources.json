@@ -1,0 +1,35 @@
+{
+  "scope": "UNEDITED_SELF_OWNED_ANDROID_UI_ONLY",
+  "source_commit": "87d5188f32cf6b816a9f0f29696dd328b6e230b5",
+  "run_id": 40866391127,
+  "linux_artifact_id": 12893424362,
+  "ui_stages_passed": 20,
+  "workflow_overall": "FAILURE_INSTALLED_IMPORT_ENABLED_STATE_AND_OLD_COLLECTOR_16_PAGE_EXPECTATION",
+  "native_stage": "SKIPPED_NOT_PASS",
+  "images": [
+    {
+      "file": "map-light.png",
+      "original": "light-360-map.png",
+      "bytes": 339991,
+      "sha256": "a268865d4ea9177de92671b3ea100bd3f020e54e1b9766b25dfa10cd5a6299af"
+    },
+    {
+      "file": "preview-dark.png",
+      "original": "dark-360-preview.png",
+      "bytes": 121179,
+      "sha256": "c081c6f30df24d10870ee43753010cd0a85890a7ed6f1ec0c0816909d8c940c1"
+    },
+    {
+      "file": "search-large.png",
+      "original": "light-large-320-search.png",
+      "bytes": 124741,
+      "sha256": "f6e86c37a60e5a88d547a21d8b606bf7ea288f9117342defa88568b5af3f7783"
+    },
+    {
+      "file": "keyboard-longitude-large.png",
+      "original": "light-large-320-keyboard-longitude.png",
+      "bytes": 73804,
+      "sha256": "e5bca377c1921d55c49159b55fdbf8dea38be2134066a99a06899b57af6cc09c"
+    }
+  ]
+}

@@ -70,7 +70,7 @@
     "x86_64-calculator"
   ],
   "visual": {
-    "passed": true,
+    "passed": false,
     "junit_seconds": 50.935,
     "expected_page_count": 20,
     "actual_stage_count": 20,
@@ -90,7 +90,10 @@
       "light-360-map"
     ],
     "no_images_edited": true,
-    "map_pixels_observed": "ROAD_AND_RIVER_GEOMETRY_VISIBLE_IN_LIGHT_360_FRAME_NOT_MAP_SELECTION_OR_PHONE_LOCATION_ACCEPTANCE"
+    "map_pixels_observed": "ROAD_AND_RIVER_GEOMETRY_VISIBLE_IN_LIGHT_360_FRAME_NOT_MAP_SELECTION_OR_PHONE_LOCATION_ACCEPTANCE",
+    "instrumented_method_passed": true,
+    "wrapper_passed": false,
+    "additional_wrapper_failure": "Outer collector still expected16 pages while method declared and captured20; identified in66 source review"
   },
   "installed_import_failure": {
     "junit_seconds": 67.004,

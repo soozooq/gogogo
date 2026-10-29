@@ -28,6 +28,9 @@ paths = {main: Path(args.main_apk),
 result = {'scope': 'SELF_OWNED_VISUAL_UI_ONLY_NOT_TARGET_LOCATION', 'passed': False}
 installed = []
 settings = {}
+profiles = ('light-360', 'dark-360', 'light-large-320', 'dark-large-320')
+stages = ('map', 'search', 'preview', 'keyboard', 'keyboard-longitude')
+expected_pages = {profile + '-' + stage for profile in profiles for stage in stages}
 
 
 def run(parts, timeout=30, check=True):
@@ -73,7 +76,7 @@ try:
                     timeout=480, check=False)
     (out / 'instrumentation.txt').write_bytes(execution.stdout + execution.stderr)
     names = shell('run-as', host, 'ls', 'files/visual-layout-evidence').splitlines()
-    assert len(names) <= 48  # 16 normal pages plus at most one failure page/profile.
+    assert len(names) <= 2 * (len(expected_pages) + len(profiles)) + 1, 'Bounded own screenshot set'
     for name in names:
         assert re.fullmatch(r'[a-zA-Z0-9_-]+\.(json|png|xml)', name)
         (out / name).write_bytes(run(['exec-out', 'run-as', host, 'cat',
@@ -82,7 +85,11 @@ try:
     result['observed'] = observed
     result['system_server_after'] = shell('pidof', 'system_server')
     assert execution.returncode == 0 and b'OK (1 test)' in execution.stdout
-    assert observed['passed'] is True and len(observed['pages']) == 16
+    assert observed['passed'] is True, 'Own visual instrumentation must pass'
+    assert observed['expected_page_count'] == len(expected_pages) \
+        and len(observed['pages']) == len(expected_pages) \
+        and {page['name'] for page in observed['pages']} == expected_pages, \
+        'All four profiles and five stages (including both coordinate keyboards) are required'
     assert result['system_server_before'] == result['system_server_after']
     for page in observed['pages']:
         ET.parse(out / (page['name'] + '.xml'))
