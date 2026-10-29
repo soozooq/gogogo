@@ -13,6 +13,53 @@ spec.loader.exec_module(release)
 
 
 class PublicationBoundaryTest(unittest.TestCase):
+    def test_new_preview_keeps_its_own_profile_and_full_host_entry_count(self):
+        config = {'expected_apks': {'main': {'version_name': '2.4.36-container-preview'}},
+                  'metadata_profile_path': 'docs/build-profiles/main-preview-2.4.36.init.gradle',
+                  'host_ci_non_signature_entries': 423}
+        self.assertEqual(423, release.preview_metadata(config)['host_entries'])
+        self.assertEqual('main-preview-2.4.36.init.gradle', release.preview_metadata(config)['profile_file'])
+        self.assertEqual(415, release.preview_metadata({})['host_entries'])
+        for mutation in [{'metadata_profile_path': 'docs/build-profiles/main-preview-2.4.35.init.gradle'},
+                         {'metadata_profile_path': '../outside.init.gradle'},
+                         {'host_ci_non_signature_entries': True}, {'host_ci_non_signature_entries': 0}]:
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                release.preview_metadata(dict(config, **mutation))
+
+    def test_visual_gate_rejects_missing_longitude_stage_ime_and_failed_cleanup(self):
+        # Report-structure fixtures, not Android images or runtime evidence.
+        profiles = ['light-360', 'dark-360', 'light-large-320', 'dark-large-320']
+        names = [p + '-' + s for p in profiles for s in ['map', 'search', 'preview', 'keyboard', 'keyboard-longitude']]
+        value = {'passed': True, 'issues': [], 'expected_page_count': 20,
+                 'pages': [{'name': name, 'input_method_window_visible': '-keyboard' in name} for name in names],
+                 'guest_imported': False, 'guest_launched': False, 'location_permission_requested': False,
+                 'target_sdk_adoption_verified': False}
+        runner = {'passed': True, 'observed': value, 'display_settings_restored': True,
+                  'system_server_before': '552', 'system_server_after': '552',
+                  'owned_package_cleanup': {name: True for name in ['com.soozooq.gogogo.test',
+                      'com.soozooq.tianwaitian.containerresearch', 'com.soozooq.tianwaitian.containerresearch.test']}}
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            for name in names:
+                for ext in ['png', 'xml']:
+                    (folder / (name + '.' + ext)).write_text('structure fixture only')
+            def write(v, r):
+                r['observed'] = v
+                (folder / 'result.json').write_text(json.dumps(v))
+                (folder / 'runner-result.json').write_text(json.dumps(r))
+            write(value, runner)
+            self.assertTrue(release.verify_visual_layout(folder, 20)['passed'])
+            for label, change in [
+                    ('missing_longitude', lambda v, r: v['pages'].pop()),
+                    ('no_real_ime', lambda v, r: v['pages'][-1].update(input_method_window_visible=False)),
+                    ('failed_profile', lambda v, r: v.update(passed=False)),
+                    ('unclean_host', lambda v, r: r['owned_package_cleanup'].update({'com.soozooq.tianwaitian.containerresearch': False})),
+                    ('changed_system', lambda v, r: r.update(system_server_after='553')),
+                    ('settings_not_restored', lambda v, r: r.update(display_settings_restored=False))]:
+                v, r = copy.deepcopy(value), copy.deepcopy(runner); change(v, r); write(v, r)
+                with self.subTest(label=label), self.assertRaises(ValueError):
+                    release.verify_visual_layout(folder, 20)
+
     def test_actions_zip_and_release_asset_use_their_supported_media_types(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(release.subprocess, 'run') as invoke:
             release.download('actions/artifacts/123/zip', Path(directory) / 'own.zip')

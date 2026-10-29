@@ -12,6 +12,7 @@ on:
       - ci/preview_release.py
       - ci/qualify_native_preview.py
       - ci/test_preview_release.py
+      - ci/test_stage_rootless_phone_preview.py
       - ci/phone-preview/**
       - ci/release-qualifications/**
 
@@ -42,7 +43,7 @@ jobs:
           import json, os
           from pathlib import Path
           from ci.preview_release import delivery_reference
-          policy = json.loads(Path('ci/release-qualifications/2.4.35.json').read_text())
+          policy = json.loads(Path('ci/release-qualifications/2.4.36.json').read_text())
           enabled = policy['publish_enabled'] is True
           source = delivery_reference(policy, int(os.environ['GITHUB_RUN_ID']), os.environ['GITHUB_SHA'])
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
@@ -63,8 +64,8 @@ jobs:
       contents: write
     env:
       GH_REPO: soozooq/gogogo
-      SOURCE_COMMIT: c8052d318bed3cf9c0e37ddc864abea4cc74c816
-      PREVIEW_TAG: preview-2.4.35-container-c8052d31
+      SOURCE_COMMIT: 20ff7a0ef8fec5fc0caca788f98095f5eba2701f
+      PREVIEW_TAG: preview-2.4.36-container-20ff7a0e
     steps:
       - uses: actions/checkout@v5
         with:
@@ -73,7 +74,7 @@ jobs:
           persist-credentials: false
       - uses: actions/checkout@v5
         with:
-          ref: c8052d318bed3cf9c0e37ddc864abea4cc74c816
+          ref: 20ff7a0ef8fec5fc0caca788f98095f5eba2701f
           path: source
           persist-credentials: false
       - uses: actions/setup-java@v4
@@ -95,10 +96,8 @@ jobs:
             ln -s 16.0 "$ANDROID_HOME/cmdline-tools/latest"
           fi
           test -x "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
-      - name: Check public signature reconstruction without credentials
-        run: python3 -m unittest discover -s delivery/ci -p test_restore_preview_signature.py -v
-      - name: Check publication and retry boundaries
-        run: python3 -m unittest discover -s delivery/ci -p test_preview_release.py -v
+      - name: Check staging, public signature restoration and publication boundaries
+        run: python3 -m unittest discover -s delivery/ci -p 'test_*preview*.py' -v
       - name: Prepare the fixed SDK and placeholder build profile
         shell: bash
         run: |
@@ -111,30 +110,30 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          bash ./gradlew --no-daemon --init-script docs/build-profiles/main-preview-2.4.35.init.gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --console=plain
-      - name: Receive only the pinned CI57 self-owned set
+          bash ./gradlew --no-daemon --init-script docs/build-profiles/main-preview-2.4.36.init.gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --console=plain
+      - name: Receive only the pinned CI67 self-owned set
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          gh api repos/soozooq/gogogo/actions/artifacts/12775788117 > package-work/artifact-api.json
+          gh api repos/soozooq/gogogo/actions/artifacts/12896231660 > package-work/artifact-api.json
           python3 - <<'PY'
           import json
           from pathlib import Path
           value = json.loads(Path('package-work/artifact-api.json').read_text())
-          assert value['id'] == 12775788117 and not value['expired']
-          assert value['workflow_run']['id'] == 40595256036
-          assert value['workflow_run']['head_sha'] == 'c8052d318bed3cf9c0e37ddc864abea4cc74c816'
-          assert value['digest'] == 'sha256:64da4721716e2d6c41e6fe5d6d56f57555d529b5b098280eadfa0d7534692bef'
+          assert value['id'] == 12896231660 and not value['expired']
+          assert value['workflow_run']['id'] == 40870835491
+          assert value['workflow_run']['head_sha'] == '20ff7a0ef8fec5fc0caca788f98095f5eba2701f'
+          assert value['digest'] == 'sha256:86b819bb01d4314091b304c5f45cf93861f79543ff2c4e921b7324e3164f9899'
           PY
-          gh api repos/soozooq/gogogo/actions/artifacts/12775788117/zip > package-work/owned.zip
+          gh api repos/soozooq/gogogo/actions/artifacts/12896231660/zip > package-work/owned.zip
           python3 - <<'PY'
           import json
           from pathlib import Path
-          inputs = {'run_id': 40595256036, 'commit': 'c8052d318bed3cf9c0e37ddc864abea4cc74c816',
-                    'artifacts': {'own': {'id': 12775788117, 'path': str(Path('package-work/owned.zip').resolve()),
-                    'sha256': '64da4721716e2d6c41e6fe5d6d56f57555d529b5b098280eadfa0d7534692bef'}}}
+          inputs = {'run_id': 40870835491, 'commit': '20ff7a0ef8fec5fc0caca788f98095f5eba2701f',
+                    'artifacts': {'own': {'id': 12896231660, 'path': str(Path('package-work/owned.zip').resolve()),
+                    'sha256': '86b819bb01d4314091b304c5f45cf93861f79543ff2c4e921b7324e3164f9899'}}}
           Path('package-work/verification-inputs.json').write_text(json.dumps(inputs))
           PY
           python3 source/research/container-api33/tools/verify-ci-receipts.py --repo source --sdk "$ANDROID_HOME" --inputs package-work/verification-inputs.json --output package-work/verified-owned.json
@@ -145,16 +144,16 @@ jobs:
               Path('package-work/base-host.apk').write_bytes(archive.read('probeHost-debug.apk'))
           PY
       - name: Restore the exact privately signed host using public APK metadata
-        run: python3 delivery/ci/restore_preview_signature.py --base package-work/base-host.apk --recipe delivery/ci/phone-preview/host-signature-c8052d31.json --output package-work/signed-host.apk
+        run: python3 delivery/ci/restore_preview_signature.py --base package-work/base-host.apk --recipe delivery/ci/phone-preview/host-signature-20ff7a0e.json --output package-work/signed-host.apk
       - name: Stage only the two verified phone APKs
         shell: bash
         run: |
           set -euo pipefail
-          python3 delivery/ci/stage_rootless_phone_preview.py --source source --host package-work/signed-host.apk --base-host package-work/base-host.apk --sdk "$ANDROID_HOME" --output package-work/staged --delivery-run-id "$GITHUB_RUN_ID"
+          python3 delivery/ci/stage_rootless_phone_preview.py --source source --host package-work/signed-host.apk --base-host package-work/base-host.apk --sdk "$ANDROID_HOME" --output package-work/staged --delivery-run-id "$GITHUB_RUN_ID" --config delivery/ci/release-qualifications/2.4.36.json
       - name: Save one flat phone download and its receipt
         uses: actions/upload-artifact@v4
         with:
-          name: tianwaitian-phone-preview-2.4.35-c8052d31
+          name: tianwaitian-phone-preview-2.4.36-20ff7a0e
           path: package-work/staged/*
           if-no-files-found: error
           retention-days: 14
@@ -167,7 +166,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 ci/preview_release.py stage --config ci/release-qualifications/2.4.35.json --package-dir ../package-work/staged --work ../package-work/draft --delivery-run "$GITHUB_RUN_ID"
+          python3 ci/preview_release.py stage --config ci/release-qualifications/2.4.36.json --package-dir ../package-work/staged --work ../package-work/draft --delivery-run "$GITHUB_RUN_ID"
       - name: Preserve staging diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -215,7 +214,7 @@ jobs:
           fi
           sdkmanager --sdk_root="$ANDROID_HOME" 'build-tools;33.0.2' 'build-tools;35.0.0'
       - name: Check publication and retry boundaries before receiving packages
-        run: python3 -m unittest discover -s ci -p test_preview_release.py -v
+        run: python3 -m unittest discover -s ci -p 'test_*preview*.py' -v
       - name: Qualify the pinned phone package and publish if available
         env:
           GH_TOKEN: ${{ github.token }}
@@ -224,7 +223,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 ci/preview_release.py publish --config ci/release-qualifications/2.4.35.json --sdk "$ANDROID_HOME" --work "$RUNNER_TEMP/matched-preview-publication" --delivery-run "$DELIVERY_SOURCE_RUN" --delivery-commit "$DELIVERY_SOURCE_COMMIT"
+          python3 ci/preview_release.py publish --config ci/release-qualifications/2.4.36.json --sdk "$ANDROID_HOME" --work "$RUNNER_TEMP/matched-preview-publication" --delivery-run "$DELIVERY_SOURCE_RUN" --delivery-commit "$DELIVERY_SOURCE_COMMIT"
       - name: Preserve qualification and actual publication result
         if: always()
         uses: actions/upload-artifact@v4
@@ -237,7 +236,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: qualified-phone-preview-2.4.35-c8052d31-${{ github.run_id }}
+          name: qualified-phone-preview-2.4.36-20ff7a0e-${{ github.run_id }}
           path: ${{ runner.temp }}/matched-preview-publication/qualified-phone/*
           if-no-files-found: ignore
           retention-days: 14

@@ -29,6 +29,50 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def preview_metadata(config):
+    """Return exact current pins while retaining legacy qualification receipts."""
+    version = config.get('expected_apks', {}).get('main', {}).get('version_name', '2.4.35-container-preview')
+    require(re.fullmatch(r'2\.4\.[0-9]+-container-preview', version), 'Unexpected main preview version')
+    profile = config.get('metadata_profile_path', 'docs/build-profiles/main-preview-2.4.35.init.gradle')
+    require(profile == 'docs/build-profiles/main-preview-' + version.removesuffix('-container-preview') + '.init.gradle',
+            'Frozen preview profile differs from version')
+    count = config.get('host_ci_non_signature_entries', 415)
+    require(type(count) is int and 1 <= count <= 10000, 'Frozen host entry count missing or invalid')
+    return {'version': version.removesuffix('-container-preview'), 'profile': profile,
+            'profile_file': Path(profile).name, 'host_entries': count}
+
+
+def verify_visual_layout(folder, expected_pages):
+    """New UI candidates require the complete same-source raw layout result."""
+    require(expected_pages == 20, 'Unexpected visual qualification profile')
+    value = json.loads((folder / 'result.json').read_text())
+    runner = json.loads((folder / 'runner-result.json').read_text())
+    profiles = ['light-360', 'dark-360', 'light-large-320', 'dark-large-320']
+    stages = ['map', 'search', 'preview', 'keyboard', 'keyboard-longitude']
+    names = {p + '-' + s for p in profiles for s in stages}
+    pages = value['pages']
+    require(value['passed'] is True and value['issues'] == [] and value['expected_page_count'] == expected_pages
+            and len(pages) == expected_pages and {p['name'] for p in pages} == names,
+            'Every visual profile and both coordinate keyboard stages must pass')
+    require(all(p['input_method_window_visible'] is True for p in pages if '-keyboard' in p['name'])
+            and all(value[k] is False for k in ['guest_imported', 'guest_launched', 'location_permission_requested',
+                                              'target_sdk_adoption_verified']), 'Visual keyboard or read-only scope differs')
+    require(runner['passed'] is True and runner['observed'] == value and runner['display_settings_restored'] is True
+            and runner['system_server_before'] == runner['system_server_after']
+            and re.fullmatch('[1-9][0-9]*', runner['system_server_before'])
+            and set(runner['owned_package_cleanup']) == {'com.soozooq.gogogo.test',
+                'com.soozooq.tianwaitian.containerresearch', 'com.soozooq.tianwaitian.containerresearch.test'}
+            and all(v is True for v in runner['owned_package_cleanup'].values()),
+            'Visual system stability, cleanup or settings restore failed')
+    require({p.stem for p in folder.glob('*.png')} == names
+            and {p.stem for p in folder.glob('*.xml')} == names
+            and all((folder / (name + ext)).stat().st_size > 0 for name in names for ext in ['.png', '.xml']),
+            'Complete actual visual image/hierarchy set missing')
+    return {'passed': True, 'page_count': expected_pages, 'profiles': profiles,
+            'both_coordinates_edited_with_real_keyboard': True,
+            'scope': 'SELF_OWNED_UI_ONLY_NOT_TARGET_LOCATION'}
+
+
 def run(command, **kwargs):
     return subprocess.check_output(command, stderr=subprocess.PIPE, **kwargs)
 
@@ -106,11 +150,12 @@ def save_qualified_release_refusal(error, work, qualified_dir, qualified):
             or response.get('message') != 'Resource not accessible by integration' \
             or str(response.get('status')) != '403' or b'HTTP 403' not in (error.stderr or b''):
         return False
-    require(qualified_dir.is_dir() and qualified['published'] is False
+    contents_verified = qualified.get('profile_main447lint_versions_signatures_and_host_contents_verified',
+        qualified.get('profile_main447lint_versions_signatures_and_415_entries_verified'))
+    require(qualified_dir.is_dir() and qualified['published'] is False and contents_verified is True
             and all(qualified[k] is True for k in [
                 'all_four_archive_sources_signatures_materials_verified',
-                'native_seven_methods_and_real_guest_nine_paths_verified',
-                'profile_main447lint_versions_signatures_and_415_entries_verified']),
+                'native_seven_methods_and_real_guest_nine_paths_verified']),
             'Artifact fallback requires full existing qualification')
     receipt = {**qualified, 'schema': 'GOGOGO_QUALIFIED_ARTIFACT_RELEASE_UNAVAILABLE_V1',
                'delivery_state': 'QUALIFIED_ARTIFACT_READY_RELEASE_CREATION_REFUSED',
@@ -157,7 +202,7 @@ def validate_manifest(value, config, delivery_run):
     require(value['main_checks'] == {'junit': COUNTS, 'lint_error_fatal_count': 0},
             'Phone main checks did not pass')
     require(value['host_original_ci_run'] == config['qualification_run_id']
-            and value['host_ci_non_signature_entries_equal'] == 415
+            and value['host_ci_non_signature_entries_equal'] == preview_metadata(config)['host_entries']
             and value['private_key_used_or_included'] is False
             and value['original_target_apks_included'] is False, 'Phone provenance differs')
     require(value['metadata_profile_sha256'] == config['profile_sha256'], 'Phone profile differs')
@@ -340,6 +385,7 @@ def receive_artifact(pin, config, work, role):
 
 
 def publish(args, config, config_path):
+    metadata = preview_metadata(config)
     work = Path(args.work)
     work.mkdir(parents=True, exist_ok=False)
     wait_qualification(config, work, config_path)
@@ -363,6 +409,10 @@ def publish(args, config, config_path):
             and proof['feedback_main'] == {'junit': COUNTS, 'lint_error_fatal_count': 0, 'passed': True}
             and len(proof['default_cases']) == 8 and all(v['passed'] for v in proof['default_cases'].values()),
             'Default qualification did not pass')
+    visual = None
+    if config.get('required_visual_page_count') is not None:
+        visual = verify_visual_layout(work / 'linux/visual-layout', config['required_visual_page_count'])
+        save(work / 'visual-qualified.json', visual)
     subprocess.run([sys.executable, 'ci/qualify_native_preview.py', '--config', str(config_path),
                     '--proof', str(work / 'verified.json'),
                     '--raw', str(work / 'native'), '--output', str(work / 'native-qualified.json')], check=True)
@@ -396,12 +446,12 @@ def publish(args, config, config_path):
         manifest['apks'][role]['sha256'] + '  ' + manifest['apks'][role]['file'] + '\n'
         for role in ['main', 'host']), 'Phone checksum list differs')
     expected_files = {v['file'] for v in manifest['apks'].values()} | {
-        'candidate-manifest.json', 'SHA256SUMS', 'PHONE-README.txt', 'main-preview-2.4.35.init.gradle'}
+        'candidate-manifest.json', 'SHA256SUMS', 'PHONE-README.txt', metadata['profile_file']}
     require({p.name for p in (work / 'phone').iterdir()} == expected_files
             and all(p.is_file() for p in (work / 'phone').iterdir()), 'Phone download is not the flat six-file set')
-    profile = (work / 'phone/main-preview-2.4.35.init.gradle').read_bytes()
+    profile = (work / 'phone' / metadata['profile_file']).read_bytes()
     require(sha(profile) == config['profile_sha256']
-            and profile == run(['git', 'show', config['runtime_commit'] + ':docs/build-profiles/main-preview-2.4.35.init.gradle']),
+            and profile == run(['git', 'show', config['runtime_commit'] + ':' + metadata['profile']]),
             'Actual phone profile differs')
     spec = importlib.util.spec_from_file_location('preview_inspector', 'ci/stage_rootless_phone_preview.py')
     inspector = importlib.util.module_from_spec(spec)
@@ -412,7 +462,7 @@ def publish(args, config, config_path):
         require(actual == {k: v for k, v in value.items() if k != 'file'}, 'Actual phone APK differs: ' + role)
     host = work / 'phone' / manifest['apks']['host']['file']
     contents = inspector.non_signature_entries(host)
-    require(len(contents) == 415 and contents == inspector.non_signature_entries(work / 'own/probeHost-debug.apk'),
+    require(len(contents) == metadata['host_entries'] and contents == inspector.non_signature_entries(work / 'own/probeHost-debug.apk'),
             'Actual host differs from matched CI APK')
     # A later code change or policy stop invalidates this pending delivery.
     live_policy_matches(config_path, config)
@@ -424,7 +474,7 @@ def publish(args, config, config_path):
     require(not run(['git', 'diff', '--name-only', config['runtime_commit'], 'FETCH_HEAD', '--',
                     'app', 'externalDemo', 'build.gradle', 'settings.gradle', 'gradle', 'gradle.properties',
                     'gradlew', 'gradlew.bat',
-                    'docs/build-profiles/main-preview-2.4.35.init.gradle']).strip(), 'Main source advanced')
+                    metadata['profile']]).strip(), 'Main source advanced')
     qualified = {'schema': 'GOGOGO_MATCHED_QUALIFIED_PHONE_ARTIFACT_V1',
                  'runtime_commit': config['runtime_commit'], 'qualification_run_id': config['qualification_run_id'],
                  'delivery_commit': args.delivery_commit, 'delivery_run_id': args.delivery_run,
@@ -432,10 +482,15 @@ def publish(args, config, config_path):
                  'qualification_execution_commit': os.environ.get('GITHUB_SHA'),
                  'all_four_archive_sources_signatures_materials_verified': True,
                  'native_seven_methods_and_real_guest_nine_paths_verified': True,
-                 'profile_main447lint_versions_signatures_and_415_entries_verified': True,
+                 'profile_main447lint_versions_signatures_and_host_contents_verified': True,
+                 'host_ci_non_signature_entry_count': metadata['host_entries'],
                  'apks': manifest['apks'], 'published': False,
                  'release_server_bytes_and_tag': 'NOT_YET_VERIFIED',
                  'target_sdk_or_vivo_business_verified': False}
+    if metadata['host_entries'] == 415:
+        qualified['profile_main447lint_versions_signatures_and_415_entries_verified'] = True
+    if visual is not None:
+        qualified['visual_layout'] = visual
     save(work / 'qualified-phone.json', qualified)
     qualified_dir = work / 'qualified-phone'
     qualified_dir.mkdir()
@@ -469,12 +524,13 @@ def publish(args, config, config_path):
     receipt = {'schema': 'GOGOGO_MATCHED_PREVIEW_PUBLICATION_V1', 'runtime_commit': config['runtime_commit'],
                'qualification_run_id': config['qualification_run_id'], 'delivery_commit': args.delivery_commit,
                'delivery_run_id': args.delivery_run, 'release_id': release['id'], 'tag': config['tag'],
-               'all_four_archive_sources_signatures_materials_verified': True, 'host_415_entries_equal': True,
+               'all_four_archive_sources_signatures_materials_verified': True,
+               'host_non_signature_entries_equal': metadata['host_entries'],
                'native_seven_methods_and_real_guest_nine_paths_verified': True, 'apks': manifest['apks'],
                'previous_failed_results_preserved': True, 'private_key_used': False,
                'target_sdk_or_vivo_business_verified': False, 'published': False}
     save(work / 'qualified-before-publication.json', receipt)
-    notes = Path(config['notes_path']).read_text() + '\n发版前实际核对：同源CI' + str(config['qualification_round']) + '的Mac构建、Linux7定位／19无线／447主检查及ARM64原包对照／7方法／独立Guest九路径通过；原包300秒主身份、系统稳定、清理、两包签名／415内容与服务器字节均已核对。云端通过不等于微信／抖音定位业务或vivo通过。\n'
+    notes = Path(config['notes_path']).read_text() + '\n发版前实际核对：同源CI' + str(config['qualification_round']) + '的Mac构建、Linux7定位／19无线／447主检查及ARM64原包对照／7方法／独立Guest九路径通过；原包300秒主身份、系统稳定、清理、两包签名／' + str(metadata['host_entries']) + '份非签名内容与服务器字节均已核对。云端通过不等于微信／抖音定位业务或vivo通过。\n'
     (work / 'published-notes.txt').write_text(notes)
     live_policy_matches(config_path, config)
     subprocess.run(['gh', 'release', 'edit', config['tag'], '--repo', REPO, '--title', config['title'],
@@ -501,10 +557,11 @@ def main():
     args = parser.parse_args()
     config_path = Path(args.config)
     config = json.loads(config_path.read_text())
+    metadata = preview_metadata(config)
     require(config['schema'] == 'GOGOGO_MATCHED_PREVIEW_DELIVERY_POLICY_V1'
             and config['publish_enabled'] is True and config['repository'] == REPO
             and re.fullmatch('[0-9a-f]{40}', config['runtime_commit'])
-            and config['tag'] == 'preview-2.4.35-container-' + config['runtime_commit'][:8], 'Policy disabled or identity differs')
+            and config['tag'] == 'preview-' + metadata['version'] + '-container-' + config['runtime_commit'][:8], 'Policy disabled or identity differs')
     require(0 < config['wait_seconds'] <= 9000 and 1 <= config['poll_seconds'] <= 60, 'Wait is not bounded')
     require(args.delivery_run > 0 and (args.package_dir if args.operation == 'stage'
             else args.sdk and args.delivery_commit and re.fullmatch('[0-9a-f]{40}', args.delivery_commit)),

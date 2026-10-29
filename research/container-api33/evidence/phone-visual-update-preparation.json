@@ -1,0 +1,30 @@
+{
+  "scope": "PHONE_2_4_36_CONTROLLER_AND_SIGNED_HOST_PREPARATION_NOT_NEW_CLOUD_DELIVERY",
+  "runtime_commit": "20ff7a0ef8fec5fc0caca788f98095f5eba2701f",
+  "qualification_run_id": 40870835491,
+  "native_job_id": 123441209819,
+  "native_state_at_capture": "IN_PROGRESS_NOT_PASS",
+  "host": {
+    "file": "Tianwaitian-Original-Preview-20ff7a0e.apk",
+    "package": "com.soozooq.tianwaitian.containerresearch",
+    "version_name": "0.5-preview",
+    "version_code": 5,
+    "certificate_sha256": "25bfd6e22d3a73813eee8f71734ad1916ccd0ae1bb80b83c44e947ec2355fa7b",
+    "sha256": "2198b7d60ec64753c40da5978a3655b306d2232b06223d9755ca9f99d05aeb02",
+    "bytes": 4603006
+  },
+  "host_base_ci_sha256": "85026bb171b032f9a5ec26854530e3a706d0c39052da18f56731129949d350e5",
+  "host_non_signature_entries_equal": 423,
+  "compressed_payload_bytes_copied": 4480748,
+  "public_recipe_operations": 847,
+  "exact_restore_verified": true,
+  "signing_key_values_read_or_included": false,
+  "private_key_used_locally_to_prepare_public_recipe": true,
+  "private_key_required_in_ci": false,
+  "main_cloud_apk": "PENDING_NEW_FIXED_SOURCE_BUILD",
+  "profile_sha256": "6a2c0c8ec700b830be25b93d10ba065e9091bcd92a59b94a0abad956da9b0b13",
+  "checks": "21_LOCAL_BOUNDARY_SIGNATURE_AND_STAGING_TESTS_PASS",
+  "new_qualified_phone_download": "NOT_AVAILABLE_BEFORE_COMPLETE_NATIVE_AND_ALL_GATES",
+  "legacy_2_4_35_policy_and_distributed_bytes_unchanged": true,
+  "source_roles_separately_recorded": true
+}
