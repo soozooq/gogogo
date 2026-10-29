@@ -133,13 +133,13 @@ jobs:
       - name: Prepare own host, driver and consumer for the same CI run (no original target APKs)
         if: ${{ inputs.run_cuttlefish_container_probe || contains(github.event.head_commit.message, '[cuttlefish-container]') || contains(github.event.head_commit.message, '[visual-layout]') }}
         run: python3 research/container-api33/tools/ci_owned_apks.py --workdir "$CONTAINER_RESEARCH_WORKDIR" --output "$RUNNER_TEMP/ci-owned-container-apks" --include-consumer
-      - name: Transfer only the self-owned APKs for ARM CI (one day, not a phone release)
+      - name: Transfer only the self-owned APKs for ARM CI (14 days, not a phone release)
         if: ${{ inputs.run_cuttlefish_container_probe || contains(github.event.head_commit.message, '[cuttlefish-container]') || contains(github.event.head_commit.message, '[visual-layout]') }}
         uses: actions/upload-artifact@v4
         with:
           name: ci-owned-container-apks-${{ github.sha }}
           path: ${{ runner.temp }}/ci-owned-container-apks/
-          retention-days: 1
+          retention-days: 14
           if-no-files-found: error
       - name: Allow the dedicated Linux runner to use its KVM device if available
         run: |

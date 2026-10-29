@@ -165,7 +165,7 @@ public final class ProbeActivity extends Activity {
         if (getResources().getConfiguration().fontScale <= 1.2f
                 && getResources().getConfiguration().screenWidthDp >= 320) return;
         for (int id : new int[] {R.id.import_actions, R.id.coordinate_fields, R.id.preview_actions}) {
-            if (id == R.id.import_actions
+            if ((id == R.id.import_actions || id == R.id.preview_actions)
                     && getResources().getConfiguration().screenWidthDp >= 320
                     && getResources().getConfiguration().fontScale <= 1.6f) continue;
             LinearLayout row = findViewById(id);

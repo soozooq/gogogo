@@ -74,6 +74,11 @@ public final class VisualLayoutInstrumentedTest {
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
                 UiObject2 search = required(MAIN, "twt_home_search");
                 required(MAIN, "twt_home_target");
+                // Capture the actual settled map state when available. Network
+                // loading remains an observation, separate from layout checks.
+                long mapDeadline = SystemClock.elapsedRealtime() + 15000;
+                while (device.hasObject(By.text("地图加载中，可先搜索地点"))
+                        && SystemClock.elapsedRealtime() < mapDeadline) SystemClock.sleep(100);
                 capture(profile + "-map");
                 assertTapTarget(required(MAIN, "twt_home_search"));
                 assertTapTarget(required(MAIN, "twt_bottom_navigation"));
@@ -113,6 +118,17 @@ public final class VisualLayoutInstrumentedTest {
                 assertTapTarget(required(HOST, "open_guest"));
                 assertTapTarget(required(HOST, "copy_preview_feedback"));
                 capture(profile + "-keyboard");
+                UiObject2 longitude = reveal("target_longitude");
+                longitude.click();
+                longitude.setText("151.20");
+                assertTrue("Longitude edit applied while keyboard visible", device.wait(Until.hasObject(
+                        By.res(HOST, "target_longitude").text("151.20")), 10000));
+                assertTrue("Actual input method remains visible for longitude", imeVisible());
+                assertTapTarget(reveal("target_longitude"));
+                assertTapTarget(required(HOST, "open_guest"));
+                assertTapTarget(required(HOST, "stop_guest"));
+                assertTapTarget(required(HOST, "copy_preview_feedback"));
+                capture(profile + "-keyboard-longitude");
                 assertEquals("Opening a UI must not enable location", BLocationManager.CLOSE_MODE,
                         BLocationManager.get().getPattern(0, GUEST));
                 assertFalse(BlackBoxCore.get().isInstalled(GUEST, 0));
@@ -134,7 +150,7 @@ public final class VisualLayoutInstrumentedTest {
         } finally {
             Configurator.getInstance().setWaitForIdleTimeout(idle);
             JSONObject result = new JSONObject().put("scope", "SELF_OWNED_VISUAL_UI_ONLY_NOT_TARGET_LOCATION")
-                    .put("passed", passed).put("pages", pages).put("expected_page_count", 16)
+                    .put("passed", passed).put("pages", pages).put("expected_page_count", 20)
                     .put("issues", issues)
                     .put("form_motions", formMotions)
                     .put("guest_imported", false).put("guest_launched", false)

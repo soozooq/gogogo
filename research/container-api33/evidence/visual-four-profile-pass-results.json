@@ -1,0 +1,358 @@
+{
+  "scope": "ACTUAL_OWN_UI_FOUR_PROFILES_AND_16_STAGE_PASS_NOT_TARGET_LOCATION",
+  "commit": "1620c94fbf817fab11f9a91b4836f4a4a73df1f2",
+  "run_id": 40864511919,
+  "linux_job_id": 123415765640,
+  "linux_conclusion": "SUCCESS",
+  "mac_job_id": 123415766090,
+  "mac_conclusion": "SUCCESS_BUILD_ONLY",
+  "archives": {
+    "own": {
+      "id": 12893496090,
+      "sha256": "c19de54831b6275ac64b84d64a5c61a4a08a7948893e41fca02f02d3521bbaed",
+      "verified": true
+    },
+    "mac": {
+      "id": 12893212239,
+      "sha256": "a027373b52c4d5f9e68a1ab914d6b3d8f69ef596745544d5854cda4232f4901b",
+      "verified": true
+    },
+    "linux": {
+      "id": 12893482469,
+      "sha256": "a2e225570a38caf7c71370309cafc0f3cdf9ad70beb67d9bcb6dfd883574ba63",
+      "verified": true
+    }
+  },
+  "own_transport": {
+    "source_count_verified": 73,
+    "apks": {
+      "host": {
+        "name": "probeHost-debug.apk",
+        "size": 4557907,
+        "sha256": "e2a10f27bb77b61bcd0c4f325075ef6f025151b53b7e4fc08f34dcb0817f8938"
+      },
+      "driver": {
+        "name": "probeHost-debug-androidTest.apk",
+        "size": 540886,
+        "sha256": "92220b2e793cb63b10878538c91de571c07e5015568e884326f0f09600f628e1"
+      },
+      "consumer": {
+        "name": "locationConsumer-debug.apk",
+        "size": 75094,
+        "sha256": "479ee511ef7219a334991ae71a09c53746777371807a32104494ab37fccb203e"
+      }
+    },
+    "notice_materials_per_apk": 11,
+    "signatures_verified_and_same": true
+  },
+  "default_cases": {
+    "x86_64-startup-framework": true,
+    "x86_64-radio-privacy": true,
+    "x86_64-owned-location": true,
+    "x86_64-ordinary-entry": true,
+    "x86_64-location-contract": true,
+    "x86_64-installed-import": true,
+    "x86_64-calculator": true,
+    "read-only-ui-capture": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "visual": {
+    "passed": true,
+    "junit_seconds": 48.475,
+    "expected_page_count": 16,
+    "normal_stage_images": 16,
+    "failure_images": 0,
+    "profiles": [
+      "light-360",
+      "dark-360",
+      "light-large-320",
+      "dark-large-320"
+    ],
+    "actual_ime_all_four_profiles": true,
+    "decorative_header_hidden_with_ime": true,
+    "minimum_visible_target_dp": 48,
+    "core_close_no_guest_import_or_launch_no_permission_request": true,
+    "bounded_read_only_scroll_motions": [
+      {
+        "profile": "light-large-320",
+        "target": "target_latitude",
+        "before": {
+          "scroll_y": 0,
+          "height": 553,
+          "can_down": true,
+          "can_up": false,
+          "field_height": 118,
+          "field_visible": false,
+          "field_visible_rect": "[64,836][576,954]",
+          "header_visible": true
+        },
+        "after": {
+          "scroll_y": 259,
+          "height": 553,
+          "can_down": true,
+          "can_up": true,
+          "field_height": 118,
+          "field_visible": false,
+          "field_visible_rect": "[64,577][576,695]",
+          "header_visible": true
+        }
+      },
+      {
+        "profile": "light-large-320",
+        "target": "target_latitude",
+        "before": {
+          "scroll_y": 259,
+          "height": 553,
+          "can_down": true,
+          "can_up": true,
+          "field_height": 118,
+          "field_visible": false,
+          "field_visible_rect": "[64,577][576,695]",
+          "header_visible": true
+        },
+        "after": {
+          "scroll_y": 520,
+          "height": 553,
+          "can_down": true,
+          "can_up": true,
+          "field_height": 118,
+          "field_visible": true,
+          "field_visible_rect": "[64,653][576,771]",
+          "header_visible": true
+        }
+      },
+      {
+        "profile": "light-large-320",
+        "target": "target_longitude",
+        "before": {
+          "scroll_y": 520,
+          "height": 553,
+          "can_down": true,
+          "can_up": true,
+          "field_height": 118,
+          "field_visible": true,
+          "field_visible_rect": "[64,851][576,890]",
+          "header_visible": true
+        },
+        "after": {
+          "scroll_y": 780,
+          "height": 553,
+          "can_down": true,
+          "can_up": true,
+          "field_height": 118,
+          "field_visible": true,
+          "field_visible_rect": "[64,591][576,709]",
+          "header_visible": true
+        }
+      },
+      {
+        "profile": "dark-large-320",
+        "target": "target_latitude",
+        "before": {
+          "scroll_y": 0,
+          "height": 553,
+          "can_down": true,
+          "can_up": false,
+          "field_height": 118,
+          "field_visible": false,
+          "field_visible_rect": "[64,836][576,954]",
+          "header_visible": true
+        },
+        "after": {
+          "scroll_y": 259,
+          "height": 553,
+          "can_down": true,
+          "can_up": true,
+          "field_height": 118,
+          "field_visible": false,
+          "field_visible_rect": "[64,577][576,695]",
+          "header_visible": true
+        }
+      },
+      {
+        "profile": "dark-large-320",
+        "target": "target_latitude",
+        "before": {
+          "scroll_y": 259,
+          "height": 553,
+          "can_down": true,
+          "can_up": true,
+          "field_height": 118,
+          "field_visible": false,
+          "field_visible_rect": "[64,577][576,695]",
+          "header_visible": true
+        },
+        "after": {
+          "scroll_y": 521,
+          "height": 553,
+          "can_down": true,
+          "can_up": true,
+          "field_height": 118,
+          "field_visible": true,
+          "field_visible_rect": "[64,652][576,770]",
+          "header_visible": true
+        }
+      },
+      {
+        "profile": "dark-large-320",
+        "target": "target_longitude",
+        "before": {
+          "scroll_y": 521,
+          "height": 553,
+          "can_down": true,
+          "can_up": true,
+          "field_height": 118,
+          "field_visible": true,
+          "field_visible_rect": "[64,850][576,890]",
+          "header_visible": true
+        },
+        "after": {
+          "scroll_y": 780,
+          "height": 553,
+          "can_down": true,
+          "can_up": true,
+          "field_height": 118,
+          "field_visible": true,
+          "field_visible_rect": "[64,591][576,709]",
+          "header_visible": true
+        }
+      }
+    ],
+    "system_server_before_and_after": "552",
+    "system_server_stable": true,
+    "owned_cleanup": {
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true,
+      "com.soozooq.gogogo.test": true
+    },
+    "display_settings_restored": true
+  },
+  "manual_image_review": {
+    "reviewed": [
+      "light-large-320-preview",
+      "light-large-320-keyboard",
+      "dark-large-320-keyboard",
+      "light-360-map",
+      "dark-360-preview",
+      "light-360-keyboard",
+      "light-large-320-search",
+      "dark-large-320-map"
+    ],
+    "no_images_edited": true,
+    "findings": [
+      "Pinned map primary action visible at normal and large fonts",
+      "Compact search and native dark resources render coherently",
+      "Decorative preview header disappears with real keyboard",
+      "Large-font latitude input is reachable and focus text visible, fixed actions remain present",
+      "Large-font footer stack consumes space and longitude is partly outside the current latitude viewport; next refinement shortens feedback label and checks editing longitude as well",
+      "Map frames still show loading; network/tile loading not verified"
+    ]
+  },
+  "images": [
+    {
+      "file": "dark-360-keyboard.png",
+      "sha256": "3c0ac7e71ae76f7fd8b9cf41a929b2b7ffd8765b18a7784df8f1e1efaf0aeac3",
+      "bytes": 110336
+    },
+    {
+      "file": "dark-360-map.png",
+      "sha256": "94ae8ee37f9a91368cfc4bd7225d0ee005bdc2aea57855d77150840fa4b22258",
+      "bytes": 110713
+    },
+    {
+      "file": "dark-360-preview.png",
+      "sha256": "38ed93007727e67e5c62444ff8e39a2aef6af98bd80029e3d809995be6e557e4",
+      "bytes": 122824
+    },
+    {
+      "file": "dark-360-search.png",
+      "sha256": "8d85cda5e1e52d58286e04fa0fd5149b83aff2e37d1c4d0eb0018ca0dba053c7",
+      "bytes": 186799
+    },
+    {
+      "file": "dark-large-320-keyboard.png",
+      "sha256": "f0d59d622f2d1670148c47a69be2a99040549155a93ba77b64137c5bb808ac0b",
+      "bytes": 68679
+    },
+    {
+      "file": "dark-large-320-map.png",
+      "sha256": "c9665a7da81ab55c991e3dc36d34fe5a56fafd5add373097d743e556b7d1b436",
+      "bytes": 117138
+    },
+    {
+      "file": "dark-large-320-preview.png",
+      "sha256": "e581fae02de774bb16b81223fac63e4005f63014dd737bcd97023e1ceedef43f",
+      "bytes": 95822
+    },
+    {
+      "file": "dark-large-320-search.png",
+      "sha256": "76fee31110bf537cc01224dd40c3874de13a265580493ccd76b49514ac965cc7",
+      "bytes": 137481
+    },
+    {
+      "file": "light-360-keyboard.png",
+      "sha256": "e686ee80132bdbb31279436c23535353e9b5a431100296cc00d521728a203adb",
+      "bytes": 108456
+    },
+    {
+      "file": "light-360-map.png",
+      "sha256": "de4354c3e4622fdeeda56943e2d3b6444960d5aff47d19a1ab481f53f22ba45f",
+      "bytes": 108369
+    },
+    {
+      "file": "light-360-preview.png",
+      "sha256": "3d8ec8829f4f78dd5812bf76c50723e2d051190973b6328065cdc1bb69684a13",
+      "bytes": 120436
+    },
+    {
+      "file": "light-360-search.png",
+      "sha256": "6f4f4c2c2b53a4228b8767e38d31807873da0584858e0229531a7c283f98f825",
+      "bytes": 115158
+    },
+    {
+      "file": "light-large-320-keyboard.png",
+      "sha256": "0e9d26700375b069feed389f2dafdc439b6a4312effa2a82348410bc42653573",
+      "bytes": 66422
+    },
+    {
+      "file": "light-large-320-map.png",
+      "sha256": "313a95a6d62fed86a49080adc21d5bc65efdee3ad34f8ec83e97bc4d1f8621e2",
+      "bytes": 114961
+    },
+    {
+      "file": "light-large-320-preview.png",
+      "sha256": "8065c76234817a298e14498179b74514c33ac1d1d19bd2bf24802e2d14a6e2af",
+      "bytes": 93092
+    },
+    {
+      "file": "light-large-320-search.png",
+      "sha256": "b8958a81fb06bc39e16e82fa89c40fcf024ecb26321afe730c12851e0dbe52b6",
+      "bytes": 125539
+    }
+  ],
+  "offline_gallery": {
+    "file": "Tianwaitian-UI-review-1620c94f.zip",
+    "sha256": "cfdec3198a7b0bc602b02f3d06a199e8cd809432148bc642ea72e7e679a6597d",
+    "original_images_embedded_unchanged": true
+  },
+  "next_refinement": {
+    "short_feedback_label_and_compact_two_column_auxiliary_actions": true,
+    "longitude_keyboard_edit_check_and_four_more_images": true,
+    "allow_map_up_to_15_seconds_before_recording_actual_state": true,
+    "owned_ci_archive_retention_days": 14,
+    "local_host_driver_build": "PASS_16_SECONDS"
+  },
+  "candidate_distributed": false,
+  "engine_changed": false,
+  "same_source_native_target_qualified": false,
+  "wechat_douyin_vivo_location_verified": false
+}

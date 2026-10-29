@@ -86,7 +86,8 @@
                 android:layout_width="0dp" android:layout_weight="1" android:text="停止预览" />
             <Space android:id="@+id/preview_action_gap" android:layout_width="8dp" android:layout_height="8dp" />
             <Button android:id="@id/copy_preview_feedback" style="@style/PreviewButton"
-                android:layout_width="0dp" android:layout_weight="1" android:text="一键复制反馈" />
+                android:layout_width="0dp" android:layout_weight="1" android:text="复制反馈"
+                android:contentDescription="一键复制反馈" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>
