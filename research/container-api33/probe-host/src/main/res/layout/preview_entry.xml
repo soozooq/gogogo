@@ -25,14 +25,16 @@
                 <LinearLayout android:id="@+id/import_actions" android:layout_width="match_parent"
                     android:layout_height="wrap_content" android:orientation="horizontal">
                     <Button android:id="@id/import_installed_guest" style="@style/PreviewButton"
-                        android:layout_width="0dp" android:layout_weight="1" android:text="导入已装应用" />
+                        android:layout_width="0dp" android:layout_weight="1" android:text="已装应用"
+                        android:contentDescription="导入手机已装版本" />
                     <Space android:id="@+id/import_gap" android:layout_width="8dp" android:layout_height="8dp" />
                     <Button android:id="@id/import_guest" style="@style/PreviewButton"
-                        android:layout_width="0dp" android:layout_weight="1" android:text="选择原版 APK" />
+                        android:layout_width="0dp" android:layout_weight="1" android:text="原版 APK"
+                        android:contentDescription="选择原版 APK 文件并导入" />
                 </LinearLayout>
                 <Button android:id="@+id/download_original" style="@style/PreviewButton"
                     android:layout_marginTop="4dp" android:background="?android:attr/selectableItemBackground"
-                    android:text="获取对应版本的原版 APK  ↗" android:textSize="13sp" />
+                    android:text="获取对应版本原版 APK" android:textSize="13sp" />
             </LinearLayout>
             <LinearLayout android:id="@+id/coordinate_section" android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:layout_marginTop="12dp"

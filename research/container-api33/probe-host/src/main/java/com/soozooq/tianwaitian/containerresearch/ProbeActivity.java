@@ -94,10 +94,10 @@ public final class ProbeActivity extends Activity {
         setContentView(R.layout.preview_entry);
         if (Build.VERSION.SDK_INT >= 30) {
             View header = findViewById(R.id.preview_header);
-            findViewById(R.id.preview_root).setOnApplyWindowInsetsListener((view, insets) -> {
+            getWindow().getDecorView().setOnApplyWindowInsetsListener((view, insets) -> {
                 int visible = insets.isVisible(WindowInsets.Type.ime()) ? View.GONE : View.VISIBLE;
                 if (header.getVisibility() != visible) header.setVisibility(visible);
-                return insets;
+                return view.onApplyWindowInsets(insets);
             });
         }
         apps = findViewById(R.id.guest_choice);
@@ -165,6 +165,9 @@ public final class ProbeActivity extends Activity {
         if (getResources().getConfiguration().fontScale <= 1.2f
                 && getResources().getConfiguration().screenWidthDp >= 320) return;
         for (int id : new int[] {R.id.import_actions, R.id.coordinate_fields, R.id.preview_actions}) {
+            if (id == R.id.import_actions
+                    && getResources().getConfiguration().screenWidthDp >= 320
+                    && getResources().getConfiguration().fontScale <= 1.6f) continue;
             LinearLayout row = findViewById(id);
             row.setOrientation(LinearLayout.VERTICAL);
             for (int i = 0; i < row.getChildCount(); i++) {

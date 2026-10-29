@@ -3,6 +3,7 @@ package com.soozooq.tianwaitian.containerresearch;
 import static org.junit.Assert.*;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -10,11 +11,13 @@ import android.graphics.Rect;
 import android.view.accessibility.AccessibilityWindowInfo;
 import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
+import android.view.View;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry;
+import androidx.test.runner.lifecycle.Stage;
 import androidx.test.uiautomator.By;
 import androidx.test.uiautomator.Configurator;
-import androidx.test.uiautomator.Direction;
 import androidx.test.uiautomator.UiDevice;
 import androidx.test.uiautomator.UiObject2;
 import androidx.test.uiautomator.StaleObjectException;
@@ -40,6 +43,7 @@ public final class VisualLayoutInstrumentedTest {
     private final UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
     private final JSONArray pages = new JSONArray();
     private final JSONArray issues = new JSONArray();
+    private final JSONArray formMotions = new JSONArray();
     private File evidence;
     private int profileWidthDp = 360;
     private String currentProfile;
@@ -103,6 +107,8 @@ public final class VisualLayoutInstrumentedTest {
                 long imeDeadline = SystemClock.elapsedRealtime() + 10000;
                 while (!imeVisible() && SystemClock.elapsedRealtime() < imeDeadline) SystemClock.sleep(50);
                 assertTrue("Actual input method visible for keyboard layout", imeVisible());
+                assertTrue("Decorative header hidden while editing", device.wait(Until.gone(
+                        By.res(HOST, "preview_header")), 10000));
                 assertTapTarget(reveal("target_latitude"));
                 assertTapTarget(required(HOST, "open_guest"));
                 assertTapTarget(required(HOST, "copy_preview_feedback"));
@@ -130,6 +136,7 @@ public final class VisualLayoutInstrumentedTest {
             JSONObject result = new JSONObject().put("scope", "SELF_OWNED_VISUAL_UI_ONLY_NOT_TARGET_LOCATION")
                     .put("passed", passed).put("pages", pages).put("expected_page_count", 16)
                     .put("issues", issues)
+                    .put("form_motions", formMotions)
                     .put("guest_imported", false).put("guest_launched", false)
                     .put("location_permission_requested", false).put("target_sdk_adoption_verified", false);
             if (lastControl != null) result.put("last_control", lastControl);
@@ -165,12 +172,46 @@ public final class VisualLayoutInstrumentedTest {
             if (node != null && node.getVisibleBounds().height() >= unitsForDp(48)) return node;
             if (n == 10) break;
             UiObject2 form = required(HOST, "preview_form");
-            // Re-query after every real swipe. Some ScrollViews move but do not
-            // acknowledge scrolling: don't undo that movement on a false return.
-            form.scroll(n < 5 ? Direction.DOWN : Direction.UP, 0.6f);
+            // Use slow screen-coordinate swipes: a fast accessibility scroll can
+            // jump over an input, especially in a short large-font viewport.
+            Rect bounds = form.getVisibleBounds();
+            JSONObject before = formGeometry(id);
+            int middle = bounds.centerY();
+            int travel = Math.max(unitsForDp(24), bounds.height() / 4);
+            int start = n < 5 ? middle + travel : middle - travel;
+            int end = n < 5 ? middle - travel : middle + travel;
+            assertTrue("Own form swipe delivered", device.swipe(bounds.centerX(), start,
+                    bounds.centerX(), end, 120));
+            SystemClock.sleep(150);
+            if (formMotions.length() < 128) {
+                try { formMotions.put(new JSONObject().put("profile", currentProfile)
+                        .put("target", id).put("before", before).put("after", formGeometry(id))); }
+                catch (Exception unavailable) { /* Assertions remain authoritative. */ }
+            }
         }
         fail("Coordinate field unreachable: " + id);
         return null;
+    }
+
+    private JSONObject formGeometry(String fieldId) {
+        JSONObject result = new JSONObject();
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+            for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED)) {
+                if (!(activity instanceof ProbeActivity)) continue;
+                View form = activity.findViewById(R.id.preview_form);
+                View field = activity.findViewById("target_latitude".equals(fieldId)
+                        ? R.id.target_latitude : R.id.target_longitude);
+                Rect visible = new Rect();
+                try {
+                    result.put("scroll_y", form.getScrollY()).put("height", form.getHeight())
+                            .put("can_down", form.canScrollVertically(1)).put("can_up", form.canScrollVertically(-1))
+                            .put("field_height", field.getHeight()).put("field_visible", field.getGlobalVisibleRect(visible))
+                            .put("field_visible_rect", visible.toShortString())
+                            .put("header_visible", activity.findViewById(R.id.preview_header).getVisibility() == View.VISIBLE);
+                } catch (Exception unavailable) { /* Geometry never changes product state. */ }
+            }
+        });
+        return result;
     }
 
     private boolean imeVisible() {

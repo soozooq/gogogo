@@ -1,0 +1,119 @@
+{
+  "scope": "ACTUAL_OWN_UI_IMAGES_WITH_REMAINING_LARGE_FORM_FAILURE_NOT_TARGET_LOCATION",
+  "commit": "d222ced0d5e04c6908b5331fa5a255f0ebf44674",
+  "run_id": 40641861039,
+  "linux_job_id": 122661597406,
+  "linux_conclusion": "FAILURE",
+  "mac_job_id": 122661597666,
+  "mac_conclusion": "SUCCESS_BUILD_ONLY",
+  "archives": {
+    "linux": {
+      "id": 12796376212,
+      "sha256": "7ed51f1b684f599ccc61dd9941d373dd54f7f5e8cde5360db0cdfb2e163c1ff5",
+      "verified": true
+    },
+    "mac": {
+      "id": 12795638956,
+      "sha256": "662611d377e65426243df94ab4be3338c72ee909b4aaea768540de60624660fe",
+      "verified": true
+    }
+  },
+  "own_transport_archive": "EXPIRED_BEFORE_RETRIEVAL_NOT_INDEPENDENTLY_VERIFIED",
+  "default_cases": {
+    "x86_64-startup-framework": true,
+    "x86_64-radio-privacy": true,
+    "x86_64-owned-location": true,
+    "x86_64-ordinary-entry": true,
+    "x86_64-location-contract": true,
+    "x86_64-installed-import": true,
+    "x86_64-calculator": true,
+    "read-only-ui-capture": true
+  },
+  "feedback_main": {
+    "junit": {
+      "tests": 447,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint_error_fatal_count": 0,
+    "passed": true
+  },
+  "visual": {
+    "passed": false,
+    "png_count": 16,
+    "xml_count": 16,
+    "normal_stage_images": 14,
+    "failure_images": 2,
+    "issues": [
+      {
+        "profile": "light-large-320",
+        "error_class": "AssertionError",
+        "message": "Coordinate field unreachable: target_latitude",
+        "control": {
+          "resource": "com.soozooq.tianwaitian.containerresearch:id/copy_preview_feedback",
+          "profile": "light-large-320",
+          "bounds": "[32,1154][608,1256]",
+          "profile_width_dp": 320,
+          "automation_viewport_width": 640,
+          "automation_viewport_height": 1280,
+          "minimum_height_dp": 48,
+          "minimum_height_in_viewport": 96
+        }
+      },
+      {
+        "profile": "dark-large-320",
+        "error_class": "AssertionError",
+        "message": "Coordinate field unreachable: target_latitude",
+        "control": {
+          "resource": "com.soozooq.tianwaitian.containerresearch:id/copy_preview_feedback",
+          "profile": "dark-large-320",
+          "bounds": "[32,1154][608,1256]",
+          "profile_width_dp": 320,
+          "automation_viewport_width": 640,
+          "automation_viewport_height": 1280,
+          "minimum_height_dp": 48,
+          "minimum_height_in_viewport": 96
+        }
+      }
+    ],
+    "normal_360_actual_ime_visible": true,
+    "normal_360_header_remained_visible": true,
+    "system_server_stable": true,
+    "owned_cleanup": {
+      "com.soozooq.tianwaitian.containerresearch.test": true,
+      "com.soozooq.tianwaitian.containerresearch": true,
+      "com.soozooq.gogogo.test": true
+    },
+    "display_settings_restored": true
+  },
+  "manual_image_review": {
+    "reviewed": [
+      "light-large-320-map",
+      "light-large-320-search",
+      "light-360-keyboard",
+      "light-large-320-failure"
+    ],
+    "findings": [
+      "Pinned map primary action now visible at 320dp / font 1.5",
+      "Search labels and vector service control render compactly",
+      "Normal keyboard image contains actual IME and reachable coordinate field / fixed actions, but decorative header still visible",
+      "Large preview form coordinate field still unreachable by automation; failure screenshot returned to first import card"
+    ],
+    "no_images_edited": true,
+    "map_tiles_network_load_verified": false
+  },
+  "next_ui_repair": {
+    "compact_import_labels_keep_two_columns_at_320dp_font_1_5": true,
+    "listen_for_raw_ime_insets_at_decor_view": true,
+    "slow_real_swipes_and_read_only_scroll_geometry": true,
+    "header_must_be_gone_with_actual_ime": true,
+    "minimum_visible_target_dp": 48,
+    "all_four_profiles_and_16_correct_stages_still_required": true,
+    "local_host_driver_build": "PASS_13_SECONDS"
+  },
+  "candidate_distributed": false,
+  "engine_changed": false,
+  "same_source_native_target_qualified": false,
+  "wechat_douyin_vivo_location_verified": false
+}
